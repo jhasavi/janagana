@@ -1,0 +1,152 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  migrate:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Run Prisma migrations on Neon
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Verify migration
+        run: |
+          cd packages/database
+          npx prisma migrate status
+
+  deploy-api:
+    name: Deploy API to Railway
+    runs-on: ubuntu-latest
+    needs: migrate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Railway Registry
+        uses: docker/login-action@v3
+        with:
+          registry: railway.app
+          username: ${{ secrets.RAILWAY_API_KEY }}
+          password: ${{ secrets.RAILWAY_API_KEY }}
+
+      - name: Build Docker image
+        run: |
+          docker build -f apps/api/Dockerfile -t railway.app/api:${{ github.sha }} .
+          docker build -f apps/api/Dockerfile -t railway.app/api:latest .
+
+      - name: Push to Railway
+        run: |
+          docker push railway.app/api:${{ github.sha }}
+          docker push railway.app/api:latest
+
+      - name: Deploy to Railway
+        uses: railwayapp/railway-action@v1
+        with:
+          railwayToken: ${{ secrets.RAILWAY_API_KEY }}
+          projectId: ${{ secrets.RAILWAY_PROJECT_ID }}
+          service: api
+
+      - name: Wait for health check
+        run: |
+          echo "Waiting for API to be healthy..."
+          timeout 300 bash -c 'until curl -f https://api.orgflow.app/health; do sleep 10; done'
+          echo "API is healthy!"
+
+  deploy-web:
+    name: Deploy Web to Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-api
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web application
+        run: npm run build --workspace apps/web
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Set Vercel Environment Variables
+        run: |
+          vercel env add NEXT_PUBLIC_API_URL production --value=https://api.orgflow.app --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env add NEXT_PUBLIC_APP_URL production --value=https://orgflow.app --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env add CLERK_PUBLISHABLE_KEY production --value=${{ secrets.CLERK_PUBLISHABLE_KEY }} --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env add CLERK_SECRET_KEY production --value=${{ secrets.CLERK_SECRET_KEY }} --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY production --value=${{ secrets.STRIPE_PUBLISHABLE_KEY }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying web deployment..."
+          timeout 300 bash -c 'until curl -f https://orgflow.app/api/health; do sleep 10; done'
+          echo "Web deployment is healthy!"
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-web]
+    if: always()
+    steps:
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "OrgFlow Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*OrgFlow Deployment ${{ job.status }}*\n\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nDeployed by: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
