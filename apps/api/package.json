@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "prebuild": "cd ../packages/database && npx prisma generate",
+    "prebuild": "cd ../../packages/database && npx prisma generate",
     "build": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
