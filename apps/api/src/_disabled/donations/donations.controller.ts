@@ -3,12 +3,12 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DonationsService } from './donations.service';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/create-campaign.dto';
 import { CreateDonationDto, ProcessDonationDto } from './dto/create-donation.dto';
-import { AuthGuard } from '../common/guards/auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 
 @ApiTags('donations')
 @Controller('donations')
-@UseGuards(AuthGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, TenantGuard)
 @ApiBearerAuth()
 export class DonationsController {
   constructor(private readonly donationsService: DonationsService) {}

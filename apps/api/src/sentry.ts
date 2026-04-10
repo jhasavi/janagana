@@ -122,12 +122,4 @@ export function captureMessage(message: string, level: Sentry.SeverityLevel = 'i
   });
 }
 
-// Helper to start transaction
-export function startTransaction(name: string, op: string) {
-  return Sentry.startSpan({
-    name,
-    op,
-  });
-}
-
 export { Sentry };

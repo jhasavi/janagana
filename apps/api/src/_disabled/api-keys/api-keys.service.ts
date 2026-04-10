@@ -1,13 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { randomBytes, createHash } from 'crypto';
-
-// TODO: Remove this once Prisma is regenerated and ApiKeyScope is exported
-enum ApiKeyScope {
-  READ = 'READ',
-  WRITE = 'WRITE',
-  ADMIN = 'ADMIN',
-}
+import { ApiKeyScope } from '@prisma/client';
 
 export interface CreateApiKeyDto {
   name: string;
