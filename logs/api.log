@@ -4238,3 +4238,1761 @@ Error: Nest could not find ConfigService element (this provider does not exist i
 [32m[Nest] 22574  - [39m04/10/2026, 2:50:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/health, GET} (version: 1) route[39m[38;5;3m +0ms[39m
 [32m[Nest] 22574  - [39m04/10/2026, 2:50:34 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +0ms[39m
 [32m[Nest] 22574  - [39m04/10/2026, 2:50:34 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mOrgFlow API listening on port 4000[39m
+[2J[3J[H[[90m2:51:57 PM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/_disabled/api-keys/api-keys.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/api-keys/api-keys.service.ts[0m:[93m94[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'key' implicitly has an 'any' type.
+
+[7m94[0m     return apiKeys.map(key => ({
+[7m  [0m [91m                       ~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m3[0m:[93m10[0m - [91merror[0m[90m TS2305: [0mModule '"@orgflow/database"' has no exported member 'PrismaService'.
+
+[7m3[0m import { PrismaService } from '@orgflow/database';
+[7m [0m [91m         ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m152[0m:[93m23[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m152[0m       logs: logs.map((log) => ({
+[7m   [0m [91m                      ~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m177[0m:[93m19[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m177[0m     logs.forEach((log) => {
+[7m   [0m [91m                  ~~~[0m
+
+[96msrc/_disabled/auth/member-auth.service.ts[0m:[93m204[0m:[93m16[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'algorithm' does not exist in type 'SignCallback'.
+
+[7m204[0m     return jwt.sign({ memberId, tenantId, role: 'member' }, this.jwtSecret, {
+[7m   [0m [91m               ~~~~[0m
+
+
+[96msrc/_disabled/communications/communications.module.ts[0m:[93m8[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../audit/audit.module' or its corresponding type declarations.
+
+[7m8[0m import { AuditModule } from '../audit/audit.module';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/communications/notifications/notifications.service.ts[0m:[93m41[0m:[93m7[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 7.
+
+[7m 41[0m       'notification.create',
+[7m   [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 42[0m       `Notification created for member ${memberId}`,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 44[0m       'notification',
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 45[0m       notification.id,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/communications/notifications/notifications.service.ts[0m:[93m73[0m:[93m7[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 6.
+
+[7m73[0m       'notification.bulk_create',
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m74[0m       `Bulk notification queued for ${jobs.length} members`,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m75[0m       { memberIds, type, title },
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m76[0m       'notification',
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m6[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/jwt-auth.guard' or its corresponding type declarations.
+
+[7m6[0m import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+[7m [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m7[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/tenant.guard' or its corresponding type declarations.
+
+[7m7[0m import { TenantGuard } from '../common/guards/tenant.guard';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m20[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m20[0m   async createCampaign(@Req() req, @Body() dto: CreateCampaignDto) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m26[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m26[0m   async getCampaigns(@Req() req, @Query('status') status?: string, @Query('isPublic') isPublic?: string) {
+[7m  [0m [91m                     ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m35[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m35[0m   async getCampaign(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m41[0m:[93m26[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m41[0m   async getCampaignStats(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                         ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m47[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m47[0m   async updateCampaign(@Req() req, @Param('id') id: string, @Body() dto: UpdateCampaignDto) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m54[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m54[0m   async deleteCampaign(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m62[0m:[93m32[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m62[0m   async createDonationCheckout(@Req() req, @Body() dto: CreateDonationDto) {
+[7m  [0m [91m                               ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m68[0m:[93m25[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m68[0m   async processDonation(@Req() req, @Body() dto: ProcessDonationDto) {
+[7m  [0m [91m                        ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m75[0m:[93m5[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m75[0m     @Req() req,
+[7m  [0m [91m    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m84[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m84[0m   async getDonation(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m90[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m90[0m   async exportDonors(@Req() req, @Query('campaignId') campaignId?: string) {
+[7m  [0m [91m                     ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m97[0m:[93m28[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m97[0m   async generateTaxReceipt(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                           ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.module.ts[0m:[93m4[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.module' or its corresponding type declarations.
+
+[7m4[0m import { DatabaseModule } from '../database/database.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.module.ts[0m:[93m5[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/payments/payments.module' or its corresponding type declarations.
+
+[7m5[0m import { PaymentsModule } from '../modules/payments/payments.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m3[0m:[93m31[0m - [91merror[0m[90m TS2307: [0mCannot find module '../payments/stripe.service' or its corresponding type declarations.
+
+[7m3[0m import { StripeService } from '../payments/stripe.service';
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m137[0m:[93m38[0m - [91merror[0m[90m TS7006: [0mParameter 'sum' implicitly has an 'any' type.
+
+[7m137[0m     const raised = donations.reduce((sum, d) => sum + d.amountCents, 0);
+[7m   [0m [91m                                     ~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m137[0m:[93m43[0m - [91merror[0m[90m TS7006: [0mParameter 'd' implicitly has an 'any' type.
+
+[7m137[0m     const raised = donations.reduce((sum, d) => sum + d.amountCents, 0);
+[7m   [0m [91m                                          ~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m335[0m:[93m33[0m - [91merror[0m[90m TS7006: [0mParameter 'd' implicitly has an 'any' type.
+
+[7m335[0m     const rows = donations.map((d) => [
+[7m   [0m [91m                                ~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m347[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'r' implicitly has an 'any' type.
+
+[7m347[0m     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+[7m   [0m [91m                                                 ~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m3[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"@nestjs/terminus"' has no exported member named 'RedisHealthIndicator'. Did you mean 'DiskHealthIndicator'?
+
+[7m3[0m import { RedisHealthIndicator } from '@nestjs/terminus';
+[7m [0m [91m         ~~~~~~~~~~~~~~~~~~~~[0m
+
+  [96m../../node_modules/@nestjs/terminus/dist/health-indicator/disk/disk.health.d.ts[0m:[93m12[0m:[93m22[0m
+    [7m12[0m export declare class DiskHealthIndicator extends HealthIndicator {
+    [7m  [0m [96m                     ~~~~~~~~~~~~~~~~~~~[0m
+    'DiskHealthIndicator' is declared here.
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m4[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@liaots/nestjs-redis' or its corresponding type declarations.
+
+[7m4[0m import { InjectRedis } from '@liaots/nestjs-redis';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m12[0m:[93m13[0m - [91merror[0m[90m TS2300: [0mDuplicate identifier 'health'.
+
+[7m12[0m     private health: HealthCheckService,
+[7m  [0m [91m            ~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m44[0m:[93m23[0m - [91merror[0m[90m TS2367: [0mThis comparison appears to be unintentional because the types '{ [optionalKeys: string]: any; status: HealthIndicatorStatus; }' and 'string' have no overlap.
+
+[7m44[0m               status: isHealthy.status === 'up' ? 'up' : 'down',
+[7m  [0m [91m                      ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m53[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m53[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m74[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m74[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m97[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m97[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m121[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m121[0m               error: error.message,
+[7m   [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m144[0m:[93m3[0m - [91merror[0m[90m TS2300: [0mDuplicate identifier 'health'.
+
+[7m144[0m   health() {
+[7m   [0m [91m  ~~~~~~[0m
+
+[96msrc/_disabled/health/health.module.ts[0m:[93m5[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@liaots/nestjs-redis' or its corresponding type declarations.
+
+[7m5[0m import { RedisModule } from '@liaots/nestjs-redis';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m18[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m18[0m       ...(requestId && { requestId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m19[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m19[0m       ...(tenantId && { tenantId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m20[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m20[0m       ...(userId && { userId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m21[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m21[0m       ...(context && { context }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m36[0m:[93m7[0m - [91merror[0m[90m TS2451: [0mCannot redeclare block-scoped variable 'logger'.
+
+[7m36[0m const logger = winston.createLogger({
+[7m  [0m [91m      ~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m51[0m:[93m9[0m - [91merror[0m[90m TS2351: [0mThis expression is not constructable.
+  Type 'typeof DailyRotateFile' has no construct signatures.
+
+[7m51[0m     new DailyRotateFile({
+[7m  [0m [91m        ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/_disabled/logger/logger.service.ts[0m:[93m3[0m:[93m1[0m
+    [7m3[0m import * as DailyRotateFile from 'winston-daily-rotate-file';
+    [7m [0m [96m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    Type originates at this import. A namespace-style import cannot be called or constructed, and will cause a failure at runtime. Consider using a default import or import require here instead.
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m61[0m:[93m9[0m - [91merror[0m[90m TS2351: [0mThis expression is not constructable.
+  Type 'typeof DailyRotateFile' has no construct signatures.
+
+[7m61[0m     new DailyRotateFile({
+[7m  [0m [91m        ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/_disabled/logger/logger.service.ts[0m:[93m3[0m:[93m1[0m
+    [7m3[0m import * as DailyRotateFile from 'winston-daily-rotate-file';
+    [7m [0m [96m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    Type originates at this import. A namespace-style import cannot be called or constructed, and will cause a failure at runtime. Consider using a default import or import require here instead.
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m184[0m:[93m14[0m - [91merror[0m[90m TS2451: [0mCannot redeclare block-scoped variable 'logger'.
+
+[7m184[0m export const logger = new CustomLogger();
+[7m   [0m [91m             ~~~~~~[0m
+
+[96msrc/_disabled/members/dto/directory-filter.dto.ts[0m:[93m3[0m:[93m31[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../common/dto/pagination.dto' or its corresponding type declarations.
+
+[7m3[0m import { PaginationDto } from '../../common/dto/pagination.dto';
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.module.ts[0m:[93m3[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../payments/payments.module' or its corresponding type declarations.
+
+[7m3[0m import { PaymentsModule } from '../payments/payments.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.service.ts[0m:[93m354[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m354[0m       meta: new PaginationMetaDto(total, filter.page, filter.limit),
+[7m   [0m [91m                                         ~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.service.ts[0m:[93m399[0m:[93m47[0m - [91merror[0m[90m TS2820: [0mType '"CANCELLED"' is not assignable to type 'RegistrationStatus | NestedEnumRegistrationStatusFilter<"EventRegistration"> | undefined'. Did you mean '"CANCELED"'?
+
+[7m399[0m       where: { memberId: member.id, status: { not: 'CANCELLED' } },
+[7m   [0m [91m                                              ~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m43[0m:[93m55[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; total: number; }' is not assignable to parameter of type 'string'.
+
+[7m 43[0m     this.logger.debug(`Counter incremented: ${name}`, {
+[7m   [0m [91m                                                      ~[0m
+[7m 44[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 47[0m       total: currentValue + value,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 48[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m58[0m:[93m54[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; count: number; }' is not assignable to parameter of type 'string'.
+
+[7m 58[0m     this.logger.debug(`Histogram recorded: ${name}`, {
+[7m   [0m [91m                                                     ~[0m
+[7m 59[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 62[0m       count: values.length,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 63[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m71[0m:[93m45[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; }' is not assignable to parameter of type 'string'.
+
+[7m 71[0m     this.logger.debug(`Gauge set: ${name}`, {
+[7m   [0m [91m                                            ~[0m
+[7m 72[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 74[0m       labels,
+[7m   [0m [91m~~~~~~~~~~~~~[0m
+[7m 75[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m198[0m:[93m17[0m - [91merror[0m[90m TS2339: [0mProperty 'info' does not exist on type 'CustomLogger'.
+
+[7m198[0m     this.logger.info('Metrics reset');
+[7m   [0m [91m                ~~~~[0m
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m26[0m - [91merror[0m[90m TS7006: [0mParameter 'data' implicitly has an 'any' type.
+
+[7m40[0m     res.send = function (data) {
+[7m  [0m [91m                         ~~~~[0m
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m53[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m53[0m           this.logger.error(`Request failed: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m55[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m55[0m           this.logger.warn(`Request error: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m57[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m57[0m           this.logger.debug(`Request completed: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m60[0m:[93m32[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m60[0m       return originalSend.call(this, data);
+[7m  [0m [91m                               ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/tenant-resolver.middleware.ts[0m:[93m3[0m:[93m36[0m - [91merror[0m[90m TS2307: [0mCannot find module '../types/request.types' or its corresponding type declarations.
+
+[7m3[0m import type { RequestTenant } from '../types/request.types';
+[7m [0m [91m                                   ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/search/search.controller.ts[0m:[93m31[0m:[93m58[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 5.
+
+[7m31[0m     await this.auditService.log(tenant.id, user.clerkId, 'search.query', `Search for '${dto.q}'`, {
+[7m  [0m [91m                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m32[0m       userRole: user.role,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m33[0m       query: dto.q,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m34[0m     });
+[7m  [0m [91m~~~~~[0m
+
+[96msrc/_disabled/search/search.module.ts[0m:[93m4[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../audit/audit.module' or its corresponding type declarations.
+
+[7m4[0m import { AuditModule } from '../audit/audit.module';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m27[0m:[93m14[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:read"' is not assignable to parameter of type 'Permission'.
+
+[7m27[0m @Permissions('settings:read')
+[7m  [0m [91m             ~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m43[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m43[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m65[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m65[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m77[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m77[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m89[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:read"' is not assignable to parameter of type 'Permission'.
+
+[7m89[0m   @Permissions('settings:read')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m96[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m96[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m106[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m106[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m116[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m116[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m127[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m127[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m140[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m140[0m   @Permissions('users:read')
+[7m   [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m147[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m147[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m157[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m157[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m168[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m168[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/upload/upload.service.ts[0m:[93m52[0m:[93m53[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(file: string, options?: UploadApiOptions | undefined, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(file: string, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+
+[7m52[0m     const result = await cloudinary.uploader.upload(this.buildUploadData(file, folder), {
+[7m  [0m [91m                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96msrc/_disabled/upload/upload.service.ts[0m:[93m62[0m:[93m53[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(file: string, options?: UploadApiOptions | undefined, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(file: string, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+
+[7m62[0m     const result = await cloudinary.uploader.upload(this.buildUploadData(file, folder), {
+[7m  [0m [91m                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m27[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m27[0m   @Permissions('users:read')
+[7m  [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m45[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m45[0m   @Permissions('users:read')
+[7m  [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m55[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m55[0m   @Permissions('users:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m68[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m68[0m   @Permissions('users:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m226[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m226[0m       logs: logs.map(log => ({
+[7m   [0m [91m                     ~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m275[0m:[93m7[0m - [91merror[0m[90m TS7053: [0mElement implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ total: number; succeeded: number; failed: number; pending: number; retrying: number; }'.
+
+[7m275[0m       result[stat.status.toLowerCase()] = stat._count;
+[7m   [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m52[0m:[93m30[0m - [91merror[0m[90m TS7006: [0mParameter 'sub' implicitly has an 'any' type.
+
+[7m52[0m     return subscriptions.map(sub => this.toResponseDto(sub));
+[7m  [0m [91m                             ~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m181[0m:[93m50[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m181[0m         message: `Failed to send test webhook: ${error.message}`,
+[7m   [0m [91m                                                 ~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.controller.ts[0m:[93m31[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/decorators/roles.decorator' or its corresponding type declarations.
+
+[7m31[0m import { Permissions } from '../common/decorators/roles.decorator';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.controller.ts[0m:[93m32[0m:[93m28[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/roles.guard' or its corresponding type declarations.
+
+[7m32[0m import { RolesGuard } from '../common/guards/roles.guard';
+[7m  [0m [91m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.module.ts[0m:[93m5[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m5[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/modules/payments/payments.module.ts[0m:[93m5[0m:[93m38[0m - [91merror[0m[90m TS2307: [0mCannot find module '../communications/communications.module' or its corresponding type declarations.
+
+[7m5[0m import { CommunicationsModule } from '../communications/communications.module';
+[7m [0m [91m                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/payments/stripe.service.ts[0m:[93m6[0m:[93m39[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/communications/communications.service' or its corresponding type declarations.
+
+[7m6[0m import { CommunicationsService } from '../modules/communications/communications.service';
+[7m [0m [91m                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[[90m2:52:00 PM[0m] Found 95 errors. Watching for file changes.
+
+[2J[3J[H[[90m2:52:31 PM[0m] File change detected. Starting incremental compilation...
+
+[[90m2:52:32 PM[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mSwagger docs available at /api/docs[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSimpleHealthController {/api} (version: 1):[39m[38;5;3m +0ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api, GET} (version: 1) route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/health, GET} (version: 1) route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +0ms[39m
+[32m[Nest] 23866  - [39m04/10/2026, 2:52:34 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mOrgFlow API listening on port 4000[39m
+[2J[3J[H[[90m2:52:38 PM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/_disabled/api-keys/api-keys.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/api-keys/api-keys.service.ts[0m:[93m94[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'key' implicitly has an 'any' type.
+
+[7m94[0m     return apiKeys.map(key => ({
+[7m  [0m [91m                       ~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m3[0m:[93m10[0m - [91merror[0m[90m TS2305: [0mModule '"@orgflow/database"' has no exported member 'PrismaService'.
+
+[7m3[0m import { PrismaService } from '@orgflow/database';
+[7m [0m [91m         ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m152[0m:[93m23[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m152[0m       logs: logs.map((log) => ({
+[7m   [0m [91m                      ~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m177[0m:[93m19[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m177[0m     logs.forEach((log) => {
+[7m   [0m [91m                  ~~~[0m
+
+[96msrc/_disabled/auth/member-auth.service.ts[0m:[93m204[0m:[93m16[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | JsonWebKeyInput | PrivateKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | JsonWebKeyInput | PrivateKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'algorithm' does not exist in type 'SignCallback'.
+
+[7m204[0m     return jwt.sign({ memberId, tenantId, role: 'member' }, this.jwtSecret, {
+[7m   [0m [91m               ~~~~[0m
+
+
+[96msrc/_disabled/communications/communications.module.ts[0m:[93m8[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../audit/audit.module' or its corresponding type declarations.
+
+[7m8[0m import { AuditModule } from '../audit/audit.module';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/communications/notifications/notifications.service.ts[0m:[93m41[0m:[93m7[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 7.
+
+[7m 41[0m       'notification.create',
+[7m   [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 42[0m       `Notification created for member ${memberId}`,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 44[0m       'notification',
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 45[0m       notification.id,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/communications/notifications/notifications.service.ts[0m:[93m73[0m:[93m7[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 6.
+
+[7m73[0m       'notification.bulk_create',
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m74[0m       `Bulk notification queued for ${jobs.length} members`,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m75[0m       { memberIds, type, title },
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m76[0m       'notification',
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m6[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/jwt-auth.guard' or its corresponding type declarations.
+
+[7m6[0m import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+[7m [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m7[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/tenant.guard' or its corresponding type declarations.
+
+[7m7[0m import { TenantGuard } from '../common/guards/tenant.guard';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m20[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m20[0m   async createCampaign(@Req() req, @Body() dto: CreateCampaignDto) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m26[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m26[0m   async getCampaigns(@Req() req, @Query('status') status?: string, @Query('isPublic') isPublic?: string) {
+[7m  [0m [91m                     ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m35[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m35[0m   async getCampaign(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m41[0m:[93m26[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m41[0m   async getCampaignStats(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                         ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m47[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m47[0m   async updateCampaign(@Req() req, @Param('id') id: string, @Body() dto: UpdateCampaignDto) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m54[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m54[0m   async deleteCampaign(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m62[0m:[93m32[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m62[0m   async createDonationCheckout(@Req() req, @Body() dto: CreateDonationDto) {
+[7m  [0m [91m                               ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m68[0m:[93m25[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m68[0m   async processDonation(@Req() req, @Body() dto: ProcessDonationDto) {
+[7m  [0m [91m                        ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m75[0m:[93m5[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m75[0m     @Req() req,
+[7m  [0m [91m    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m84[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m84[0m   async getDonation(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m90[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m90[0m   async exportDonors(@Req() req, @Query('campaignId') campaignId?: string) {
+[7m  [0m [91m                     ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m97[0m:[93m28[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m97[0m   async generateTaxReceipt(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                           ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.module.ts[0m:[93m4[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.module' or its corresponding type declarations.
+
+[7m4[0m import { DatabaseModule } from '../database/database.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.module.ts[0m:[93m5[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/payments/payments.module' or its corresponding type declarations.
+
+[7m5[0m import { PaymentsModule } from '../modules/payments/payments.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m3[0m:[93m31[0m - [91merror[0m[90m TS2307: [0mCannot find module '../payments/stripe.service' or its corresponding type declarations.
+
+[7m3[0m import { StripeService } from '../payments/stripe.service';
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m137[0m:[93m38[0m - [91merror[0m[90m TS7006: [0mParameter 'sum' implicitly has an 'any' type.
+
+[7m137[0m     const raised = donations.reduce((sum, d) => sum + d.amountCents, 0);
+[7m   [0m [91m                                     ~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m137[0m:[93m43[0m - [91merror[0m[90m TS7006: [0mParameter 'd' implicitly has an 'any' type.
+
+[7m137[0m     const raised = donations.reduce((sum, d) => sum + d.amountCents, 0);
+[7m   [0m [91m                                          ~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m335[0m:[93m33[0m - [91merror[0m[90m TS7006: [0mParameter 'd' implicitly has an 'any' type.
+
+[7m335[0m     const rows = donations.map((d) => [
+[7m   [0m [91m                                ~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m347[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'r' implicitly has an 'any' type.
+
+[7m347[0m     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+[7m   [0m [91m                                                 ~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m3[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"@nestjs/terminus"' has no exported member named 'RedisHealthIndicator'. Did you mean 'DiskHealthIndicator'?
+
+[7m3[0m import { RedisHealthIndicator } from '@nestjs/terminus';
+[7m [0m [91m         ~~~~~~~~~~~~~~~~~~~~[0m
+
+  [96m../../node_modules/@nestjs/terminus/dist/health-indicator/disk/disk.health.d.ts[0m:[93m12[0m:[93m22[0m
+    [7m12[0m export declare class DiskHealthIndicator extends HealthIndicator {
+    [7m  [0m [96m                     ~~~~~~~~~~~~~~~~~~~[0m
+    'DiskHealthIndicator' is declared here.
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m4[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@liaots/nestjs-redis' or its corresponding type declarations.
+
+[7m4[0m import { InjectRedis } from '@liaots/nestjs-redis';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m12[0m:[93m13[0m - [91merror[0m[90m TS2300: [0mDuplicate identifier 'health'.
+
+[7m12[0m     private health: HealthCheckService,
+[7m  [0m [91m            ~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m44[0m:[93m23[0m - [91merror[0m[90m TS2367: [0mThis comparison appears to be unintentional because the types '{ [optionalKeys: string]: any; status: HealthIndicatorStatus; }' and 'string' have no overlap.
+
+[7m44[0m               status: isHealthy.status === 'up' ? 'up' : 'down',
+[7m  [0m [91m                      ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m53[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m53[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m74[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m74[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m97[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m97[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m121[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m121[0m               error: error.message,
+[7m   [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m144[0m:[93m3[0m - [91merror[0m[90m TS2300: [0mDuplicate identifier 'health'.
+
+[7m144[0m   health() {
+[7m   [0m [91m  ~~~~~~[0m
+
+[96msrc/_disabled/health/health.module.ts[0m:[93m5[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@liaots/nestjs-redis' or its corresponding type declarations.
+
+[7m5[0m import { RedisModule } from '@liaots/nestjs-redis';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m18[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m18[0m       ...(requestId && { requestId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m19[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m19[0m       ...(tenantId && { tenantId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m20[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m20[0m       ...(userId && { userId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m21[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m21[0m       ...(context && { context }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m36[0m:[93m7[0m - [91merror[0m[90m TS2451: [0mCannot redeclare block-scoped variable 'logger'.
+
+[7m36[0m const logger = winston.createLogger({
+[7m  [0m [91m      ~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m51[0m:[93m9[0m - [91merror[0m[90m TS2351: [0mThis expression is not constructable.
+  Type 'typeof DailyRotateFile' has no construct signatures.
+
+[7m51[0m     new DailyRotateFile({
+[7m  [0m [91m        ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/_disabled/logger/logger.service.ts[0m:[93m3[0m:[93m1[0m
+    [7m3[0m import * as DailyRotateFile from 'winston-daily-rotate-file';
+    [7m [0m [96m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    Type originates at this import. A namespace-style import cannot be called or constructed, and will cause a failure at runtime. Consider using a default import or import require here instead.
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m61[0m:[93m9[0m - [91merror[0m[90m TS2351: [0mThis expression is not constructable.
+  Type 'typeof DailyRotateFile' has no construct signatures.
+
+[7m61[0m     new DailyRotateFile({
+[7m  [0m [91m        ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/_disabled/logger/logger.service.ts[0m:[93m3[0m:[93m1[0m
+    [7m3[0m import * as DailyRotateFile from 'winston-daily-rotate-file';
+    [7m [0m [96m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    Type originates at this import. A namespace-style import cannot be called or constructed, and will cause a failure at runtime. Consider using a default import or import require here instead.
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m184[0m:[93m14[0m - [91merror[0m[90m TS2451: [0mCannot redeclare block-scoped variable 'logger'.
+
+[7m184[0m export const logger = new CustomLogger();
+[7m   [0m [91m             ~~~~~~[0m
+
+[96msrc/_disabled/members/dto/directory-filter.dto.ts[0m:[93m3[0m:[93m31[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../common/dto/pagination.dto' or its corresponding type declarations.
+
+[7m3[0m import { PaginationDto } from '../../common/dto/pagination.dto';
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.module.ts[0m:[93m3[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../payments/payments.module' or its corresponding type declarations.
+
+[7m3[0m import { PaymentsModule } from '../payments/payments.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.service.ts[0m:[93m354[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m354[0m       meta: new PaginationMetaDto(total, filter.page, filter.limit),
+[7m   [0m [91m                                         ~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.service.ts[0m:[93m399[0m:[93m47[0m - [91merror[0m[90m TS2820: [0mType '"CANCELLED"' is not assignable to type 'RegistrationStatus | NestedEnumRegistrationStatusFilter<"EventRegistration"> | undefined'. Did you mean '"CANCELED"'?
+
+[7m399[0m       where: { memberId: member.id, status: { not: 'CANCELLED' } },
+[7m   [0m [91m                                              ~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m43[0m:[93m55[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; total: number; }' is not assignable to parameter of type 'string'.
+
+[7m 43[0m     this.logger.debug(`Counter incremented: ${name}`, {
+[7m   [0m [91m                                                      ~[0m
+[7m 44[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 47[0m       total: currentValue + value,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 48[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m58[0m:[93m54[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; count: number; }' is not assignable to parameter of type 'string'.
+
+[7m 58[0m     this.logger.debug(`Histogram recorded: ${name}`, {
+[7m   [0m [91m                                                     ~[0m
+[7m 59[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 62[0m       count: values.length,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 63[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m71[0m:[93m45[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; }' is not assignable to parameter of type 'string'.
+
+[7m 71[0m     this.logger.debug(`Gauge set: ${name}`, {
+[7m   [0m [91m                                            ~[0m
+[7m 72[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 74[0m       labels,
+[7m   [0m [91m~~~~~~~~~~~~~[0m
+[7m 75[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m198[0m:[93m17[0m - [91merror[0m[90m TS2339: [0mProperty 'info' does not exist on type 'CustomLogger'.
+
+[7m198[0m     this.logger.info('Metrics reset');
+[7m   [0m [91m                ~~~~[0m
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m26[0m - [91merror[0m[90m TS7006: [0mParameter 'data' implicitly has an 'any' type.
+
+[7m40[0m     res.send = function (data) {
+[7m  [0m [91m                         ~~~~[0m
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m53[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m53[0m           this.logger.error(`Request failed: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m55[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m55[0m           this.logger.warn(`Request error: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m57[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m57[0m           this.logger.debug(`Request completed: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m60[0m:[93m32[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m60[0m       return originalSend.call(this, data);
+[7m  [0m [91m                               ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/tenant-resolver.middleware.ts[0m:[93m3[0m:[93m36[0m - [91merror[0m[90m TS2307: [0mCannot find module '../types/request.types' or its corresponding type declarations.
+
+[7m3[0m import type { RequestTenant } from '../types/request.types';
+[7m [0m [91m                                   ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/search/search.controller.ts[0m:[93m31[0m:[93m58[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 5.
+
+[7m31[0m     await this.auditService.log(tenant.id, user.clerkId, 'search.query', `Search for '${dto.q}'`, {
+[7m  [0m [91m                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m32[0m       userRole: user.role,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m33[0m       query: dto.q,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m34[0m     });
+[7m  [0m [91m~~~~~[0m
+
+[96msrc/_disabled/search/search.module.ts[0m:[93m4[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../audit/audit.module' or its corresponding type declarations.
+
+[7m4[0m import { AuditModule } from '../audit/audit.module';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m27[0m:[93m14[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:read"' is not assignable to parameter of type 'Permission'.
+
+[7m27[0m @Permissions('settings:read')
+[7m  [0m [91m             ~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m43[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m43[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m65[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m65[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m77[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m77[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m89[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:read"' is not assignable to parameter of type 'Permission'.
+
+[7m89[0m   @Permissions('settings:read')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m96[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m96[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m106[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m106[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m116[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m116[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m127[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m127[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m140[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m140[0m   @Permissions('users:read')
+[7m   [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m147[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m147[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m157[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m157[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m168[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m168[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/upload/upload.service.ts[0m:[93m52[0m:[93m53[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(file: string, options?: UploadApiOptions | undefined, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(file: string, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+
+[7m52[0m     const result = await cloudinary.uploader.upload(this.buildUploadData(file, folder), {
+[7m  [0m [91m                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96msrc/_disabled/upload/upload.service.ts[0m:[93m62[0m:[93m53[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(file: string, options?: UploadApiOptions | undefined, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(file: string, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+
+[7m62[0m     const result = await cloudinary.uploader.upload(this.buildUploadData(file, folder), {
+[7m  [0m [91m                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m27[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m27[0m   @Permissions('users:read')
+[7m  [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m45[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m45[0m   @Permissions('users:read')
+[7m  [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m55[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m55[0m   @Permissions('users:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m68[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m68[0m   @Permissions('users:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m226[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m226[0m       logs: logs.map(log => ({
+[7m   [0m [91m                     ~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m275[0m:[93m7[0m - [91merror[0m[90m TS7053: [0mElement implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ total: number; succeeded: number; failed: number; pending: number; retrying: number; }'.
+
+[7m275[0m       result[stat.status.toLowerCase()] = stat._count;
+[7m   [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m52[0m:[93m30[0m - [91merror[0m[90m TS7006: [0mParameter 'sub' implicitly has an 'any' type.
+
+[7m52[0m     return subscriptions.map(sub => this.toResponseDto(sub));
+[7m  [0m [91m                             ~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m181[0m:[93m50[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m181[0m         message: `Failed to send test webhook: ${error.message}`,
+[7m   [0m [91m                                                 ~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.controller.ts[0m:[93m31[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/decorators/roles.decorator' or its corresponding type declarations.
+
+[7m31[0m import { Permissions } from '../common/decorators/roles.decorator';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.controller.ts[0m:[93m32[0m:[93m28[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/roles.guard' or its corresponding type declarations.
+
+[7m32[0m import { RolesGuard } from '../common/guards/roles.guard';
+[7m  [0m [91m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.module.ts[0m:[93m5[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m5[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/modules/payments/payments.module.ts[0m:[93m5[0m:[93m38[0m - [91merror[0m[90m TS2307: [0mCannot find module '../communications/communications.module' or its corresponding type declarations.
+
+[7m5[0m import { CommunicationsModule } from '../communications/communications.module';
+[7m [0m [91m                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/payments/stripe.service.ts[0m:[93m6[0m:[93m39[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/communications/communications.service' or its corresponding type declarations.
+
+[7m6[0m import { CommunicationsService } from '../modules/communications/communications.service';
+[7m [0m [91m                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[[90m2:52:52 PM[0m] Found 95 errors. Watching for file changes.
+
+[2J[3J[H[[90m2:53:05 PM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/_disabled/api-keys/api-keys.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/api-keys/api-keys.service.ts[0m:[93m94[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'key' implicitly has an 'any' type.
+
+[7m94[0m     return apiKeys.map(key => ({
+[7m  [0m [91m                       ~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m3[0m:[93m10[0m - [91merror[0m[90m TS2305: [0mModule '"@orgflow/database"' has no exported member 'PrismaService'.
+
+[7m3[0m import { PrismaService } from '@orgflow/database';
+[7m [0m [91m         ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m152[0m:[93m23[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m152[0m       logs: logs.map((log) => ({
+[7m   [0m [91m                      ~~~[0m
+
+[96msrc/_disabled/audit/audit.service.ts[0m:[93m177[0m:[93m19[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m177[0m     logs.forEach((log) => {
+[7m   [0m [91m                  ~~~[0m
+
+[96msrc/_disabled/auth/member-auth.service.ts[0m:[93m204[0m:[93m16[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | JsonWebKeyInput | PrivateKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | JsonWebKeyInput | PrivateKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'algorithm' does not exist in type 'SignCallback'.
+
+[7m204[0m     return jwt.sign({ memberId, tenantId, role: 'member' }, this.jwtSecret, {
+[7m   [0m [91m               ~~~~[0m
+
+
+[96msrc/_disabled/communications/communications.module.ts[0m:[93m8[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../audit/audit.module' or its corresponding type declarations.
+
+[7m8[0m import { AuditModule } from '../audit/audit.module';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/communications/notifications/notifications.service.ts[0m:[93m41[0m:[93m7[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 7.
+
+[7m 41[0m       'notification.create',
+[7m   [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 42[0m       `Notification created for member ${memberId}`,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 44[0m       'notification',
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 45[0m       notification.id,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/communications/notifications/notifications.service.ts[0m:[93m73[0m:[93m7[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 6.
+
+[7m73[0m       'notification.bulk_create',
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m74[0m       `Bulk notification queued for ${jobs.length} members`,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m75[0m       { memberIds, type, title },
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m76[0m       'notification',
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m6[0m:[93m30[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/jwt-auth.guard' or its corresponding type declarations.
+
+[7m6[0m import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+[7m [0m [91m                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m7[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/tenant.guard' or its corresponding type declarations.
+
+[7m7[0m import { TenantGuard } from '../common/guards/tenant.guard';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m20[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m20[0m   async createCampaign(@Req() req, @Body() dto: CreateCampaignDto) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m26[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m26[0m   async getCampaigns(@Req() req, @Query('status') status?: string, @Query('isPublic') isPublic?: string) {
+[7m  [0m [91m                     ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m35[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m35[0m   async getCampaign(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m41[0m:[93m26[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m41[0m   async getCampaignStats(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                         ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m47[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m47[0m   async updateCampaign(@Req() req, @Param('id') id: string, @Body() dto: UpdateCampaignDto) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m54[0m:[93m24[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m54[0m   async deleteCampaign(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                       ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m62[0m:[93m32[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m62[0m   async createDonationCheckout(@Req() req, @Body() dto: CreateDonationDto) {
+[7m  [0m [91m                               ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m68[0m:[93m25[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m68[0m   async processDonation(@Req() req, @Body() dto: ProcessDonationDto) {
+[7m  [0m [91m                        ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m75[0m:[93m5[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m75[0m     @Req() req,
+[7m  [0m [91m    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m84[0m:[93m21[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m84[0m   async getDonation(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                    ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m90[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m90[0m   async exportDonors(@Req() req, @Query('campaignId') campaignId?: string) {
+[7m  [0m [91m                     ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.controller.ts[0m:[93m97[0m:[93m28[0m - [91merror[0m[90m TS7006: [0mParameter 'req' implicitly has an 'any' type.
+
+[7m97[0m   async generateTaxReceipt(@Req() req, @Param('id') id: string) {
+[7m  [0m [91m                           ~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.module.ts[0m:[93m4[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.module' or its corresponding type declarations.
+
+[7m4[0m import { DatabaseModule } from '../database/database.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.module.ts[0m:[93m5[0m:[93m32[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/payments/payments.module' or its corresponding type declarations.
+
+[7m5[0m import { PaymentsModule } from '../modules/payments/payments.module';
+[7m [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m3[0m:[93m31[0m - [91merror[0m[90m TS2307: [0mCannot find module '../payments/stripe.service' or its corresponding type declarations.
+
+[7m3[0m import { StripeService } from '../payments/stripe.service';
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m137[0m:[93m38[0m - [91merror[0m[90m TS7006: [0mParameter 'sum' implicitly has an 'any' type.
+
+[7m137[0m     const raised = donations.reduce((sum, d) => sum + d.amountCents, 0);
+[7m   [0m [91m                                     ~~~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m137[0m:[93m43[0m - [91merror[0m[90m TS7006: [0mParameter 'd' implicitly has an 'any' type.
+
+[7m137[0m     const raised = donations.reduce((sum, d) => sum + d.amountCents, 0);
+[7m   [0m [91m                                          ~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m335[0m:[93m33[0m - [91merror[0m[90m TS7006: [0mParameter 'd' implicitly has an 'any' type.
+
+[7m335[0m     const rows = donations.map((d) => [
+[7m   [0m [91m                                ~[0m
+
+[96msrc/_disabled/donations/donations.service.ts[0m:[93m347[0m:[93m50[0m - [91merror[0m[90m TS7006: [0mParameter 'r' implicitly has an 'any' type.
+
+[7m347[0m     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+[7m   [0m [91m                                                 ~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m3[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"@nestjs/terminus"' has no exported member named 'RedisHealthIndicator'. Did you mean 'DiskHealthIndicator'?
+
+[7m3[0m import { RedisHealthIndicator } from '@nestjs/terminus';
+[7m [0m [91m         ~~~~~~~~~~~~~~~~~~~~[0m
+
+  [96m../../node_modules/@nestjs/terminus/dist/health-indicator/disk/disk.health.d.ts[0m:[93m12[0m:[93m22[0m
+    [7m12[0m export declare class DiskHealthIndicator extends HealthIndicator {
+    [7m  [0m [96m                     ~~~~~~~~~~~~~~~~~~~[0m
+    'DiskHealthIndicator' is declared here.
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m4[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@liaots/nestjs-redis' or its corresponding type declarations.
+
+[7m4[0m import { InjectRedis } from '@liaots/nestjs-redis';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m12[0m:[93m13[0m - [91merror[0m[90m TS2300: [0mDuplicate identifier 'health'.
+
+[7m12[0m     private health: HealthCheckService,
+[7m  [0m [91m            ~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m44[0m:[93m23[0m - [91merror[0m[90m TS2367: [0mThis comparison appears to be unintentional because the types '{ [optionalKeys: string]: any; status: HealthIndicatorStatus; }' and 'string' have no overlap.
+
+[7m44[0m               status: isHealthy.status === 'up' ? 'up' : 'down',
+[7m  [0m [91m                      ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m53[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m53[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m74[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m74[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m97[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m97[0m               error: error.message,
+[7m  [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m121[0m:[93m22[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m121[0m               error: error.message,
+[7m   [0m [91m                     ~~~~~[0m
+
+[96msrc/_disabled/health/health.controller.ts[0m:[93m144[0m:[93m3[0m - [91merror[0m[90m TS2300: [0mDuplicate identifier 'health'.
+
+[7m144[0m   health() {
+[7m   [0m [91m  ~~~~~~[0m
+
+[96msrc/_disabled/health/health.module.ts[0m:[93m5[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@liaots/nestjs-redis' or its corresponding type declarations.
+
+[7m5[0m import { RedisModule } from '@liaots/nestjs-redis';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m18[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m18[0m       ...(requestId && { requestId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m19[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m19[0m       ...(tenantId && { tenantId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m20[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m20[0m       ...(userId && { userId }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m21[0m:[93m7[0m - [91merror[0m[90m TS2698: [0mSpread types may only be created from object types.
+
+[7m21[0m       ...(context && { context }),
+[7m  [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m36[0m:[93m7[0m - [91merror[0m[90m TS2451: [0mCannot redeclare block-scoped variable 'logger'.
+
+[7m36[0m const logger = winston.createLogger({
+[7m  [0m [91m      ~~~~~~[0m
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m51[0m:[93m9[0m - [91merror[0m[90m TS2351: [0mThis expression is not constructable.
+  Type 'typeof DailyRotateFile' has no construct signatures.
+
+[7m51[0m     new DailyRotateFile({
+[7m  [0m [91m        ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/_disabled/logger/logger.service.ts[0m:[93m3[0m:[93m1[0m
+    [7m3[0m import * as DailyRotateFile from 'winston-daily-rotate-file';
+    [7m [0m [96m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    Type originates at this import. A namespace-style import cannot be called or constructed, and will cause a failure at runtime. Consider using a default import or import require here instead.
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m61[0m:[93m9[0m - [91merror[0m[90m TS2351: [0mThis expression is not constructable.
+  Type 'typeof DailyRotateFile' has no construct signatures.
+
+[7m61[0m     new DailyRotateFile({
+[7m  [0m [91m        ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/_disabled/logger/logger.service.ts[0m:[93m3[0m:[93m1[0m
+    [7m3[0m import * as DailyRotateFile from 'winston-daily-rotate-file';
+    [7m [0m [96m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+    Type originates at this import. A namespace-style import cannot be called or constructed, and will cause a failure at runtime. Consider using a default import or import require here instead.
+
+[96msrc/_disabled/logger/logger.service.ts[0m:[93m184[0m:[93m14[0m - [91merror[0m[90m TS2451: [0mCannot redeclare block-scoped variable 'logger'.
+
+[7m184[0m export const logger = new CustomLogger();
+[7m   [0m [91m             ~~~~~~[0m
+
+[96msrc/_disabled/members/dto/directory-filter.dto.ts[0m:[93m3[0m:[93m31[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../common/dto/pagination.dto' or its corresponding type declarations.
+
+[7m3[0m import { PaginationDto } from '../../common/dto/pagination.dto';
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.service.ts[0m:[93m354[0m:[93m42[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m354[0m       meta: new PaginationMetaDto(total, filter.page, filter.limit),
+[7m   [0m [91m                                         ~~~~~~~~~~~[0m
+
+[96msrc/_disabled/members/members.service.ts[0m:[93m399[0m:[93m47[0m - [91merror[0m[90m TS2820: [0mType '"CANCELLED"' is not assignable to type 'RegistrationStatus | NestedEnumRegistrationStatusFilter<"EventRegistration"> | undefined'. Did you mean '"CANCELED"'?
+
+[7m399[0m       where: { memberId: member.id, status: { not: 'CANCELLED' } },
+[7m   [0m [91m                                              ~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m43[0m:[93m55[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; total: number; }' is not assignable to parameter of type 'string'.
+
+[7m 43[0m     this.logger.debug(`Counter incremented: ${name}`, {
+[7m   [0m [91m                                                      ~[0m
+[7m 44[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 47[0m       total: currentValue + value,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 48[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m58[0m:[93m54[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; count: number; }' is not assignable to parameter of type 'string'.
+
+[7m 58[0m     this.logger.debug(`Histogram recorded: ${name}`, {
+[7m   [0m [91m                                                     ~[0m
+[7m 59[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 62[0m       count: values.length,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m 63[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m71[0m:[93m45[0m - [91merror[0m[90m TS2345: [0mArgument of type '{ metric: string; value: number; labels: Record<string, string>; }' is not assignable to parameter of type 'string'.
+
+[7m 71[0m     this.logger.debug(`Gauge set: ${name}`, {
+[7m   [0m [91m                                            ~[0m
+[7m 72[0m       metric: name,
+[7m   [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m...[0m 
+[7m 74[0m       labels,
+[7m   [0m [91m~~~~~~~~~~~~~[0m
+[7m 75[0m     });
+[7m   [0m [91m~~~~~[0m
+
+[96msrc/_disabled/metrics/metrics.service.ts[0m:[93m198[0m:[93m17[0m - [91merror[0m[90m TS2339: [0mProperty 'info' does not exist on type 'CustomLogger'.
+
+[7m198[0m     this.logger.info('Metrics reset');
+[7m   [0m [91m                ~~~~[0m
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m26[0m - [91merror[0m[90m TS7006: [0mParameter 'data' implicitly has an 'any' type.
+
+[7m40[0m     res.send = function (data) {
+[7m  [0m [91m                         ~~~~[0m
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m53[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m53[0m           this.logger.error(`Request failed: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m55[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m55[0m           this.logger.warn(`Request error: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m57[0m:[93m11[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m57[0m           this.logger.debug(`Request completed: ${req.method} ${req.url}`, logData);
+[7m  [0m [91m          ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m60[0m:[93m32[0m - [91merror[0m[90m TS2683: [0m'this' implicitly has type 'any' because it does not have a type annotation.
+
+[7m60[0m       return originalSend.call(this, data);
+[7m  [0m [91m                               ~~~~[0m
+
+  [96msrc/_disabled/middleware/request-id.middleware.ts[0m:[93m40[0m:[93m16[0m
+    [7m40[0m     res.send = function (data) {
+    [7m  [0m [96m               ~~~~~~~~[0m
+    An outer value of 'this' is shadowed by this container.
+
+[96msrc/_disabled/middleware/tenant-resolver.middleware.ts[0m:[93m3[0m:[93m36[0m - [91merror[0m[90m TS2307: [0mCannot find module '../types/request.types' or its corresponding type declarations.
+
+[7m3[0m import type { RequestTenant } from '../types/request.types';
+[7m [0m [91m                                   ~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/search/search.controller.ts[0m:[93m31[0m:[93m58[0m - [91merror[0m[90m TS2554: [0mExpected 1-2 arguments, but got 5.
+
+[7m31[0m     await this.auditService.log(tenant.id, user.clerkId, 'search.query', `Search for '${dto.q}'`, {
+[7m  [0m [91m                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m32[0m       userRole: user.role,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m33[0m       query: dto.q,
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~[0m
+[7m34[0m     });
+[7m  [0m [91m~~~~~[0m
+
+[96msrc/_disabled/search/search.module.ts[0m:[93m4[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../audit/audit.module' or its corresponding type declarations.
+
+[7m4[0m import { AuditModule } from '../audit/audit.module';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m27[0m:[93m14[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:read"' is not assignable to parameter of type 'Permission'.
+
+[7m27[0m @Permissions('settings:read')
+[7m  [0m [91m             ~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m43[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m43[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m65[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m65[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m77[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m77[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m89[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:read"' is not assignable to parameter of type 'Permission'.
+
+[7m89[0m   @Permissions('settings:read')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m96[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m96[0m   @Permissions('settings:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m106[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m106[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m116[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m116[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m127[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"settings:write"' is not assignable to parameter of type 'Permission'.
+
+[7m127[0m   @Permissions('settings:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m140[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m140[0m   @Permissions('users:read')
+[7m   [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m147[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m147[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m157[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m157[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/tenants/settings.controller.ts[0m:[93m168[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m168[0m   @Permissions('users:write')
+[7m   [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/upload/upload.service.ts[0m:[93m52[0m:[93m53[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(file: string, options?: UploadApiOptions | undefined, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(file: string, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+
+[7m52[0m     const result = await cloudinary.uploader.upload(this.buildUploadData(file, folder), {
+[7m  [0m [91m                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96msrc/_disabled/upload/upload.service.ts[0m:[93m62[0m:[93m53[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(file: string, options?: UploadApiOptions | undefined, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(file: string, callback?: UploadResponseCallback | undefined): Promise<UploadApiResponse>', gave the following error.
+    Argument of type '{ file: string; folder: string; use_filename: boolean; unique_filename: boolean; overwrite: boolean; }' is not assignable to parameter of type 'string'.
+
+[7m62[0m     const result = await cloudinary.uploader.upload(this.buildUploadData(file, folder), {
+[7m  [0m [91m                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m27[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m27[0m   @Permissions('users:read')
+[7m  [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m45[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:read"' is not assignable to parameter of type 'Permission'.
+
+[7m45[0m   @Permissions('users:read')
+[7m  [0m [91m               ~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m55[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m55[0m   @Permissions('users:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/users/users.controller.ts[0m:[93m68[0m:[93m16[0m - [91merror[0m[90m TS2345: [0mArgument of type '"users:write"' is not assignable to parameter of type 'Permission'.
+
+[7m68[0m   @Permissions('users:write')
+[7m  [0m [91m               ~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m226[0m:[93m22[0m - [91merror[0m[90m TS7006: [0mParameter 'log' implicitly has an 'any' type.
+
+[7m226[0m       logs: logs.map(log => ({
+[7m   [0m [91m                     ~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-delivery.service.ts[0m:[93m275[0m:[93m7[0m - [91merror[0m[90m TS7053: [0mElement implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ total: number; succeeded: number; failed: number; pending: number; retrying: number; }'.
+
+[7m275[0m       result[stat.status.toLowerCase()] = stat._count;
+[7m   [0m [91m      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m2[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m2[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m52[0m:[93m30[0m - [91merror[0m[90m TS7006: [0mParameter 'sub' implicitly has an 'any' type.
+
+[7m52[0m     return subscriptions.map(sub => this.toResponseDto(sub));
+[7m  [0m [91m                             ~~~[0m
+
+[96msrc/_disabled/webhooks/webhook-subscription.service.ts[0m:[93m181[0m:[93m50[0m - [91merror[0m[90m TS18046: [0m'error' is of type 'unknown'.
+
+[7m181[0m         message: `Failed to send test webhook: ${error.message}`,
+[7m   [0m [91m                                                 ~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.controller.ts[0m:[93m31[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/decorators/roles.decorator' or its corresponding type declarations.
+
+[7m31[0m import { Permissions } from '../common/decorators/roles.decorator';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.controller.ts[0m:[93m32[0m:[93m28[0m - [91merror[0m[90m TS2307: [0mCannot find module '../common/guards/roles.guard' or its corresponding type declarations.
+
+[7m32[0m import { RolesGuard } from '../common/guards/roles.guard';
+[7m  [0m [91m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/_disabled/webhooks/webhooks.module.ts[0m:[93m5[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../database/database.service' or its corresponding type declarations.
+
+[7m5[0m import { DatabaseService } from '../database/database.service';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/payments/stripe.service.ts[0m:[93m6[0m:[93m39[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/communications/communications.service' or its corresponding type declarations.
+
+[7m6[0m import { CommunicationsService } from '../modules/communications/communications.service';
+[7m [0m [91m                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[[90m2:53:06 PM[0m] Found 93 errors. Watching for file changes.
+
+[2J[3J[H[[90m2:53:13 PM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/payments/stripe.service.ts[0m:[93m6[0m:[93m39[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/communications/communications.service' or its corresponding type declarations.
+
+[7m6[0m import { CommunicationsService } from '../modules/communications/communications.service';
+[7m [0m [91m                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[[90m2:53:16 PM[0m] Found 1 error. Watching for file changes.
+
+[2J[3J[H[[90m2:53:30 PM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/_disabled/stripe.service.ts[0m:[93m6[0m:[93m39[0m - [91merror[0m[90m TS2307: [0mCannot find module '../modules/communications/communications.service' or its corresponding type declarations.
+
+[7m6[0m import { CommunicationsService } from '../modules/communications/communications.service';
+[7m [0m [91m                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[[90m2:53:31 PM[0m] Found 1 error. Watching for file changes.
+
+[2J[3J[H[[90m2:53:52 PM[0m] File change detected. Starting incremental compilation...
+
+[[90m2:53:55 PM[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mSwagger docs available at /api/docs[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSimpleHealthController {/api} (version: 1):[39m[38;5;3m +0ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api, GET} (version: 1) route[39m[38;5;3m +0ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/health, GET} (version: 1) route[39m[38;5;3m +0ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +1ms[39m
+[32m[Nest] 25537  - [39m04/10/2026, 2:53:57 PM [32m    LOG[39m [38;5;3m[Bootstrap] [39m[32mOrgFlow API listening on port 4000[39m
