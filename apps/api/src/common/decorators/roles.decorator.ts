@@ -4,6 +4,9 @@ import type { OrgFlowRole, Permission } from '@orgflow/types';
 export const ROLES_KEY = 'roles';
 export const PERMISSIONS_KEY = 'permissions';
 
+// Re-export for use in other modules
+export type { OrgFlowRole, Permission };
+
 /**
  * Restricts a route to users who hold at least one of the given roles within
  * the current tenant.
