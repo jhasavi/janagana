@@ -134,7 +134,7 @@ async function bootstrap() {
 
   const startupTime = ((Date.now() - startTime) / 1000).toFixed(2);
   logger.log(`✅ Janagana API listening on ${host}:${port}`);
-  logger.log(`📊 Module health check available at /api/v1/health/live`);
+  logger.log(`📊 Health check available at /api/v1/health`);
   logger.log(`⏱️  Startup time: ${startupTime}s`);
 
   // ── Graceful shutdown ───────────────────────────────────────────────────────────

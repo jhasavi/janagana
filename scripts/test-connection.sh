@@ -28,8 +28,8 @@ fi
 echo ""
 
 # ─── Test 2: Render API Health ──────────────────────────────────────────────────────
-echo "2. Testing Render API health (https://janagana-api.onrender.com/api/v1/health/live)..."
-API_HEALTH=$(curl -s https://janagana-api.onrender.com/api/v1/health/live)
+echo "2. Testing Render API health (https://janagana-api.onrender.com/api/v1/health)..."
+API_HEALTH=$(curl -s https://janagana-api.onrender.com/api/v1/health)
 if [ -n "$API_HEALTH" ]; then
   echo -e "${GREEN}✅ Render API is responding${NC}"
   echo "   Response: $API_HEALTH"
@@ -43,7 +43,7 @@ echo ""
 echo "3. Testing API CORS with Vercel origin..."
 CORS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
   -H "Origin: https://janagana.namasteneedham.com" \
-  https://janagana-api.onrender.com/api/v1/health/live)
+  https://janagana-api.onrender.com/api/v1/health)
 if [ "$CORS_STATUS" -eq 200 ]; then
   echo -e "${GREEN}✅ CORS is configured correctly (HTTP $CORS_STATUS)${NC}"
 else
@@ -54,7 +54,7 @@ echo ""
 
 # ─── Test 4: Database Connection (via API) ─────────────────────────────────────────
 echo "4. Testing Neon database connection (via API health endpoint)..."
-DB_HEALTH=$(curl -s https://janagana-api.onrender.com/api/v1/health/live)
+DB_HEALTH=$(curl -s https://janagana-api.onrender.com/api/v1/health)
 if echo "$DB_HEALTH" | grep -q "database"; then
   echo -e "${GREEN}✅ Database connection is healthy${NC}"
   echo "   Database status: $(echo $DB_HEALTH | grep -o '"database":"[^"]*"')"
@@ -67,7 +67,7 @@ echo ""
 # ─── Test 5: API Response Time ─────────────────────────────────────────────────────
 echo "5. Testing API response time..."
 START_TIME=$(date +%s)
-curl -s https://janagana-api.onrender.com/api/v1/health/live > /dev/null
+curl -s https://janagana-api.onrender.com/api/v1/health > /dev/null
 END_TIME=$(date +%s)
 RESPONSE_TIME=$((END_TIME - START_TIME))
 

@@ -15,8 +15,8 @@ jobs:
     steps:
       - name: Ping Janagana API
         run: |
-          echo "Pinging https://janagana-api.onrender.com/api/v1/health/live"
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://janagana-api.onrender.com/api/v1/health/live)
+          echo "Pinging https://janagana-api.onrender.com/api/v1/health"
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://janagana-api.onrender.com/api/v1/health)
           echo "Response status code: $response"
           
           if [ "$response" -eq 200 ]; then
