@@ -10,11 +10,30 @@ This document lists all environment variables that need to be set in the Vercel 
 4. Click **Add** for each variable below
 5. Select the appropriate environment(s): Production, Preview, Development
 
+## CRITICAL - MUST SET FIRST (app will 500 without these)
+
+- [ ] **NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY** 🔒
+  - Get from Clerk dashboard: https://dashboard.clerk.com/
+  - Format: `pk_test_...` or `pk_live_...`
+  - Navigate to your application → API Keys → Publishable Key
+  - Public key (exposed to browser)
+  - **REQUIRED** - App will crash without this
+
+- [ ] **CLERK_SECRET_KEY** 🔒
+  - Get from Clerk dashboard
+  - Format: `sk_test_...` or `sk_live_...`
+  - Secret key (server-side only)
+  - **REQUIRED** - App will crash without this
+
 ## REQUIRED (app won't work without these)
 
 - [ ] **NEXT_PUBLIC_API_URL** = `https://janagana-api.onrender.com/api/v1`
   - Public API URL (exposed to browser)
   - Used for client-side API calls
+
+- [ ] **API_URL** = `https://janagana-api.onrender.com/api/v1`
+  - Server-side API URL
+  - Used for SSR and API routes
 
 - [ ] **NEXT_PUBLIC_APP_URL** = `https://janagana.namasteneedham.com`
   - Public app URL (exposed to browser)
@@ -28,26 +47,7 @@ This document lists all environment variables that need to be set in the Vercel 
   - App name (exposed to browser)
   - Used in UI and page titles
 
-- [ ] **NEXT_PUBLIC_ROOT_DOMAIN** = `namasteneedham.com`
-  - Root domain (exposed to browser)
-  - Used for multi-tenant subdomain resolution
-
-- [ ] **NEXT_PUBLIC_TENANT_FALLBACK** = `demo`
-  - Fallback tenant slug (exposed to browser)
-  - Used when no tenant is specified
-
-## AUTHENTICATION (Clerk)
-
-- [ ] **NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY** 🔒
-  - Get from Clerk dashboard: https://dashboard.clerk.com/
-  - Format: `pk_test_...` or `pk_live_...`
-  - Navigate to your application → API Keys → Publishable Key
-  - Public key (exposed to browser)
-
-- [ ] **CLERK_SECRET_KEY** 🔒
-  - Get from Clerk dashboard
-  - Format: `sk_test_...` or `sk_live_...`
-  - Secret key (server-side only)
+## AUTHENTICATION (Clerk) - ADDITIONAL
 
 - [ ] **NEXT_PUBLIC_CLERK_SIGN_IN_URL** = `/sign-in`
   - Sign-in page path
@@ -61,7 +61,7 @@ This document lists all environment variables that need to be set in the Vercel 
   - Redirect after sign-in
   - Public (exposed to browser)
 
-- [ ] **NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL** = `/dashboard`
+- [ ] **NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL** = `/onboarding`
   - Redirect after sign-up
   - Public (exposed to browser)
 
@@ -81,18 +81,25 @@ This document lists all environment variables that need to be set in the Vercel 
 
 ## ERROR TRACKING (Sentry)
 
-- [ ] **NEXT_PUBLIC_SENTRY_DSN** 🔒
+- [ ] **SENTRY_DSN** 🔒
   - Get from Sentry dashboard: https://sentry.io/
+  - Format: `https://xxx@oxxx.ingest.us.sentry.io/xxx`
+  - Server-side DSN
+
+- [ ] **NEXT_PUBLIC_SENTRY_DSN** 🔒
+  - Get from Sentry dashboard
   - Format: `https://xxx@oxxx.ingest.us.sentry.io/xxx`
   - Public DSN (exposed to browser for client-side errors)
 
-## SERVER-SIDE ONLY
+- [ ] **SENTRY_AUTH_TOKEN** 🔒
+  - Get from Sentry Settings → Auth Tokens
+  - Used for uploading source maps to Sentry
 
-These are used for server-side API calls and should NOT be prefixed with NEXT_PUBLIC_:
+## FEATURE FLAGS
 
-- [ ] **API_URL** = `https://janagana-api.onrender.com/api/v1`
-  - Server-side API URL
-  - Used for SSR and API routes
+- [ ] **NEXT_PUBLIC_ENABLE_ANALYTICS** = `true`
+  - Enable analytics tracking
+  - Set to "true" or "false"
 
 ## Environment-Specific Values
 
@@ -101,21 +108,18 @@ These are used for server-side API calls and should NOT be prefixed with NEXT_PU
 - `API_URL` = `https://janagana-api.onrender.com/api/v1`
 - `NEXT_PUBLIC_APP_URL` = `https://janagana.namasteneedham.com`
 - `NEXT_PUBLIC_APP_DOMAIN` = `namasteneedham.com`
-- `NEXT_PUBLIC_ROOT_DOMAIN` = `namasteneedham.com`
 
 ### Preview (automatic Vercel preview deployments)
 - `NEXT_PUBLIC_API_URL` = `https://janagana-api.onrender.com/api/v1`
 - `API_URL` = `https://janagana-api.onrender.com/api/v1`
 - `NEXT_PUBLIC_APP_URL` = `https://your-preview-url.vercel.app`
 - `NEXT_PUBLIC_APP_DOMAIN` = `vercel.app`
-- `NEXT_PUBLIC_ROOT_DOMAIN` = `vercel.app`
 
 ### Development (local)
 - `NEXT_PUBLIC_API_URL` = `http://localhost:4000/api/v1`
 - `API_URL` = `http://localhost:4000/api/v1`
 - `NEXT_PUBLIC_APP_URL` = `http://localhost:3000`
 - `NEXT_PUBLIC_APP_DOMAIN` = `localhost`
-- `NEXT_PUBLIC_ROOT_DOMAIN` = `localhost`
 
 ## After Setting Environment Variables
 
@@ -125,6 +129,11 @@ These are used for server-side API calls and should NOT be prefixed with NEXT_PU
 4. Test the application at https://janagana.namasteneedham.com
 
 ## Troubleshooting
+
+### 500 Internal Server Error
+- **Most common cause:** Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY or CLERK_SECRET_KEY
+- Check Vercel dashboard logs for specific error
+- Ensure all REQUIRED environment variables are set
 
 ### Build Fails
 - Check that all required environment variables are set
