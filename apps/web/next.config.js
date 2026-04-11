@@ -18,6 +18,10 @@ const nextConfig = {
         source: '/tenant/:path*',
         destination: '/:path*',
       },
+      {
+        source: '/api/proxy/:path*',
+        destination: `${process.env.API_URL || 'http://localhost:4000/api/v1'}/:path*`,
+      },
     ];
   },
   async headers() {
