@@ -23,6 +23,21 @@ export class HealthController {
     };
   }
 
+  @Get('live')
+  @Public()
+  @ApiOkResponse({ description: 'Live health check for Render.' })
+  async getLiveHealth() {
+    const db = await this.healthService.checkDb();
+    const redis = await this.healthService.checkRedis();
+
+    return {
+      status: 'ok',
+      database: db ? 'connected' : 'disconnected',
+      redis: redis ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get('modules')
   @Public()
   @ApiOkResponse({ description: 'Module health check.' })

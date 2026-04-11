@@ -12,7 +12,7 @@ services:
       cd packages/database && npx prisma generate &&
       cd ../../apps/api && npm run build
     startCommand: node apps/api/dist/main.js
-    healthCheckPath: /api/v1/health/live
+    healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:
       # Required - app won't start without these

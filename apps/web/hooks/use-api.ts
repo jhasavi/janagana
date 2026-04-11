@@ -127,7 +127,7 @@ export function useApiPatch<TData, TResponse>(
 export function useApiHealth() {
   return useApiGet<{ status: string; timestamp: string }>(
     ['health'],
-    '/health/live',
+    '/health',
     {
       refetchInterval: 30000, // Poll every 30 seconds
       retry: 3,
