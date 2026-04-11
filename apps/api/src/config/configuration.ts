@@ -16,7 +16,81 @@
  * ```
  */
 
-export default () => ({
+// ─── Configuration Interfaces ───────────────────────────────────────────────────────
+export interface AppConfig {
+  port: number;
+  nodeEnv: string;
+  url: string;
+  corsOrigins: string[];
+  isProduction: boolean;
+}
+
+export interface DatabaseConfig {
+  url: string;
+}
+
+export interface RedisConfig {
+  url: string;
+  upstashRestUrl?: string;
+  upstashRestToken?: string;
+}
+
+export interface JwtConfig {
+  secret: string;
+  expiresIn: string;
+}
+
+export interface ClerkConfig {
+  secretKey: string;
+  publishableKey: string;
+  webhookSecret?: string;
+}
+
+export interface StripeConfig {
+  secretKey: string;
+  publishableKey: string;
+  webhookSecret?: string;
+  connectWebhookSecret?: string;
+  platformFeePercentage: number;
+}
+
+export interface ResendConfig {
+  apiKey: string;
+  from: string;
+  fromName: string;
+}
+
+export interface CloudinaryConfig {
+  cloudName: string;
+  apiKey: string;
+  apiSecret: string;
+}
+
+export interface SentryConfig {
+  dsn?: string;
+}
+
+export interface RateLimitConfig {
+  ttl: number;
+  limit: number;
+}
+
+export interface Configuration {
+  app: AppConfig;
+  database: DatabaseConfig;
+  redis: RedisConfig;
+  jwt: JwtConfig;
+  memberJwt: JwtConfig;
+  clerk: ClerkConfig;
+  stripe: StripeConfig;
+  resend: ResendConfig;
+  cloudinary: CloudinaryConfig;
+  sentry: SentryConfig;
+  rateLimit: RateLimitConfig;
+}
+
+// ─── Configuration Factory ───────────────────────────────────────────────────────────
+export default (): Configuration => ({
   // ─── APPLICATION CONFIGURATION ─────────────────────────────────────────────────
   app: {
     // Port the API server will listen on
@@ -33,36 +107,54 @@ export default () => ({
       'http://localhost:3000',
       'http://localhost:3001',
     ],
+    
+    // Production flag
+    isProduction: process.env.NODE_ENV === 'production',
   },
 
   // ─── DATABASE CONFIGURATION ─────────────────────────────────────────────────────
   database: {
     // PostgreSQL database connection string
-    url: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL || '',
   },
 
   // ─── REDIS CONFIGURATION ─────────────────────────────────────────────────────────
   redis: {
     // Redis connection string for caching and sessions
     url: process.env.REDIS_URL || 'redis://localhost:6379',
+    
+    // Upstash Redis REST API (optional)
+    upstashRestUrl: process.env.UPSTASH_REDIS_REST_URL,
+    
+    // Upstash Redis REST API token (optional)
+    upstashRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
   },
 
   // ─── JWT AUTHENTICATION CONFIGURATION ───────────────────────────────────────────
   jwt: {
     // Secret key for signing JWT tokens
-    secret: process.env.JWT_SECRET,
+    secret: process.env.JWT_SECRET || '',
     
     // JWT token expiration time
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  },
+  
+  // ─── MEMBER JWT AUTHENTICATION CONFIGURATION ─────────────────────────────────────
+  memberJwt: {
+    // Secret key for signing member JWT tokens
+    secret: process.env.MEMBER_JWT_SECRET || '',
+    
+    // Member JWT token expiration time
+    expiresIn: process.env.MEMBER_JWT_EXPIRES_IN || '30d',
   },
 
   // ─── CLERK AUTHENTICATION CONFIGURATION ───────────────────────────────────────────
   clerk: {
     // Clerk Secret Key (server-side)
-    secretKey: process.env.CLERK_SECRET_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY || '',
     
     // Clerk Publishable Key (also needed for JWT verification)
-    publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
     
     // Clerk Webhook Secret (for verifying webhook signatures)
     webhookSecret: process.env.CLERK_WEBHOOK_SECRET,
@@ -71,10 +163,10 @@ export default () => ({
   // ─── STRIPE PAYMENTS CONFIGURATION ──────────────────────────────────────────────
   stripe: {
     // Stripe Secret Key (server-side)
-    secretKey: process.env.STRIPE_SECRET_KEY,
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
     
     // Stripe Publishable Key (client-side)
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     
     // Stripe Webhook Secret (for payment events)
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
@@ -89,25 +181,25 @@ export default () => ({
   // ─── RESEND EMAIL CONFIGURATION ────────────────────────────────────────────────
   resend: {
     // Resend API Key
-    apiKey: process.env.RESEND_API_KEY,
+    apiKey: process.env.RESEND_API_KEY || '',
     
     // Default sender email address
-    from: process.env.EMAIL_FROM || 'noreply@orgflow.app',
+    from: process.env.EMAIL_FROM || 'noreply@namasteneedham.com',
     
     // Default sender name
-    fromName: process.env.EMAIL_FROM_NAME || 'OrgFlow',
+    fromName: process.env.EMAIL_FROM_NAME || 'Janagana',
   },
 
   // ─── CLOUDINARY MEDIA CONFIGURATION ───────────────────────────────────────────────
   cloudinary: {
     // Cloudinary Cloud Name
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     
     // Cloudinary API Key
-    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
     
     // Cloudinary API Secret
-    apiSecret: process.env.CLOUDINARY_API_SECRET,
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
   },
 
   // ─── SENTRY ERROR TRACKING CONFIGURATION ───────────────────────────────────────────

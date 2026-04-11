@@ -14,7 +14,7 @@
     "outDir": "./dist",
     "incremental": true,
     "strictPropertyInitialization": false,
-    "types": ["node", "multer"]
+    "types": ["node", "multer", "jest"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [

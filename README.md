@@ -1,16 +1,48 @@
-# OrgFlow
+# Janagana
 
-OrgFlow is a production-ready SaaS monorepo for membership, event, volunteer, club, and donations management for non-profit and for-profit organizations.
+> Membership, Event, Volunteer & Club Management SaaS
+> For Non-profit and For-profit Organizations
 
-## Stack
+## Live Demo
+- Web: https://janagana.namasteneedham.com
+- API Docs: https://janagana-api.onrender.com/api/docs
 
+## Local Development
+```bash
+git clone [repo-url]
+cd janagana
+cp .env.example .env.local
+# Fill in environment variables (see docs/SETUP.md)
+npm install
+docker compose up -d  # PostgreSQL + Redis for local dev
+npm run db:generate
+npm run dev
+```
+
+Access:
+- Web: http://localhost:3000
+- API: http://localhost:4000  
+- Swagger: http://localhost:4000/api/docs
+
+## Tech Stack
 - **Monorepo:** Turborepo
 - **Frontend:** Next.js 14 (App Router), TypeScript, TailwindCSS, shadcn/ui
 - **Backend:** NestJS 10, TypeScript, Swagger, class-validator
-- **Database:** PostgreSQL + Prisma 5
-- **Cache:** Redis 7
+- **Database:** PostgreSQL (Neon) + Prisma 5
+- **Cache:** Redis (Upstash)
+- **Authentication:** Clerk (admin), JWT (member portal)
+- **Payments:** Stripe (payments, Stripe Connect)
+- **Email:** Resend
+- **Media:** Cloudinary
+- **Error Tracking:** Sentry
 - **Mobile:** Expo SDK 51, React Native, Expo Router, NativeWind
-- **Tooling:** Docker Compose
+
+## Documentation
+- [Setup Guide](docs/SETUP.md) - Environment configuration
+- [API Documentation](docs/API.md) - Backend API reference
+- [Web App Documentation](docs/WEB.md) - Frontend dashboard guide
+- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
+- [Architecture](docs/ARCHITECTURE.md) - System architecture
 
 ## Monorepo Structure
 
