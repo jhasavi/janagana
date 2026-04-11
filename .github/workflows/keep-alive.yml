@@ -1,0 +1,27 @@
+name: Keep Render API Alive
+
+# Run every 14 minutes to prevent Render free tier from spinning down
+# Render free tier spins down after 15 minutes of inactivity
+on:
+  schedule:
+    - cron: '*/14 * * * *'  # Every 14 minutes
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  keep-alive:
+    name: Ping API Health Endpoint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Janagana API
+        run: |
+          echo "Pinging https://janagana-api.onrender.com/api/v1/health/live"
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://janagana-api.onrender.com/api/v1/health/live)
+          echo "Response status code: $response"
+          
+          if [ "$response" -eq 200 ]; then
+            echo "✅ API is alive and healthy"
+          else
+            echo "⚠️  API returned status code: $response"
+            echo "This is informational - the workflow will not fail"
+          fi
