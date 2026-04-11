@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import ApiStatusIndicator from '@/components/common/ApiStatusIndicator';
 
 import { AreaChart } from '@/components/charts/AreaChart';
 import { BarChart } from '@/components/charts/BarChart';
@@ -121,12 +122,15 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold">{greeting}, {firstName} 👋</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{dateStr}</p>
         </div>
-        <Link href="/dashboard/analytics">
-          <Button variant="outline" size="sm">
-            <BarChart2 className="h-4 w-4 mr-1.5" />
-            Full Analytics
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <ApiStatusIndicator />
+          <Link href="/dashboard/analytics">
+            <Button variant="outline" size="sm">
+              <BarChart2 className="h-4 w-4 mr-1.5" />
+              Full Analytics
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* ─── Quick actions ───────────────────────────────────────────────── */}
