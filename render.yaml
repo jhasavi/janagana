@@ -1,84 +1,72 @@
 services:
-  # Web Service (Next.js)
-  - type: web
-    name: janagana-web
-    env: node
-    buildCommand: cd apps/web && npm install && npm run build
-    startCommand: cd apps/web && npm run start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_APP_URL
-        value: https://janagana.onrender.com
-      - key: NEXT_PUBLIC_API_URL
-        value: https://janagana-api.onrender.com
-      - key: NEXT_PUBLIC_APP_DOMAIN
-        value: janagana.onrender.com
-      - key: NEXT_PUBLIC_ROOT_DOMAIN
-        value: onrender.com
-      - key: NEXT_PUBLIC_TENANT_FALLBACK
-        value: demo
-      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-        sync: false
-      - key: CLERK_SECRET_KEY
-        sync: false
-      - key: NEXT_PUBLIC_CLERK_SIGN_IN_URL
-        value: /sign-in
-      - key: NEXT_PUBLIC_CLERK_SIGN_UP_URL
-        value: /sign-up
-      - key: NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL
-        value: /dashboard
-      - key: NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
-        value: /dashboard
-      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-        sync: false
-      - key: NEXT_PUBLIC_SENTRY_DSN
-        sync: false
-
-  # API Service (NestJS)
+  # API Service (NestJS) - Optimized for monorepo build
   - type: web
     name: janagana-api
     env: node
-    buildCommand: cd packages/database && npx prisma generate && cd ../apps/api && npm install && npm run build
-    startCommand: cd apps/api && npm run start
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: >
+      npm ci --workspace=apps/api --workspace=packages/database
+      --workspace=packages/types --workspace=packages/utils &&
+      cd packages/database && npx prisma generate &&
+      cd ../../apps/api && npm run build
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /api/v1/health/live
+    autoDeploy: true
     envVars:
+      # Required - app won't start without these
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 4000
-      - key: WEB_ORIGIN
-        value: https://janagana.onrender.com
       - key: DATABASE_URL
         sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: MEMBER_JWT_SECRET
+        sync: false
+
+      # Required for features
       - key: REDIS_URL
         sync: false
       - key: UPSTASH_REDIS_REST_URL
         sync: false
       - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: CLERK_PUBLISHABLE_KEY
-        sync: false
-      - key: CLERK_SECRET_KEY
-        sync: false
-      - key: CLERK_WEBHOOK_SECRET
-        sync: false
-      - key: CORS_ORIGINS
-        value: https://janagana.onrender.com
-      - key: APP_URL
-        value: https://janagana-api.onrender.com
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: STRIPE_CONNECT_WEBHOOK_SECRET
         sync: false
-      - key: PLATFORM_FEE_PERCENTAGE
-        value: 2
       - key: RESEND_API_KEY
+        sync: false
+
+      # Optional - feature degrades gracefully without
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
         sync: false
       - key: SENTRY_DSN
         sync: false
-      - key: CLOUDINARY_URL
-        sync: false
+      - key: PLATFORM_FEE_PERCENTAGE
+        value: 2
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: MEMBER_JWT_EXPIRES_IN
+        value: 30d
+      - key: CORS_ORIGINS
+        value: https://janagana.namasteneedham.com,https://janagana-api.onrender.com,http://localhost:3000,http://localhost:3001
+      - key: WEB_ORIGIN
+        value: https://janagana.namasteneedham.com
+      - key: APP_URL
+        value: https://janagana-api.onrender.com
+      - key: EMAIL_FROM
+        value: noreply@namasteneedham.com
+      - key: EMAIL_FROM_NAME
+        value: Janagana

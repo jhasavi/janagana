@@ -15,10 +15,11 @@ import { sanitizeRequest } from './security/input-sanitizer';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
-  logger.log('🚀 Starting OrgFlow API...');
+  const startTime = Date.now();
+
+  logger.log('🚀 Starting Janagana API...');
   logger.log('📦 Loading modules in tiered order...');
-  
+
   try {
     const app = await NestFactory.create(AppModule, {
       // Disable NestJS built-in logger in production — use our structured logger instead
@@ -31,9 +32,9 @@ async function bootstrap() {
   app.use(helmet());
 
   // ── CORS ─────────────────────────────────────────────────────────────────────
-  const webOrigins = configService.get<string[]>('app.webOrigins') ?? [
-    'http://localhost:3000',
-  ];
+  // Read CORS_ORIGINS from env var, split by comma, default to localhost
+  const corsOriginsStr = configService.get<string>('app.corsOrigins') ?? process.env.CORS_ORIGINS ?? 'http://localhost:3000';
+  const webOrigins = corsOriginsStr.split(',').map(origin => origin.trim());
   app.enableCors({
     origin: webOrigins,
     credentials: true,
@@ -120,10 +121,41 @@ async function bootstrap() {
   }
 
   // ── Start ─────────────────────────────────────────────────────────────────────
-  const port = configService.get<number>('app.port') ?? 4000;
-  await app.listen(port);
-  logger.log(`✅ OrgFlow API listening on port ${port}`);
-  logger.log('📊 Module health check available at /api/v1/health/modules');
+  // Render-specific: listen on 0.0.0.0 and use PORT from env
+  const port = configService.get<number>('app.port') ?? parseInt(process.env.PORT ?? '4000', 10);
+  const host = process.env.HOST ?? '0.0.0.0'; // Render requires 0.0.0.0
+
+  // Keep-alive timeout adjustment for Render free tier (spins down after 15min inactivity)
+  const server = await app.listen(port, host);
+
+  // Set keep-alive timeout to 65 seconds to work around Render's 60-second limit
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
+
+  const startupTime = ((Date.now() - startTime) / 1000).toFixed(2);
+  logger.log(`✅ Janagana API listening on ${host}:${port}`);
+  logger.log(`📊 Module health check available at /api/v1/health/live`);
+  logger.log(`⏱️  Startup time: ${startupTime}s`);
+
+  // ── Graceful shutdown ───────────────────────────────────────────────────────────
+  // Render sends SIGTERM before shutting down
+  const gracefulShutdown = (signal: string) => {
+    logger.log(`⚠️  Received ${signal}, shutting down gracefully...`);
+    server.close(() => {
+      logger.log('✅ Server closed successfully');
+      process.exit(0);
+    });
+
+    // Force close after 10 seconds
+    setTimeout(() => {
+      logger.error('❌ Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
   } catch (error) {
     logger.error('❌ Failed to start API', error);
     process.exit(1);
