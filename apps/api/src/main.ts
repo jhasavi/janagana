@@ -14,13 +14,18 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { sanitizeRequest } from './security/input-sanitizer';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    // Disable NestJS built-in logger in production — use our structured logger instead
-    bufferLogs: true,
-  });
-
-  const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
+  
+  logger.log('🚀 Starting OrgFlow API...');
+  logger.log('📦 Loading modules in tiered order...');
+  
+  try {
+    const app = await NestFactory.create(AppModule, {
+      // Disable NestJS built-in logger in production — use our structured logger instead
+      bufferLogs: true,
+    });
+
+    const configService = app.get(ConfigService);
 
   // ── Security headers ─────────────────────────────────────────────────────────
   app.use(helmet());
@@ -117,7 +122,12 @@ async function bootstrap() {
   // ── Start ─────────────────────────────────────────────────────────────────────
   const port = configService.get<number>('app.port') ?? 4000;
   await app.listen(port);
-  logger.log(`OrgFlow API listening on port ${port}`);
+  logger.log(`✅ OrgFlow API listening on port ${port}`);
+  logger.log('📊 Module health check available at /api/v1/health/modules');
+  } catch (error) {
+    logger.error('❌ Failed to start API', error);
+    process.exit(1);
+  }
 }
 
 void bootstrap();

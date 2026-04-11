@@ -56,6 +56,13 @@ export const validationSchema = Joi.object({
     .required()
     .description('Redis connection string for caching and sessions'),
 
+  UPSTASH_REDIS_REST_URL: Joi.string()
+    .uri()
+    .description('Upstash Redis REST API URL'),
+
+  UPSTASH_REDIS_REST_TOKEN: Joi.string()
+    .description('Upstash Redis REST API token'),
+
   // ─── JWT AUTHENTICATION CONFIGURATION ───────────────────────────────────────────
   JWT_SECRET: Joi.string()
     .required()
@@ -65,6 +72,14 @@ export const validationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string()
     .default('7d')
     .description('JWT token expiration time (e.g., "7d", "24h", "60m")'),
+
+  MEMBER_JWT_SECRET: Joi.string()
+    .min(32)
+    .description('Secret key for signing member JWT tokens (min 32 characters)'),
+
+  MEMBER_JWT_EXPIRES_IN: Joi.string()
+    .default('30d')
+    .description('Member JWT token expiration time (e.g., "30d", "60d", "90d")'),
 
   // ─── CLERK AUTHENTICATION CONFIGURATION ───────────────────────────────────────────
   CLERK_SECRET_KEY: Joi.string()

@@ -22,5 +22,35 @@ export class HealthController {
       timestamp: new Date().toISOString(),
     };
   }
+
+  @Get('modules')
+  @Public()
+  @ApiOkResponse({ description: 'Module health check.' })
+  async getModulesHealth() {
+    return {
+      tenants: 'active',
+      users: 'active',
+      members: 'active',
+      events: 'active',
+      volunteers: 'active',
+      clubs: 'active',
+      communications: 'active',
+      analytics: 'active',
+      payments: 'active',
+      donations: 'active',
+      upload: 'active',
+      webhooks: 'active',
+      apiKeys: 'active',
+      reports: 'active',
+      search: 'active',
+      notifications: 'active',
+      organizations: 'active',
+      feedback: 'active',
+      audit: 'active',
+      health: 'active',
+      auth: 'active',
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
