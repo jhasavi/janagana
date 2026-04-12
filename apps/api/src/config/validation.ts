@@ -133,7 +133,7 @@ export const validationSchema = Joi.object({
     .description('Default sender email address'),
 
   EMAIL_FROM_NAME: Joi.string()
-    .default('OrgFlow')
+    .default('Jana Gana')
     .description('Default sender name'),
 
   // ─── CLOUDINARY MEDIA CONFIGURATION ───────────────────────────────────────────────

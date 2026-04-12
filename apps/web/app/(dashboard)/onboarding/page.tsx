@@ -33,7 +33,7 @@ const STEPS = [
   { id: 5 as Step, label: 'Launch', icon: Rocket },
 ];
 
-const STORAGE_KEY = 'orgflow_onboarding_step';
+const STORAGE_KEY = 'janagana_onboarding_step';
 
 // ─── Step 1: Organisation ─────────────────────────────────────────────────────
 
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
           <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mx-auto text-lg font-bold">
             O
           </div>
-          <h1 className="text-xl font-semibold">Welcome to OrgFlow</h1>
+          <h1 className="text-xl font-semibold">Welcome to Jana Gana</h1>
           <p className="text-sm text-muted-foreground">Let's get your organisation set up in 5 steps.</p>
         </div>
 

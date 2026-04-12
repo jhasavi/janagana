@@ -44,7 +44,7 @@ export function DashboardMobileMenu() {
       <SheetContent side="left" className="w-full max-w-xs">
         <div className="flex items-center justify-between pb-4">
           <div>
-            <p className="text-sm font-semibold">OrgFlow</p>
+            <p className="text-sm font-semibold">Jana Gana</p>
             <p className="text-xs text-muted-foreground">Admin navigation</p>
           </div>
           <SheetClose asChild>

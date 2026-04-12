@@ -47,7 +47,7 @@ Access:
 ## Monorepo Structure
 
 ```
-orgflow/
+janagana/
 ├── apps/
 │   ├── web/                    # Next.js admin dashboard & public site
 │   ├── api/                    # NestJS REST API
@@ -243,9 +243,9 @@ Base URL: `http://localhost:4000`
 
 ## Multi-Tenancy
 
-OrgFlow uses subdomain-based multi-tenancy:
-- `tenant1.orgflow.app` → Tenant 1
-- `tenant2.orgflow.app` → Tenant 2
+Jana Gana uses subdomain-based multi-tenancy:
+- `tenant1.namasteneedham.com` → Tenant 1
+- `tenant2.namasteneedham.com` → Tenant 2
 
 In development, use path-based routing:
 - `localhost:3000/tenant1/dashboard`

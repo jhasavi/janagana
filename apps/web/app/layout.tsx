@@ -13,8 +13,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'OrgFlow',
-    template: '%s | OrgFlow',
+    default: 'Jana Gana',
+    template: '%s | Jana Gana',
   },
   description: 'Membership, event, volunteer, and club management platform',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),

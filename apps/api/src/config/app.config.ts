@@ -8,7 +8,7 @@ export const appConfig = registerAs('app', () => ({
   webOrigins: (process.env.WEB_ORIGINS ?? 'http://localhost:3000,http://localhost:3001')
     .split(',')
     .map((o) => o.trim()),
-  appDomain: process.env.APP_DOMAIN ?? 'orgflow.app',
+  appDomain: process.env.APP_DOMAIN ?? 'namasteneedham.com',
   webUrl: process.env.APP_WEB_URL ?? 'http://localhost:3000',
   isProduction: (process.env.NODE_ENV ?? '') === 'production',
 }));

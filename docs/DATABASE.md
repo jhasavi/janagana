@@ -1,6 +1,6 @@
 # Database Migration Guide
 
-This guide covers database operations for the OrgFlow platform, including migrations, seeding, and production deployment strategies.
+This guide covers database operations for the Jana Gana platform, including migrations, seeding, and production deployment strategies.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This guide covers database operations for the OrgFlow platform, including migrat
 
 ## Overview
 
-OrgFlow uses PostgreSQL as the primary database, managed through Prisma ORM. The database schema includes:
+Jana Gana uses PostgreSQL as the primary database, managed through Prisma ORM. The database schema includes:
 
 - **50 models** covering platform functionality
 - **Multi-tenant architecture** with tenant isolation
@@ -30,7 +30,7 @@ Before working with the database, ensure you have:
 - PostgreSQL running locally (via Docker or native installation)
 - Node.js 20+ installed
 - Environment variables configured in `apps/api/.env.local`
-- Database URL set: `DATABASE_URL=postgresql://postgres:password@localhost:5432/orgflow_dev`
+- Database URL set: `DATABASE_URL=postgresql://postgres:password@localhost:5432/janagana_dev`
 
 ## Development Workflow
 
@@ -206,10 +206,10 @@ If the automated reset fails, manually reset:
 
 ```bash
 # Drop the database
-psql postgres://postgres:password@localhost:5432/postgres -c "DROP DATABASE IF EXISTS orgflow_dev;"
+psql postgres://postgres:password@localhost:5432/postgres -c "DROP DATABASE IF EXISTS janagana_dev;"
 
 # Recreate the database
-psql postgres://postgres:password@localhost:5432/postgres -c "CREATE DATABASE orgflow_dev;"
+psql postgres://postgres:password@localhost:5432/postgres -c "CREATE DATABASE janagana_dev;"
 
 # Run migrations
 cd packages/database
@@ -484,8 +484,8 @@ npx prisma format
 
 ```bash
 # Development
-DATABASE_URL=postgresql://postgres:password@localhost:5432/orgflow_dev
+DATABASE_URL=postgresql://postgres:password@localhost:5432/janagana_dev
 
 # Production (example)
-DATABASE_URL=postgresql://user:pass@host:5432/orgflow_prod?sslmode=require
+DATABASE_URL=postgresql://user:pass@host:5432/janagana_prod?sslmode=require
 ```
