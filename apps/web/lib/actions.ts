@@ -347,3 +347,84 @@ export async function createCheckoutSession(priceId: string) {
 
   return session
 }
+
+// Club Posts and Comments actions
+export async function getClubPosts(clubId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.clubPost.findMany({
+    where: { 
+      tenantId: tenant.id,
+      clubId,
+    },
+    include: {
+      author: true,
+      comments: {
+        include: {
+          member: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+    orderBy: { isPinned: 'desc', createdAt: 'desc' },
+  })
+}
+
+export async function createClubPost(data: {
+  clubId: string
+  authorId: string
+  title?: string
+  body: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.clubPost.create({
+    data: {
+      tenantId: tenant.id,
+      clubId: data.clubId,
+      authorId: data.authorId,
+      title: data.title,
+      body: data.body,
+      isPinned: false,
+      publishedAt: new Date(),
+    },
+  })
+}
+
+export async function deleteClubPost(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.clubPost.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
+
+export async function createClubComment(data: {
+  postId: string
+  memberId: string
+  body: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.clubPostComment.create({
+    data: {
+      tenantId: tenant.id,
+      postId: data.postId,
+      memberId: data.memberId,
+      body: data.body,
+    },
+  })
+}
