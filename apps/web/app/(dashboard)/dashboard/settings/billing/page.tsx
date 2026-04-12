@@ -79,7 +79,7 @@ export default function BillingPage() {
           <AlertDescription>
             <div className="space-y-2">
               <p className="font-semibold">Your trial has ended</p>
-              <p className="text-sm">To continue using OrgFlow, please subscribe to a plan. Your data will be preserved for 30 days.</p>
+              <p className="text-sm">To continue using Jana Gana, please subscribe to a plan. Your data will be preserved for 30 days.</p>
               <Button size="sm" className="mt-2" asChild>
                 <a href="#plans">Choose a Plan</a>
               </Button>

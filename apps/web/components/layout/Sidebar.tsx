@@ -60,7 +60,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           {collapsed ? (
             <span className="text-xl font-bold text-primary">O</span>
           ) : (
-            <span className="text-xl font-bold tracking-tight">OrgFlow</span>
+            <span className="text-xl font-bold tracking-tight">Jana Gana</span>
           )}
         </div>
 

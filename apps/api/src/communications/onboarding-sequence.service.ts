@@ -96,11 +96,11 @@ export class OnboardingSequenceService {
 
     switch (template) {
       case 'welcome':
-        subject = `Welcome to OrgFlow, ${orgName}!`;
+        subject = `Welcome to Jana Gana, ${orgName}!`;
         html = this.getWelcomeTemplate(orgName);
         break;
       case 'add-first-member':
-        subject = 'Tip: Add your first member to OrgFlow';
+        subject = 'Tip: Add your first member to Jana Gana';
         html = this.getAddMemberTemplate(orgName);
         break;
       case 'create-first-event':

@@ -18,7 +18,7 @@ export default async function SignUpPage() {
       )}
       {!tenant?.logoUrl && (
         <p className="text-xl font-semibold tracking-tight">
-          {tenant?.name ?? 'OrgFlow'}
+          {tenant?.name ?? 'Jana Gana'}
         </p>
       )}
       <SignUp

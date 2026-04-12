@@ -1,8 +1,8 @@
-# OrgFlow Beta Launch Guide
+# Jana Gana Beta Launch Guide
 
-## Welcome to the OrgFlow Beta!
+## Welcome to the Jana Gana Beta!
 
-Thank you for participating in our beta program. This guide will help you get started with OrgFlow and provide feedback to help us improve the platform.
+Thank you for participating in our beta program. This guide will help you get started with Jana Gana and provide feedback to help us improve the platform.
 
 ---
 
@@ -13,7 +13,7 @@ Thank you for participating in our beta program. This guide will help you get st
 Your organization has been created with the following details:
 - **Organization Name**: [Provided during setup]
 - **Admin Email**: [Provided during setup]
-- **Access URL**: `https://[your-slug].orgflow.app/dashboard`
+- **Access URL**: `https://[your-slug].namasteneedham.com/dashboard`
 
 ### 2. Complete the 5-Minute Setup Wizard
 
@@ -26,7 +26,7 @@ When you first log in, you'll be guided through a quick setup wizard:
 
 ### 3. Import Your First Members
 
-OrgFlow makes it easy to import your existing member database:
+Jana Gana makes it easy to import your existing member database:
 
 **Option A: CSV Import**
 1. Download our CSV template from the Members section
@@ -120,7 +120,7 @@ During the beta period, we encourage you to test all aspects of the platform:
 - Select the feature you want most
 
 ### Email
-- Send feedback to: beta@orgflow.app
+- Send feedback to: beta@namasteneedham.com
 - Include screenshots when possible
 - Describe the steps to reproduce any issues
 
@@ -181,10 +181,10 @@ Save 17% with annual billing.
 ## Getting Help
 
 ### Help Documentation
-Visit our comprehensive help center: https://orgflow.app/help
+Visit our comprehensive help center: https://janagana.namasteneedham.com/help
 
 ### Support Channels
-- **Email**: support@orgflow.app
+- **Email**: support@namasteneedham.com
 - **Response Time**: Within 24 hours during beta
 - **Priority Support**: Available for Pro plans
 
@@ -196,7 +196,7 @@ Step-by-step video guides coming soon to the help center.
 ## Data Privacy & Security
 
 ### Your Data
-- You own all data you upload to OrgFlow
+- You own all data you upload to Jana Gana
 - Data is stored securely in SOC 2 compliant data centers
 - You can export your data at any time
 - Data is deleted upon account cancellation
@@ -228,15 +228,15 @@ Step-by-step video guides coming soon to the help center.
 ## Quick Reference
 
 ### Important URLs
-- **Dashboard**: `https://[your-slug].orgflow.app/dashboard`
-- **Member Portal**: `https://[your-slug].orgflow.app/portal`
-- **Help Center**: https://orgflow.app/help
-- **Status Page**: https://orgflow.app/status
+- **Dashboard**: `https://[your-slug].namasteneedham.com/dashboard`
+- **Member Portal**: `https://[your-slug].namasteneedham.com/portal`
+- **Help Center**: https://janagana.namasteneedham.com/help
+- **Status Page**: https://janagana.namasteneedham.com/status
 
 ### Key Contacts
-- **Beta Support**: beta@orgflow.app
-- **Technical Support**: support@orgflow.app
-- **Feedback**: feedback@orgflow.app
+- **Beta Support**: beta@namasteneedham.com
+- **Technical Support**: support@namasteneedham.com
+- **Feedback**: feedback@namasteneedham.com
 
 ### Quick Actions
 - **Add Member**: Dashboard → Members → Add Member
@@ -249,9 +249,9 @@ Step-by-step video guides coming soon to the help center.
 
 ## Thank You!
 
-Thank you for being part of the OrgFlow beta program. Your feedback is invaluable in helping us build the best organization management platform.
+Thank you for being part of the Jana Gana beta program. Your feedback is invaluable in helping us build the best organization management platform.
 
-We're excited to see what you build with OrgFlow!
+We're excited to see what you build with Jana Gana!
 
 ---
 

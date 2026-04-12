@@ -6,7 +6,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: {
       default: tenant ? `${tenant.name} — Sign In` : 'Sign In',
-      template: `%s | ${tenant?.name ?? 'OrgFlow'}`,
+      template: `%s | ${tenant?.name ?? 'Jana Gana'}`,
     },
   };
 }

@@ -119,7 +119,7 @@ export default function MemberLoginPage() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={tenant.logoUrl} alt={tenant.name} className="h-10 w-auto object-contain" />
         ) : (
-          <p className="text-xl font-semibold">{tenant?.name ?? 'OrgFlow'}</p>
+          <p className="text-xl font-semibold">{tenant?.name ?? 'Jana Gana'}</p>
         )}
         <h1 className="text-2xl font-bold tracking-tight">Member Portal</h1>
         <p className="text-sm text-muted-foreground">Sign in to access your membership dashboard</p>

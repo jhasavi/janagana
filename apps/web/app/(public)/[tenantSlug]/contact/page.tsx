@@ -27,7 +27,7 @@ export default async function TenantContactPage({ params }: { params: { tenantSl
               <Mail className="h-5 w-5" />
               <p className="font-semibold">Email</p>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">support@orgflow.app</p>
+            <p className="mt-4 text-sm text-muted-foreground">support@namasteneedham.com</p>
           </div>
           <div className="rounded-3xl border border-border bg-background/80 p-6">
             <div className="flex items-center gap-3 text-primary">

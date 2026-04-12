@@ -76,7 +76,7 @@ export function FeedbackWidget({ tenantId }: FeedbackWidgetProps) {
           <DialogHeader>
             <DialogTitle>Send Feedback</DialogTitle>
             <DialogDescription>
-              Help us improve OrgFlow by sharing your thoughts.
+              Help us improve Jana Gana by sharing your thoughts.
             </DialogDescription>
             <button
               onClick={() => setOpen(false)}

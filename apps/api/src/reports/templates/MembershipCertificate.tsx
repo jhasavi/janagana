@@ -22,7 +22,7 @@ export function MembershipCertificateDocument({ member, tier, expiry, qrCode }: 
           <Text style={styles.body}>This certificate confirms that the holder is a valued member of the organization and is recognized for their membership tier of {tier}.</Text>
           {expiry && <Text style={styles.body}>Membership expires on {expiry.toLocaleDateString()}</Text>}
           <View style={styles.signatureSection}>
-            <Text style={styles.signature}>Authorized by OrgFlow</Text>
+            <Text style={styles.signature}>Authorized by Jana Gana</Text>
           </View>
           <Image style={styles.qrCode} src={qrCode} />
           <Text style={styles.small}>Verify membership at your portal using the QR code above.</Text>

@@ -39,7 +39,7 @@ export default async function TenantPublicHomepage({ params }: Props) {
             Keep members connected with events, volunteer opportunities, and clubs.
           </h1>
           <p className="max-w-2xl text-lg text-muted-foreground">
-            {tenant.name} uses OrgFlow to make it easy for community members to discover upcoming events, join the team, and get involved.
+            {tenant.name} uses Jana Gana to make it easy for community members to discover upcoming events, join the team, and get involved.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild>

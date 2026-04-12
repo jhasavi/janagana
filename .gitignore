@@ -47,3 +47,5 @@ apps/mobile/dist/
 # Deployment
 .vercel/
 .render/
+.vercel
+.env*.local

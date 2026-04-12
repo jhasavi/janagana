@@ -24,10 +24,10 @@ const RESERVED = new Set(['www', 'app', 'api', 'localhost', 'mail', 'admin']);
 
 function resolveTenantSlug(host: string): { slug: string | null; isCustomDomain: boolean } {
   const hostname = host.split(':')[0].toLowerCase();
-  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'orgflow.app';
+  const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'namasteneedham.com';
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost';
 
-  // Subdomain of the app domain: acme.orgflow.app
+  // Subdomain of the app domain: acme.namasteneedham.com
   if (hostname.endsWith(`.${appDomain}`)) {
     const slug = hostname.slice(0, -(appDomain.length + 1));
     if (slug && !RESERVED.has(slug)) return { slug, isCustomDomain: false };

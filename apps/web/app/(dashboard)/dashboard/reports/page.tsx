@@ -20,7 +20,7 @@ export default function ReportsPage() {
   const [recentDownloads, setRecentDownloads] = useState<string[]>([]);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem('orgflow.reports.recent');
+    const stored = window.localStorage.getItem('janagana.reports.recent');
     if (stored) {
       setRecentDownloads(JSON.parse(stored));
     }
@@ -31,7 +31,7 @@ export default function ReportsPage() {
     const entry = `${new Date().toLocaleString()} — ${type} (${format.toUpperCase()})`;
     setRecentDownloads((current) => {
       const next = [entry, ...current].slice(0, 10);
-      window.localStorage.setItem('orgflow.reports.recent', JSON.stringify(next));
+      window.localStorage.setItem('janagana.reports.recent', JSON.stringify(next));
       return next;
     });
     return blob;
