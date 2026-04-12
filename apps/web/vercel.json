@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && npm run build --workspace apps/web",
-  "outputDirectory": "apps/web/.next",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["iad1"],
   "rewrites": [
@@ -61,8 +61,8 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://orgflow.app",
-    "NEXT_PUBLIC_API_URL": "https://api.orgflow.app",
+    "NEXT_PUBLIC_APP_URL": "https://janagana.namasteneedham.com",
+    "NEXT_PUBLIC_API_URL": "https://janagana.namasteneedham.com/api",
     "CLERK_PUBLISHABLE_KEY": "@clerk-publishable-key",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe-publishable-key"
   }
