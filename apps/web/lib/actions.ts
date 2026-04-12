@@ -303,3 +303,47 @@ export async function deleteVolunteerOpportunity(id: string) {
     },
   })
 }
+
+// Stripe integration actions
+import Stripe from 'stripe'
+
+let stripeInstance: Stripe | null = null
+
+function getStripe() {
+  if (!stripeInstance && process.env.STRIPE_SECRET_KEY) {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-03-25.dahlia',
+    })
+  }
+  return stripeInstance
+}
+
+export async function createCheckoutSession(priceId: string) {
+  const stripe = getStripe()
+  if (!stripe) {
+    throw new Error('Stripe is not configured. Please add STRIPE_SECRET_KEY to environment variables.')
+  }
+
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing?canceled=true`,
+    metadata: {
+      tenantId: tenant.id,
+    },
+  })
+
+  return session
+}
