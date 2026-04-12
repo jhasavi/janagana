@@ -248,3 +248,58 @@ export async function deleteClub(id: string) {
     },
   })
 }
+
+// Volunteer Opportunity CRUD actions
+export async function getVolunteerOpportunities() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.volunteerOpportunity.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function createVolunteerOpportunity(data: {
+  title: string
+  description?: string
+  location?: string
+  isVirtual?: boolean
+  startsAt?: Date
+  endsAt?: Date
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const slug = data.title.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '-' + Date.now()
+
+  return await prisma.volunteerOpportunity.create({
+    data: {
+      tenantId: tenant.id,
+      title: data.title,
+      slug,
+      description: data.description,
+      location: data.location,
+      isVirtual: data.isVirtual || false,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+      isActive: true,
+    },
+  })
+}
+
+export async function deleteVolunteerOpportunity(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerOpportunity.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
