@@ -1,42 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  poweredByHeader: false,
-  transpilePackages: ['@orgflow/ui', '@orgflow/types', '@orgflow/utils'],
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' },
-      { protocol: 'http', hostname: '**' },
-    ],
+    domains: ['res.cloudinary.com', 'img.clerk.com'],
   },
-  experimental: {
-    typedRoutes: true,
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/tenant/:path*',
-        destination: '/:path*',
-      },
-      {
-        source: '/api/proxy/:path*',
-        destination: `${process.env.API_URL || 'http://localhost:4000/api/v1'}/:path*`,
-      },
-    ];
-  },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'x-orgflow-tenant-hint',
-            value: 'Use subdomain for tenant routing',
-          },
-        ],
-      },
-    ];
-  },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
