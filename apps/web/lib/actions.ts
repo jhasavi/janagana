@@ -56,3 +56,72 @@ export async function getUserTenant() {
 
   return user?.tenant || null
 }
+
+// Member CRUD actions
+export async function getMembers() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.member.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function createMember(data: {
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.member.create({
+    data: {
+      tenantId: tenant.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      status: 'ACTIVE',
+    },
+  })
+}
+
+export async function updateMember(id: string, data: {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  status?: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'BANNED'
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.member.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data,
+  })
+}
+
+export async function deleteMember(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.member.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
