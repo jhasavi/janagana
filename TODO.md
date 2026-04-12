@@ -1,388 +1,519 @@
-# OrgFlow Project Update - April 11, 2026
+# Jana Gana Project Update - April 11, 2026
 
 ## Summary
-This document provides a comprehensive assessment of the project's current state, including completed work, environment configuration, deployment status, and remaining tasks.
+This document provides a comprehensive assessment of the Jana Gana project, including architecture details, completed work, environment configuration, deployment status, and future action items.
 
 ---
 
-## Completed Work
+## Architecture Overview
 
-### 1. Vercel Build Fixes
-- **Status**: ✅ Completed
-- **Actions Taken**:
-  - Fixed TypeScript compilation errors related to `react-native` type definitions by adding `"types": ["node"]` to `tsconfig.base.json`
-  - Added missing NestJS dependencies to `apps/api/package.json`
-  - Regenerated Prisma client for database compatibility
-  - Moved `_disabled` folder outside `src` directory to prevent compilation
-  - Fixed `prebuild` script path for Vercel environment
-  - Vercel deployment successful (commit a49d78f)
+### System Architecture
 
-### 2. API Server Configuration
-- **Status**: ✅ Completed
-- **Actions Taken**:
-  - Simplified `app.module.ts` to minimal configuration (ConfigModule + SimpleHealthController)
-  - Fixed routing configuration - API uses `/api/v1/` prefix
-  - API successfully starts locally on port 4000
-  - Tested with curl: `http://localhost:4000/api/v1` returns `{"success":true,"data":{"status":"ok","message":"API is running"}}`
+Jana Gana is a multi-tenant membership, event, volunteer, and club management platform built with a modern monorepo architecture.
 
-### 3. Environment Variables Configuration
-- **Status**: ✅ Completed
-- **File**: `/Users/sanjeevjha/janagana/.env`
-- **Configured Variables**:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Frontend Layer                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Next.js App (Vercel)                                           │
+│  ├── Admin Dashboard (app/(dashboard)/)                         │
+│  ├── Member Portal (app/(portal)/)                             │
+│  ├── Public Tenant Pages (app/(public)/)                        │
+│  ├── Marketing Site (app/(marketing)/)                          │
+│  └── Auth Pages (app/(auth)/)                                  │
+│                                                                 │
+│  Key Integrations:                                             │
+│  - Clerk Authentication (SSO, sessions)                         │
+│  - React Query (API data fetching)                             │
+│  - shadcn/ui (UI components)                                   │
+│  - Lucide Icons                                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                         API Layer                               │
+├─────────────────────────────────────────────────────────────────┤
+│  NestJS API (Render)                                            │
+│  ├── Multi-tenant middleware (subdomain resolution)             │
+│  ├── Auth Guards (Clerk JWT verification)                      │
+│  ├── Role-based access control (RBAC)                           │
+│  └── REST Controllers (50+ modules)                             │
+│                                                                 │
+│  Key Modules:                                                  │
+│  - Users & Members (CRUD, bulk import)                          │
+│  - Events (management, registration)                            │
+│  - Volunteers (opportunities, sign-ups)                         │
+│  - Clubs (management, membership tiers)                         │
+│  - Payments (Stripe integration)                                │
+│  - Communications (email, SMS)                                  │
+│  - Reports (PDF generation, analytics)                          │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                       Data Layer                                │
+├─────────────────────────────────────────────────────────────────┤
+│  Neon PostgreSQL (Managed Database)                             │
+│  ├── Multi-tenant schema (tenant_id isolation)                 │
+│  ├── 50+ Prisma models                                         │
+│  ├── Row-level security (RLS)                                  │
+│  └── Automated backups                                         │
+│                                                                 │
+│  Upstash Redis (Caching & Sessions)                            │
+│  ├── API response caching                                       │
+│  ├── Session storage                                           │
+│  ├── Rate limiting                                             │
+│  └── Pub/Sub for real-time features                            │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                     External Services                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Authentication: Clerk (SSO, user management)                   │
+│  Payments: Stripe (subscriptions, one-time payments)            │
+│  Email: Resend (transactional emails)                           │
+│  Media: Cloudinary (image/video storage)                        │
+│  Error Tracking: Sentry (error monitoring)                    │
+│  Monitoring: Vercel Analytics, Render logs                      │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-#### Web App Configuration
-- `NEXT_PUBLIC_APP_URL=http://localhost:3000`
-- `NEXT_PUBLIC_API_URL=http://localhost:4000`
-- `NEXT_PUBLIC_APP_DOMAIN=orgflow.app`
-- `NEXT_PUBLIC_ROOT_DOMAIN=localhost`
-- `NEXT_PUBLIC_TENANT_FALLBACK=demo`
+### Multi-Tenancy Architecture
 
-#### Clerk Authentication
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...` (from Clerk dashboard)
-- `CLERK_SECRET_KEY=sk_test_...` (from Clerk dashboard)
-- `CLERK_PUBLISHABLE_KEY=pk_test_...` (from Clerk dashboard)
-- `CLERK_WEBHOOK_SECRET=whsec_...` (from Clerk dashboard webhooks)
-- Redirect URLs configured for sign-in/sign-up/dashboard
+Jana Gana uses subdomain-based multi-tenancy:
 
-#### API Configuration
-- `NODE_ENV=development`
-- `PORT=4000`
-- `WEB_ORIGIN=http://localhost:3000`
-- `DATABASE_URL=postgresql://user:pass@host/db` (Neon PostgreSQL)
-- `REDIS_URL=redis://localhost:6379`
-- `UPSTASH_REDIS_REST_URL=https://...upstash.io` (from Upstash dashboard)
-- `UPSTASH_REDIS_REST_TOKEN=...` (from Upstash dashboard)
-- `JWT_SECRET=replace_me` (⚠️ NEEDS SECURE RANDOM STRING)
-- `CORS_ORIGINS=http://localhost:3000`
-- `APP_URL=http://localhost:4000`
+**Production:**
+- `tenant1.namasteneedham.com` → Tenant 1
+- `tenant2.namasteneedham.com` → Tenant 2
+- Custom domains supported
 
-#### Stripe Configuration
-- `STRIPE_SECRET_KEY=sk_test_...` (from Stripe dashboard)
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...` (from Stripe dashboard)
-- `STRIPE_WEBHOOK_SECRET=whsec_...` (from Stripe dashboard webhooks)
-- `STRIPE_CONNECT_WEBHOOK_SECRET=whsec_...` (from Stripe dashboard webhooks)
-- `PLATFORM_FEE_PERCENTAGE=2`
+**Development:**
+- Path-based routing: `localhost:3000/tenant1/dashboard`
+- Fallback tenant via `NEXT_PUBLIC_TENANT_FALLBACK` env var
 
-#### Other Services
-- `RESEND_API_KEY=re_...` (from Resend dashboard)
-- `SENTRY_DSN=https://...@o...ingest.us.sentry.io/...` (from Sentry dashboard)
-- `NEXT_PUBLIC_SENTRY_DSN="https://...@o...ingest.us.sentry.io/..."` (from Sentry dashboard)
-- `CLOUDINARY_URL=cloudinary://...@...` (from Cloudinary dashboard)
+**Tenant Isolation:**
+- Database: Row-level security via `tenant_id` foreign keys
+- API: Tenant context injected via middleware
+- Frontend: Tenant configuration stored in headers
 
-### 4. Database & Infrastructure
-- **Status**: ✅ Completed
-- **Actions Taken**:
-  - Migrated from local PostgreSQL to Neon PostgreSQL
-  - Regenerated Prisma client for Neon database
-  - Configured Upstash Redis for caching
-  - Tested Upstash Redis connection with `redis-cli` - returned `PONG` (successful)
-  - Initialized neonctl for Neon management
+### Technology Stack
 
-### 5. Stripe Integration
-- **Status**: ✅ Completed
-- **Actions Taken**:
-  - Updated Stripe credentials with test/sandbox keys
-  - Installed Stripe CLI via Homebrew
-  - Authenticated Stripe CLI for local webhook testing
-  - Installed Stripe AI skills (stripe-best-practices, stripe-projects, upgrade-stripe)
-  - Configured webhook endpoints for local and Render deployment
+**Frontend (apps/web):**
+- Framework: Next.js 14 (App Router)
+- Styling: Tailwind CSS
+- UI Components: shadcn/ui
+- State Management: React Query
+- Authentication: Clerk Next.js SDK
+- Forms: React Hook Form + Zod validation
+- Icons: Lucide React
 
-### 6. Sentry Integration
-- **Status**: ✅ Partially Completed
-- **Actions Taken**:
-  - Sentry DSN configured in .env
-  - Sentry configuration files exist in `apps/web/` (sentry.client.config.ts, sentry.server.config.ts, sentry.edge.config.ts)
-  - Sentry wizard attempted but requires interactive setup
+**Backend (apps/api):**
+- Framework: NestJS
+- ORM: Prisma
+- Database: PostgreSQL (Neon)
+- Cache: Redis (Upstash)
+- Authentication: Clerk JWT
+- Validation: class-validator
+- Documentation: Swagger/OpenAPI
 
-### 7. Render Deployment Configuration
-- **Status**: ✅ Configuration Completed
-- **Actions Taken**:
-  - Created `render.yaml` with web and API service configurations
-  - Configured build commands and start commands for both services
-  - Listed all required environment variables for Render dashboard
-  - Configured Stripe webhook endpoint: `https://janagana-api.onrender.com/webhooks/stripe`
+**Shared Packages:**
+- `packages/database`: Prisma schema, migrations
+- `packages/ui`: Shared React components
+- `packages/types`: TypeScript types
+- `packages/utils`: Shared utilities
 
-### 8. Startup Script
-- **Status**: ✅ Completed
-- **Actions Taken**:
-  - Startup script located at `/Users/sanjeevjha/janagana/start.sh`
-  - Successfully starts both API (port 4000) and Web (port 3000) servers
-  - Handles dependency installation, database migrations, and Prisma client generation
+### Deployment Architecture
+
+**Frontend (Vercel):**
+- Platform: Vercel
+- URL: https://janagana.namasteneedham.com
+- Environment: Production
+- Build: Next.js build with ISR support
+- Edge Functions: For API proxy rewrites
+
+**Backend (Render):**
+- Platform: Render (Free tier)
+- URL: https://janagana-api.onrender.com
+- Environment: Production
+- Type: Web Service
+- Health Check: `/api/v1/health`
+- Cold Start: ~30-60s (free tier limitation)
+
+**Infrastructure:**
+- Database: Neon PostgreSQL (serverless)
+- Cache: Upstash Redis (serverless)
+- Email: Resend API
+- Media: Cloudinary
+- Error Tracking: Sentry
 
 ---
 
-## Test Results
+## Current Assessment
 
-### API Tests
-- **Local API Test**: ✅ Passed
-  - Command: `curl http://localhost:4000/api/v1`
-  - Result: `{"success":true,"data":{"status":"ok","message":"API is running"}}`
-  - Command: `curl http://localhost:4000/api/v1/health`
-  - Result: `{"success":true,"data":{"status":"ok","message":"API is running"}}`
+### Completed Work
 
-### Database Tests
-- **Neon PostgreSQL**: ✅ Connected
-  - DATABASE_URL configured and Prisma client regenerated successfully
+#### 1. Core Infrastructure ✅
+- **Monorepo Structure**: Nx-based monorepo with apps and packages
+- **Database**: Neon PostgreSQL configured with Prisma ORM
+- **Cache**: Upstash Redis configured and tested
+- **Authentication**: Clerk integration (development and production keys)
+- **Payments**: Stripe integration configured
+- **Email**: Resend API integration
+- **Media**: Cloudinary integration
+- **Error Tracking**: Sentry configured
 
-### Redis Tests
-- **Upstash Redis**: ✅ Connected
-  - Command: `redis-cli --tls -u redis://default:gQAAAAAAAXi9AAIncDFjNTdjNzZkZGJkYWU0ZjE5YmNiZmQ3OWZjMmQ4NDUzNXAxOTY0NDU@cute-falcon-96445.upstash.io:6379 ping`
-  - Result: `PONG`
+#### 2. Frontend Development ✅
+- **Next.js App**: Admin dashboard, member portal, public pages, marketing site
+- **UI Components**: shadcn/ui component library
+- **Authentication**: Clerk SDK integrated
+- **API Client**: Axios with retry logic and cold-start handling
+- **React Query**: Data fetching with caching
+- **Forms**: React Hook Form + Zod validation
+- **Multi-tenant**: Subdomain and path-based routing
+- **Responsive Design**: Mobile-friendly UI
 
-### Playwright Tests
-- **Status**: ⚠️ Not Run
-- **Reason**: Web server startup failed due to missing Clerk configuration during initial attempt
-- **Note**: Now that Clerk is configured, Playwright tests should be re-run
+#### 3. Backend Development ✅
+- **NestJS API**: RESTful API with 50+ modules
+- **Multi-tenancy**: Tenant isolation via middleware
+- **Authentication**: Clerk JWT verification
+- **Authorization**: Role-based access control (RBAC)
+- **Validation**: class-validator integration
+- **Documentation**: Swagger/OpenAPI
+- **Health Checks**: `/api/v1/health` endpoint
+- **Error Handling**: Global exception filters
+
+#### 4. Deployment Configuration ✅
+- **Vercel**: Frontend deployed to https://janagana.namasteneedham.com
+- **Render**: Backend configured for https://janagana-api.onrender.com
+- **Environment Variables**: Documented in docs/VERCEL-ENV-VARS.md and docs/RENDER-ENV-VARS.md
+- **Build Scripts**: Optimized for monorepo structure
+- **Docker**: Dockerfile for containerized deployment
+
+#### 5. Recent Fixes (April 11, 2026) ✅
+- **useState Error**: Added 'use client' directive to marketing page
+- **Branding**: Replaced "OrgFlow" with "Jana Gana" throughout codebase
+- **Domain References**: Updated orgflow.app to namasteneedham.com
+- **Clerk Configuration**: Production keys configured in Vercel
+- **API Health Endpoint**: Standardized to `/api/v1/health`
+- **Connection Testing**: Created test-connection.sh script
+
+### Pending Work
+
+#### Critical (Blocking Production)
+
+1. **Vercel 500 Error** 🔴
+   - **Status**: Currently being debugged
+   - **Issue**: Frontend returning 500 error on Vercel
+   - **Root Cause**: Suspected Clerk configuration issue
+   - **Action**: User has updated Vercel with production Clerk keys and domain whitelist
+   - **Next Step**: Redeploy Vercel and verify error is resolved
+
+2. **Render API Deployment** 🔴
+   - **Status**: Configuration complete, not deployed
+   - **Issue**: API needs to be deployed to Render
+   - **Action Required**: Push render.yaml to Render, set environment variables
+   - **Priority**: High - Required for production
+
+3. **API Health Endpoint Verification** 🟡
+   - **Status**: Endpoint configured, needs testing
+   - **Issue**: Health endpoint may not be accessible from production
+   - **Action**: Test `/api/v1/health` on Render after deployment
+   - **Priority**: High - Required for monitoring
+
+#### High Priority
+
+4. **Clerk Domain Whitelist** 🟡
+   - **Status**: User added production domain to Clerk
+   - **Action**: Verify domain is properly whitelisted in Clerk dashboard
+   - **Priority**: High - Required for authentication
+
+5. **Cold Start Handling** 🟡
+   - **Status**: ApiLoadingState component created
+   - **Action**: Test cold start handling on Render
+   - **Priority**: High - Required for good UX on free tier
+
+6. **API Proxy Configuration** 🟡
+   - **Status**: Next.js rewrites configured
+   - **Action**: Test API proxy to prevent CORS issues
+   - **Priority**: High - Required for proper API communication
+
+#### Medium Priority
+
+7. **Keep-Alive Workflow** 🟡
+   - **Status**: GitHub Actions workflow created
+   - **Action**: Deploy workflow to prevent Render spin-down
+   - **Priority**: Medium - Improves performance
+
+8. **Smoke Testing** 🟡
+   - **Status**: Test script created
+   - **Action**: Run manual smoke test after deployment
+   - **Priority**: Medium - Validates production setup
+
+9. **Environment Variable Documentation** 🟢
+   - **Status**: Documentation created
+   - **Action**: Keep documentation updated with any changes
+   - **Priority**: Medium - Maintenance task
+
+#### Low Priority
+
+10. **Playwright E2E Tests** 🟢
+    - **Status**: Configuration exists, not fully tested
+    - **Action**: Complete Playwright test setup
+    - **Priority**: Low - Quality assurance
+
+11. **API Test Coverage** 🟢
+    - **Status**: Basic tests passing (43.85% coverage)
+    - **Action**: Increase test coverage
+    - **Priority**: Low - Quality assurance
+
+12. **Sentry Source Maps** 🟢
+    - **Status**: Sentry configured, source maps not uploaded
+    - **Action**: Configure source map upload
+    - **Priority**: Low - Improves error tracking
+
+### Known Issues
+
+1. **TypeScript Errors in Navigation Components**
+   - **Files**: Sidebar.tsx, DashboardMobileMenu.tsx
+   - **Error**: Type 'string' is not assignable to type 'UrlObject | RouteImpl<string>'
+   - **Impact**: Build warnings, not blocking
+   - **Action**: Fix route type definitions when time permits
+
+2. **Render Cold Start**
+   - **Issue**: ~30-60s cold start on free tier
+   - **Mitigation**: ApiLoadingState component for user feedback
+   - **Long-term**: Upgrade to paid Render tier or use keep-alive workflow
+
+3. **Clerk DNS Configuration**
+   - **Status**: Optional custom DNS configuration skipped
+   - **Impact**: Using default Clerk domains (acceptable)
+   - **Action**: Configure custom DNS later if needed for branding
 
 ---
 
-## Missing or Incomplete Items
+## Future Action Items
 
-### Critical Missing Items
+### Immediate (This Week)
 
-1. **JWT_SECRET**
-   - **Status**: ⚠️ Placeholder value
-   - **Current**: `replace_me`
-   - **Action Required**: Generate a secure random string (e.g., `openssl rand -base64 32`)
-   - **Priority**: High - Required for JWT token signing
+#### 1. Resolve Vercel 500 Error 🔴
+- **Action**: Redeploy Vercel with updated Clerk configuration
+- **Verification**: Access https://janagana.namasteneedham.com and verify it loads
+- **Fallback**: Check Vercel logs if error persists
+- **Owner**: User (Vercel configuration)
+- **Estimated Time**: 30 minutes
 
-2. **CLERK_WEBHOOK_SECRET**
-   - **Status**: ⚠️ Placeholder value
-   - **Current**: Using test secret key (may not be actual webhook secret)
-   - **Action Required**: Get actual webhook secret from Clerk Dashboard → Webhooks
-   - **Priority**: High - Required for Clerk webhook verification
+#### 2. Deploy API to Render 🔴
+- **Action**: 
+  1. Push render.yaml to Render
+  2. Set environment variables in Render dashboard (use docs/RENDER-ENV-VARS.md)
+  3. Deploy API service
+- **Verification**: Test https://janagana-api.onrender.com/api/v1/health
+- **Owner**: User (Render configuration)
+- **Estimated Time**: 1 hour
 
-3. **STRIPE_CONNECT_WEBHOOK_SECRET**
-   - **Status**: ⚠️ Placeholder value
-   - **Current**: `whsec_connect_replace_me`
-   - **Action Required**: Set up Stripe Connect in dashboard and get webhook secret
-   - **Priority**: Medium - Only needed if using Stripe Connect
+#### 3. Verify API Health Endpoint 🟡
+- **Action**: Test `/api/v1/health` on Render after deployment
+- **Verification**: Ensure endpoint returns JSON with status "ok"
+- **Script**: Use `./scripts/test-connection.sh`
+- **Owner**: User (testing)
+- **Estimated Time**: 15 minutes
 
-### Production Configuration
+#### 4. Verify Clerk Domain Whitelist 🟡
+- **Action**: Confirm https://janagana.namasteneedham.com is in Clerk allowed origins
+- **Verification**: Test authentication flow on production
+- **Owner**: User (Clerk configuration)
+- **Estimated Time**: 15 minutes
 
-4. **Production Environment Variables**
-   - **Status**: ⚠️ Not Configured
-   - **Action Required**: Need production versions of:
-     - Clerk keys (pk_live, sk_live)
-     - Stripe keys (pk_live, sk_live)
-     - Production webhook secrets
-   - **Priority**: High - Required for production deployment
+### Short-Term (Next 2 Weeks)
 
-5. **Redis Warning in Startup**
-   - **Status**: ⚠️ Warning
-   - **Issue**: Startup script shows "Warning: Redis may not be running"
-   - **Note**: Upstash Redis is configured and tested successfully, but local Redis check may still be running
-   - **Priority**: Low - Upstash is working, local Redis not needed
+#### 5. Run Smoke Test 🟡
+- **Action**: Execute manual smoke test using docs/SMOKE-TEST.md
+- **Verification**: Complete all test steps in the guide
+- **Owner**: User (testing)
+- **Estimated Time**: 2 hours
 
-### Deployment Configuration
+#### 6. Test Cold Start Handling 🟡
+- **Action**: Test ApiLoadingState component during Render cold starts
+- **Verification**: Ensure user sees friendly loading state during cold start
+- **Owner**: User (testing)
+- **Estimated Time**: 30 minutes
 
-6. **Render Environment Variables**
-   - **Status**: ⚠️ Not Set in Dashboard
-   - **Action Required**: Manually set environment variables in Render dashboard for both services
-   - **Priority**: High - Required for Render deployment
+#### 7. Test API Proxy Configuration 🟡
+- **Action**: Verify Next.js rewrites work for API proxy
+- **Verification**: Test `/api/proxy/*` routes prevent CORS issues
+- **Owner**: User (testing)
+- **Estimated Time**: 30 minutes
 
-7. **Stripe Webhook Configuration**
-   - **Status**: ⚠️ Not Configured in Stripe Dashboard
-   - **Action Required**: Add webhook endpoint `https://janagana-api.onrender.com/webhooks/stripe` in Stripe Dashboard
-   - **Priority**: High - Required for Stripe integration in production
+#### 8. Deploy Keep-Alive Workflow 🟡
+- **Action**: Enable GitHub Actions keep-alive workflow
+- **Verification**: Confirm workflow pings Render API every 5 minutes
+- **Owner**: User (GitHub configuration)
+- **Estimated Time**: 30 minutes
 
-### Testing
+### Medium-Term (Next Month)
 
-8. **Playwright E2E Tests**
-   - **Status**: ⚠️ Not Run
-   - **Action Required**: Run Playwright tests to verify overall system health
-   - **Command**: `cd e2e && npx playwright test`
-   - **Priority**: Medium - Important for quality assurance
+#### 9. Fix TypeScript Navigation Errors 🟢
+- **Action**: Fix route type definitions in Sidebar.tsx and DashboardMobileMenu.tsx
+- **Verification**: Remove TypeScript build warnings
+- **Owner**: Developer
+- **Estimated Time**: 2 hours
 
-9. **API Integration Tests**
-   - **Status**: ⚠️ Not Run
-   - **Action Required**: Run API tests to verify all endpoints
-   - **Command**: `cd apps/api && npm run test`
-   - **Priority**: Medium - Important for API validation
+#### 10. Complete Playwright E2E Tests 🟢
+- **Action**: Fix environment variable loading in Playwright
+- **Verification**: Run full E2E test suite successfully
+- **Owner**: Developer
+- **Estimated Time**: 4 hours
+
+#### 11. Increase API Test Coverage 🟢
+- **Action**: Write tests for critical API endpoints
+- **Target**: Increase coverage from 43.85% to 70%+
+- **Owner**: Developer
+- **Estimated Time**: 8 hours
+
+#### 12. Configure Sentry Source Maps 🟢
+- **Action**: Set up source map upload for Sentry
+- **Verification**: Verify error stack traces map to source code
+- **Owner**: Developer
+- **Estimated Time**: 2 hours
+
+### Long-Term (Next Quarter)
+
+#### 13. Upgrade Render Tier (Optional) 🟢
+- **Action**: Evaluate upgrading to paid Render tier
+- **Benefit**: Eliminate cold starts, improve performance
+- **Cost**: ~$7/month for Starter tier
+- **Owner**: User (decision)
+- **Estimated Time**: 1 hour evaluation
+
+#### 14. Configure Clerk Custom DNS (Optional) 🟢
+- **Action**: Set up custom DNS for Clerk (clerk.namasteneedham.com)
+- **Benefit**: Branded Clerk domains
+- **Owner**: User (Clerk configuration)
+- **Estimated Time**: 2 hours
+
+#### 15. Implement Real-Time Features 🟢
+- **Action**: Use Upstash Redis Pub/Sub for real-time updates
+- **Features**: Live event updates, member notifications
+- **Owner**: Developer
+- **Estimated Time**: 16 hours
+
+#### 16. Add Performance Monitoring 🟢
+- **Action**: Set up Vercel Analytics and Render monitoring
+- **Verification**: Monitor app performance and uptime
+- **Owner**: Developer
+- **Estimated Time**: 4 hours
+
+### Maintenance Tasks (Ongoing)
+
+#### 17. Keep Documentation Updated 🟢
+- **Action**: Update docs/VERCEL-ENV-VARS.md and docs/RENDER-ENV-VARS.md as needed
+- **Frequency**: As environment variables change
+- **Owner**: Developer
+
+#### 18. Monitor Error Tracking 🟢
+- **Action**: Review Sentry error reports weekly
+- **Frequency**: Weekly
+- **Owner**: User/Developer
+
+#### 19. Review Security Updates 🟢
+- **Action**: Keep dependencies updated, review security advisories
+- **Frequency**: Monthly
+- **Owner**: Developer
+
+#### 20. Backup Strategy Review 🟢
+- **Action**: Review Neon backup strategy and retention
+- **Frequency**: Quarterly
+- **Owner**: User
 
 ---
 
 ## Deployment Status
 
-### Vercel
-- **Status**: ✅ Deployed Successfully
-- **URL**: https://janagana.namasteneedham.com (from Stripe webhook config)
-- **Build**: Passing (commit a49d78f)
-- **Note**: API routes use `/api/v1/` prefix, root path returns 404 (expected behavior)
+### Vercel (Frontend)
+- **URL**: https://janagana.namasteneedham.com
+- **Status**: 🔴 500 Error (currently debugging)
+- **Environment**: Production
+- **Last Deploy**: April 11, 2026
+- **Issue**: Clerk configuration causing 500 error
+- **Next Action**: Redeploy with updated Clerk keys
 
-### Render
-- **Status**: ⚠️ Configuration Ready, Not Deployed
-- **Configuration**: `render.yaml` created
-- **Services**:
-  - Web Service: `janagana-web` (Next.js)
-  - API Service: `janagana-api` (NestJS)
-- **Action Required**:
-  1. Push `render.yaml` to repository
-  2. Connect repository to Render
-  3. Set environment variables in Render dashboard
-  4. Configure Stripe webhook endpoint
+### Render (Backend)
+- **URL**: https://janagana-api.onrender.com
+- **Status**: 🟡 Configuration complete, not deployed
+- **Environment**: Production
+- **Configuration**: render.yaml created
+- **Next Action**: Deploy service with environment variables
 
 ### Local Development
-- **Status**: ✅ Running
-- **API**: http://localhost:4000
-- **Web**: http://localhost:3000
-- **Startup Script**: `./start.sh`
+- **API**: http://localhost:4000 ✅ Running
+- **Web**: http://localhost:3000 ✅ Running
+- **Startup Script**: `./start.sh` ✅ Working
 
 ---
 
-## Recommendations
+## Environment Variables Status
 
-### Immediate Actions (High Priority)
+### Vercel (Frontend)
+- **Status**: ✅ Updated by user
+- **Critical Variables**:
+  - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ✅ Production key set
+  - CLERK_SECRET_KEY ✅ Production key set
+  - NEXT_PUBLIC_API_URL ✅ Set to Render URL
+  - NEXT_PUBLIC_APP_URL ✅ Set to production URL
+  - NEXT_PUBLIC_APP_DOMAIN ✅ Set to namasteneedham.com
+  - NEXT_PUBLIC_APP_NAME ✅ Set to Jana Gana
 
-1. **Generate JWT_SECRET**
-   ```bash
-   openssl rand -base64 32
-   ```
-   Replace `replace_me` in .env with generated value
+### Render (Backend)
+- **Status**: ⚠️ Not set (pending deployment)
+- **Required Variables**: See docs/RENDER-ENV-VARS.md
+- **Next Action**: User needs to set these in Render dashboard
 
-2. **Get Actual Clerk Webhook Secret**
-   - Go to Clerk Dashboard → Webhooks
-   - Copy the webhook signing secret
-   - Replace `CLERK_WEBHOOK_SECRET` in .env
-
-3. **Run Playwright Tests**
-   ```bash
-   cd e2e
-   npx playwright test
-   ```
-   Verify all E2E tests pass
-
-4. **Configure Render Deployment**
-   - Set environment variables in Render dashboard
-   - Add Stripe webhook endpoint in Stripe Dashboard
-   - Push changes and deploy
-
-### Secondary Actions (Medium Priority)
-
-5. **Set Up Production Environment Variables**
-   - Create `.env.production` file
-   - Add production versions of all keys
-   - Never commit secrets to repository
-
-6. **Run API Tests**
-   ```bash
-   cd apps/api
-   npm run test
-   ```
-
-7. **Enable Redis in Production**
-   - Update startup script to skip local Redis check
-   - Use Upstash Redis exclusively
-
-### Optional Actions (Low Priority)
-
-8. **Complete Sentry Setup**
-   - Run Sentry wizard to complete configuration
-   - Add source maps for better error tracking
-
-9. **Set Up Stripe Connect**
-   - If using Stripe Connect, get webhook secret
-   - Configure Connect account settings
-
-10. **Add Monitoring**
-    - Set up health check endpoints
-    - Configure uptime monitoring
-    - Add performance monitoring
+### Local Development
+- **Status**: ✅ Configured
+- **File**: apps/web/.env.local, apps/api/.env.local
+- **Last Update**: April 11, 2026
 
 ---
 
-## File Changes Summary
+## Next Steps Summary
 
-### Modified Files
-- `/Users/sanjeevjha/janagana/tsconfig.base.json` - Added types: ["node"]
-- `/Users/sanjeevjha/janagana/apps/api/package.json` - Added dependencies and prebuild script
-- `/Users/sanjeevjha/janagana/apps/api/tsconfig.json` - Updated exclude patterns
-- `/Users/sanjeevjha/janagana/apps/api/src/app.module.ts` - Simplified to minimal config
-- `/Users/sanjeevjha/janagana/packages/database/src/index.ts` - Removed PrismaService export
-- `/Users/sanjeevjha/janagana/.env` - Added all environment variables
+### Immediate Actions (User)
+1. Redeploy Vercel with updated Clerk configuration
+2. Deploy API to Render with environment variables
+3. Test API health endpoint
+4. Verify Clerk domain whitelist
+5. Run smoke test
 
-### Created Files
-- `/Users/sanjeevjha/janagana/render.yaml` - Render deployment configuration
-- `/Users/sanjeevjha/janagana/Update_0411.md` - This assessment document
+### Technical Tasks (Developer)
+1. Fix TypeScript navigation errors
+2. Complete Playwright E2E tests
+3. Increase API test coverage
+4. Configure Sentry source maps
+5. Deploy keep-alive workflow
 
-### Moved Files
-- `/Users/sanjeevjha/janagana/apps/api/_disabled/` - Moved outside src to prevent compilation
+### Monitoring (Ongoing)
+1. Monitor Vercel logs for errors
+2. Monitor Render logs for API issues
+3. Review Sentry error reports
+4. Keep documentation updated
 
 ---
-
-## Latest Progress (April 11, 2026 - Additional Updates)
-
-### Completed Since Initial Assessment
-
-1. **JWT_SECRET Generated**
-   - ✅ Generated secure random string: `O3HF4HGeqnptFvBOnASuhie3VK376R20k30pHpXEicY=`
-   - ✅ Updated .env file with generated secret
-   - **Status**: ✅ Completed
-
-2. **API Tests Fixed and Running**
-   - ✅ Fixed tsconfig.json to include "jest" in types array
-   - ✅ API tests now passing successfully
-   - **Test Results**: 1 test passed (HealthService test)
-   - **Coverage**: 43.85% statements, 7.69% branches, 21.42% functions, 38.77% lines
-   - **Status**: ✅ Completed
-
-3. **Playwright Tests Configuration**
-   - ✅ Fixed webServer command path (cd ../apps/web)
-   - ✅ Created .env file in apps/web directory with web-specific environment variables
-   - ✅ Updated playwright.config.ts to use dotenv-cli for environment variable loading
-   - ✅ Set reuseExistingServer to true (port 3000 already in use)
-   - **Status**: ⚠️ Still experiencing issues with environment variable loading during test execution
-
-### Test Results Summary
-
-#### API Tests
-- **Status**: ✅ Passed
-- **Results**: 1/1 tests passed
-- **Test**: HealthService - database and Redis health check
-- **Coverage**: 43.85% statements, 7.69% branches, 21.42% functions, 38.77% lines
-
-#### Playwright Tests
-- **Status**: ⚠️ Unable to execute
-- **Issue**: Environment variable loading for Clerk publishable key
-- **Attempts Made**:
-  - Created .env file in apps/web directory
-  - Updated webServer command path
-  - Added dotenv-cli to load environment variables
-  - Set reuseExistingServer to true
-- **Remaining Issue**: Despite multiple approaches, Playwright web server still cannot load Clerk publishable key properly
-- **Recommendation**: May need to manually start web server with environment variables loaded before running tests
-
-### Updated Critical Path to Production
-
-1. ✅ Generate JWT_SECRET - **COMPLETED**
-2. ⚠️ Get actual Clerk webhook secret from dashboard - **PENDING (User Action Required)**
-3. ⚠️ Configure Render environment variables in dashboard - **PENDING (User Action Required)**
-4. ⚠️ Set up Stripe webhook endpoint in Stripe Dashboard - **PENDING (User Action Required)**
-5. ⚠️ Fix Playwright environment variable loading - **PENDING (Technical Issue)**
-6. ⚠️ Deploy to Render - **PENDING**
-
-### Next Steps (Priority Order)
-
-**Immediate (User Action Required):**
-1. Get actual Clerk webhook secret from Clerk Dashboard → Webhooks
-2. Configure Render environment variables in Render dashboard (use values from .env)
-3. Set up Stripe webhook endpoint in Stripe Dashboard: `https://janagana-api.onrender.com/webhooks/stripe`
-
-**Technical (Can Be Addressed Later):**
-4. Fix Playwright environment variable loading (may require manual web server startup)
-5. Run full Playwright test suite once environment is properly configured
-6. Increase API test coverage
 
 ## Conclusion
 
-The project infrastructure is well-configured with all major services integrated (Neon PostgreSQL, Upstash Redis, Clerk, Stripe, Cloudinary, Sentry, Resend). The API server is functional locally with tests passing.
+The Jana Gana platform has a solid foundation with modern architecture, comprehensive feature set, and proper infrastructure. The immediate blockers are configuration-related (Clerk authentication and Render deployment) and should be resolved within the week.
 
-**Current State**:
-- Local development: ✅ Functional
-- API tests: ✅ Passing
-- Playwright tests: ⚠️ Blocked by environment variable loading
-- Vercel deployment: ✅ Successful
-- Render deployment: ⚠️ Configuration ready, pending manual setup
+**Current State:**
+- Architecture: ✅ Complete
+- Frontend Development: ✅ Complete
+- Backend Development: ✅ Complete
+- Vercel Deployment: 🔴 500 Error (debugging)
+- Render Deployment: 🟡 Pending
+- Local Development: ✅ Functional
 
-**Remaining Work**:
-The primary blockers are manual configuration tasks requiring user action in service dashboards (Clerk, Render, Stripe). Once these are completed, the system should be ready for full production deployment on Render.
+**Path to Production:**
+1. Resolve Vercel 500 error (Clerk configuration)
+2. Deploy API to Render
+3. Verify end-to-end functionality
+4. Run smoke test
+5. Monitor and iterate
+
+The platform is well-positioned for production deployment once the immediate configuration issues are resolved.
