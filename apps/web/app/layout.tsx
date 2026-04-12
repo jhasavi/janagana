@@ -25,7 +25,13 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const tenant = await getCurrentTenant();
+  let tenant = null;
+  try {
+    tenant = await getCurrentTenant();
+  } catch (error) {
+    // Silent fail - tenant resolution errors should not crash the app
+    console.error('Failed to resolve tenant:', error);
+  }
 
   return (
     <ClerkProvider
