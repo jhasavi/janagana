@@ -5,6 +5,32 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Starting seed...')
 
+  // Create a plan first (or use existing)
+  let plan = await prisma.plan.findUnique({
+    where: { slug: 'STARTER' },
+  })
+
+  if (!plan) {
+    plan = await prisma.plan.create({
+      data: {
+        slug: 'STARTER',
+        name: 'Starter',
+        description: 'Basic plan for small organizations',
+        monthlyPriceCents: 0,
+        annualPriceCents: 0,
+        maxMembers: 100,
+        maxUsers: 5,
+        maxEvents: 10,
+        maxClubs: 5,
+        hasCustomDomain: false,
+        hasApiAccess: false,
+        hasAdvancedReports: false,
+        isActive: true,
+      },
+    })
+    console.log('Created plan:', plan.name)
+  }
+
   // Create a sample tenant
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'demo-organization' },
@@ -23,7 +49,7 @@ async function main() {
       },
       subscription: {
         create: {
-          planId: 'starter',
+          planId: plan.id,
           status: 'TRIALING',
           currentPeriodStart: new Date(),
           currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
