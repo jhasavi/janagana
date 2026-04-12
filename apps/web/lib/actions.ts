@@ -125,3 +125,79 @@ export async function deleteMember(id: string) {
     },
   })
 }
+
+// Event CRUD actions
+export async function getEvents() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.event.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { startsAt: 'desc' },
+  })
+}
+
+export async function createEvent(data: {
+  title: string
+  description?: string
+  startsAt: Date
+  endsAt?: Date
+  location?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const slug = data.title.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '-' + Date.now()
+
+  return await prisma.event.create({
+    data: {
+      tenantId: tenant.id,
+      title: data.title,
+      slug,
+      description: data.description,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+      location: data.location,
+      status: 'DRAFT',
+      format: 'IN_PERSON',
+    },
+  })
+}
+
+export async function updateEvent(id: string, data: {
+  title?: string
+  description?: string
+  startsAt?: Date
+  endsAt?: Date
+  location?: string
+  status?: 'DRAFT' | 'PUBLISHED' | 'CANCELED' | 'COMPLETED'
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.event.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data,
+  })
+}
+
+export async function deleteEvent(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.event.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
