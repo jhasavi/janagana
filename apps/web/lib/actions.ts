@@ -201,3 +201,50 @@ export async function deleteEvent(id: string) {
     },
   })
 }
+
+// Club CRUD actions
+export async function getClubs() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.club.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function createClub(data: {
+  name: string
+  description?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const slug = data.name.toLowerCase().replace(/[^a-z0-9-]/g, '-') + '-' + Date.now()
+
+  return await prisma.club.create({
+    data: {
+      tenantId: tenant.id,
+      name: data.name,
+      slug,
+      description: data.description,
+      isActive: true,
+    },
+  })
+}
+
+export async function deleteClub(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.club.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
