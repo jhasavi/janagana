@@ -2,21 +2,38 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createCheckoutSession } from '@/lib/actions'
+import { createCheckoutSession, getTenantSubscription, cancelSubscription } from '@/lib/actions'
+import { AlertCircle, CheckCircle2, CreditCard, FileText, X } from 'lucide-react'
 
 export default function BillingPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [subscription, setSubscription] = useState<any>(null)
+  const [isCanceling, setIsCanceling] = useState(false)
   const searchParams = useSearchParams()
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
 
   useEffect(() => {
+    loadSubscription()
+  }, [])
+
+  useEffect(() => {
     if (success === 'true') {
       alert('Subscription activated successfully!')
+      loadSubscription()
     } else if (canceled === 'true') {
       alert('Subscription was canceled. You can try again anytime.')
     }
   }, [success, canceled])
+
+  const loadSubscription = async () => {
+    try {
+      const sub = await getTenantSubscription()
+      setSubscription(sub)
+    } catch (error) {
+      console.error('Failed to load subscription:', error)
+    }
+  }
 
   const handleSubscribe = async (priceId: string) => {
     setIsLoading(true)
@@ -30,6 +47,22 @@ export default function BillingPage() {
       alert('Failed to initiate checkout. Please try again.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('Are you sure you want to cancel your subscription? You will lose access at the end of your billing period.')) return
+    
+    setIsCanceling(true)
+    try {
+      await cancelSubscription()
+      await loadSubscription()
+      alert('Subscription will be canceled at the end of your billing period.')
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error)
+      alert(error instanceof Error ? error.message : 'Failed to cancel subscription. Please try again.')
+    } finally {
+      setIsCanceling(false)
     }
   }
 
@@ -76,6 +109,40 @@ export default function BillingPage() {
     <div className="p-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Billing</h1>
       
+      {subscription && subscription.status === 'ACTIVE' && (
+        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Current Subscription</h2>
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <span className="text-green-600 font-medium">Active</span>
+              </div>
+              {subscription.currentPeriodEnd && (
+                <p className="text-sm text-gray-600">
+                  Renews on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                </p>
+              )}
+              {subscription.cancelAtPeriodEnd && (
+                <div className="flex items-center gap-2 mt-2 text-orange-600">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm">Cancels at period end</span>
+                </div>
+              )}
+            </div>
+            {!subscription.cancelAtPeriodEnd && (
+              <button
+                onClick={handleCancelSubscription}
+                disabled={isCanceling}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-300"
+              >
+                {isCanceling ? 'Canceling...' : 'Cancel Subscription'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
       <div className="bg-white rounded-xl shadow-sm border p-8 mb-8">
         <h2 className="text-xl font-semibold mb-4">Choose Your Plan</h2>
         <p className="text-gray-600 mb-6">
@@ -108,16 +175,22 @@ export default function BillingPage() {
       </div>
       
       <div className="bg-white rounded-xl shadow-sm border p-8">
-        <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <CreditCard className="w-5 h-5" />
+          Payment Methods
+        </h2>
         <p className="text-gray-600">
-          Payment methods will be managed here once you subscribe to a plan.
+          Payment methods are managed through Stripe. You can update them during checkout.
         </p>
       </div>
       
       <div className="bg-white rounded-xl shadow-sm border p-8 mt-8">
-        <h2 className="text-xl font-semibold mb-4">Invoices</h2>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <FileText className="w-5 h-5" />
+          Invoices
+        </h2>
         <p className="text-gray-600">
-          Invoice history will appear here once you have active subscriptions.
+          Invoices will be available here once you have an active subscription.
         </p>
       </div>
     </div>

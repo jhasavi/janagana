@@ -1,6 +1,6 @@
-# OrgFlow Setup Guide
+# Janagana Setup Guide
 
-This guide will walk you through setting up the OrgFlow development environment, including configuring all required third-party services.
+This guide will walk you through setting up the Janagana development environment.
 
 ## Table of Contents
 
@@ -8,10 +8,9 @@ This guide will walk you through setting up the OrgFlow development environment,
 - [Quick Start](#quick-start)
 - [Service Configuration](#service-configuration)
   - [Clerk Authentication](#clerk-authentication)
-  - [Stripe Payments](#stripe-payments)
-  - [Resend Email](#resend-email)
-  - [Cloudinary Media](#cloudinary-media)
-  - [Sentry Error Tracking](#sentry-error-tracking)
+  - [Database Setup](#database-setup)
+  - [Stripe Payments (Optional)](#stripe-payments-optional)
+  - [Sentry Error Tracking (Optional)](#sentry-error-tracking-optional)
 - [Local Development](#local-development)
 - [Production Deployment](#production-deployment)
 - [Troubleshooting](#troubleshooting)
@@ -21,39 +20,43 @@ This guide will walk you through setting up the OrgFlow development environment,
 Before you begin, ensure you have the following installed:
 
 - **Node.js** 20 or higher ([Download](https://nodejs.org/))
-- **pnpm** or npm (comes with Node.js)
-- **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop))
+- **npm** (comes with Node.js)
 - **Git** ([Download](https://git-scm.com/))
+- **PostgreSQL** (local installation or hosted database)
 
 ## Quick Start
 
-The easiest way to set up OrgFlow is to use the automated setup script:
-
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/orgflow.git
-cd orgflow
+git clone https://github.com/your-org/janagana.git
+cd janagana
 
-# Run the setup script
-./scripts/setup.sh
+# Install dependencies
+npm install
+
+# Copy environment variables template
+cp .env.example .env.local
+
+# Generate Prisma client
+npm run db:generate
+
+# Run database migrations
+npm run db:migrate
+
+# (Optional) Seed database with demo data
+npm run seed
+
+# Start development server
+npm run dev
 ```
 
-The script will:
-1. Check Node.js version (must be 20+)
-2. Check Docker is running
-3. Create `.env.local` files from examples
-4. Install dependencies
-5. Start Docker containers (PostgreSQL, Redis)
-6. Run database migrations
-7. Seed the database
-
-After the script completes, you'll need to fill in the environment variables (see [Service Configuration](#service-configuration)).
+Access the app at: http://localhost:3000
 
 ## Service Configuration
 
 ### Clerk Authentication
 
-Clerk provides user authentication and user management for OrgFlow.
+Clerk provides user authentication and user management for Janagana.
 
 #### Setup Steps
 
@@ -64,7 +67,7 @@ Clerk provides user authentication and user management for OrgFlow.
 
 2. **Create a New Application**
    - In the Clerk Dashboard, click "Add application"
-   - Give your application a name (e.g., "OrgFlow Dev")
+   - Give your application a name (e.g., "Janagana Dev")
    - Choose "Email & Password" as the authentication method
    - Click "Create application"
 
@@ -79,45 +82,70 @@ Clerk provides user authentication and user management for OrgFlow.
      - `http://localhost:3000`
      - `http://localhost:3000/sign-in`
      - `http://localhost:3000/sign-up`
+     - `http://localhost:3000/dashboard`
    - For production, add your production domain
-
-5. **Set Up Webhook**
-   - Go to "Webhooks" in the left sidebar
-   - Click "Add endpoint"
-   - Set the webhook URL to: `http://localhost:4000/webhooks/clerk`
-   - Select events to listen for:
-     - `user.created`
-     - `user.updated`
-     - `user.deleted`
-     - `session.created`
-     - `session.ended`
-   - Click "Create"
-   - Copy the **Webhook Secret** (starts with `whsec_...`)
 
 #### Environment Variables
 
-Add these to `apps/api/.env.local`:
+Add these to `.env.local`:
 
 ```bash
 CLERK_SECRET_KEY="sk_test_..."
-CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_WEBHOOK_SECRET="whsec_..."
-```
-
-Add these to `apps/web/.env.local`:
-
-```bash
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
 NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
 NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/onboarding"
 ```
 
-### Stripe Payments
+### Database Setup
 
-Stripe handles payment processing and Stripe Connect for multi-tenant payments.
+Janagana uses PostgreSQL with Prisma ORM.
+
+#### Option 1: Local PostgreSQL
+
+1. **Install PostgreSQL**
+   - Mac: `brew install postgresql`
+   - Windows: Download from [postgresql.org](https://postgresql.org/download)
+   - Linux: Use your package manager
+
+2. **Create Database**
+   ```bash
+   psql postgres
+   CREATE DATABASE janagana_dev;
+   \q
+   ```
+
+3. **Set DATABASE_URL**
+   ```bash
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/janagana_dev"
+   ```
+
+#### Option 2: Hosted PostgreSQL (Recommended)
+
+**Neon** (Serverless PostgreSQL):
+1. Go to [neon.tech](https://neon.tech)
+2. Create a free account
+3. Create a new project
+4. Copy the `DATABASE_URL` from the project settings
+
+**Supabase**:
+1. Go to [supabase.com](https://supabase.com)
+2. Create a free account
+3. Create a new project
+4. Copy the `DATABASE_URL` from project settings
+
+#### Environment Variables
+
+Add to `.env.local`:
+
+```bash
+DATABASE_URL="postgresql://..."
+```
+
+### Stripe Payments (Optional)
+
+Stripe handles payment processing for subscriptions and donations.
 
 #### Setup Steps
 
@@ -131,347 +159,206 @@ Stripe handles payment processing and Stripe Connect for multi-tenant payments.
    - Copy the **Secret key** (starts with `sk_test_...`)
    - Copy the **Publishable key** (starts with `pk_test_...`)
 
-3. **Set Up Payment Webhook**
+3. **Set Up Webhook** (for production)
    - Go to "Developers" → "Webhooks"
    - Click "Add endpoint"
-   - Set the webhook URL to: `http://localhost:4000/webhooks/stripe`
-   - Select events to listen for:
-     - `payment_intent.succeeded`
-     - `payment_intent.payment_failed`
-     - `checkout.session.completed`
-     - `customer.subscription.created`
-     - `customer.subscription.updated`
-     - `customer.subscription.deleted`
-     - `invoice.payment_succeeded`
-     - `invoice.payment_failed`
-   - Click "Create endpoint"
-   - Copy the **Signing secret** (starts with `whsec_...`)
-
-4. **Set Up Stripe Connect**
-   - Go to "Developers" → "Webhooks"
-   - Click "Add endpoint"
-   - Select "Connect" as the event type
-   - Set the webhook URL to: `http://localhost:4000/webhooks/stripe/connect`
-   - Select Connect events:
-     - `account.updated`
-     - `account.external_account.created`
-     - `account.external_account.deleted`
-     - `account.external_account.updated`
-   - Click "Create endpoint"
-   - Copy the **Signing secret** (starts with `whsec_...`)
-
-5. **Configure Platform Fee**
-   - Go to "Settings" → "Connect" → "Platform settings"
-   - Set your platform fee percentage (default: 2%)
+   - Set the webhook URL to your production domain
+   - Select events to listen for
 
 #### Environment Variables
 
-Add these to `apps/api/.env.local`:
+Add these to `.env.local`:
 
 ```bash
 STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-STRIPE_CONNECT_WEBHOOK_SECRET="whsec_..."
-PLATFORM_FEE_PERCENTAGE=2
-```
-
-Add these to `apps/web/.env.local`:
-
-```bash
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 ```
 
-### Resend Email
+### Sentry Error Tracking (Optional)
 
-Resend provides transactional email services for OrgFlow.
-
-#### Setup Steps
-
-1. **Create a Resend Account**
-   - Go to [resend.com](https://resend.com/)
-   - Click "Sign up" and create an account
-   - Verify your email address
-
-2. **Get API Key**
-   - In the Resend Dashboard, go to "API Keys"
-   - Click "Create API Key"
-   - Give it a name (e.g., "OrgFlow Dev")
-   - Copy the API key (starts with `re_...`)
-
-3. **Verify Sender Domain**
-   - Go to "Domains" in the left sidebar
-   - Click "Add domain"
-   - Enter your domain (e.g., `orgflow.app`)
-   - Add the DNS records provided by Resend to your domain's DNS settings
-   - Wait for DNS propagation (usually takes a few minutes to 24 hours)
-   - For development, you can use Resend's default `@resend.dev` domain
-
-#### Environment Variables
-
-Add these to `apps/api/.env.local`:
-
-```bash
-RESEND_API_KEY="re_..."
-EMAIL_FROM="noreply@orgflow.app"
-EMAIL_FROM_NAME="OrgFlow"
-```
-
-### Cloudinary Media
-
-Cloudinary provides image and file storage for OrgFlow.
-
-#### Setup Steps
-
-1. **Create a Cloudinary Account**
-   - Go to [cloudinary.com](https://cloudinary.com/)
-   - Click "Sign up for free" and create an account
-   - Verify your email address
-
-2. **Get Credentials**
-   - In the Cloudinary Dashboard, go to "Account Details"
-   - Copy the **Cloud name**
-   - Copy the **API Key**
-   - Copy the **API Secret**
-
-3. **Configure Upload Settings** (Optional)
-   - Go to "Settings" → "Upload"
-   - Configure allowed formats, file size limits, etc.
-   - Set up auto-formatting and optimization
-
-#### Environment Variables
-
-Add these to `apps/api/.env.local`:
-
-```bash
-CLOUDINARY_CLOUD_NAME="your-cloud-name"
-CLOUDINARY_API_KEY="your-api-key"
-CLOUDINARY_API_SECRET="your-api-secret"
-```
-
-Add these to `apps/web/.env.local`:
-
-```bash
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-```
-
-### Sentry Error Tracking
-
-Sentry provides error tracking and performance monitoring for OrgFlow.
+Sentry provides error tracking and performance monitoring.
 
 #### Setup Steps
 
 1. **Create a Sentry Account**
    - Go to [sentry.io](https://sentry.io/)
    - Click "Sign up" and create an account
-   - Verify your email address
 
 2. **Create a Project**
-   - In the Sentry Dashboard, click "Create Project"
-   - Select "NestJS" for the API
-   - Select "Next.js" for the web app
-   - Give your project a name (e.g., "orgflow-api", "orgflow-web")
+   - Select "Next.js" as the platform
+   - Give your project a name
    - Click "Create Project"
 
 3. **Get DSN**
-   - In your project settings, go to "Client Keys (DSN)"
-   - Copy the **DSN** (Data Source Name)
-
-4. **Get Auth Token** (for source maps upload)
-   - Go to "Settings" → "Auth Tokens"
-   - Click "Create New Token"
-   - Give it a name (e.g., "orgflow-deploy")
-   - Select the `project:write` scope
-   - Copy the token
+   - Copy the **DSN** (Data Source Name) from project settings
 
 #### Environment Variables
 
-Add these to `apps/api/.env.local`:
-
-```bash
-SENTRY_DSN="https://..."
-```
-
-Add these to `apps/web/.env.local`:
+Add these to `.env.local`:
 
 ```bash
 SENTRY_DSN="https://..."
 NEXT_PUBLIC_SENTRY_DSN="https://..."
-SENTRY_AUTH_TOKEN="your-auth-token"
 ```
 
 ## Local Development
 
-### Starting the Development Servers
-
-Once you've configured all environment variables, start the development servers:
+### Starting the Development Server
 
 ```bash
-# Terminal 1: Start the API
-cd apps/api
-npm run dev
-
-# Terminal 2: Start the Web App
-cd apps/web
 npm run dev
 ```
 
-### Access Points
-
-- **API**: http://localhost:4000
-- **API Documentation**: http://localhost:4000/api/docs
-- **Web App**: http://localhost:3000
-- **Database**: localhost:5432 (via Docker)
-- **Redis**: localhost:6379 (via Docker)
+Access the app at: http://localhost:3000
 
 ### Database Management
 
 ```bash
-# Generate a new migration
-cd packages/database
-npx prisma migrate dev --name your_migration_name
+# Generate Prisma client
+npm run db:generate
 
-# Apply migrations
-npx prisma migrate deploy
+# Run migrations
+npm run db:migrate
 
-# Seed the database
-npx prisma db seed
+# Push schema changes (development only)
+npm run db:push
+
+# Seed database with demo data
+npm run seed
 
 # Open Prisma Studio (database GUI)
-npx prisma studio
+npm run db:studio
 ```
 
-### Running Tests
+### Code Quality
 
 ```bash
-# Run API tests
-cd apps/api
-npm test
+# Run ESLint
+npm run lint
 
-# Run web app tests
-cd apps/web
-npm test
+# Run TypeScript type check
+npm run typecheck
+
+# Run tests
+npm run test
+```
+
+### Build for Production
+
+```bash
+npm run build
+npm run start
 ```
 
 ## Production Deployment
 
-### Environment Variables
+### Vercel Deployment (Recommended)
 
-For production, you'll need to update the environment variables with production values:
+Janagana is currently deployed on Vercel. To deploy:
 
-1. Use production API keys (not test keys)
-2. Update URLs to production domains
-3. Set `NODE_ENV=production`
-4. Use production database and Redis instances
-5. Configure production Sentry DSN
+1. **Install Vercel CLI**
+   ```bash
+   npm install -g vercel
+   vercel login
+   ```
+
+2. **Deploy**
+   ```bash
+   vercel --prod
+   ```
+
+3. **Configure Environment Variables**
+   - Add all required environment variables in Vercel dashboard
+   - Use production API keys (not test keys)
+   - Set `NEXT_PUBLIC_APP_URL` to your production domain
+
+### Environment Variables for Production
+
+```bash
+# Required
+DATABASE_URL=postgresql://...
+CLERK_SECRET_KEY=...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+
+# Application
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+
+# Optional (Stripe)
+STRIPE_SECRET_KEY=...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
+
+# Optional (Sentry)
+SENTRY_DSN=...
+NEXT_PUBLIC_SENTRY_DSN=...
+```
 
 ### Deployment Checklist
 
 - [ ] Update all API keys to production versions
-- [ ] Set `NODE_ENV=production`
 - [ ] Configure production database
-- [ ] Configure production Redis
-- [ ] Update CORS origins to production domain
-- [ ] Configure production webhooks
-- [ ] Set up SSL certificates
-- [ ] Configure CDN for static assets
+- [ ] Set `NEXT_PUBLIC_APP_URL` to production domain
+- [ ] Configure Clerk redirect URLs for production
 - [ ] Enable Sentry error tracking
+- [ ] Test all critical user flows
 - [ ] Set up monitoring and alerting
 - [ ] Configure backup strategy
-- [ ] Review security settings
-
-### Recommended Hosting
-
-- **API**: Railway, Fly.io, or AWS ECS
-- **Web**: Vercel, Netlify, or AWS Amplify
-- **Database**: Supabase, Neon, or AWS RDS
-- **Redis**: Upstash or AWS ElastiCache
-- **File Storage**: Cloudinary (already configured)
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### Docker won't start
-
-```bash
-# Check Docker status
-docker info
-
-# Restart Docker Desktop
-# (Mac) Click Docker Desktop icon → Restart
-# (Windows) Right-click Docker tray icon → Restart
-```
-
 #### Database connection errors
 
 ```bash
-# Check if PostgreSQL container is running
-docker ps | grep postgres
+# Verify DATABASE_URL is correct
+echo $DATABASE_URL
 
-# View PostgreSQL logs
-docker logs <container-name>
+# Test database connection
+psql $DATABASE_URL
 
-# Restart PostgreSQL container
-docker restart <container-name>
+# Reset database (development only - deletes all data)
+npm run db:push --force-reset
 ```
 
-#### Redis connection errors
+#### Prisma client out of sync
 
 ```bash
-# Check if Redis container is running
-docker ps | grep redis
-
-# View Redis logs
-docker logs <container-name>
-
-# Test Redis connection
-redis-cli ping
+# Regenerate Prisma client
+npm run db:generate
 ```
-
-#### Environment variable validation errors
-
-The API will fail to start if required environment variables are missing. Check the error message for the specific variable that's missing and add it to `.env.local`.
 
 #### Clerk authentication not working
 
 - Verify the Clerk keys are correct
 - Check that redirect URLs are configured in Clerk Dashboard
-- Ensure webhook secret matches what's in Clerk Dashboard
-- Check Clerk webhook logs for failed deliveries
+- Ensure you're using the correct environment (test vs production)
 
-#### Stripe webhooks not receiving events
+#### Build errors
 
-- Verify webhook endpoints are accessible from Stripe
-- Check webhook secret matches what's in Stripe Dashboard
-- Use Stripe CLI to test webhooks locally:
-  ```bash
-  stripe listen --forward-to localhost:4000/webhooks/stripe
-  ```
+```bash
+# Clear Next.js cache
+rm -rf .next
 
-#### Resend emails not sending
-
-- Verify your sender domain is verified in Resend
-- Check that the API key is valid
-- Review Resend logs for delivery failures
-- For development, use `@resend.dev` domain
+# Clear node_modules and reinstall
+rm -rf node_modules
+npm install
+```
 
 ### Getting Help
 
 If you encounter issues not covered here:
 
-1. Check the [GitHub Issues](https://github.com/your-org/orgflow/issues)
-2. Review the [API Documentation](http://localhost:4000/api/docs)
+1. Check the [TODO.md](../TODO.md) for known issues
+2. Review [legacy documentation](./legacy/) for reference
 3. Check service-specific documentation:
    - [Clerk Docs](https://clerk.com/docs)
-   - [Stripe Docs](https://stripe.com/docs)
-   - [Resend Docs](https://resend.com/docs)
-   - [Cloudinary Docs](https://cloudinary.com/documentation)
-   - [Sentry Docs](https://docs.sentry.io/)
+   - [Prisma Docs](https://www.prisma.io/docs)
+   - [Next.js Docs](https://nextjs.org/docs)
+   - [Vercel Docs](https://vercel.com/docs)
 
 ## Additional Resources
 
 - [Prisma Documentation](https://www.prisma.io/docs)
-- [NestJS Documentation](https://docs.nestjs.com)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Docker Documentation](https://docs.docker.com)
+- [Clerk Documentation](https://clerk.com/docs)
+- [Vercel Documentation](https://vercel.com/docs)

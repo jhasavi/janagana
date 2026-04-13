@@ -17,7 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClerkProvider>
+        <ClerkProvider
+          publishableKey={process.env.CLERK_PUBLISHABLE_KEY}
+          afterSignInUrl="/dashboard"
+          afterSignUpUrl="/onboarding"
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+        >
           {children}
         </ClerkProvider>
       </body>

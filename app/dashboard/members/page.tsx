@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getMembers, createMember, deleteMember, updateMember } from '@/lib/actions'
-import { Plus, Trash2, Edit, Search } from 'lucide-react'
+import { Plus, Trash2, Edit, Search, Download, Upload } from 'lucide-react'
+import Papa from 'papaparse'
 
 type Member = {
   id: string
@@ -27,6 +28,8 @@ export default function MembersPage() {
     email: '',
     phone: '',
   })
+  const [isImporting, setIsImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadMembers()
@@ -118,6 +121,71 @@ export default function MembersPage() {
     setShowAddForm(true)
   }
 
+  const handleExportCSV = () => {
+    const csvData = members.map(member => ({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      phone: member.phone || '',
+      status: member.status,
+    }))
+
+    const csv = Papa.unparse(csvData)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', 'members.csv')
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const data = results.data as any[]
+        let successCount = 0
+        let errorCount = 0
+
+        for (const row of data) {
+          try {
+            if (row.firstName && row.lastName && row.email) {
+              await createMember({
+                firstName: row.firstName,
+                lastName: row.lastName,
+                email: row.email,
+                phone: row.phone || '',
+              })
+              successCount++
+            }
+          } catch (error) {
+            errorCount++
+          }
+        }
+
+        setIsImporting(false)
+        loadMembers()
+        alert(`Import complete: ${successCount} members added, ${errorCount} failed`)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      },
+      error: (error) => {
+        console.error('CSV parsing error:', error)
+        setIsImporting(false)
+        alert('Failed to parse CSV file')
+      },
+    })
+  }
+
   const filteredMembers = members.filter(m =>
     `${m.firstName} ${m.lastName} ${m.email}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -126,17 +194,41 @@ export default function MembersPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Members</h1>
-        <button
-          onClick={() => {
-            setEditingMember(null)
-            setFormData({ firstName: '', lastName: '', email: '', phone: '' })
-            setShowAddForm(!showAddForm)
-          }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" />
-          Add Member
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+          >
+            <Upload className="w-4 h-4" />
+            {isImporting ? 'Importing...' : 'Import CSV'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImportCSV}
+            className="hidden"
+          />
+          <button
+            onClick={() => {
+              setEditingMember(null)
+              setFormData({ firstName: '', lastName: '', email: '', phone: '' })
+              setShowAddForm(!showAddForm)
+            }}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            Add Member
+          </button>
+        </div>
       </div>
 
       {showAddForm && (

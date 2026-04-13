@@ -96,7 +96,7 @@ export async function createMember(data: {
     throw new Error('Tenant not found')
   }
 
-  return await prisma.member.create({
+  const member = await prisma.member.create({
     data: {
       tenantId: tenant.id,
       firstName: data.firstName,
@@ -106,6 +106,17 @@ export async function createMember(data: {
       status: 'ACTIVE',
     },
   })
+
+  // Send welcome email
+  try {
+    const { sendWelcomeEmail } = await import('./email')
+    await sendWelcomeEmail(data.email, data.firstName, tenant.name)
+  } catch (error) {
+    console.error('Failed to send welcome email:', error)
+    // Don't throw error - email failure shouldn't block member creation
+  }
+
+  return member
 }
 
 export async function updateMember(id: string, data: {
@@ -237,17 +248,33 @@ export async function registerForEvent(eventId: string, memberId: string) {
     throw new Error('Already registered for this event')
   }
 
-  const confirmationCode = 'REG-' + Math.random().toString(36).substring(2, 10).toUpperCase()
+  const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase()
 
-  return await prisma.eventRegistration.create({
+  const registration = await prisma.eventRegistration.create({
     data: {
       tenantId: tenant.id,
       eventId,
       memberId,
-      status: 'CONFIRMED',
       confirmationCode,
+      status: 'CONFIRMED',
     },
   })
+
+  // Send confirmation email
+  try {
+    const member = await prisma.member.findUnique({ where: { id: memberId } })
+    const event = await prisma.event.findUnique({ where: { id: eventId } })
+    
+    if (member && event) {
+      const { sendEventConfirmationEmail } = await import('./email')
+      await sendEventConfirmationEmail(member.email, member.firstName, event.title, event.startsAt)
+    }
+  } catch (error) {
+    console.error('Failed to send event confirmation email:', error)
+    // Don't throw error - email failure shouldn't block registration
+  }
+
+  return registration
 }
 
 export async function getMemberRegistrations(memberId: string) {
@@ -453,6 +480,385 @@ export async function updateVolunteerOpportunity(id: string, data: {
       tenantId: tenant.id,
     },
     data,
+  })
+}
+
+// Volunteer Shift CRUD actions
+export async function getVolunteerShifts(opportunityId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.volunteerShift.findMany({
+    where: { 
+      tenantId: tenant.id,
+      opportunityId,
+    },
+    orderBy: { startsAt: 'asc' },
+    include: {
+      signups: true,
+    },
+  })
+}
+
+export async function createVolunteerShift(data: {
+  opportunityId: string
+  name: string
+  description?: string
+  startsAt: Date
+  endsAt: Date
+  capacity?: number
+  location?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerShift.create({
+    data: {
+      tenantId: tenant.id,
+      opportunityId: data.opportunityId,
+      name: data.name,
+      description: data.description,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+      capacity: data.capacity || 1,
+      location: data.location,
+      status: 'OPEN',
+    },
+  })
+}
+
+export async function deleteVolunteerShift(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerShift.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
+
+export async function signupForShift(shiftId: string, memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  // Check if already signed up
+  const existing = await prisma.volunteerShiftSignup.findFirst({
+    where: {
+      shiftId,
+      memberId,
+    },
+  })
+
+  if (existing) {
+    throw new Error('Already signed up for this shift')
+  }
+
+  // Check capacity
+  const shift = await prisma.volunteerShift.findUnique({
+    where: { id: shiftId },
+    include: { signups: true },
+  })
+
+  if (!shift) {
+    throw new Error('Shift not found')
+  }
+
+  if (shift.signups.length >= shift.capacity) {
+    throw new Error('Shift is full')
+  }
+
+  const signup = await prisma.volunteerShiftSignup.create({
+    data: {
+      tenantId: tenant.id,
+      shiftId,
+      memberId,
+      confirmedAt: new Date(),
+    },
+  })
+
+  // Send confirmation email
+  try {
+    const member = await prisma.member.findUnique({ where: { id: memberId } })
+    
+    if (member) {
+      const { sendVolunteerShiftConfirmationEmail } = await import('./email')
+      await sendVolunteerShiftConfirmationEmail(member.email, member.firstName, shift.name, shift.startsAt)
+    }
+  } catch (error) {
+    console.error('Failed to send volunteer shift confirmation email:', error)
+    // Don't throw error - email failure shouldn't block signup
+  }
+
+  return signup
+}
+
+export async function cancelShiftSignup(shiftId: string, memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerShiftSignup.updateMany({
+    where: {
+      shiftId,
+      memberId,
+      tenantId: tenant.id,
+    },
+    data: {
+      canceledAt: new Date(),
+    },
+  })
+}
+
+// Volunteer Hours actions
+export async function getVolunteerHours(memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.volunteerHours.findMany({
+    where: {
+      tenantId: tenant.id,
+      memberId,
+    },
+    orderBy: { date: 'desc' },
+  })
+}
+
+export async function logVolunteerHours(data: {
+  memberId: string
+  hours: number
+  date: Date
+  description?: string
+  opportunityId?: string
+  shiftId?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerHours.create({
+    data: {
+      tenantId: tenant.id,
+      memberId: data.memberId,
+      hours: data.hours,
+      date: data.date,
+      description: data.description,
+      opportunityId: data.opportunityId,
+      shiftId: data.shiftId,
+      isApproved: false,
+    },
+  })
+}
+
+export async function approveVolunteerHours(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerHours.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data: {
+      isApproved: true,
+      approvedAt: new Date(),
+    },
+  })
+}
+
+// Subscription management actions
+export async function getTenantSubscription() {
+  const tenant = await getUserTenant()
+  if (!tenant) return null
+
+  return await prisma.tenantSubscription.findFirst({
+    where: { tenantId: tenant.id },
+  })
+}
+
+// Webhook management actions
+export async function getWebhooks() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.webhookSubscription.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function createWebhook(data: {
+  url: string
+  events: string[]
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const secret = Math.random().toString(36).substring(2, 32)
+
+  return await prisma.webhookSubscription.create({
+    data: {
+      tenantId: tenant.id,
+      url: data.url,
+      events: data.events,
+      secret,
+      isActive: true,
+    },
+  })
+}
+
+export async function deleteWebhook(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.webhookSubscription.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
+
+export async function toggleWebhook(id: string, isActive: boolean) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.webhookSubscription.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data: { isActive },
+  })
+}
+
+// API key management actions
+export async function getApiKeys() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.apiKey.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function createApiKey(data: {
+  name: string
+  scope: string
+  rateLimit?: number
+  expiresAt?: Date
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const key = `jan_${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`
+  const keyPrefix = key.substring(0, 8)
+  
+  // Simple hash for demonstration - in production use bcrypt
+  const keyHash = Buffer.from(key).toString('base64')
+
+  return await prisma.apiKey.create({
+    data: {
+      tenantId: tenant.id,
+      name: data.name,
+      keyHash,
+      keyPrefix,
+      scope: data.scope as any,
+      rateLimit: data.rateLimit || 1000,
+      expiresAt: data.expiresAt,
+      isActive: true,
+    },
+  })
+}
+
+export async function deleteApiKey(id: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.apiKey.deleteMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+  })
+}
+
+export async function toggleApiKey(id: string, isActive: boolean) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.apiKey.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data: { isActive },
+  })
+}
+
+// File upload action
+export async function uploadFile(file: File, folder?: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const { uploadFile: uploadToCloudinary } = await import('./upload')
+  const result = await uploadToCloudinary(file, folder || `tenant-${tenant.id}`)
+  
+  return result
+}
+
+export async function cancelSubscription() {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const subscription = await prisma.tenantSubscription.findFirst({
+    where: { tenantId: tenant.id },
+  })
+
+  if (!subscription || !subscription.stripeSubscriptionId) {
+    throw new Error('No active subscription found')
+  }
+
+  const stripe = getStripe()
+  if (!stripe) {
+    throw new Error('Stripe is not configured')
+  }
+
+  await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+    cancel_at_period_end: true,
+  })
+
+  return await prisma.tenantSubscription.update({
+    where: { id: subscription.id },
+    data: { cancelAtPeriodEnd: true },
   })
 }
 
