@@ -2,51 +2,9 @@
 > @orgflow/api@1.0.0 start:dev
 > nest start --watch
 
-[2J[3J[H[[90m9:33:18 PM[0m] Starting compilation in watch mode...
+[2J[3J[H[[90m7:09:20 AM[0m] Starting compilation in watch mode...
 
-[[90m9:33:25 PM[0m] Found 0 errors. Watching for file changes.
-
-file:///Users/sanjeevjha/janagana/packages/types/src/index.ts:5
-export type LegacyRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VOLUNTEER';
-^^^^^^
-
-SyntaxError: Unexpected token 'export'
-    at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
-    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:316:18)
-    at loadESMFromCJS (node:internal/modules/cjs/loader:1371:24)
-    at Module._compile (node:internal/modules/cjs/loader:1511:5)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
-    at Module.load (node:internal/modules/cjs/loader:1275:32)
-    at Module._load (node:internal/modules/cjs/loader:1096:12)
-    at Module.require (node:internal/modules/cjs/loader:1298:19)
-    at require (node:internal/modules/helpers:182:18)
-    at Object.<anonymous> (/Users/sanjeevjha/janagana/apps/api/src/common/guards/roles.guard.ts:10:1)
-
-Node.js v20.19.3
-[2J[3J[H[[90m9:37:16 PM[0m] File change detected. Starting incremental compilation...
-
-[[90m9:37:16 PM[0m] Found 0 errors. Watching for file changes.
-
-file:///Users/sanjeevjha/janagana/packages/types/src/index.ts:5
-export type LegacyRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VOLUNTEER';
-^^^^^^
-
-SyntaxError: Unexpected token 'export'
-    at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
-    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:316:18)
-    at loadESMFromCJS (node:internal/modules/cjs/loader:1371:24)
-    at Module._compile (node:internal/modules/cjs/loader:1511:5)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
-    at Module.load (node:internal/modules/cjs/loader:1275:32)
-    at Module._load (node:internal/modules/cjs/loader:1096:12)
-    at Module.require (node:internal/modules/cjs/loader:1298:19)
-    at require (node:internal/modules/helpers:182:18)
-    at Object.<anonymous> (/Users/sanjeevjha/janagana/apps/api/src/common/guards/roles.guard.ts:10:1)
-
-Node.js v20.19.3
-[2J[3J[H[[90m9:37:22 PM[0m] File change detected. Starting incremental compilation...
-
-[[90m9:37:22 PM[0m] Found 0 errors. Watching for file changes.
+[[90m7:09:31 AM[0m] Found 0 errors. Watching for file changes.
 
 file:///Users/sanjeevjha/janagana/packages/types/src/index.ts:5
 export type LegacyRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VOLUNTEER';
