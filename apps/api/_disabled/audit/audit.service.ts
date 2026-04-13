@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CustomLogger } from '../logger/logger.service';
-import { PrismaService } from '@orgflow/database';
+import { PrismaService } from '@janagana/database';
 import { Request } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';

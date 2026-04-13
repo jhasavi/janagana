@@ -17,5 +17,7 @@
       "dependsOn": ["^typecheck"],
       "outputs": []
     }
-  }
+  },
+  "globalDependencies": ["**/.env.*local", ".env"],
+  "globalEnv": ["NODE_ENV"]
 }

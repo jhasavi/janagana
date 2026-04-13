@@ -22,8 +22,8 @@ const config: Config = {
   globalTeardown: '<rootDir>/test/setup.ts',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@orgflow/database$': '<rootDir>/../../packages/database/src',
-    '^@orgflow/types$': '<rootDir>/../../packages/types/src',
+    '^@janagana/database$': '<rootDir>/../../packages/database/src',
+    '^@janagana/types$': '<rootDir>/../../packages/types/src',
   },
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',

@@ -7,15 +7,15 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { ROLES_KEY, PERMISSIONS_KEY } from '../decorators/roles.decorator';
 import type { RequestUser } from '../types/request.types';
-import { 
-  OrgFlowRole, 
-  Permission, 
-  ROLE_PRESETS, 
+import {
+  OrgFlowRole,
+  Permission,
+  ROLE_PRESETS,
   RoleType,
   hasPermission,
   hasAnyPermission,
   hasAllPermissions
-} from '@orgflow/types';
+} from '@janagana/types';
 
 /** Numeric hierarchy — higher is more privileged. */
 const ROLE_HIERARCHY: Record<OrgFlowRole, number> = {
