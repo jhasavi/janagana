@@ -19,8 +19,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <ClerkProvider
           publishableKey={process.env.CLERK_PUBLISHABLE_KEY}
-          afterSignInUrl="/dashboard"
-          afterSignUpUrl="/onboarding"
+          signInFallbackRedirectUrl="/dashboard"
+          signUpFallbackRedirectUrl="/onboarding"
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
         >
