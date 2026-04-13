@@ -74,10 +74,8 @@ echo ""
 
 # Run database migrations
 echo -e "${BLUE}Running database migrations...${NC}"
-cd packages/database
 npx prisma migrate dev --name init || echo -e "${YELLOW}Migration may have already run or failed${NC}"
 npx prisma generate
-cd ../..
 echo -e "${GREEN}✓ Database migrations complete${NC}"
 echo ""
 
@@ -85,27 +83,16 @@ echo ""
 echo -e "${BLUE}Starting services...${NC}"
 echo ""
 
-# Start API in background
-echo "Starting API server..."
-cd apps/api
-$PKG_MANAGER run start:dev > ../../logs/api.log 2>&1 &
-API_PID=$!
-cd ../..
-
 # Start Web in background
 echo "Starting Web server..."
-cd apps/web
-$PKG_MANAGER run dev > ../../logs/web.log 2>&1 &
+$PKG_MANAGER run dev > logs/web.log 2>&1 &
 WEB_PID=$!
-cd ../..
 
 echo ""
 echo -e "${GREEN}=== Services Started ===${NC}"
 echo ""
-echo "API Server: http://localhost:3001"
 echo "Web Server: http://localhost:3000"
 echo ""
-echo "API PID: $API_PID"
 echo "Web PID: $WEB_PID"
 echo ""
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
@@ -114,7 +101,7 @@ echo ""
 # Function to cleanup on exit
 cleanup() {
     echo -e "\n${YELLOW}Stopping services...${NC}"
-    kill $API_PID $WEB_PID 2>/dev/null || true
+    kill $WEB_PID 2>/dev/null || true
     echo -e "${GREEN}✓ Services stopped${NC}"
     exit 0
 }
