@@ -23,3 +23,26 @@ SyntaxError: Unexpected token 'export'
     at Object.<anonymous> (/Users/sanjeevjha/janagana/apps/api/src/common/guards/roles.guard.ts:10:1)
 
 Node.js v20.19.3
+[2J[3J[H[[90m8:25:13 AM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/common/guards/roles.guard.ts[0m:[93m18[0m:[93m8[0m - [91merror[0m[90m TS2307: [0mCannot find module '@janagana/types' or its corresponding type declarations.
+
+[7m18[0m } from '@janagana/types';
+[7m  [0m [91m       ~~~~~~~~~~~~~~~~~[0m
+
+[[90m8:25:16 AM[0m] Found 1 error. Watching for file changes.
+
+[2J[3J[H[[90m8:25:25 AM[0m] File change detected. Starting incremental compilation...
+
+[96msrc/common/decorators/roles.decorator.ts[0m:[93m2[0m:[93m46[0m - [91merror[0m[90m TS2307: [0mCannot find module '@janagana/types' or its corresponding type declarations.
+
+[7m2[0m import type { OrgFlowRole, Permission } from '@janagana/types';
+[7m [0m [91m                                             ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/common/guards/roles.guard.ts[0m:[93m18[0m:[93m8[0m - [91merror[0m[90m TS2307: [0mCannot find module '@janagana/types' or its corresponding type declarations.
+
+[7m18[0m } from '@janagana/types';
+[7m  [0m [91m       ~~~~~~~~~~~~~~~~~[0m
+
+[[90m8:25:27 AM[0m] Found 2 errors. Watching for file changes.
+
