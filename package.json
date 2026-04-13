@@ -1,8 +1,8 @@
 {
-  "name": "orgflow",
+  "name": "janagana",
   "version": "1.0.0",
   "private": true,
-  "description": "OrgFlow monorepo: membership, events, volunteer, and club management SaaS",
+  "description": "Jana Gana: membership, events, volunteer, and club management platform",
   "engines": {
     "node": ">=20.0.0"
   },

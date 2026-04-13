@@ -1,5 +1,5 @@
 {
-  "name": "@orgflow/api",
+  "name": "@janagana/api",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -24,8 +24,8 @@
     "@nestjs/bullmq": "^10.0.1",
     "@nestjs/terminus": "^10.2.3",
     "@nestjs/typeorm": "^10.0.2",
-    "@orgflow/database": "^1.0.0",
-    "@orgflow/types": "*",
+    "@janagana/database": "^1.0.0",
+    "@janagana/types": "*",
     "@stripe/stripe-js": "^9.1.0",
     "@react-email/components": "^1.0.0",
     "@react-email/render": "^1.0.0",

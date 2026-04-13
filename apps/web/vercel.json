@@ -62,8 +62,6 @@
   ],
   "env": {
     "NEXT_PUBLIC_APP_URL": "https://janagana.namasteneedham.com",
-    "NEXT_PUBLIC_API_URL": "https://janagana.namasteneedham.com/api",
-    "CLERK_PUBLISHABLE_KEY": "@clerk-publishable-key",
-    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe-publishable-key"
+    "NEXT_PUBLIC_API_URL": "https://janagana.namasteneedham.com/api"
   }
 }
