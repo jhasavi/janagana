@@ -6,6 +6,10 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "cd apps/web && lsof -ti:3000 | xargs kill -9 2>/dev/null; npm run dev",
     "build": "cd apps/web && npm run build",
