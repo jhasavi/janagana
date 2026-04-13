@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getVolunteerOpportunities, createVolunteerOpportunity, deleteVolunteerOpportunity } from '@/lib/actions'
-import { Plus, Trash2, Search, Users, MapPin, Calendar } from 'lucide-react'
+import { getVolunteerOpportunities, createVolunteerOpportunity, deleteVolunteerOpportunity, updateVolunteerOpportunity } from '@/lib/actions'
+import { Plus, Trash2, Search, Users, MapPin, Calendar, Edit } from 'lucide-react'
 
 type VolunteerOpportunity = {
   id: string
@@ -22,6 +22,7 @@ export default function VolunteersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [editingOpportunity, setEditingOpportunity] = useState<VolunteerOpportunity | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -47,7 +48,12 @@ export default function VolunteersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await createVolunteerOpportunity(formData)
+      if (editingOpportunity) {
+        await updateVolunteerOpportunity(editingOpportunity.id, formData)
+        setEditingOpportunity(null)
+      } else {
+        await createVolunteerOpportunity(formData)
+      }
       setFormData({ title: '', description: '', location: '', isVirtual: false })
       setShowAddForm(false)
       loadOpportunities()
@@ -68,6 +74,17 @@ export default function VolunteersPage() {
     }
   }
 
+  const handleEdit = (opportunity: VolunteerOpportunity) => {
+    setEditingOpportunity(opportunity)
+    setFormData({
+      title: opportunity.title,
+      description: opportunity.description || '',
+      location: opportunity.location || '',
+      isVirtual: opportunity.isVirtual,
+    })
+    setShowAddForm(true)
+  }
+
   const filteredOpportunities = opportunities.filter(o =>
     `${o.title} ${o.description}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -78,6 +95,7 @@ export default function VolunteersPage() {
         <h1 className="text-3xl font-bold text-gray-900">Volunteer Opportunities</h1>
         <button
           onClick={() => {
+            setEditingOpportunity(null)
             setFormData({ title: '', description: '', location: '', isVirtual: false })
             setShowAddForm(!showAddForm)
           }}
@@ -90,7 +108,9 @@ export default function VolunteersPage() {
 
       {showAddForm && (
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Add New Volunteer Opportunity</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            {editingOpportunity ? 'Edit Volunteer Opportunity' : 'Add New Volunteer Opportunity'}
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -143,12 +163,13 @@ export default function VolunteersPage() {
                 type="submit"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
-                Add Opportunity
+                {editingOpportunity ? 'Update Opportunity' : 'Add Opportunity'}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowAddForm(false)
+                  setEditingOpportunity(null)
                   setFormData({ title: '', description: '', location: '', isVirtual: false })
                 }}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
@@ -210,13 +231,22 @@ export default function VolunteersPage() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDelete(opportunity.id)}
-                    className="p-2 hover:bg-red-100 rounded text-red-600"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleEdit(opportunity)}
+                      className="p-2 hover:bg-gray-100 rounded"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(opportunity.id)}
+                      className="p-2 hover:bg-red-100 rounded text-red-600"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

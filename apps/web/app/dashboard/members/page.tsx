@@ -20,6 +20,7 @@ export default function MembersPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
+  const [errors, setErrors] = useState<{ firstName?: string; lastName?: string; email?: string }>({})
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -42,8 +43,38 @@ export default function MembersPage() {
     }
   }
 
+  const validateForm = () => {
+    const newErrors: { firstName?: string; lastName?: string; email?: string } = {}
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required'
+    } else if (formData.firstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters'
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required'
+    } else if (formData.lastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters'
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
     try {
       if (editingMember) {
         await updateMember(editingMember.id, formData)
@@ -52,11 +83,16 @@ export default function MembersPage() {
         await createMember(formData)
       }
       setFormData({ firstName: '', lastName: '', email: '', phone: '' })
+      setErrors({})
       setShowAddForm(false)
       loadMembers()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save member:', error)
-      alert('Failed to save member. Please try again.')
+      if (error.message?.includes('Unique constraint')) {
+        setErrors({ email: 'This email is already in use.' })
+      } else {
+        alert('Failed to save member. Please try again.')
+      }
     }
   }
 
@@ -115,11 +151,11 @@ export default function MembersPage() {
               </label>
               <input
                 type="text"
-                required
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className={`w-full px-3 py-2 border rounded-lg ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.firstName && <p className="text-sm text-red-600 mt-1">{errors.firstName}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -127,11 +163,11 @@ export default function MembersPage() {
               </label>
               <input
                 type="text"
-                required
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className={`w-full px-3 py-2 border rounded-lg ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.lastName && <p className="text-sm text-red-600 mt-1">{errors.lastName}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -139,11 +175,11 @@ export default function MembersPage() {
               </label>
               <input
                 type="email"
-                required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className={`w-full px-3 py-2 border rounded-lg ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -153,7 +189,7 @@ export default function MembersPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg border-gray-300"
               />
             </div>
             <div className="col-span-2 flex gap-2">
@@ -169,6 +205,7 @@ export default function MembersPage() {
                   setShowAddForm(false)
                   setEditingMember(null)
                   setFormData({ firstName: '', lastName: '', email: '', phone: '' })
+                  setErrors({})
                 }}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
               >

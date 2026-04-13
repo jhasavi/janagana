@@ -57,6 +57,23 @@ export async function getUserTenant() {
   return user?.tenant || null
 }
 
+export async function updateTenant(data: {
+  name?: string
+  slug?: string
+  logoUrl?: string
+  primaryColor?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.tenant.update({
+    where: { id: tenant.id },
+    data,
+  })
+}
+
 // Member CRUD actions
 export async function getMembers() {
   const tenant = await getUserTenant()
@@ -202,6 +219,53 @@ export async function deleteEvent(id: string) {
   })
 }
 
+export async function registerForEvent(eventId: string, memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  // Check if already registered
+  const existing = await prisma.eventRegistration.findFirst({
+    where: {
+      eventId,
+      memberId,
+    },
+  })
+
+  if (existing) {
+    throw new Error('Already registered for this event')
+  }
+
+  const confirmationCode = 'REG-' + Math.random().toString(36).substring(2, 10).toUpperCase()
+
+  return await prisma.eventRegistration.create({
+    data: {
+      tenantId: tenant.id,
+      eventId,
+      memberId,
+      status: 'CONFIRMED',
+      confirmationCode,
+    },
+  })
+}
+
+export async function getMemberRegistrations(memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.eventRegistration.findMany({
+    where: {
+      tenantId: tenant.id,
+      memberId,
+    },
+    include: {
+      event: true,
+    },
+    orderBy: { registeredAt: 'desc' },
+  })
+}
+
 // Club CRUD actions
 export async function getClubs() {
   const tenant = await getUserTenant()
@@ -246,6 +310,26 @@ export async function deleteClub(id: string) {
       id,
       tenantId: tenant.id,
     },
+  })
+}
+
+export async function updateClub(id: string, data: {
+  name?: string
+  slug?: string
+  description?: string
+  isActive?: boolean
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.club.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data,
   })
 }
 
@@ -301,6 +385,74 @@ export async function deleteVolunteerOpportunity(id: string) {
       id,
       tenantId: tenant.id,
     },
+  })
+}
+
+export async function applyForVolunteerOpportunity(opportunityId: string, memberId: string, coverLetter?: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  // Check if already applied
+  const existing = await prisma.volunteerApplication.findFirst({
+    where: {
+      opportunityId,
+      memberId,
+    },
+  })
+
+  if (existing) {
+    throw new Error('Already applied for this opportunity')
+  }
+
+  return await prisma.volunteerApplication.create({
+    data: {
+      tenantId: tenant.id,
+      opportunityId,
+      memberId,
+      status: 'PENDING',
+      coverLetter,
+    },
+  })
+}
+
+export async function getVolunteerApplications(memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.volunteerApplication.findMany({
+    where: {
+      tenantId: tenant.id,
+      memberId,
+    },
+    include: {
+      opportunity: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function updateVolunteerOpportunity(id: string, data: {
+  title?: string
+  description?: string
+  location?: string
+  isVirtual?: boolean
+  startsAt?: Date
+  endsAt?: Date
+  isActive?: boolean
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.volunteerOpportunity.updateMany({
+    where: {
+      id,
+      tenantId: tenant.id,
+    },
+    data,
   })
 }
 
