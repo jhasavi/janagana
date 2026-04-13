@@ -5,121 +5,126 @@
 
 ## Live Demo
 - Web: https://janagana.namasteneedham.com
-- API Docs: https://janagana-api.onrender.com/api/docs
 
 ## Local Development
 ```bash
 git clone [repo-url]
 cd janagana
 cp .env.example .env.local
-# Fill in environment variables (see docs/SETUP.md)
+# Fill in environment variables
 npm install
-docker compose up -d  # PostgreSQL + Redis for local dev
 npm run db:generate
 npm run dev
 ```
 
 Access:
 - Web: http://localhost:3000
-- API: http://localhost:4000  
-- Swagger: http://localhost:4000/api/docs
 
 ## Tech Stack
-- **Monorepo:** Turborepo
-- **Frontend:** Next.js 14 (App Router), TypeScript, TailwindCSS, shadcn/ui
-- **Backend:** NestJS 10, TypeScript, Swagger, class-validator
-- **Database:** PostgreSQL (Neon) + Prisma 5
-- **Cache:** Redis (Upstash)
-- **Authentication:** Clerk (admin), JWT (member portal)
-- **Payments:** Stripe (payments, Stripe Connect)
-- **Email:** Resend
-- **Media:** Cloudinary
+- **Framework:** Next.js 14 (App Router), TypeScript
+- **Styling:** TailwindCSS, shadcn/ui
+- **Database:** PostgreSQL + Prisma ORM
+- **Authentication:** Clerk
+- **Payments:** Stripe (placeholder)
 - **Error Tracking:** Sentry
-- **Mobile:** Expo SDK 51, React Native, Expo Router, NativeWind
 
-## Documentation
-- [Setup Guide](docs/SETUP.md) - Environment configuration
-- [API Documentation](docs/API.md) - Backend API reference
-- [Web App Documentation](docs/WEB.md) - Frontend dashboard guide
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
-- [Architecture](docs/ARCHITECTURE.md) - System architecture
-
-## Monorepo Structure
+## Project Structure
 
 ```
 janagana/
-├── apps/
-│   ├── web/                    # Next.js admin dashboard & public site
-│   ├── api/                    # NestJS REST API
-│   └── mobile/                 # React Native member portal
-├── packages/
-│   ├── database/               # Prisma schema & migrations
-│   ├── ui/                     # Shared UI components
-│   ├── types/                  # Shared TypeScript types
-│   └── utils/                  # Shared utilities
-├── scripts/                    # Utility scripts
-├── docs/                       # Documentation
-├── turbo.json
-├── package.json
-└── docker-compose.yml
+├── app/                       # Next.js App Router pages
+│   ├── (auth)/               # Authentication pages
+│   ├── dashboard/            # Admin dashboard
+│   ├── portal/               # Member portal
+│   └── onboarding/           # Onboarding flow
+├── components/               # React components
+├── lib/                      # Server actions & utilities
+│   ├── actions.ts           # Server Actions
+│   └── prisma.ts            # Prisma client
+├── prisma/                   # Database schema & migrations
+│   ├── schema.prisma        # Prisma schema
+│   └── seed.ts             # Seed script
+├── docs/legacy/              # Legacy documentation (archived)
+├── TODO.md                  # Project status & roadmap
+└── package.json
 ```
 
-## Features
+## Current Features (Implemented)
 
 ### Core Platform
-- **Multi-tenant SaaS** - Subdomain-based organization isolation
-- **Role-based Access Control** - Owner, Admin, Staff, ReadOnly, Custom roles
-- **Audit Logging** - Complete activity tracking
-- **Webhooks** - Extensible event system
+- **Multi-tenant SaaS** - Organization isolation
+- **Authentication** - Clerk integration
+- **Onboarding** - Organization setup wizard
 
-### Member Management
-- Member profiles with custom fields
-- Membership tiers and expiry tracking
-- Member portal for self-service
-- Import/export members (CSV)
+### Admin Dashboard
+- **Member Management** - CRUD operations for members
+- **Event Management** - Create, edit, delete events
+- **Event Registration** - Member registration with confirmation emails
+- **Club Management** - Club CRUD with posts and comments
+- **Volunteer Opportunities** - Create and manage opportunities
+- **Volunteer Shifts** - Shift scheduling with capacity management
+- **Volunteer Hours** - Hours logging and approval workflow
+- **Settings** - Organization settings
+- **Analytics Dashboard** - Member, event, volunteer, and club counts
+- **Billing** - Stripe subscription management
+- **Webhooks** - Webhook subscription management
+- **API Keys** - API key generation and management
 
-### Events
-- Event creation with categories and venues
-- Registration management
-- Check-in system with QR codes
-- Waitlist management
-- Event reminders and notifications
+### Member Portal
+- **Profile** - View and edit member profile
+- **Events** - Browse events
+- **Volunteer** - View volunteer opportunities
 
-### Volunteering
-- Volunteer opportunities
-- Shift scheduling
-- Hours tracking
-- Application management
-- Shift reminders
+### Communications
+- **Email Notifications** - Resend integration for transactional emails
+- **Welcome Emails** - Automatic welcome emails for new members
+- **Event Confirmation Emails** - Registration confirmations
+- **Volunteer Shift Confirmation Emails** - Shift signup confirmations
 
-### Clubs
-- Club creation and management
-- Member clubs
-- Post feed and engagement
-- Club leadership roles
+### File Management
+- **File Upload** - Cloudinary integration for file uploads
 
-### Donations
-- Campaign management with progress tracking
-- One-time and recurring donations
-- Stripe integration for payments
-- Tax receipt generation
-- Donor management and export
-- Thank you emails
+### Database
+- **50+ Prisma models** - Comprehensive schema preserved
+- **Migrations** - Database migration support
+- **Seed data** - Demo data for testing
+- **Member Import/Export** - CSV bulk import and export
 
-### Mobile App (Member Portal)
-- Digital membership card with QR
-- Event browsing and registration
-- Volunteer shift management
-- Club participation
-- Push notifications
-- Multi-tenant support
+## Planned Features (Roadmap)
+
+See [TODO.md](TODO.md) for detailed roadmap and implementation status.
+
+### Phase 2: Complete Core Features ✅ COMPLETED
+- ✅ Volunteer shifts & hours tracking
+- ✅ Club posts & comments
+- ✅ Event registration flow
+- ✅ Member import/export (CSV)
+- ✅ Basic analytics dashboard
+
+### Phase 3: Payment Integration ✅ COMPLETED
+- ✅ Full Stripe integration
+- ✅ Subscription billing
+- ✅ Invoice generation
+- ✅ Payment history
+
+### Phase 4: Communications ✅ COMPLETED
+- ✅ Resend email integration
+- ✅ Email templates
+- ⏳ Email campaigns (partially - infrastructure ready)
+- ⏳ Notification system (infrastructure ready)
+
+### Phase 5: Advanced Features ✅ COMPLETED
+- ✅ Webhook system
+- ✅ API key authentication
+- ✅ File upload system (Cloudinary)
+- ⏳ Advanced permissions/RBAC (schema ready)
+- ⏳ Real-time features (requires Redis)
 
 ## Prerequisites
 
 - Node.js 20+
 - npm 10+
-- Docker + Docker Compose
-- Expo CLI (for mobile development)
+- PostgreSQL (local or hosted)
 
 ## Getting Started
 
@@ -129,16 +134,16 @@ janagana/
 npm install
 ```
 
-### 2. Start local infrastructure
+### 2. Configure environment variables
 
 ```bash
-docker compose up -d
+cp .env.example .env.local
 ```
 
-This starts:
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- pgAdmin (port 5050)
+Edit `.env.local` and add:
+- `DATABASE_URL` - PostgreSQL connection string
+- `CLERK_SECRET_KEY` - Clerk secret key
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
 
 ### 3. Generate Prisma client
 
@@ -152,125 +157,96 @@ npm run db:generate
 npm run db:migrate
 ```
 
-### 5. Run development servers
+### 5. (Optional) Seed database with demo data
+
+```bash
+npm run seed
+```
+
+### 6. Start development server
 
 ```bash
 npm run dev
 ```
 
-This starts:
-- Web app: http://localhost:3000
-- API: http://localhost:4000
-- Swagger docs: http://localhost:4000/docs
-
-### 6. (Optional) Run mobile app
-
-```bash
-cd apps/mobile
-npm install
-npx expo start
-```
+Access the app at: http://localhost:3000
 
 ## Environment Variables
 
 See `.env.example` for required environment variables. Key variables:
 
 ```env
-# API
+# Database
 DATABASE_URL=postgresql://...
-REDIS_URL=redis://localhost:6379
-CLERK_SECRET_KEY=...
-STRIPE_SECRET_KEY=...
-STRIPE_WEBHOOK_SECRET=...
-RESEND_API_KEY=...
 
-# Web
-NEXT_PUBLIC_API_URL=http://localhost:4000
+# Clerk Authentication
+CLERK_SECRET_KEY=...
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 
-# Mobile
-EXPO_PUBLIC_API_URL=http://localhost:4000
+# Application
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Optional: Stripe
+STRIPE_SECRET_KEY=...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
+
+# Optional: Sentry
+SENTRY_DSN=...
+NEXT_PUBLIC_SENTRY_DSN=...
 ```
 
 ## Useful Commands
 
 ```bash
 # Development
-npm run dev              # Start all services
-npm run dev:web          # Web only
-npm run dev:api          # API only
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
 
 # Database
 npm run db:generate      # Generate Prisma client
 npm run db:migrate       # Run migrations
 npm run db:studio        # Open Prisma Studio
-npm run db:seed          # Seed database
+npm run db:push          # Push schema changes
+npm run seed             # Seed database
 
-# Build & Test
-npm run build            # Build all packages
-npm run lint             # Lint all packages
-npm run typecheck        # Type check all packages
+# Code Quality
+npm run lint             # Run ESLint
+npm run typecheck        # Run TypeScript type check
 npm run test             # Run tests
 ```
 
+## Architecture Notes
+
+This project underwent a significant architectural change in April 2026:
+- **Previous:** Turborepo monorepo with NestJS API, Next.js web, and Expo mobile
+- **Current:** Simplified Next.js monolith with Server Actions
+- **Reason:** Resolved persistent Vercel deployment issues
+- **Trade-off:** Lost some advanced features, gained deployment stability and faster iteration
+
+The Prisma schema with 50+ models was preserved from the original architecture, allowing for incremental feature rebuild.
+
 ## Documentation
 
-- [API Documentation](docs/API.md) - Backend API reference
-- [Web App Documentation](docs/WEB.md) - Frontend dashboard guide
-- [Mobile App Documentation](apps/mobile/README.md) - Mobile app guide
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
-- [Architecture](docs/ARCHITECTURE.md) - System architecture
-
-## API Endpoints
-
-Base URL: `http://localhost:4000`
-
-- Swagger UI: http://localhost:4000/docs
-- Health check: http://localhost:4000/health
-
-### Key Endpoints
-
-- `POST /auth/register` - Register organization
-- `POST /auth/login` - Login
-- `GET /tenants/:id` - Get tenant details
-- `GET /members` - List members
-- `GET /events` - List events
-- `POST /events/:id/register` - Register for event
-- `GET /volunteer/opportunities` - List volunteer opportunities
-- `GET /clubs` - List clubs
-- `GET /donations/campaigns` - List donation campaigns
-- `POST /donations/checkout` - Create donation checkout
+- [TODO.md](TODO.md) - Current status and implementation roadmap
+- [docs/legacy/](docs/legacy/) - Archived documentation from original architecture
 
 ## Multi-Tenancy
 
-Jana Gana uses subdomain-based multi-tenancy:
-- `tenant1.namasteneedham.com` → Tenant 1
-- `tenant2.namasteneedham.com` → Tenant 2
-
-In development, use path-based routing:
-- `localhost:3000/tenant1/dashboard`
-- `localhost:3000/tenant2/dashboard`
+Currently uses path-based routing for development. Each user has one organization associated with their Clerk account.
 
 ## Authentication
 
 - **Admin Portal:** Clerk authentication
-- **Member Portal:** Magic link authentication
-- **API:** JWT tokens via Clerk
-- **Mobile:** Magic link + SecureStore
+- **Member Portal:** Clerk authentication (planned magic link)
 
-## Payments
+## Deployment
 
-- **Stripe Connect** for organization accounts
-- **Subscription billing** via Stripe
-- **Donation processing** via Stripe Checkout
-- **Webhook handling** for payment events
+- **Platform:** Vercel
+- **Status:** ✅ Deployed successfully
+- **URL:** https://janagana.namasteneedham.com
 
-## Notifications
-
-- **Email:** Resend for transactional emails
-- **Push:** Expo Notifications for mobile
-- **SMS:** Twilio (optional)
-- **In-app:** Real-time updates via WebSockets
+See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment details.
 
 ## License
 

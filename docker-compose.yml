@@ -3,100 +3,28 @@ version: "3.9"
 services:
   postgres:
     image: postgres:15
-    container_name: orgflow-postgres
+    container_name: janagana-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: orgflow
-      POSTGRES_USER: orgflow
-      POSTGRES_PASSWORD: orgflow_password
+      POSTGRES_DB: janagana_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orgflow -d orgflow"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d janagana_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  redis:
-    image: redis:7
-    container_name: orgflow-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  api:
-    build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-    container_name: orgflow-api
-    restart: unless-stopped
-    ports:
-      - "4000:4000"
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://orgflow:orgflow_password@postgres:5432/orgflow?schema=public
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: replace_me
-      CLERK_SECRET_KEY: replace_me
-      STRIPE_SECRET_KEY: replace_me
-      STRIPE_WEBHOOK_SECRET: replace_me
-      STRIPE_CONNECT_WEBHOOK_SECRET: replace_me
-      RESEND_API_KEY: replace_me
-      APP_URL: http://localhost:4000
-      CORS_ORIGINS: http://localhost:3000
-    depends_on:
-      - postgres
-      - redis
-
-  web:
-    build:
-      context: ./apps/web
-      dockerfile: Dockerfile
-    container_name: orgflow-web
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-      NEXT_PUBLIC_APP_DOMAIN: localhost
-      NEXT_PUBLIC_ROOT_DOMAIN: localhost
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: replace_me
-      CLERK_SECRET_KEY: replace_me
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: replace_me
-      SENTRY_DSN: replace_me
-      NEXT_PUBLIC_SENTRY_DSN: replace_me
-    depends_on:
-      - api
-
-  nginx:
-    image: nginx:stable-alpine
-    container_name: orgflow-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api
-      - web
 
   pgadmin:
     image: dpage/pgadmin4:8
-    container_name: orgflow-pgadmin
+    container_name: janagana-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@orgflow.local
+      PGADMIN_DEFAULT_EMAIL: admin@janagana.local
       PGADMIN_DEFAULT_PASSWORD: admin_password
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
@@ -108,5 +36,4 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
   pgadmin_data:
