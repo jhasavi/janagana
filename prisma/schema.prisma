@@ -1,0 +1,1356 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum PlanSlug {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum UserRoleType {
+  OWNER
+  ADMIN
+  STAFF
+  READONLY
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  BANNED
+}
+
+enum MembershipSubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PENDING
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  URL
+  PHONE
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELED
+  COMPLETED
+}
+
+enum EventFormat {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+  ATTENDED
+  NO_SHOW
+}
+
+enum VolunteerApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum VolunteerShiftStatus {
+  OPEN
+  FULL
+  CANCELED
+  COMPLETED
+}
+
+enum ClubVisibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+enum ClubRoleType {
+  LEADER
+  CO_LEADER
+  MEMBER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethodType {
+  CARD
+  BANK_ACCOUNT
+  PAYPAL
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AnnouncementAudience {
+  ALL
+  MEMBERS
+  SPECIFIC_TIERS
+  CLUBS
+}
+
+enum EmailCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  RETRYING
+}
+
+enum ApiKeyScope {
+  READ
+  WRITE
+  ADMIN
+}
+
+enum DonationCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum DonationStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum RecurringInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+// ─────────────────────────────────────────────
+// 1. PLATFORM MODELS
+// ─────────────────────────────────────────────
+
+model Plan {
+  id                String          @id @default(uuid())
+  slug              PlanSlug        @unique
+  name              String
+  description       String?
+  monthlyPriceCents Int
+  annualPriceCents  Int
+  maxMembers        Int
+  maxUsers          Int
+  maxEvents         Int
+  maxClubs          Int
+  hasCustomDomain   Boolean         @default(false)
+  hasApiAccess      Boolean         @default(false)
+  hasAdvancedReports Boolean        @default(false)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  subscriptions     TenantSubscription[]
+}
+
+model Tenant {
+  id            String          @id @default(uuid())
+  slug          String          @unique
+  name          String
+  domain        String?         @unique
+  logoUrl       String?
+  primaryColor  String?
+  countryCode   String          @default("US")
+  timezone      String          @default("UTC")
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  subscription          TenantSubscription?
+  users                 User[]
+  members               Member[]
+  membershipTiers       MembershipTier[]
+  membershipSubscriptions MembershipSubscription[]
+  memberCustomFields    MemberCustomField[]
+  memberDocuments       MemberDocument[]
+  memberNotes           MemberNote[]
+  events                Event[]
+  eventCategories       EventCategory[]
+  volunteerOpportunities VolunteerOpportunity[]
+  clubs                 Club[]
+  payments              Payment[]
+  paymentMethods        PaymentMethod[]
+  invoices              Invoice[]
+  emailCampaigns        EmailCampaign[]
+  emailTemplates        EmailTemplate[]
+  emailLogs             EmailLog[]
+  notifications         Notification[]
+  announcements         Announcement[]
+  auditLogs             AuditLog[]
+  feedback             Feedback[]
+  donationCampaigns    DonationCampaign[]
+  donations            Donation[]
+  settings              TenantSettings?
+  integrations          TenantIntegration[]
+  webhookSubscriptions  WebhookSubscription[]
+  apiKeys               ApiKey[]
+}
+
+model TenantSubscription {
+  id                    String             @id @default(uuid())
+  tenantId              String             @unique
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId                String
+  plan                  Plan               @relation(fields: [planId], references: [id])
+  status                SubscriptionStatus @default(TRIALING)
+  billingInterval       BillingInterval    @default(MONTHLY)
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  trialEnd              DateTime?
+  cancelAtPeriodEnd     Boolean            @default(false)
+  stripeSubscriptionId  String?            @unique
+  stripeCustomerId      String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([planId])
+  @@index([stripeSubscriptionId])
+}
+
+// ─────────────────────────────────────────────
+// 2. USER & AUTH MODELS
+// ─────────────────────────────────────────────
+
+model User {
+  id               String       @id @default(uuid())
+  tenantId         String
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email            String
+  fullName         String
+  avatarUrl        String?
+  hashedPassword   String?
+  role             UserRoleType @default(STAFF)
+  isActive         Boolean      @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  sessions         Session[]
+  memberNotes      MemberNote[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ─────────────────────────────────────────────
+// 3. MEMBER MODELS
+// ─────────────────────────────────────────────
+
+model Member {
+  id           String       @id @default(uuid())
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  dateOfBirth  DateTime?
+  address      String?
+  city         String?
+  state        String?
+  postalCode   String?
+  countryCode  String       @default("US")
+  bio          String?
+  status       MemberStatus @default(PENDING)
+  joinedAt     DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  membershipSubscriptions MembershipSubscription[]
+  customFieldValues       MemberCustomFieldValue[]
+  documents               MemberDocument[]
+  notes                   MemberNote[]
+  eventRegistrations      EventRegistration[]
+  eventAttendance         EventAttendance[]
+  eventWaitlists          EventWaitlist[]
+  volunteerApplications   VolunteerApplication[]
+  shiftSignups            VolunteerShiftSignup[]
+  volunteerHours          VolunteerHours[]
+  volunteerSkills         MemberVolunteerSkill[]
+  clubMemberships         ClubMembership[]
+  clubPosts              ClubPost[]
+  clubPostComments       ClubPostComment[]
+  donations              Donation[]
+  payments               Payment[]
+  paymentMethods          PaymentMethod[]
+  notifications           Notification[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+  @@index([tenantId, status])
+}
+
+model MembershipTier {
+  id                String  @id @default(uuid())
+  tenantId          String
+  tenant            Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name              String
+  slug              String
+  description       String?
+  monthlyPriceCents Int     @default(0)
+  annualPriceCents  Int     @default(0)
+  isFree            Boolean @default(false)
+  isPublic          Boolean @default(true)
+  sortOrder         Int     @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  subscriptions     MembershipSubscription[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model MembershipSubscription {
+  id              String                       @id @default(uuid())
+  tenantId        String
+  tenant          Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId        String
+  member          Member                       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  tierId          String
+  tier            MembershipTier               @relation(fields: [tierId], references: [id])
+  status          MembershipSubscriptionStatus @default(ACTIVE)
+  billingInterval BillingInterval              @default(MONTHLY)
+  startedAt       DateTime                     @default(now())
+  endsAt          DateTime?
+  renewsAt        DateTime?
+  canceledAt      DateTime?
+  stripeSubscriptionId String?                 @unique
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+
+  payments        Payment[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tierId])
+}
+
+model MemberCustomField {
+  id           String          @id @default(uuid())
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String
+  fieldType    CustomFieldType @default(TEXT)
+  isRequired   Boolean         @default(false)
+  isPublic     Boolean         @default(false)
+  placeholder  String?
+  helpText     String?
+  options      String[]
+  sortOrder    Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  values       MemberCustomFieldValue[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model MemberCustomFieldValue {
+  id        String            @id @default(uuid())
+  memberId  String
+  member    Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  fieldId   String
+  field     MemberCustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  value     String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([memberId, fieldId])
+  @@index([memberId])
+  @@index([fieldId])
+}
+
+model MemberDocument {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name        String
+  fileUrl     String
+  mimeType    String
+  sizeBytes   Int
+  uploadedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([memberId])
+}
+
+model MemberNote {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  isPrivate Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([memberId])
+}
+
+// ─────────────────────────────────────────────
+// 4. EVENT MODELS
+// ─────────────────────────────────────────────
+
+model EventCategory {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model Event {
+  id                  String      @id @default(uuid())
+  tenantId            String
+  tenant              Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoryId          String?
+  category            EventCategory? @relation(fields: [categoryId], references: [id])
+  title               String
+  slug                String
+  description         String?
+  coverImageUrl       String?
+  status              EventStatus  @default(DRAFT)
+  format              EventFormat  @default(IN_PERSON)
+  location            String?
+  virtualUrl          String?
+  startsAt            DateTime
+  endsAt              DateTime?
+  registrationOpensAt DateTime?
+  registrationClosesAt DateTime?
+  capacity            Int?
+  isPublic            Boolean      @default(true)
+  isFeatured          Boolean      @default(false)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  tickets             EventTicket[]
+  registrations       EventRegistration[]
+  attendance          EventAttendance[]
+  speakers            EventSpeaker[]
+  sponsors            EventSponsor[]
+  waitlist            EventWaitlist[]
+  clubEvents          ClubEvent[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, startsAt])
+}
+
+model EventTicket {
+  id                String  @id @default(uuid())
+  eventId           String
+  event             Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?
+  priceCents        Int     @default(0)
+  isFree            Boolean @default(true)
+  capacity          Int?
+  quantitySold      Int     @default(0)
+  salesStart        DateTime?
+  salesEnd          DateTime?
+  sortOrder         Int     @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  registrations     EventRegistration[]
+
+  @@index([eventId])
+}
+
+model EventRegistration {
+  id              String             @id @default(uuid())
+  tenantId        String
+  eventId         String
+  event           Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketId        String?
+  ticket          EventTicket?       @relation(fields: [ticketId], references: [id])
+  memberId        String
+  member          Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  status          RegistrationStatus @default(PENDING)
+  amountCents     Int                @default(0)
+  paymentId       String?
+  payment         Payment?           @relation(fields: [paymentId], references: [id])
+  confirmationCode String?           @unique
+  registeredAt    DateTime           @default(now())
+  canceledAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  attendance      EventAttendance?
+
+  @@unique([eventId, memberId])
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([memberId])
+}
+
+model EventAttendance {
+  id             String            @id @default(uuid())
+  tenantId       String
+  eventId        String
+  event          Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  memberId       String
+  member         Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  registrationId String?           @unique
+  registration   EventRegistration? @relation(fields: [registrationId], references: [id])
+  checkedInAt    DateTime
+  checkedOutAt   DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([eventId, memberId])
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([memberId])
+}
+
+model EventSpeaker {
+  id          String   @id @default(uuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  title       String?
+  company     String?
+  bio         String?
+  avatarUrl   String?
+  websiteUrl  String?
+  twitterUrl  String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+model EventSponsor {
+  id         String   @id @default(uuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name       String
+  tier       String?
+  logoUrl    String?
+  websiteUrl String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+model EventWaitlist {
+  id         String   @id @default(uuid())
+  tenantId   String
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  position   Int
+  notifiedAt DateTime?
+  joinedAt   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([eventId, memberId])
+  @@index([tenantId])
+  @@index([eventId])
+}
+
+// ─────────────────────────────────────────────
+// 5. VOLUNTEER MODELS
+// ─────────────────────────────────────────────
+
+model VolunteerOpportunity {
+  id              String      @id @default(uuid())
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title           String
+  slug            String
+  description     String?
+  location        String?
+  isVirtual       Boolean     @default(false)
+  isActive        Boolean     @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  totalHours      Float?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  applications    VolunteerApplication[]
+  shifts          VolunteerShift[]
+  skills          VolunteerSkill[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model VolunteerApplication {
+  id             String                    @id @default(uuid())
+  tenantId       String
+  opportunityId  String
+  opportunity    VolunteerOpportunity      @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  memberId       String
+  member         Member                    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  status         VolunteerApplicationStatus @default(PENDING)
+  coverLetter    String?
+  reviewedAt     DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  @@unique([opportunityId, memberId])
+  @@index([tenantId])
+  @@index([opportunityId])
+  @@index([memberId])
+}
+
+model VolunteerShift {
+  id            String               @id @default(uuid())
+  tenantId      String
+  opportunityId String
+  opportunity   VolunteerOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  startsAt      DateTime
+  endsAt        DateTime
+  capacity      Int                  @default(1)
+  status        VolunteerShiftStatus @default(OPEN)
+  location      String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  signups       VolunteerShiftSignup[]
+
+  @@index([tenantId])
+  @@index([opportunityId])
+}
+
+model VolunteerShiftSignup {
+  id          String         @id @default(uuid())
+  tenantId    String
+  shiftId     String
+  shift       VolunteerShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  confirmedAt DateTime?
+  canceledAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([shiftId, memberId])
+  @@index([tenantId])
+  @@index([shiftId])
+  @@index([memberId])
+}
+
+model VolunteerHours {
+  id            String   @id @default(uuid())
+  tenantId      String
+  memberId      String
+  member        Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  opportunityId String?
+  shiftId       String?
+  hours         Float
+  date          DateTime
+  description   String?
+  isApproved    Boolean  @default(false)
+  approvedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([memberId])
+}
+
+model VolunteerSkill {
+  id            String               @id @default(uuid())
+  tenantId      String
+  opportunityId String
+  opportunity   VolunteerOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name          String
+  isRequired    Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  memberSkills  MemberVolunteerSkill[]
+
+  @@unique([opportunityId, name])
+  @@index([tenantId])
+  @@index([opportunityId])
+}
+
+model MemberVolunteerSkill {
+  id        String         @id @default(uuid())
+  memberId  String
+  member    Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     VolunteerSkill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([memberId, skillId])
+  @@index([memberId])
+  @@index([skillId])
+}
+
+// ─────────────────────────────────────────────
+// 6. CLUB MODELS
+// ─────────────────────────────────────────────
+
+model Club {
+  id           String         @id @default(uuid())
+  tenantId     String
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String
+  description  String?
+  coverImageUrl String?
+  visibility   ClubVisibility @default(PUBLIC)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  memberships  ClubMembership[]
+  events       ClubEvent[]
+  posts        ClubPost[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model ClubMembership {
+  id        String       @id @default(uuid())
+  tenantId  String
+  clubId    String
+  club      Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role      ClubRoleType @default(MEMBER)
+  joinedAt  DateTime     @default(now())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([clubId, memberId])
+  @@index([tenantId])
+  @@index([clubId])
+  @@index([memberId])
+}
+
+model ClubRole {
+  id          String       @id @default(uuid())
+  tenantId    String
+  clubId      String
+  name        String
+  roleType    ClubRoleType @default(MEMBER)
+  permissions String[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([clubId, name])
+  @@index([tenantId])
+  @@index([clubId])
+}
+
+model ClubEvent {
+  id        String   @id @default(uuid())
+  tenantId  String
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clubId, eventId])
+  @@index([tenantId])
+  @@index([clubId])
+  @@index([eventId])
+}
+
+model ClubPost {
+  id          String        @id @default(uuid())
+  tenantId    String
+  clubId      String
+  club        Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      Member        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title       String?
+  body        String
+  isPinned    Boolean       @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  comments    ClubPostComment[]
+
+  @@index([tenantId])
+  @@index([clubId])
+}
+
+model ClubPostComment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  postId    String
+  post      ClubPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([postId])
+  @@index([memberId])
+}
+
+// ─────────────────────────────────────────────
+// 7. PAYMENT MODELS
+// ─────────────────────────────────────────────
+
+model Payment {
+  id                    String        @id @default(uuid())
+  tenantId              String
+  tenant                Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId              String?
+  member                Member?       @relation(fields: [memberId], references: [id])
+  membershipSubscriptionId String?
+  membershipSubscription   MembershipSubscription? @relation(fields: [membershipSubscriptionId], references: [id])
+  amountCents           Int
+  currency              String        @default("USD")
+  status                PaymentStatus @default(PENDING)
+  paymentMethodId       String?
+  paymentMethod         PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  stripePaymentIntentId String?       @unique
+  stripeChargeId        String?
+  description           String?
+  metadata              Json?
+  paidAt                DateTime?
+  failedAt              DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  eventRegistrations    EventRegistration[]
+  invoiceItems          InvoiceItem[]
+  refunds               Refund[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+}
+
+model PaymentMethod {
+  id                  String            @id @default(uuid())
+  tenantId            String
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId            String
+  member              Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type                PaymentMethodType @default(CARD)
+  last4               String?
+  brand               String?
+  expiryMonth         Int?
+  expiryYear          Int?
+  isDefault           Boolean           @default(false)
+  stripePaymentMethodId String?         @unique
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  payments            Payment[]
+
+  @@index([tenantId])
+  @@index([memberId])
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId      String?
+  invoiceNumber String
+  status        InvoiceStatus @default(DRAFT)
+  subtotalCents Int           @default(0)
+  taxCents      Int           @default(0)
+  totalCents    Int           @default(0)
+  currency      String        @default("USD")
+  dueDate       DateTime?
+  paidAt        DateTime?
+  notes         String?
+  stripeInvoiceId String?     @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items         InvoiceItem[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([memberId])
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  paymentId   String?
+  payment     Payment? @relation(fields: [paymentId], references: [id])
+  description String
+  quantity    Int      @default(1)
+  unitCents   Int
+  totalCents  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([invoiceId])
+}
+
+model Refund {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  paymentId           String
+  payment             Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amountCents         Int
+  reason              String?
+  stripeRefundId      String?  @unique
+  refundedAt          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([paymentId])
+}
+
+// ─────────────────────────────────────────────
+// DONATIONS MODELS
+// ─────────────────────────────────────────────
+
+model DonationCampaign {
+  id                String                @id @default(uuid())
+  tenantId          String
+  tenant            Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title             String
+  description       String
+  coverImageUrl     String?
+  goalAmountCents   Int
+  currency          String                @default("USD")
+  raisedAmountCents Int                   @default(0)
+  startDate         DateTime
+  endDate           DateTime?
+  isPublic          Boolean               @default(true)
+  showProgressBar   Boolean               @default(true)
+  showDonorList     Boolean               @default(false)
+  allowRecurring    Boolean               @default(false)
+  defaultAmounts    Int[]                 @default([10, 25, 50, 100])
+  thankYouMessage   String?
+  status            DonationCampaignStatus @default(DRAFT)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  donations         Donation[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([startDate, endDate])
+}
+
+model Donation {
+  id                   String              @id @default(uuid())
+  tenantId             String
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaignId           String?
+  campaign             DonationCampaign?   @relation(fields: [campaignId], references: [id])
+  memberId             String?
+  member               Member?             @relation(fields: [memberId], references: [id])
+  amountCents          Int
+  currency             String              @default("USD")
+  donorName            String?
+  donorEmail           String?
+  message              String?
+  isAnonymous          Boolean             @default(false)
+  isRecurring          Boolean             @default(false)
+  recurringInterval    RecurringInterval?
+  dedicatedTo          String?             // In memory/honor of
+  status               DonationStatus      @default(PENDING)
+  stripePaymentIntentId String?             @unique
+  stripeSubscriptionId  String?             @unique
+  stripeCustomerId     String?
+  taxReceiptGenerated  Boolean             @default(false)
+  taxReceiptUrl        String?
+  paidAt               DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, campaignId])
+  @@index([tenantId, memberId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+  @@index([stripeSubscriptionId])
+}
+
+// ─────────────────────────────────────────────
+// 8. COMMUNICATION MODELS
+// ─────────────────────────────────────────────
+
+model EmailTemplate {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  subject     String
+  bodyHtml    String
+  bodyText    String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campaigns   EmailCampaign[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model EmailCampaign {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  templateId   String?
+  template     EmailTemplate? @relation(fields: [templateId], references: [id])
+  name         String
+  subject      String
+  bodyHtml     String
+  bodyText     String?
+  fromName       String
+  fromEmail      String
+  recipientCount Int               @default(0)
+  recipientFilter Json?
+  status         EmailCampaignStatus @default(DRAFT)
+  sentAt         DateTime?
+  scheduledFor   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  logs         EmailLog[]
+
+  @@index([tenantId])
+}
+
+model EmailLog {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaignId      String?
+  campaign        EmailCampaign? @relation(fields: [campaignId], references: [id])
+  memberId        String?
+  toEmail         String
+  subject         String
+  status          String
+  resendMessageId String?  @unique
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  sentAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([campaignId])
+  @@index([memberId])
+}
+
+model Notification {
+  id         String             @id @default(uuid())
+  tenantId   String
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  channel    NotificationChannel @default(IN_APP)
+  status     NotificationStatus  @default(UNREAD)
+  type       String             @default("general")
+  title      String
+  body       String
+  actionUrl  String?
+  readAt     DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([memberId, status])
+}
+
+model Announcement {
+  id          String             @id @default(uuid())
+  tenantId    String
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  status      AnnouncementStatus   @default(DRAFT)
+  audience    AnnouncementAudience @default(ALL)
+  targetIds   String[]             @default([])
+  isPinned    Boolean             @default(false)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId     String?
+  action     String
+  description String?
+  entityType String?
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model Feedback {
+  id             String   @id @default(uuid())
+  tenantId       String?
+  tenant         Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rating         Int
+  feedback       String
+  featureRequest String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// 9. SETTINGS MODELS
+// ─────────────────────────────────────────────
+
+model TenantSettings {
+  id                   String   @id @default(uuid())
+  tenantId             String   @unique
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  primaryColor         String?
+  accentColor          String?
+  logoUrl              String?
+  faviconUrl           String?
+  supportEmail         String?
+  supportPhone         String?
+  websiteUrl           String?
+  facebookUrl          String?
+  twitterUrl           String?
+  linkedinUrl          String?
+  instagramUrl         String?
+  enableMemberships    Boolean  @default(true)
+  enableEvents         Boolean  @default(true)
+  enableVolunteers     Boolean  @default(true)
+  enableClubs          Boolean  @default(true)
+  enablePayments       Boolean  @default(false)
+  requireEmailVerification Boolean @default(true)
+  allowPublicMemberDirectory Boolean @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model TenantIntegration {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider     String
+  isActive     Boolean  @default(false)
+  accessToken  String?
+  refreshToken String?
+  accountId    String?
+  webhookSecret String?
+  metadata     Json?
+  connectedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
+}
+
+// ─────────────────────────────────────────────
+// 10. WEBHOOK MODELS
+// ─────────────────────────────────────────────
+
+model WebhookSubscription {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  url         String
+  events      String[] // Array of event types this subscription listens to
+  secret      String   // HMAC secret for signature verification
+  isActive    Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deliveryLogs WebhookDeliveryLog[]
+
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model WebhookDeliveryLog {
+  id             String               @id @default(uuid())
+  subscriptionId String
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  eventType      String
+  payload        Json
+  statusCode     Int?
+  response       String?
+  status         WebhookDeliveryStatus @default(PENDING)
+  attemptNumber  Int                  @default(1)
+  nextRetryAt    DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([nextRetryAt])
+}
+
+// ─────────────────────────────────────────────
+// 11. API KEY MODELS
+// ─────────────────────────────────────────────
+
+model ApiKey {
+  id          String     @id @default(uuid())
+  tenantId    String
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  keyHash     String     // Hashed API key
+  keyPrefix   String     // First 8 characters for identification
+  scope       ApiKeyScope @default(READ)
+  isActive    Boolean    @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  rateLimit   Int        @default(1000) // Requests per hour
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([keyHash])
+  @@index([isActive])
+}
