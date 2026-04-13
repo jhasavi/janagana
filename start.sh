@@ -83,6 +83,14 @@ echo ""
 echo -e "${BLUE}Starting services...${NC}"
 echo ""
 
+# Kill any existing process on port 3000
+echo "Checking for existing process on port 3000..."
+if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "Found process on port 3000, killing it..."
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    sleep 1
+fi
+
 # Start Web in background
 echo "Starting Web server..."
 $PKG_MANAGER run dev > logs/web.log 2>&1 &
