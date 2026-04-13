@@ -1,7 +1,10 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { generateMembershipCardQR } from '@/lib/actions'
+import { QrCode, Download } from 'lucide-react'
 
 export default async function ProfilePage() {
   const user = await currentUser()
+  const qrCode = user ? await generateMembershipCardQR(user.id) : null
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -42,6 +45,37 @@ export default async function ProfilePage() {
                 Email
               </label>
               <div className="text-gray-900">{user?.emailAddresses[0]?.emailAddress}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t pt-6 mt-6">
+          <h3 className="text-lg font-semibold mb-4">Digital Membership Card</h3>
+          <div className="bg-gray-50 rounded-lg p-6">
+            <div className="flex items-center gap-6">
+              {qrCode && (
+                <div className="bg-white p-4 rounded-lg">
+                  <img src={qrCode} alt="Membership QR Code" className="w-48 h-48" />
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-gray-600 mb-4">
+                  Scan this QR code to check in at events. This is your digital membership card.
+                </p>
+                <div className="flex gap-2">
+                  <a
+                    href={qrCode || '#'}
+                    download="membership-card.png"
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Card
+                  </a>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Apple Wallet and Google Pay integration coming soon (requires developer account setup)
+                </p>
+              </div>
             </div>
           </div>
         </div>

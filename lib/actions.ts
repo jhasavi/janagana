@@ -833,6 +833,93 @@ export async function uploadFile(file: File, folder?: string) {
   return result
 }
 
+// Membership card action
+export async function generateMembershipCardQR(memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const member = await prisma.member.findFirst({
+    where: {
+      id: memberId,
+      tenantId: tenant.id,
+    },
+  })
+
+  if (!member) {
+    throw new Error('Member not found')
+  }
+
+  const organization = await prisma.tenant.findUnique({
+    where: { id: tenant.id },
+  })
+
+  if (!organization) {
+    throw new Error('Organization not found')
+  }
+
+  const { generateMembershipCardQR: generateQR } = await import('./membership-card')
+  const qrCode = await generateQR(member, organization)
+  
+  return qrCode
+}
+
+// SMS notification actions
+export async function sendSMSNotification(memberId: string, message: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const member = await prisma.member.findFirst({
+    where: {
+      id: memberId,
+      tenantId: tenant.id,
+    },
+  })
+
+  if (!member) {
+    throw new Error('Member not found')
+  }
+
+  const { sendSMS } = await import('./sms')
+  const result = await sendSMS(member.phone || '', message)
+  
+  return result
+}
+
+export async function sendMembershipRenewalReminder(memberId: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const member = await prisma.member.findFirst({
+    where: {
+      id: memberId,
+      tenantId: tenant.id,
+    },
+  })
+
+  if (!member) {
+    throw new Error('Member not found')
+  }
+
+  const organization = await prisma.tenant.findUnique({
+    where: { id: tenant.id },
+  })
+
+  if (!organization) {
+    throw new Error('Organization not found')
+  }
+
+  const { sendMembershipRenewalReminder } = await import('./sms')
+  const result = await sendMembershipRenewalReminder(member, organization)
+  
+  return result
+}
+
 export async function cancelSubscription() {
   const tenant = await getUserTenant()
   if (!tenant) {
