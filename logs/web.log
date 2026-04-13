@@ -5,136 +5,28 @@
   ▲ Next.js 14.2.35
   - Local:        http://localhost:3000
   - Environments: .env.local, .env
-  - Experiments (use with caution):
-    · typedRoutes
 
  ✓ Starting...
  ⚠ Found lockfile missing swc dependencies, patching...
 npm error code ENOWORKSPACES
 npm error This command does not support workspaces.
-npm error A complete log of this run can be found in: /Users/sanjeevjha/.npm/_logs/2026-04-12T01_33_20_026Z-debug-0.log
+npm error A complete log of this run can be found in: /Users/sanjeevjha/.npm/_logs/2026-04-12T11_09_23_131Z-debug-0.log
  ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
 TypeError: Cannot read properties of undefined (reading 'os')
     at fetchPkgInfo (/Users/sanjeevjha/janagana/node_modules/next/dist/lib/patch-incorrect-lockfile.js:73:25)
     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async Promise.all (index 0)
+    at async Promise.all (index 6)
     at async patchIncorrectLockfile (/Users/sanjeevjha/janagana/node_modules/next/dist/lib/patch-incorrect-lockfile.js:162:26)
- ✓ Ready in 2.9s
+ ✓ Ready in 5.6s
  ○ Compiling /middleware ...
- ✓ Compiled /middleware in 629ms (182 modules)
-Clerk: unable to resolve handshake:  [Error: Unable to find a signing key in JWKS that matches the kid='ins_3CBHhqK7Oks3MenoFbnRYLfjcLn' of the provided session token. Please make sure that the __session cookie or the HTTP authorization header contain a Clerk-generated session JWT. The following kid is available: ins_3CDxXDfVpRlGbN2QgWOhlk0DJbp] {
-  reason: 'jwk-kid-mismatch',
-  action: 'Go to your Dashboard and validate your secret and public keys are correct. Contact support@clerk.com if the issue persists.'
-}
-Clerk: unable to resolve handshake:  [Error: Unable to find a signing key in JWKS that matches the kid='ins_3CBHhqK7Oks3MenoFbnRYLfjcLn' of the provided session token. Please make sure that the __session cookie or the HTTP authorization header contain a Clerk-generated session JWT. The following kid is available: ins_3CDxXDfVpRlGbN2QgWOhlk0DJbp] {
-  reason: 'jwk-kid-mismatch',
-  action: 'Go to your Dashboard and validate your secret and public keys are correct. Contact support@clerk.com if the issue persists.'
-}
+ ✓ Compiled /middleware in 1284ms (182 modules)
  ○ Compiling / ...
- ✓ Compiled / in 3.3s (1453 modules)
- ⨯ app/(marketing)/page.tsx (9:43) @ React
- ⨯ useState only works in Client Components. Add the "use client" directive at the top of the file to use it. Read more: https://nextjs.org/docs/messages/react-client-hook-in-server-component
-    at MarketingHomePage (page.tsx:31:80)
-    at stringify (<anonymous>)
-digest: "3889990337"
-[0m [90m  7 |[39m[0m
-[0m [90m  8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mMarketingHomePage[39m() {[0m
-[0m[31m[1m>[22m[39m[90m  9 |[39m   [36mconst[39m [billingCycle[33m,[39m setBillingCycle] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[32m'monthly'[39m [33m|[39m [32m'annual'[39m[33m>[39m([32m'monthly'[39m)[33m;[39m[0m
-[0m [90m    |[39m                                           [31m[1m^[22m[39m[0m
-[0m [90m 10 |[39m   [36mconst[39m [openFaq[33m,[39m setOpenFaq] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[33mnumber[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
-[0m [90m 11 |[39m[0m
-[0m [90m 12 |[39m   [36mconst[39m pricing [33m=[39m {[0m
- ⨯ app/(marketing)/page.tsx (9:43) @ React
- ⨯ useState only works in Client Components. Add the "use client" directive at the top of the file to use it. Read more: https://nextjs.org/docs/messages/react-client-hook-in-server-component
-    at MarketingHomePage (page.tsx:31:80)
-    at stringify (<anonymous>)
-digest: "3889990337"
-[0m [90m  7 |[39m[0m
-[0m [90m  8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mMarketingHomePage[39m() {[0m
-[0m[31m[1m>[22m[39m[90m  9 |[39m   [36mconst[39m [billingCycle[33m,[39m setBillingCycle] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[32m'monthly'[39m [33m|[39m [32m'annual'[39m[33m>[39m([32m'monthly'[39m)[33m;[39m[0m
-[0m [90m    |[39m                                           [31m[1m^[22m[39m[0m
-[0m [90m 10 |[39m   [36mconst[39m [openFaq[33m,[39m setOpenFaq] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[33mnumber[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
-[0m [90m 11 |[39m[0m
-[0m [90m 12 |[39m   [36mconst[39m pricing [33m=[39m {[0m
- GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NEbnFIOHhHeHVQQ0ZNSkFpZHNpMG85ZExXOyBQYXRoPS87IEV4cGlyZXM9U3VuLCAxMSBBcHIgMjAyNyAxNzozOTo1NiBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.liYGTPXN85j9lDhSBdM1JNOugIQ0iJgeQo-fv3M_Hs1blVq2rxS6EfI-23OxJcg2CGVv1X3HrJszY_Sl_gwXN0hklmkycdMomUG9N2qWY-b7cQpesbZ_ihTlUIz36eslrFYUTvQspp4sQLzblPWU7TX3xAHBNE0_22Zh3UFni0mESH2sjEe2N7qeWvEQix5y29waN4f8mz0oV9ycybW1COZBxh4IaKGZIzfr6cPfz6cBycHZlr9cP6ASUrAXjkM2wFjoAZGqaGDzN19MJPcjaNcrxHKdrdAia3zubOkjpB4aIpxWogxFwe2BjULZAixLbHUczk5jj0lmMbCtjj4z9Q 200 in 4815ms
- ○ Compiling /sign-in/[[...sign-in]] ...
- ✓ Compiled /sign-in/[[...sign-in]] in 1237ms (1458 modules)
- GET /sign-in 200 in 1967ms
-Clerk: unable to resolve handshake:  [Error: Unable to find a signing key in JWKS that matches the kid='ins_3CBHhqK7Oks3MenoFbnRYLfjcLn' of the provided session token. Please make sure that the __session cookie or the HTTP authorization header contain a Clerk-generated session JWT. The following kid is available: ins_3CDxXDfVpRlGbN2QgWOhlk0DJbp] {
-  reason: 'jwk-kid-mismatch',
-  action: 'Go to your Dashboard and validate your secret and public keys are correct. Contact support@clerk.com if the issue persists.'
-}
- ⨯ app/(marketing)/page.tsx (9:43) @ React
- ⨯ useState only works in Client Components. Add the "use client" directive at the top of the file to use it. Read more: https://nextjs.org/docs/messages/react-client-hook-in-server-component
-    at MarketingHomePage (page.tsx:31:80)
-    at stringify (<anonymous>)
-digest: "3889990337"
-[0m [90m  7 |[39m[0m
-[0m [90m  8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mMarketingHomePage[39m() {[0m
-[0m[31m[1m>[22m[39m[90m  9 |[39m   [36mconst[39m [billingCycle[33m,[39m setBillingCycle] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[32m'monthly'[39m [33m|[39m [32m'annual'[39m[33m>[39m([32m'monthly'[39m)[33m;[39m[0m
-[0m [90m    |[39m                                           [31m[1m^[22m[39m[0m
-[0m [90m 10 |[39m   [36mconst[39m [openFaq[33m,[39m setOpenFaq] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[33mnumber[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
-[0m [90m 11 |[39m[0m
-[0m [90m 12 |[39m   [36mconst[39m pricing [33m=[39m {[0m
- ⨯ app/(marketing)/page.tsx (9:43) @ React
- ⨯ useState only works in Client Components. Add the "use client" directive at the top of the file to use it. Read more: https://nextjs.org/docs/messages/react-client-hook-in-server-component
-    at MarketingHomePage (page.tsx:31:80)
-    at stringify (<anonymous>)
-digest: "3889990337"
-[0m [90m  7 |[39m[0m
-[0m [90m  8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mMarketingHomePage[39m() {[0m
-[0m[31m[1m>[22m[39m[90m  9 |[39m   [36mconst[39m [billingCycle[33m,[39m setBillingCycle] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[32m'monthly'[39m [33m|[39m [32m'annual'[39m[33m>[39m([32m'monthly'[39m)[33m;[39m[0m
-[0m [90m    |[39m                                           [31m[1m^[22m[39m[0m
-[0m [90m 10 |[39m   [36mconst[39m [openFaq[33m,[39m setOpenFaq] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[33mnumber[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
-[0m [90m 11 |[39m[0m
-[0m [90m 12 |[39m   [36mconst[39m pricing [33m=[39m {[0m
- GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NEbnFIOHhHeHVQQ0ZNSkFpZHNpMG85ZExXOyBQYXRoPS87IEV4cGlyZXM9U3VuLCAxMSBBcHIgMjAyNyAxNzozOTo1NiBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.liYGTPXN85j9lDhSBdM1JNOugIQ0iJgeQo-fv3M_Hs1blVq2rxS6EfI-23OxJcg2CGVv1X3HrJszY_Sl_gwXN0hklmkycdMomUG9N2qWY-b7cQpesbZ_ihTlUIz36eslrFYUTvQspp4sQLzblPWU7TX3xAHBNE0_22Zh3UFni0mESH2sjEe2N7qeWvEQix5y29waN4f8mz0oV9ycybW1COZBxh4IaKGZIzfr6cPfz6cBycHZlr9cP6ASUrAXjkM2wFjoAZGqaGDzN19MJPcjaNcrxHKdrdAia3zubOkjpB4aIpxWogxFwe2BjULZAixLbHUczk5jj0lmMbCtjj4z9Q 200 in 81ms
- GET /sign-in 200 in 58ms
- ⨯ app/(marketing)/page.tsx (9:43) @ React
- ⨯ useState only works in Client Components. Add the "use client" directive at the top of the file to use it. Read more: https://nextjs.org/docs/messages/react-client-hook-in-server-component
-    at MarketingHomePage (page.tsx:31:80)
-    at stringify (<anonymous>)
-    at AsyncLocalStorage.run (node:async_hooks:346:14)
-digest: "957926273"
-[0m [90m  7 |[39m[0m
-[0m [90m  8 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mMarketingHomePage[39m() {[0m
-[0m[31m[1m>[22m[39m[90m  9 |[39m   [36mconst[39m [billingCycle[33m,[39m setBillingCycle] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[32m'monthly'[39m [33m|[39m [32m'annual'[39m[33m>[39m([32m'monthly'[39m)[33m;[39m[0m
-[0m [90m    |[39m                                           [31m[1m^[22m[39m[0m
-[0m [90m 10 |[39m   [36mconst[39m [openFaq[33m,[39m setOpenFaq] [33m=[39m [33mReact[39m[33m.[39museState[33m<[39m[33mnumber[39m [33m|[39m [36mnull[39m[33m>[39m([36mnull[39m)[33m;[39m[0m
-[0m [90m 11 |[39m[0m
-[0m [90m 12 |[39m   [36mconst[39m pricing [33m=[39m {[0m
- ✓ Compiled in 3.8s (1488 modules)
- GET /features?_rsc=j9axs 200 in 169ms
-   Reload env: .env.local
- ✓ Compiled in 323ms (1656 modules)
- GET /features?_rsc=j9axs 200 in 188ms
- ✓ Compiled in 1188ms (1488 modules)
- GET /features?_rsc=j9axs 200 in 99ms
- ✓ Compiled in 887ms (1488 modules)
- GET /features?_rsc=j9axs 200 in 107ms
- ✓ Compiled in 474ms (656 modules)
- GET /features?_rsc=j9axs 200 in 28ms
- ✓ Compiled in 402ms (656 modules)
- GET /features?_rsc=j9axs 200 in 35ms
- ✓ Compiled in 527ms (1484 modules)
- GET /features?_rsc=j9axs 200 in 91ms
- ✓ Compiled in 348ms (656 modules)
- GET /features?_rsc=j9axs 200 in 37ms
- ✓ Compiled in 448ms (656 modules)
- GET /features?_rsc=j9axs 200 in 30ms
- ✓ Compiled in 449ms (656 modules)
- GET /features?_rsc=j9axs 200 in 26ms
- ✓ Compiled in 420ms (656 modules)
- GET /features?_rsc=j9axs 200 in 71ms
- ✓ Compiled in 89ms (182 modules)
- ✓ Compiled in 683ms (656 modules)
- GET /features?_rsc=j9axs 200 in 39ms
- ✓ Compiled in 608ms (656 modules)
- GET /features?_rsc=j9axs 200 in 59ms
- ✓ Compiled in 517ms (656 modules)
- GET /features?_rsc=j9axs 200 in 36ms
- ✓ Compiled in 418ms (656 modules)
- GET /features?_rsc=j9axs 200 in 29ms
- ✓ Compiled in 818ms (1484 modules)
- GET /features?_rsc=j9axs 200 in 263ms
+ ✓ Compiled / in 7.4s (828 modules)
+ GET / 200 in 8120ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 8.2s (808 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 7801ms
+ GET /?_rsc=1p60s 200 in 43ms
+ ✓ Compiled in 358ms (343 modules)
+ GET /?_rsc=1p60s 200 in 32ms
 [?25h
