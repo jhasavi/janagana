@@ -920,6 +920,114 @@ export async function sendMembershipRenewalReminder(memberId: string) {
   return result
 }
 
+// Fundraising/Donations actions
+export async function getDonationCampaigns() {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  return await prisma.donationCampaign.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function createDonationCampaign(data: {
+  title: string
+  description: string
+  goalAmount: number
+  startDate: Date
+  endDate?: Date
+  isPublic?: boolean
+  showProgressBar?: boolean
+  showDonorList?: boolean
+  allowRecurring?: boolean
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  return await prisma.donationCampaign.create({
+    data: {
+      tenantId: tenant.id,
+      title: data.title,
+      description: data.description,
+      goalAmountCents: Math.round(data.goalAmount * 100),
+      startDate: data.startDate,
+      endDate: data.endDate,
+      isPublic: data.isPublic ?? true,
+      showProgressBar: data.showProgressBar ?? true,
+      showDonorList: data.showDonorList ?? false,
+      allowRecurring: data.allowRecurring ?? false,
+    },
+  })
+}
+
+export async function getDonations(campaignId?: string) {
+  const tenant = await getUserTenant()
+  if (!tenant) return []
+
+  const where: any = { tenantId: tenant.id }
+  if (campaignId) {
+    where.campaignId = campaignId
+  }
+
+  return await prisma.donation.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      campaign: true,
+      member: true,
+    },
+  })
+}
+
+export async function createDonation(data: {
+  campaignId?: string
+  memberId?: string
+  amount: number
+  donorName?: string
+  donorEmail?: string
+  message?: string
+  isAnonymous?: boolean
+  isRecurring?: boolean
+  recurringInterval?: string
+}) {
+  const tenant = await getUserTenant()
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  const donation = await prisma.donation.create({
+    data: {
+      tenantId: tenant.id,
+      campaignId: data.campaignId,
+      memberId: data.memberId,
+      amountCents: Math.round(data.amount * 100),
+      donorName: data.donorName,
+      donorEmail: data.donorEmail,
+      message: data.message,
+      isAnonymous: data.isAnonymous ?? false,
+      isRecurring: data.isRecurring ?? false,
+      recurringInterval: data.recurringInterval as any,
+    },
+  })
+
+  // Update campaign raised amount if linked to campaign
+  if (data.campaignId) {
+    await prisma.donationCampaign.update({
+      where: { id: data.campaignId },
+      data: {
+        raisedAmountCents: {
+          increment: donation.amountCents,
+        },
+      },
+    })
+  }
+
+  return donation
+}
+
 export async function cancelSubscription() {
   const tenant = await getUserTenant()
   if (!tenant) {
