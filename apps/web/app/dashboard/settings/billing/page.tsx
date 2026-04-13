@@ -1,10 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createCheckoutSession } from '@/lib/actions'
 
 export default function BillingPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const success = searchParams.get('success')
+  const canceled = searchParams.get('canceled')
+
+  useEffect(() => {
+    if (success === 'true') {
+      alert('Subscription activated successfully!')
+    } else if (canceled === 'true') {
+      alert('Subscription was canceled. You can try again anytime.')
+    }
+  }, [success, canceled])
 
   const handleSubscribe = async (priceId: string) => {
     setIsLoading(true)

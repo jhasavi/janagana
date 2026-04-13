@@ -1046,3 +1046,685 @@ digest: "1667884515"
     at AsyncLocalStorage.run (node:async_hooks:346:14)
 digest: "1667884515"
  GET /.well-known/appspecific/com.chrome.devtools.json 404 in 53ms
+ ✓ Compiled in 477ms (510 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 741ms (993 modules)
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 991ms
+ ✓ Compiled in 156ms (512 modules)
+ ✓ Compiled in 167ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 30ms
+ ✓ Compiled in 326ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 30ms
+ ✓ Compiled in 183ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 29ms
+ ✓ Compiled in 147ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 5ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 27ms
+ ✓ Compiled in 422ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 30ms
+ ✓ Compiled in 218ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 39ms
+ ✓ Compiled in 153ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 48ms
+ ✓ Compiled in 154ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 27ms
+ ✓ Compiled in 157ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 29ms
+ ✓ Compiled in 131ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 33ms
+ ✓ Compiled in 222ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 25ms
+ ✓ Compiled in 151ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 29ms
+ ✓ Compiled in 160ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 4ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 37ms
+ ✓ Compiled in 154ms (512 modules)
+ ✓ Compiled in 209ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 26ms
+ ✓ Compiled in 1100ms (1189 modules)
+ ⚠ Fast Refresh had to perform a full reload when ../../node_modules/next/dist/shared/lib/router/router.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 4ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 37ms
+ ✓ Compiled in 123ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 32ms
+ ✓ Compiled in 154ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 34ms
+ ✓ Compiled in 231ms (512 modules)
+ ✓ Compiled in 367ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 35ms
+ ✓ Compiled in 189ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 34ms
+ ✓ Compiled in 164ms (512 modules)
+ ✓ Compiled in 224ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 47ms
+ ✓ Compiled in 838ms (741 modules)
+ ⚠ Fast Refresh had to perform a full reload when ../../node_modules/next/dist/shared/lib/router/router.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ✓ Compiled /_not-found in 408ms (993 modules)
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 615ms
+ ✓ Compiled in 768ms (741 modules)
+ ⚠ Fast Refresh had to perform a full reload when ../../node_modules/next/dist/shared/lib/router/router.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 5ms
+ ✓ Compiled /_not-found in 441ms (993 modules)
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 645ms
+ ✓ Compiled in 163ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 32ms
+ ✓ Compiled in 157ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 30ms
+ ✓ Compiled in 265ms (510 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 543ms (993 modules)
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 691ms
+ ✓ Compiled in 173ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 53ms
+ ✓ Compiled in 160ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 52ms
+ ✓ Compiled in 163ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 41ms
+ ✓ Compiled in 290ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 1ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 35ms
+ ✓ Compiled in 157ms (512 modules)
+ ⨯ Error: Clerk: Handshake token verification failed: The provided Clerk Secret Key is invalid. Make sure that your Clerk Secret Key is correct. Contact support@clerk.com (reason=secret-key-invalid, token-carrier=undefined).
+    at handleHandshakeTokenVerificationErrorInDevelopment (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2549:11)
+    at authenticateRequestWithTokenInCookie (webpack-internal:///(middleware)/../../node_modules/@clerk/backend/dist/chunk-HGGLOBDA.mjs:2561:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(middleware)/../../node_modules/@clerk/nextjs/dist/esm/server/clerkMiddleware.js:75:28)
+    at async adapter (webpack-internal:///(middleware)/../../node_modules/next/dist/esm/server/web/adapter.js:178:16)
+    at async (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:97:22)
+    at async runWithTaggedErrors (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/web/sandbox/sandbox.js:94:9)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:1068:24)
+    at async DevServer.runMiddleware (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/dev/next-dev-server.js:268:28)
+    at async NextNodeServer.handleCatchallMiddlewareRequest (file:///Users/sanjeevjha/janagana/node_modules/next/dist/server/next-server.js:322:26)
+ GET /?__clerk_handshake=eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18zQ0JIaHFLN09rczNNZW5vRmJuUllMZmpjTG4iLCJ0eXAiOiJKV1QifQ.eyJoYW5kc2hha2UiOlsiX19jbGllbnRfdWF0PTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsaWVudF91YXQ9MDsgUGF0aD0vOyBEb21haW49bG9jYWxob3N0OyBNYXgtQWdlPTMxNTM2MDAwMDsgU2VjdXJlOyBTYW1lU2l0ZT1Ob25lIiwiX19zZXNzaW9uPTsgUGF0aD0vOyBFeHBpcmVzPVRodSwgMDEgSmFuIDE5NzAgMDA6MDA6MDAgR01UOyBTZWN1cmU7IFNhbWVTaXRlPU5vbmUiLCJfX2NsZXJrX2RiX2p3dD1kdmJfM0NIZ2tnaFVUV1ZWM2VvYVR2MWI4NFNKSWp0OyBQYXRoPS87IEV4cGlyZXM9VHVlLCAxMyBBcHIgMjAyNyAwMjo0MDo1MyBHTVQ7IFNlY3VyZTsgU2FtZVNpdGU9Tm9uZSJdfQ.j6--2hTgpmPjU8xeqt990dAosFAp_YMc7D1Q7yWR1baCu2NAkv1VKZB77foKqi3FmxBuQw2a7SHQ6iZjQzbd2RfflqerLHaVZ7qyu7dP6BKqOKn_qyvMsHe-TRbtqt8iaHoDwIgC9ckgjqhSU3R5xBgzwuXVStvTNCtR3ffkSFk8sfVSYPer_3Lvt7OvTneHn9c80YM38G6zb4-XIhc0Z5jMchPUXeXst8ZOfS1rDlWXqR6pDfLL3N8JzHY1UuYq4LaPAh6OtBqQX-SAbnjfA08LiX1SlImCvHzC3ajfp6wM0uoVkJTMq2SLBHiRWASphKLMN_m7BY3xZDJd67hv-Q 404 in 2ms
+ ⨯ Error [ERR_HTTP_HEADERS_SENT]: Cannot append headers after they are sent to the client
+    at ServerResponse.appendHeader (node:_http_outgoing:711:11)
+    at AsyncLocalStorage.run (node:async_hooks:346:14)
+digest: "1667884515"
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 28ms

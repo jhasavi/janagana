@@ -5,14 +5,12 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Starting seed...')
 
-  // Create a plan first (or use existing)
-  let plan = await prisma.plan.findUnique({
-    where: { slug: 'STARTER' },
-  })
-
-  if (!plan) {
-    plan = await prisma.plan.create({
-      data: {
+  // Create all plans
+  const plans = await Promise.all([
+    prisma.plan.upsert({
+      where: { slug: 'STARTER' },
+      update: {},
+      create: {
         slug: 'STARTER',
         name: 'Starter',
         description: 'Basic plan for small organizations',
@@ -27,9 +25,50 @@ async function main() {
         hasAdvancedReports: false,
         isActive: true,
       },
-    })
-    console.log('Created plan:', plan.name)
-  }
+    }),
+    prisma.plan.upsert({
+      where: { slug: 'GROWTH' },
+      update: {},
+      create: {
+        slug: 'GROWTH',
+        name: 'Growth',
+        description: 'For growing organizations',
+        monthlyPriceCents: 2900,
+        annualPriceCents: 29000,
+        maxMembers: 500,
+        maxUsers: 10,
+        maxEvents: 50,
+        maxClubs: 20,
+        hasCustomDomain: true,
+        hasApiAccess: false,
+        hasAdvancedReports: false,
+        isActive: true,
+      },
+    }),
+    prisma.plan.upsert({
+      where: { slug: 'PRO' },
+      update: {},
+      create: {
+        slug: 'PRO',
+        name: 'Pro',
+        description: 'For large organizations',
+        monthlyPriceCents: 9900,
+        annualPriceCents: 99000,
+        maxMembers: 999999,
+        maxUsers: 25,
+        maxEvents: 999999,
+        maxClubs: 999999,
+        hasCustomDomain: true,
+        hasApiAccess: true,
+        hasAdvancedReports: true,
+        isActive: true,
+      },
+    }),
+  ])
+
+  console.log(`Created ${plans.length} plans`)
+
+  const plan = plans[0]
 
   // Create a sample tenant
   const tenant = await prisma.tenant.upsert({
@@ -61,10 +100,17 @@ async function main() {
 
   console.log('Created tenant:', tenant.name)
 
-  // Create sample members
+  // Create sample members using upsert to avoid unique constraint violations
   const members = await Promise.all([
-    prisma.member.create({
-      data: {
+    prisma.member.upsert({
+      where: {
+        tenantId_email: {
+          tenantId: tenant.id,
+          email: 'john.smith@example.com',
+        },
+      },
+      update: {},
+      create: {
         tenantId: tenant.id,
         firstName: 'John',
         lastName: 'Smith',
@@ -73,8 +119,15 @@ async function main() {
         status: 'ACTIVE',
       },
     }),
-    prisma.member.create({
-      data: {
+    prisma.member.upsert({
+      where: {
+        tenantId_email: {
+          tenantId: tenant.id,
+          email: 'jane.doe@example.com',
+        },
+      },
+      update: {},
+      create: {
         tenantId: tenant.id,
         firstName: 'Jane',
         lastName: 'Doe',
@@ -83,8 +136,15 @@ async function main() {
         status: 'ACTIVE',
       },
     }),
-    prisma.member.create({
-      data: {
+    prisma.member.upsert({
+      where: {
+        tenantId_email: {
+          tenantId: tenant.id,
+          email: 'bob.johnson@example.com',
+        },
+      },
+      update: {},
+      create: {
         tenantId: tenant.id,
         firstName: 'Bob',
         lastName: 'Johnson',
@@ -97,13 +157,15 @@ async function main() {
 
   console.log(`Created ${members.length} members`)
 
-  // Create sample events
+  // Create sample events using upsert
   const events = await Promise.all([
-    prisma.event.create({
-      data: {
+    prisma.event.upsert({
+      where: { tenantId_slug: { tenantId: tenant.id, slug: 'annual-meeting' } },
+      update: {},
+      create: {
         tenantId: tenant.id,
         title: 'Annual Meeting',
-        slug: 'annual-meeting-' + Date.now(),
+        slug: 'annual-meeting',
         description: 'Our yearly general meeting for all members',
         startsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
@@ -112,11 +174,13 @@ async function main() {
         format: 'IN_PERSON',
       },
     }),
-    prisma.event.create({
-      data: {
+    prisma.event.upsert({
+      where: { tenantId_slug: { tenantId: tenant.id, slug: 'community-service-day' } },
+      update: {},
+      create: {
         tenantId: tenant.id,
         title: 'Community Service Day',
-        slug: 'community-service-day-' + Date.now(),
+        slug: 'community-service-day',
         description: 'Volunteer opportunity to help the local community',
         startsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         endsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
@@ -129,22 +193,26 @@ async function main() {
 
   console.log(`Created ${events.length} events`)
 
-  // Create sample clubs
+  // Create sample clubs using upsert
   const clubs = await Promise.all([
-    prisma.club.create({
-      data: {
+    prisma.club.upsert({
+      where: { tenantId_slug: { tenantId: tenant.id, slug: 'book-club' } },
+      update: {},
+      create: {
         tenantId: tenant.id,
         name: 'Book Club',
-        slug: 'book-club-' + Date.now(),
+        slug: 'book-club',
         description: 'Monthly book discussions and reviews',
         isActive: true,
       },
     }),
-    prisma.club.create({
-      data: {
+    prisma.club.upsert({
+      where: { tenantId_slug: { tenantId: tenant.id, slug: 'sports-club' } },
+      update: {},
+      create: {
         tenantId: tenant.id,
         name: 'Sports Club',
-        slug: 'sports-club-' + Date.now(),
+        slug: 'sports-club',
         description: 'Weekly sports activities and competitions',
         isActive: true,
       },

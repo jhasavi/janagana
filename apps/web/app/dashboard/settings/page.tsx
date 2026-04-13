@@ -4,7 +4,7 @@ export default function SettingsPage() {
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
-      
+
       <div className="bg-white rounded-xl shadow-sm border">
         <Link
           href="/dashboard/settings/billing"
@@ -18,8 +18,11 @@ export default function SettingsPage() {
             <span className="text-gray-400">→</span>
           </div>
         </Link>
-        
-        <div className="p-4">
+
+        <Link
+          href="/dashboard/settings/organization"
+          className="block p-4 hover:bg-gray-50"
+        >
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold text-gray-900">Organization Settings</h2>
@@ -27,7 +30,7 @@ export default function SettingsPage() {
             </div>
             <span className="text-gray-400">→</span>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   )
