@@ -6,12 +6,16 @@
 ## Live Demo
 - Web: https://janagana.namasteneedham.com
 
-## Local Development
+## 📚 Complete Setup Guide
+
+**For detailed setup, deployment, and development instructions, see [COMPLETE_GUIDE.md](COMPLETE_GUIDE.md)**
+
+## Quick Start
 ```bash
-git clone [repo-url]
+git clone https://github.com/jhasavi/janagana.git
 cd janagana
 cp .env.example .env.local
-# Fill in environment variables
+# Fill in environment variables (see COMPLETE_GUIDE.md)
 npm install
 npm run db:generate
 npm run dev
