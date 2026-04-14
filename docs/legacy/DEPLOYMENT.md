@@ -1,6 +1,6 @@
-# OrgFlow Deployment Guide
+# Jana Gana Deployment Guide
 
-This guide covers the complete deployment process for the OrgFlow SaaS platform to production environments.
+This guide covers the complete deployment process for the Jana Gana SaaS platform to production environments.
 
 ## Architecture Overview
 
@@ -26,7 +26,7 @@ Before deploying to production, ensure you have:
 - [ ] Resend domain verified and API key obtained
 - [ ] Cloudinary account set up with API credentials
 - [ ] Sentry projects created (web + api) with DSNs
-- [ ] Custom domain (orgflow.app) purchased and ready
+- [ ] Custom domain (janagana.app) purchased and ready
 - [ ] GitHub repository configured with necessary secrets
 - [ ] Railway project created and API key obtained
 - [ ] Vercel project created and API token obtained
@@ -38,7 +38,7 @@ Before deploying to production, ensure you have:
 ### Create Neon Database
 
 1. Go to [neon.tech](https://neon.tech) and sign up
-2. Create a new project named "orgflow-prod"
+2. Create a new project named "janagana-prod"
 3. Choose a region closest to your users
 4. Copy the `DATABASE_URL` from the project settings
 
@@ -46,7 +46,7 @@ Before deploying to production, ensure you have:
 
 ```bash
 # Set the DATABASE_URL environment variable
-export DATABASE_URL="postgres://user:password@ep-xxx.us-east-2.aws.neon.tech/orgflow?sslmode=require"
+export DATABASE_URL="postgres://user:password@ep-xxx.us-east-2.aws.neon.tech/janagana?sslmode=require"
 
 # Generate Prisma client
 npm run db:generate
@@ -73,7 +73,7 @@ Add the `DATABASE_URL` to:
 ### Create Upstash Redis
 
 1. Go to [upstash.com](https://upstash.com) and sign up
-2. Create a new database named "orgflow-redis"
+2. Create a new database named "janagana-redis"
 3. Choose a region (preferably same as Neon)
 4. Copy the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
 
@@ -99,7 +99,7 @@ Add to environment variables:
 ### Create Production Instance
 
 1. Go to [clerk.com](https://clerk.com) and sign in
-2. Create a new application "OrgFlow Production"
+2. Create a new application "Jana Gana Production"
 3. Enable the following features:
    - Email/password authentication
    - Social providers (Google, GitHub)
@@ -111,18 +111,18 @@ Add to environment variables:
 Add the following URLs to your Clerk application:
 
 **Allowed Origins:**
-- `https://orgflow.app`
-- `https://*.orgflow.app`
-- `https://api.orgflow.app`
+- `https://janagana.app`
+- `https://*.janagana.app`
+- `https://api.janagana.app`
 
 **Redirect URLs:**
-- `https://orgflow.app/sign-in`
-- `https://orgflow.app/sign-up`
-- `https://orgflow.app/portal/*`
-- `https://*.orgflow.app/portal/*`
+- `https://janagana.app/sign-in`
+- `https://janagana.app/sign-up`
+- `https://janagana.app/portal/*`
+- `https://*.janagana.app/portal/*`
 
 **Webhook URLs:**
-- `https://api.orgflow.app/webhooks/clerk`
+- `https://api.janagana.app/webhooks/clerk`
 
 ### Save Credentials
 
@@ -148,8 +148,8 @@ Add the following URLs to your Clerk application:
 2. Create a Connect application
 3. Configure onboarding flow
 4. Set up webhook endpoints:
-   - `https://api.orgflow.app/webhooks/stripe`
-   - `https://api.orgflow.app/webhooks/stripe-connect`
+   - `https://api.janagana.app/webhooks/stripe`
+   - `https://api.janagana.app/webhooks/stripe-connect`
 
 ### Configure Webhooks
 
@@ -187,7 +187,7 @@ Create webhooks for the following events:
 ### Verify Domain
 
 1. Go to [resend.com](https://resend.com) and sign up
-2. Add your domain `orgflow.app`
+2. Add your domain `janagana.app`
 3. Verify DNS records:
    - TXT record for verification
    - CNAME record for DKIM
@@ -213,7 +213,7 @@ Create email templates for:
 ### Create Cloudinary Account
 
 1. Go to [cloudinary.com](https://cloudinary.com) and sign up
-2. Create a new cloud named "orgflow"
+2. Create a new cloud named "janagana"
 3. Enable auto-upload for user uploads
 4. Configure image transformations
 
@@ -242,10 +242,10 @@ Create email templates for:
 ### Create Sentry Projects
 
 1. Go to [sentry.io](https://sentry.io) and sign in
-2. Create a new organization "OrgFlow"
+2. Create a new organization "Jana Gana"
 3. Create two projects:
-   - `orgflow-web` (Next.js frontend)
-   - `orgflow-api` (NestJS backend)
+   - `janagana-web` (Next.js frontend)
+   - `janagana-api` (NestJS backend)
 
 ### Configure Projects
 
@@ -281,7 +281,7 @@ railway login
 ```bash
 railway new
 # Select "Empty Project"
-# Name it "orgflow-api"
+# Name it "janagana-api"
 ```
 
 ### Add PostgreSQL (Optional)
@@ -352,8 +352,8 @@ vercel
 In Vercel dashboard, add environment variables:
 
 **Public Variables:**
-- `NEXT_PUBLIC_APP_URL` = `https://orgflow.app`
-- `NEXT_PUBLIC_API_URL` = `https://api.orgflow.app`
+- `NEXT_PUBLIC_APP_URL` = `https://janagana.app`
+- `NEXT_PUBLIC_API_URL` = `https://api.janagana.app`
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
@@ -374,12 +374,12 @@ vercel --prod
 
 ### Configure Custom Domain
 
-1. In Vercel project settings, add domain `orgflow.app`
+1. In Vercel project settings, add domain `janagana.app`
 2. Vercel will provide CNAME records to add to your DNS:
-   - CNAME: `orgflow.app` → `cname.vercel-dns.com`
+   - CNAME: `janagana.app` → `cname.vercel-dns.com`
 
 3. For subdomain routing, add wildcard:
-   - CNAME: `*.orgflow.app` → `cname.vercel-dns.com`
+   - CNAME: `*.janagana.app` → `cname.vercel-dns.com`
 
 4. Update DNS records with your domain provider
 
@@ -400,15 +400,15 @@ Add the following DNS records to your domain provider:
 ### SSL Configuration
 
 Vercel automatically provisions SSL certificates for:
-- `orgflow.app`
-- `*.orgflow.app`
+- `janagana.app`
+- `*.janagana.app`
 
 ### Test Subdomain Routing
 
 Test that subdomains work correctly:
-- `tenant1.orgflow.app` → Should route to tenant dashboard
-- `tenant2.orgflow.app` → Should route to tenant dashboard
-- `orgflow.app` → Should route to marketing page
+- `tenant1.janagana.app` → Should route to tenant dashboard
+- `tenant2.janagana.app` → Should route to tenant dashboard
+- `janagana.app` → Should route to marketing page
 
 ---
 
@@ -472,10 +472,10 @@ Run the following checks to verify deployment:
 
 ```bash
 # API Health Check
-curl https://api.orgflow.app/health
+curl https://api.janagana.app/health
 
 # Web Health Check
-curl https://orgflow.app/api/health
+curl https://janagana.app/api/health
 
 # Database Connection
 # Check Railway logs for database connection success
@@ -553,7 +553,7 @@ npm audit
 # Run on production URL
 
 # SSL check
-curl https://www.ssllabs.com/ssltest/analyze.html?d=orgflow.app
+curl https://www.ssllabs.com/ssltest/analyze.html?d=janagana.app
 ```
 
 ---

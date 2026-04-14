@@ -55,7 +55,7 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: orgflow_test
+          POSTGRES_DB: janagana_test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
         ports:
@@ -77,7 +77,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/orgflow_test?schema=public
+      DATABASE_URL: postgresql://test:test@localhost:5432/janagana_test?schema=public
       REDIS_URL: redis://localhost:6379
       NODE_ENV: test
 

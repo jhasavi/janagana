@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getEvents, getMembers, registerForEvent, getMemberRegistrations } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Calendar, MapPin, Users, Check } from 'lucide-react'
 
 export default function PortalEventsPage() {
@@ -33,17 +34,17 @@ export default function PortalEventsPage() {
 
   const handleRegister = async (eventId: string) => {
     if (!members[0]) {
-      alert('No member profile found')
+      toast.error('No member profile found for your account')
       return
     }
 
     try {
       await registerForEvent(eventId, members[0].id)
       await loadData()
-      alert('Successfully registered for event!')
+      toast.success('Successfully registered for event!')
     } catch (error: any) {
       console.error('Failed to register:', error)
-      alert(error.message || 'Failed to register for event')
+      toast.error(error.message || 'Failed to register for event')
     }
   }
 

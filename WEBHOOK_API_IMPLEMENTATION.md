@@ -1,7 +1,7 @@
 # Webhook and Public API Implementation Summary
 
 ## Overview
-This document summarizes the implementation of the webhook system and public API with API key authentication for OrgFlow.
+This document summarizes the implementation of the webhook system and public API with API key authentication for Jana Gana.
 
 ## Completed Components
 

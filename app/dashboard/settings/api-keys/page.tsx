@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getApiKeys, createApiKey, deleteApiKey, toggleApiKey } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, Trash2, Key, CheckCircle, XCircle, Copy, RefreshCw, Clock } from 'lucide-react'
 
 type ApiKey = {
@@ -49,15 +50,14 @@ export default function ApiKeysPage() {
     e.preventDefault()
     try {
       const result = await createApiKey(formData)
-      // For demo purposes, we'll show the full key (in production, only show it once)
-      const fullKey = `jan_${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`
-      setNewlyCreatedKey(fullKey)
+      // The server returns the plaintext key once — store it for display
+      setNewlyCreatedKey((result as any).plainTextKey)
       setFormData({ name: '', scope: 'READ', rateLimit: 1000 })
       setShowAddForm(false)
       loadApiKeys()
     } catch (error) {
       console.error('Failed to create API key:', error)
-      alert('Failed to create API key. Please try again.')
+      toast.error('Failed to create API key. Please try again.')
     }
   }
 
@@ -68,7 +68,7 @@ export default function ApiKeysPage() {
       loadApiKeys()
     } catch (error) {
       console.error('Failed to delete API key:', error)
-      alert('Failed to delete API key. Please try again.')
+      toast.error('Failed to delete API key. Please try again.')
     }
   }
 
@@ -78,7 +78,7 @@ export default function ApiKeysPage() {
       loadApiKeys()
     } catch (error) {
       console.error('Failed to toggle API key:', error)
-      alert('Failed to toggle API key. Please try again.')
+      toast.error('Failed to toggle API key. Please try again.')
     }
   }
 
@@ -94,7 +94,7 @@ export default function ApiKeysPage() {
 
       <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
         <p className="text-gray-600 mb-4">
-          API keys allow external applications and scripts to interact with your organization's data programmatically. 
+          API keys allow external applications and scripts to interact with your organization&apos;s data programmatically.
           Create keys with appropriate scopes to control access.
         </p>
         <button
@@ -112,7 +112,7 @@ export default function ApiKeysPage() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-yellow-900 mb-2">Your New API Key</h3>
               <p className="text-sm text-yellow-800 mb-3">
-                Copy this key now. You won't be able to see it again.
+                Copy this key now. You won&apos;t be able to see it again.
               </p>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-white border border-yellow-300 rounded px-3 py-2 font-mono text-sm">

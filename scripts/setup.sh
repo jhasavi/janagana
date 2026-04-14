@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ORGFLOW SETUP SCRIPT
+# JANA GANA SETUP SCRIPT
 # ═══════════════════════════════════════════════════════════════════════════════
-# This script automates the setup process for the OrgFlow development environment.
+# This script automates the setup process for the Jana Gana development environment.
 # It checks prerequisites, installs dependencies, and starts the development servers.
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -110,7 +110,7 @@ setup_env_files() {
         else
             print_warning "apps/api/.env.example not found. Creating .env.local with placeholder values."
             cat > apps/api/.env.local << 'EOF'
-DATABASE_URL="postgresql://postgres:password@localhost:5432/orgflow_dev"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/janagana_dev"
 REDIS_URL="redis://localhost:6379"
 NODE_ENV="development"
 PORT=4000
@@ -127,8 +127,8 @@ STRIPE_WEBHOOK_SECRET=""
 STRIPE_CONNECT_WEBHOOK_SECRET=""
 PLATFORM_FEE_PERCENTAGE=2
 RESEND_API_KEY=""
-EMAIL_FROM="noreply@orgflow.app"
-EMAIL_FROM_NAME="OrgFlow"
+EMAIL_FROM="noreply@janagana.app"
+EMAIL_FROM_NAME="Jana Gana"
 CLOUDINARY_CLOUD_NAME=""
 CLOUDINARY_API_KEY=""
 CLOUDINARY_API_SECRET=""
@@ -160,7 +160,7 @@ NEXT_PUBLIC_API_URL="http://localhost:4000/api/v1"
 API_URL="http://localhost:4000/api/v1"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_DOMAIN="localhost:3000"
-NEXT_PUBLIC_APP_NAME="OrgFlow"
+NEXT_PUBLIC_APP_NAME="Jana Gana"
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=""
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=""
 SENTRY_DSN=""
@@ -237,7 +237,7 @@ seed_database() {
 print_success_message() {
     print_header "SETUP COMPLETE"
     
-    echo -e "${GREEN}✓ OrgFlow development environment is ready!${NC}\n"
+    echo -e "${GREEN}✓ Jana Gana development environment is ready!${NC}\n"
     
     echo -e "${BLUE}🚀 To start the development servers:${NC}"
     echo -e "   API:     ${YELLOW}cd apps/api && npm run dev${NC}"
@@ -259,7 +259,7 @@ print_success_message() {
 
 # Main setup flow
 main() {
-    print_header "ORGFLOW DEVELOPMENT SETUP"
+    print_header "JANA GANA DEVELOPMENT SETUP"
     
     check_node_version
     check_docker
