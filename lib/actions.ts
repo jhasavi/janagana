@@ -1,6 +1,7 @@
 'use server'
 
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
 import { prisma } from './prisma'
 import { redirect } from 'next/navigation'
 import { randomBytes, createHash } from 'crypto'
@@ -56,7 +57,22 @@ export async function getUserTenant() {
     include: { tenant: true },
   })
 
-  return user?.tenant || null
+  const impersonatedTenantSlug = cookies().get('impersonateTenantSlug')?.value
+  const adminOverride = await isGlobalAdmin()
+
+  if (user?.tenant) {
+    if (adminOverride && impersonatedTenantSlug) {
+      const overrideTenant = await prisma.tenant.findUnique({ where: { slug: impersonatedTenantSlug } })
+      if (overrideTenant) return overrideTenant
+    }
+    return user.tenant
+  }
+
+  if (!adminOverride || !impersonatedTenantSlug) {
+    return null
+  }
+
+  return await prisma.tenant.findUnique({ where: { slug: impersonatedTenantSlug } })
 }
 
 export async function getDashboardStats() {
@@ -132,6 +148,28 @@ export async function getTenantForAdmin(slug: string) {
       },
     },
   })
+}
+
+export async function impersonateTenant(tenantSlug: string) {
+  if (!(await isGlobalAdmin())) {
+    throw new Error('Forbidden: global admin access required')
+  }
+
+  const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } })
+  if (!tenant) {
+    throw new Error('Tenant not found')
+  }
+
+  cookies().set({
+    name: 'impersonateTenantSlug',
+    value: tenantSlug,
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+  })
+
+  redirect('/dashboard')
 }
 
 // ─────────────────────────────────────────────
