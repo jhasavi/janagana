@@ -12,6 +12,8 @@
     "seed": "tsx prisma/seed.ts",
     "simulate:real-world": "tsx scripts/simulate-real-world.ts",
     "simulate:real-world:details": "tsx scripts/simulate-real-world-details.ts",
+    "simulate:verify": "tsx scripts/verify-seeded-tenants.ts",
+    "simulate:verify-tenant-switch": "tsx scripts/verify-tenant-switch.ts",
     "tenant:switch": "tsx scripts/switch-clerk-tenant.ts"
   },
   "prisma": {
