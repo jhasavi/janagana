@@ -1,5 +1,16 @@
 import Link from 'next/link'
-import { getTenantForAdmin } from '@/lib/actions'
+import { getTenantForAdmin, impersonateTenant } from '@/lib/actions'
+
+'use server'
+
+async function impersonateTenantAction(formData: FormData) {
+  const slug = formData.get('slug')
+  if (!slug || typeof slug !== 'string') {
+    throw new Error('Tenant slug is required')
+  }
+
+  await impersonateTenant(slug)
+}
 
 type Props = {
   params: {
@@ -67,6 +78,15 @@ export default async function TenantAdminPage({ params }: Props) {
             Use this tenant detail view to validate tenant health, subscription status, and counts before
             investigating further.
           </p>
+          <form action={impersonateTenantAction} className="mt-6">
+            <input type="hidden" name="slug" value={tenant.slug} />
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Open tenant dashboard
+            </button>
+          </form>
         </div>
       </div>
     </div>
