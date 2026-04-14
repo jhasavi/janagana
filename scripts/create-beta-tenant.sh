@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# OrgFlow Beta Tenant Creation Script
+# Jana Gana Beta Tenant Creation Script
 # This script creates a new beta tenant organization via the API
 
 set -e
@@ -23,7 +23,7 @@ if [ -z "$API_KEY" ]; then
     exit 1
 fi
 
-echo -e "${BLUE}=== OrgFlow Beta Tenant Creation ===${NC}"
+echo -e "${BLUE}=== Jana Gana Beta Tenant Creation ===${NC}"
 echo ""
 
 # Prompt for organization name
@@ -176,8 +176,8 @@ echo "  Email: $admin_email"
 echo "  ID: $user_id"
 echo ""
 echo -e "${BLUE}Access URLs:${NC}"
-echo "  Dashboard: https://$slug.orgflow.app/dashboard"
-echo "  Member Portal: https://$slug.orgflow.app/portal"
+echo "  Dashboard: https://$slug.janagana.app/dashboard"
+echo "  Member Portal: https://$slug.janagana.app/portal"
 echo ""
 echo -e "${YELLOW}Next Steps:${NC}"
 echo "1. Send the admin email ($admin_email) to the organization admin"

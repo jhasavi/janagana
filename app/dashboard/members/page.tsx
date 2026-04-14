@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { getMembers, createMember, deleteMember, updateMember } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, Trash2, Edit, Search, Download, Upload } from 'lucide-react'
 import Papa from 'papaparse'
 
@@ -94,7 +95,7 @@ export default function MembersPage() {
       if (error.message?.includes('Unique constraint')) {
         setErrors({ email: 'This email is already in use.' })
       } else {
-        alert('Failed to save member. Please try again.')
+        toast.error('Failed to save member. Please try again.')
       }
     }
   }
@@ -106,7 +107,7 @@ export default function MembersPage() {
       loadMembers()
     } catch (error) {
       console.error('Failed to delete member:', error)
-      alert('Failed to delete member. Please try again.')
+      toast.error('Failed to delete member. Please try again.')
     }
   }
 
@@ -173,7 +174,7 @@ export default function MembersPage() {
 
         setIsImporting(false)
         loadMembers()
-        alert(`Import complete: ${successCount} members added, ${errorCount} failed`)
+        toast.success(`Import complete: ${successCount} members added${errorCount > 0 ? `, ${errorCount} failed` : ''}`)
         if (fileInputRef.current) {
           fileInputRef.current.value = ''
         }
@@ -181,7 +182,7 @@ export default function MembersPage() {
       error: (error) => {
         console.error('CSV parsing error:', error)
         setIsImporting(false)
-        alert('Failed to parse CSV file')
+        toast.error('Failed to parse CSV file')
       },
     })
   }

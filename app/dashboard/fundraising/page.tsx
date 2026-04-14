@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getDonationCampaigns, createDonationCampaign, getDonations, createDonation } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react'
 
 type Campaign = {
@@ -110,7 +111,7 @@ export default function FundraisingPage() {
       loadData()
     } catch (error) {
       console.error('Failed to create campaign:', error)
-      alert('Failed to create campaign. Please try again.')
+      toast.error('Failed to create campaign. Please try again.')
     }
   }
 
@@ -139,7 +140,7 @@ export default function FundraisingPage() {
       loadData()
     } catch (error) {
       console.error('Failed to create donation:', error)
-      alert('Failed to create donation. Please try again.')
+      toast.error('Failed to create donation. Please try again.')
     }
   }
 
@@ -490,7 +491,7 @@ export default function FundraisingPage() {
                       <p className="text-sm text-gray-600">{donation.campaign.title}</p>
                     )}
                     {donation.message && (
-                      <p className="text-sm text-gray-600 italic">"{donation.message}"</p>
+                      <p className="text-sm text-gray-600 italic">&ldquo;{donation.message}&rdquo;</p>
                     )}
                   </div>
                   <div className="text-right">

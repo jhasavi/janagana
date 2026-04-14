@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getVolunteerOpportunities, getMembers, applyForVolunteerOpportunity, getVolunteerApplications } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Heart, MapPin, Check, Send } from 'lucide-react'
 
 export default function PortalVolunteersPage() {
@@ -45,10 +46,10 @@ export default function PortalVolunteersPage() {
       setCoverLetter('')
       setSelectedOpportunity(null)
       await loadData()
-      alert('Application submitted successfully!')
+      toast.success('Application submitted successfully!')
     } catch (error: any) {
       console.error('Failed to apply:', error)
-      alert(error.message || 'Failed to submit application')
+      toast.error(error.message || 'Failed to submit application')
     }
   }
 

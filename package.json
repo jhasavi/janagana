@@ -9,7 +9,13 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed": "tsx prisma/seed.ts"
+    "test:e2e": "npx playwright test --config=e2e/playwright.config.ts",
+    "seed": "tsx prisma/seed.ts",
+    "simulate:real-world": "tsx scripts/simulate-real-world.ts",
+    "simulate:real-world:details": "tsx scripts/simulate-real-world-details.ts",
+    "simulate:verify": "tsx scripts/verify-seeded-tenants.ts",
+    "simulate:verify-tenant-switch": "tsx scripts/verify-tenant-switch.ts",
+    "tenant:switch": "tsx scripts/switch-clerk-tenant.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -78,6 +84,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tanstack/react-query-devtools": "^5.97.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",

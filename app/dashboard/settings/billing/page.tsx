@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createCheckoutSession, getTenantSubscription, cancelSubscription } from '@/lib/actions'
+import { toast } from 'sonner'
 import { AlertCircle, CheckCircle2, CreditCard, FileText, X } from 'lucide-react'
 
 export default function BillingPage() {
@@ -19,10 +20,10 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (success === 'true') {
-      alert('Subscription activated successfully!')
+      toast.success('Subscription activated successfully!')
       loadSubscription()
     } else if (canceled === 'true') {
-      alert('Subscription was canceled. You can try again anytime.')
+      toast.info('Subscription checkout was canceled. You can try again anytime.')
     }
   }, [success, canceled])
 
@@ -44,7 +45,7 @@ export default function BillingPage() {
       }
     } catch (error) {
       console.error('Failed to create checkout session:', error)
-      alert('Failed to initiate checkout. Please try again.')
+      toast.error('Failed to initiate checkout. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -57,10 +58,10 @@ export default function BillingPage() {
     try {
       await cancelSubscription()
       await loadSubscription()
-      alert('Subscription will be canceled at the end of your billing period.')
+      toast.success('Subscription will be canceled at the end of your billing period.')
     } catch (error) {
       console.error('Failed to cancel subscription:', error)
-      alert(error instanceof Error ? error.message : 'Failed to cancel subscription. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Failed to cancel subscription. Please try again.')
     } finally {
       setIsCanceling(false)
     }
