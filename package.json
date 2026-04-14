@@ -9,6 +9,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "npx playwright test",
     "seed": "tsx prisma/seed.ts",
     "simulate:real-world": "tsx scripts/simulate-real-world.ts",
     "simulate:real-world:details": "tsx scripts/simulate-real-world-details.ts",
@@ -83,6 +84,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tanstack/react-query-devtools": "^5.97.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
