@@ -10,6 +10,7 @@ import {
   createVolunteerShift,
   deleteVolunteerShift
 } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, Trash2, Search, Users, MapPin, Calendar, Edit, Clock, X, ChevronRight } from 'lucide-react'
 
 type VolunteerOpportunity = {
@@ -99,7 +100,7 @@ export default function VolunteersPage() {
       loadOpportunities()
     } catch (error) {
       console.error('Failed to save opportunity:', error)
-      alert('Failed to save opportunity. Please try again.')
+      toast.error('Failed to save opportunity. Please try again.')
     }
   }
 
@@ -121,7 +122,7 @@ export default function VolunteersPage() {
       loadShifts(selectedOpportunity.id)
     } catch (error) {
       console.error('Failed to save shift:', error)
-      alert('Failed to save shift. Please try again.')
+      toast.error('Failed to save shift. Please try again.')
     }
   }
 
@@ -132,7 +133,7 @@ export default function VolunteersPage() {
       loadOpportunities()
     } catch (error) {
       console.error('Failed to delete opportunity:', error)
-      alert('Failed to delete opportunity. Please try again.')
+      toast.error('Failed to delete opportunity. Please try again.')
     }
   }
 
@@ -143,7 +144,7 @@ export default function VolunteersPage() {
       if (selectedOpportunity) loadShifts(selectedOpportunity.id)
     } catch (error) {
       console.error('Failed to delete shift:', error)
-      alert('Failed to delete shift. Please try again.')
+      toast.error('Failed to delete shift. Please try again.')
     }
   }
 

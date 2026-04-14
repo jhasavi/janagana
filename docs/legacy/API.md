@@ -1,11 +1,11 @@
-# OrgFlow API Documentation
+# Jana Gana API Documentation
 
-NestJS REST API for the OrgFlow platform.
+NestJS REST API for the Jana Gana platform.
 
 ## Base URL
 
 - Development: `http://localhost:4000`
-- Production: `https://api.orgflow.app`
+- Production: `https://api.janagana.app`
 
 ## Authentication
 
@@ -19,7 +19,7 @@ Magic link tokens are sent via email and verified through the API.
 
 ### Multi-Tenancy
 All requests include tenant context via:
-- Subdomain: `tenant.orgflow.app`
+- Subdomain: `tenant.janagana.app`
 - Header: `X-Tenant-Slug: tenant-slug`
 - Development path: `/tenant-slug/...`
 
@@ -495,7 +495,7 @@ Response includes:
 
 ## Webhooks
 
-OrgFlow sends webhooks for the following events:
+Jana Gana sends webhooks for the following events:
 
 - `member.created`
 - `member.updated`
@@ -525,4 +525,4 @@ Webhook payload:
 
 Interactive API documentation available at:
 - Development: `http://localhost:4000/docs`
-- Production: `https://api.orgflow.app/docs`
+- Production: `https://api.janagana.app/docs`

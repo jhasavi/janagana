@@ -5,13 +5,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-orgflow}
-      POSTGRES_USER: ${POSTGRES_USER:-orgflow}
+      POSTGRES_DB: ${POSTGRES_DB:-janagana}
+      POSTGRES_USER: ${POSTGRES_USER:-janagana}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-orgflow} -d ${POSTGRES_DB:-orgflow}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-janagana} -d ${POSTGRES_DB:-janagana}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,7 +22,7 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - orgflow-network
+      - janagana-network
 
   redis:
     image: redis:7-alpine
@@ -42,7 +42,7 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - orgflow-network
+      - janagana-network
 
   api:
     build:
@@ -54,7 +54,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-orgflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-orgflow}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-janagana}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-janagana}?schema=public
       REDIS_URL: redis://redis:6379
     depends_on:
       postgres:
@@ -75,7 +75,7 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - orgflow-network
+      - janagana-network
 
   web:
     build:
@@ -88,7 +88,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://api:4000
-      NEXT_PUBLIC_APP_URL: https://orgflow.app
+      NEXT_PUBLIC_APP_URL: https://janagana.app
     depends_on:
       api:
         condition: service_healthy
@@ -106,7 +106,7 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - orgflow-network
+      - janagana-network
 
   nginx:
     image: nginx:stable-alpine
@@ -132,7 +132,7 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - orgflow-network
+      - janagana-network
 
 volumes:
   postgres_data:
@@ -143,5 +143,5 @@ volumes:
     driver: local
 
 networks:
-  orgflow-network:
+  janagana-network:
     driver: bridge

@@ -1,6 +1,6 @@
-# OrgFlow Web Application Documentation
+# Jana Gana Web Application Documentation
 
-Next.js 14 web application for the OrgFlow platform, including the admin dashboard and public-facing pages.
+Next.js 14 web application for the Jana Gana platform, including the admin dashboard and public-facing pages.
 
 ## Tech Stack
 
@@ -56,8 +56,8 @@ apps/web/
 The app supports two routing modes:
 
 **Production (Subdomain-based):**
-- `tenant1.orgflow.app/dashboard` → Tenant 1 dashboard
-- `tenant2.orgflow.app/donate` → Tenant 2 donation page
+- `tenant1.janagana.app/dashboard` → Tenant 1 dashboard
+- `tenant2.janagana.app/donate` → Tenant 2 donation page
 
 **Development (Path-based):**
 - `localhost:3000/tenant1/dashboard` → Tenant 1 dashboard
@@ -420,10 +420,10 @@ Recommended deployment platform:
 ### Environment Variables (Production)
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.orgflow.app
+NEXT_PUBLIC_API_URL=https://api.janagana.app
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
 CLERK_SECRET_KEY=sk_live_...
-NEXT_PUBLIC_APP_URL=https://app.orgflow.app
+NEXT_PUBLIC_APP_URL=https://app.janagana.app
 ```
 
 ## Troubleshooting

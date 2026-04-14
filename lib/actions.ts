@@ -3,6 +3,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from './prisma'
 import { redirect } from 'next/navigation'
+import { randomBytes, createHash } from 'crypto'
 
 export async function createTenant(data: {
   name: string
@@ -13,24 +14,30 @@ export async function createTenant(data: {
     throw new Error('User not authenticated')
   }
 
+  const starterPlan = await prisma.plan.findFirst({ where: { slug: 'STARTER' } })
+  if (!starterPlan) {
+    throw new Error('Starter plan not found. Run database seed first.')
+  }
+
   const tenant = await prisma.tenant.create({
     data: {
       name: data.name,
       slug: data.slug,
       users: {
         create: {
+          clerkId: user.id,
           email: user.emailAddresses[0].emailAddress,
-          fullName: user.fullName || user.firstName + ' ' + user.lastName,
+          fullName: user.fullName || `${user.firstName} ${user.lastName}`,
           avatarUrl: user.imageUrl,
           role: 'OWNER',
         },
       },
       subscription: {
         create: {
-          planId: 'starter', // Will need to match actual plan ID
+          planId: starterPlan.id,
           status: 'TRIALING',
           currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           trialEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       },
@@ -45,17 +52,44 @@ export async function getUserTenant() {
   if (!userId) return null
 
   const user = await prisma.user.findFirst({
-    where: {
-      // Clerk user ID would be stored, for now using email as fallback
-      email: (await currentUser())?.emailAddresses[0]?.emailAddress,
-    },
-    include: {
-      tenant: true,
-    },
+    where: { clerkId: userId },
+    include: { tenant: true },
   })
 
   return user?.tenant || null
 }
+
+export async function getDashboardStats() {
+  const tenant = await getUserTenant()
+  if (!tenant) return { memberCount: 0, eventCount: 0, volunteerCount: 0, clubCount: 0 }
+
+  const [memberCount, eventCount, volunteerCount, clubCount] = await Promise.all([
+    prisma.member.count({ where: { tenantId: tenant.id } }),
+    prisma.event.count({ where: { tenantId: tenant.id } }),
+    prisma.volunteerOpportunity.count({ where: { tenantId: tenant.id } }),
+    prisma.club.count({ where: { tenantId: tenant.id } }),
+  ])
+
+  return { memberCount, eventCount, volunteerCount, clubCount }
+}
+
+// ─────────────────────────────────────────────
+// RBAC helper
+// ─────────────────────────────────────────────
+async function requireRole(allowedRoles: Array<'OWNER' | 'ADMIN' | 'STAFF' | 'READONLY'>) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('Unauthorized')
+
+  const user = await prisma.user.findFirst({ where: { clerkId: userId } })
+  if (!user || !allowedRoles.includes(user.role as any)) {
+    throw new Error('Forbidden: insufficient permissions')
+  }
+  return user
+}
+
+// ─────────────────────────────────────────────
+// Tenant actions
+// ─────────────────────────────────────────────
 
 export async function updateTenant(data: {
   name?: string
@@ -75,13 +109,15 @@ export async function updateTenant(data: {
 }
 
 // Member CRUD actions
-export async function getMembers() {
+export async function getMembers(page = 1, pageSize = 100) {
   const tenant = await getUserTenant()
   if (!tenant) return []
 
   return await prisma.member.findMany({
     where: { tenantId: tenant.id },
     orderBy: { createdAt: 'desc' },
+    take: pageSize,
+    skip: (page - 1) * pageSize,
   })
 }
 
@@ -141,27 +177,25 @@ export async function updateMember(id: string, data: {
 }
 
 export async function deleteMember(id: string) {
+  await requireRole(['OWNER', 'ADMIN'])
   const tenant = await getUserTenant()
-  if (!tenant) {
-    throw new Error('Tenant not found')
-  }
+  if (!tenant) throw new Error('Tenant not found')
 
   return await prisma.member.deleteMany({
-    where: {
-      id,
-      tenantId: tenant.id,
-    },
+    where: { id, tenantId: tenant.id },
   })
 }
 
 // Event CRUD actions
-export async function getEvents() {
+export async function getEvents(page = 1, pageSize = 100) {
   const tenant = await getUserTenant()
   if (!tenant) return []
 
   return await prisma.event.findMany({
     where: { tenantId: tenant.id },
     orderBy: { startsAt: 'desc' },
+    take: pageSize,
+    skip: (page - 1) * pageSize,
   })
 }
 
@@ -217,16 +251,12 @@ export async function updateEvent(id: string, data: {
 }
 
 export async function deleteEvent(id: string) {
+  await requireRole(['OWNER', 'ADMIN'])
   const tenant = await getUserTenant()
-  if (!tenant) {
-    throw new Error('Tenant not found')
-  }
+  if (!tenant) throw new Error('Tenant not found')
 
   return await prisma.event.deleteMany({
-    where: {
-      id,
-      tenantId: tenant.id,
-    },
+    where: { id, tenantId: tenant.id },
   })
 }
 
@@ -248,7 +278,7 @@ export async function registerForEvent(eventId: string, memberId: string) {
     throw new Error('Already registered for this event')
   }
 
-  const confirmationCode = Math.random().toString(36).substring(2, 10).toUpperCase()
+  const confirmationCode = randomBytes(4).toString('hex').toUpperCase()
 
   const registration = await prisma.eventRegistration.create({
     data: {
@@ -294,13 +324,15 @@ export async function getMemberRegistrations(memberId: string) {
 }
 
 // Club CRUD actions
-export async function getClubs() {
+export async function getClubs(page = 1, pageSize = 100) {
   const tenant = await getUserTenant()
   if (!tenant) return []
 
   return await prisma.club.findMany({
     where: { tenantId: tenant.id },
     orderBy: { createdAt: 'desc' },
+    take: pageSize,
+    skip: (page - 1) * pageSize,
   })
 }
 
@@ -327,16 +359,12 @@ export async function createClub(data: {
 }
 
 export async function deleteClub(id: string) {
+  await requireRole(['OWNER', 'ADMIN'])
   const tenant = await getUserTenant()
-  if (!tenant) {
-    throw new Error('Tenant not found')
-  }
+  if (!tenant) throw new Error('Tenant not found')
 
   return await prisma.club.deleteMany({
-    where: {
-      id,
-      tenantId: tenant.id,
-    },
+    where: { id, tenantId: tenant.id },
   })
 }
 
@@ -707,7 +735,7 @@ export async function createWebhook(data: {
     throw new Error('Tenant not found')
   }
 
-  const secret = Math.random().toString(36).substring(2, 32)
+  const secret = randomBytes(32).toString('hex')
 
   return await prisma.webhookSubscription.create({
     data: {
@@ -771,13 +799,11 @@ export async function createApiKey(data: {
     throw new Error('Tenant not found')
   }
 
-  const key = `jan_${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`
-  const keyPrefix = key.substring(0, 8)
-  
-  // Simple hash for demonstration - in production use bcrypt
-  const keyHash = Buffer.from(key).toString('base64')
+  const rawKey = `jan_${randomBytes(24).toString('hex')}`
+  const keyPrefix = rawKey.substring(0, 10)
+  const keyHash = createHash('sha256').update(rawKey).digest('hex')
 
-  return await prisma.apiKey.create({
+  const record = await prisma.apiKey.create({
     data: {
       tenantId: tenant.id,
       name: data.name,
@@ -789,6 +815,9 @@ export async function createApiKey(data: {
       isActive: true,
     },
   })
+
+  // Return created record plus the plaintext key (only shown once)
+  return { ...record, plainTextKey: rawKey }
 }
 
 export async function deleteApiKey(id: string) {
@@ -967,7 +996,7 @@ export async function getDonations(campaignId?: string) {
   const tenant = await getUserTenant()
   if (!tenant) return []
 
-  const where: any = { tenantId: tenant.id }
+  const where: { tenantId: string; campaignId?: string } = { tenantId: tenant.id }
   if (campaignId) {
     where.campaignId = campaignId
   }

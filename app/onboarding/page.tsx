@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTenant } from '@/lib/actions'
+import { toast } from 'sonner'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -52,7 +53,7 @@ export default function OnboardingPage() {
       if (error.message?.includes('Unique constraint')) {
         setErrors({ slug: 'This slug is already taken. Please choose another.' })
       } else {
-        alert('Failed to create organization. Please try again.')
+        toast.error('Failed to create organization. Please try again.')
       }
     } finally {
       setIsLoading(false)

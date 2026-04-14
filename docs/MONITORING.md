@@ -1,6 +1,6 @@
-# OrgFlow Monitoring & Observability Guide
+# Jana Gana Monitoring & Observability Guide
 
-This guide covers how to monitor, observe, and troubleshoot the OrgFlow SaaS platform in production.
+This guide covers how to monitor, observe, and troubleshoot the Jana Gana SaaS platform in production.
 
 ## Table of Contents
 
@@ -19,18 +19,18 @@ This guide covers how to monitor, observe, and troubleshoot the OrgFlow SaaS pla
 ### Accessing Sentry
 
 1. Go to [sentry.io](https://sentry.io)
-2. Sign in with your OrgFlow account
-3. Select the "OrgFlow" organization
+2. Sign in with your Jana Gana account
+3. Select the "Jana Gana" organization
 
 ### Projects
 
-**API Project (`orgflow-api`)**
+**API Project (`janagana-api`)**
 - Backend NestJS errors and performance
 - Database query performance
 - API response times
 - Third-party service errors (Stripe, Resend, Clerk)
 
-**Web Project (`orgflow-web`)**
+**Web Project (`janagana-web`)**
 - Frontend Next.js errors
 - Client-side JavaScript errors
 - Performance metrics
@@ -424,13 +424,13 @@ Returns basic health information.
 **Manual Checks**
 ```bash
 # Quick health check
-curl https://api.orgflow.app/health
+curl https://api.janagana.app/health
 
 # Detailed readiness check
-curl https://api.orgflow.app/health/ready
+curl https://api.janagana.app/health/ready
 
 # With timing
-time curl https://api.orgflow.app/health
+time curl https://api.janagana.app/health
 ```
 
 ---
@@ -515,7 +515,7 @@ ORDER BY timestamp DESC;
 
 ### Public Status Page
 
-**URL**: `https://orgflow.app/status`
+**URL**: `https://janagana.app/status`
 
 The status page shows:
 - Overall system status
@@ -528,7 +528,7 @@ The status page shows:
 
 The status page fetches data from the health endpoint:
 ```
-https://api.orgflow.app/health/ready
+https://api.janagana.app/health/ready
 ```
 
 ### Updating Status Page

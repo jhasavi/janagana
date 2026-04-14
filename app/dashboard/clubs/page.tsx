@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getClubs, createClub, deleteClub, updateClub, getClubPosts, createClubPost, deleteClubPost, createClubComment, getMembers } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, Trash2, Search, Building2, MessageSquare, ArrowLeft, Send, Edit } from 'lucide-react'
 
 type Club = {
@@ -89,7 +90,7 @@ export default function ClubsPage() {
       loadClubs()
     } catch (error) {
       console.error('Failed to delete club:', error)
-      alert('Failed to delete club. Please try again.')
+      toast.error('Failed to delete club. Please try again.')
     }
   }
 
@@ -118,7 +119,7 @@ export default function ClubsPage() {
         {showPostForm ? (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Create New Post</h2>
-            <form onSubmit={async (e) => { e.preventDefault(); try { await createClubPost({ clubId: selectedClub.id, authorId: members[0]?.id || '', title: postFormData.title || undefined, body: postFormData.body }); setPostFormData({ title: '', body: '' }); setShowPostForm(false); loadPosts(selectedClub.id); } catch (error) { alert('Failed to create post'); } }} className="space-y-4">
+            <form onSubmit={async (e) => { e.preventDefault(); try { await createClubPost({ clubId: selectedClub.id, authorId: members[0]?.id || '', title: postFormData.title || undefined, body: postFormData.body }); setPostFormData({ title: '', body: '' }); setShowPostForm(false); loadPosts(selectedClub.id); } catch (error) { toast.error('Failed to create post'); } }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title (optional)</label>
                 <input type="text" placeholder="Post title" value={postFormData.title} onChange={(e) => setPostFormData({ ...postFormData, title: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
@@ -164,7 +165,7 @@ export default function ClubsPage() {
                     {post.title && <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>}
                     <p className="text-gray-700">{post.body}</p>
                   </div>
-                  <button onClick={async () => { if (confirm('Delete this post?')) { try { await deleteClubPost(post.id); loadPosts(selectedClub.id); } catch (error) { alert('Failed to delete post'); } } }} className="p-2 hover:bg-red-100 rounded text-red-600">
+                  <button onClick={async () => { if (confirm('Delete this post?')) { try { await deleteClubPost(post.id); loadPosts(selectedClub.id); } catch (error) { toast.error('Failed to delete post'); } } }} className="p-2 hover:bg-red-100 rounded text-red-600">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -194,10 +195,10 @@ export default function ClubsPage() {
                       value={commentForms[post.id] || ''}
                       onChange={(e) => setCommentForms({ ...commentForms, [post.id]: e.target.value })}
                       className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                      onKeyPress={async (e) => { if (e.key === 'Enter' && commentForms[post.id]?.trim()) { try { await createClubComment({ postId: post.id, memberId: members[0]?.id || '', body: commentForms[post.id] }); setCommentForms({ ...commentForms, [post.id]: '' }); loadPosts(selectedClub.id); } catch (error) { alert('Failed to add comment'); } } }}
+                      onKeyPress={async (e) => { if (e.key === 'Enter' && commentForms[post.id]?.trim()) { try { await createClubComment({ postId: post.id, memberId: members[0]?.id || '', body: commentForms[post.id] }); setCommentForms({ ...commentForms, [post.id]: '' }); loadPosts(selectedClub.id); } catch (error) { toast.error('Failed to add comment'); } } }}
                     />
                     <button
-                      onClick={async () => { if (commentForms[post.id]?.trim()) { try { await createClubComment({ postId: post.id, memberId: members[0]?.id || '', body: commentForms[post.id] }); setCommentForms({ ...commentForms, [post.id]: '' }); loadPosts(selectedClub.id); } catch (error) { alert('Failed to add comment'); } } }}
+                      onClick={async () => { if (commentForms[post.id]?.trim()) { try { await createClubComment({ postId: post.id, memberId: members[0]?.id || '', body: commentForms[post.id] }); setCommentForms({ ...commentForms, [post.id]: '' }); loadPosts(selectedClub.id); } catch (error) { toast.error('Failed to add comment'); } } }}
                       disabled={!commentForms[post.id]?.trim()}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 text-sm"
                     >
@@ -225,7 +226,7 @@ export default function ClubsPage() {
       {showAddForm && (
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">{editingClub ? 'Edit Club' : 'Add New Club'}</h2>
-          <form onSubmit={async (e) => { e.preventDefault(); try { if (editingClub) { await updateClub(editingClub.id, formData); setEditingClub(null); } else { await createClub(formData); } setFormData({ name: '', description: '' }); setShowAddForm(false); loadClubs(); } catch (error) { console.error('Failed to save club:', error); alert('Failed to save club. Please try again.'); } }} className="space-y-4">
+          <form onSubmit={async (e) => { e.preventDefault(); try { if (editingClub) { await updateClub(editingClub.id, formData); setEditingClub(null); } else { await createClub(formData); } setFormData({ name: '', description: '' }); setShowAddForm(false); loadClubs(); } catch (error) { console.error('Failed to save club:', error); toast.error('Failed to save club. Please try again.'); } }} className="space-y-4">
             <input type="text" required placeholder="Club Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
             <textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg" rows={3} />
             <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">{editingClub ? 'Save Changes' : 'Add Club'}</button>
