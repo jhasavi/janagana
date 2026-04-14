@@ -75,7 +75,7 @@ jobs:
       - name: Wait for health check
         run: |
           echo "Waiting for API to be healthy..."
-          timeout 300 bash -c 'until curl -f https://api.orgflow.app/health; do sleep 10; done'
+          timeout 300 bash -c 'until curl -f https://api.janagana.app/health; do sleep 10; done'
           echo "API is healthy!"
 
   deploy-web:
@@ -112,8 +112,8 @@ jobs:
 
       - name: Set Vercel Environment Variables
         run: |
-          vercel env add NEXT_PUBLIC_API_URL production --value=https://api.orgflow.app --token=${{ secrets.VERCEL_TOKEN }}
-          vercel env add NEXT_PUBLIC_APP_URL production --value=https://orgflow.app --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env add NEXT_PUBLIC_API_URL production --value=https://api.janagana.app --token=${{ secrets.VERCEL_TOKEN }}
+          vercel env add NEXT_PUBLIC_APP_URL production --value=https://janagana.app --token=${{ secrets.VERCEL_TOKEN }}
           vercel env add CLERK_PUBLISHABLE_KEY production --value=${{ secrets.CLERK_PUBLISHABLE_KEY }} --token=${{ secrets.VERCEL_TOKEN }}
           vercel env add CLERK_SECRET_KEY production --value=${{ secrets.CLERK_SECRET_KEY }} --token=${{ secrets.VERCEL_TOKEN }}
           vercel env add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY production --value=${{ secrets.STRIPE_PUBLISHABLE_KEY }} --token=${{ secrets.VERCEL_TOKEN }}
@@ -121,7 +121,7 @@ jobs:
       - name: Verify deployment
         run: |
           echo "Verifying web deployment..."
-          timeout 300 bash -c 'until curl -f https://orgflow.app/api/health; do sleep 10; done'
+          timeout 300 bash -c 'until curl -f https://janagana.app/api/health; do sleep 10; done'
           echo "Web deployment is healthy!"
 
   notify:
@@ -136,13 +136,13 @@ jobs:
         with:
           payload: |
             {
-              "text": "OrgFlow Deployment ${{ job.status }}",
+              "text": "Jana Gana Deployment ${{ job.status }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*OrgFlow Deployment ${{ job.status }}*\n\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nDeployed by: ${{ github.actor }}"
+                    "text": "*Jana Gana Deployment ${{ job.status }}*\n\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nDeployed by: ${{ github.actor }}"
                   }
                 }
               ]

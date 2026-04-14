@@ -1,6 +1,6 @@
-# OrgFlow Setup Guide
+# Jana Gana Setup Guide
 
-This guide will walk you through setting up the OrgFlow development environment, including configuring all required third-party services.
+This guide will walk you through setting up the Jana Gana development environment, including configuring all required third-party services.
 
 ## Table of Contents
 
@@ -27,12 +27,12 @@ Before you begin, ensure you have the following installed:
 
 ## Quick Start
 
-The easiest way to set up OrgFlow is to use the automated setup script:
+The easiest way to set up Jana Gana is to use the automated setup script:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/orgflow.git
-cd orgflow
+git clone https://github.com/your-org/janagana.git
+cd janagana
 
 # Run the setup script
 ./scripts/setup.sh
@@ -53,7 +53,7 @@ After the script completes, you'll need to fill in the environment variables (se
 
 ### Clerk Authentication
 
-Clerk provides user authentication and user management for OrgFlow.
+Clerk provides user authentication and user management for Jana Gana.
 
 #### Setup Steps
 
@@ -64,7 +64,7 @@ Clerk provides user authentication and user management for OrgFlow.
 
 2. **Create a New Application**
    - In the Clerk Dashboard, click "Add application"
-   - Give your application a name (e.g., "OrgFlow Dev")
+   - Give your application a name (e.g., "Jana Gana Dev")
    - Choose "Email & Password" as the authentication method
    - Click "Create application"
 
@@ -184,7 +184,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 
 ### Resend Email
 
-Resend provides transactional email services for OrgFlow.
+Resend provides transactional email services for Jana Gana.
 
 #### Setup Steps
 
@@ -196,13 +196,13 @@ Resend provides transactional email services for OrgFlow.
 2. **Get API Key**
    - In the Resend Dashboard, go to "API Keys"
    - Click "Create API Key"
-   - Give it a name (e.g., "OrgFlow Dev")
+   - Give it a name (e.g., "Jana Gana Dev")
    - Copy the API key (starts with `re_...`)
 
 3. **Verify Sender Domain**
    - Go to "Domains" in the left sidebar
    - Click "Add domain"
-   - Enter your domain (e.g., `orgflow.app`)
+   - Enter your domain (e.g., `janagana.app`)
    - Add the DNS records provided by Resend to your domain's DNS settings
    - Wait for DNS propagation (usually takes a few minutes to 24 hours)
    - For development, you can use Resend's default `@resend.dev` domain
@@ -213,13 +213,13 @@ Add these to `apps/api/.env.local`:
 
 ```bash
 RESEND_API_KEY="re_..."
-EMAIL_FROM="noreply@orgflow.app"
-EMAIL_FROM_NAME="OrgFlow"
+EMAIL_FROM="noreply@janagana.app"
+EMAIL_FROM_NAME="Jana Gana"
 ```
 
 ### Cloudinary Media
 
-Cloudinary provides image and file storage for OrgFlow.
+Cloudinary provides image and file storage for Jana Gana.
 
 #### Setup Steps
 
@@ -257,7 +257,7 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
 
 ### Sentry Error Tracking
 
-Sentry provides error tracking and performance monitoring for OrgFlow.
+Sentry provides error tracking and performance monitoring for Jana Gana.
 
 #### Setup Steps
 
@@ -270,7 +270,7 @@ Sentry provides error tracking and performance monitoring for OrgFlow.
    - In the Sentry Dashboard, click "Create Project"
    - Select "NestJS" for the API
    - Select "Next.js" for the web app
-   - Give your project a name (e.g., "orgflow-api", "orgflow-web")
+   - Give your project a name (e.g., "janagana-api", "janagana-web")
    - Click "Create Project"
 
 3. **Get DSN**
@@ -280,7 +280,7 @@ Sentry provides error tracking and performance monitoring for OrgFlow.
 4. **Get Auth Token** (for source maps upload)
    - Go to "Settings" → "Auth Tokens"
    - Click "Create New Token"
-   - Give it a name (e.g., "orgflow-deploy")
+   - Give it a name (e.g., "janagana-deploy")
    - Select the `project:write` scope
    - Copy the token
 
@@ -460,7 +460,7 @@ The API will fail to start if required environment variables are missing. Check 
 
 If you encounter issues not covered here:
 
-1. Check the [GitHub Issues](https://github.com/your-org/orgflow/issues)
+1. Check the [GitHub Issues](https://github.com/your-org/janagana/issues)
 2. Review the [API Documentation](http://localhost:4000/api/docs)
 3. Check service-specific documentation:
    - [Clerk Docs](https://clerk.com/docs)

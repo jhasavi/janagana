@@ -293,38 +293,23 @@ model TenantSubscription {
 
 model User {
   id               String       @id @default(uuid())
+  clerkId          String?      @unique
   tenantId         String
   tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   email            String
   fullName         String
   avatarUrl        String?
-  hashedPassword   String?
   role             UserRoleType @default(STAFF)
   isActive         Boolean      @default(true)
   lastLoginAt      DateTime?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
-  sessions         Session[]
   memberNotes      MemberNote[]
 
   @@unique([tenantId, email])
+  @@index([clerkId])
   @@index([tenantId])
   @@index([email])
-}
-
-model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String   @unique
-  ipAddress    String?
-  userAgent    String?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([userId])
-  @@index([token])
 }
 
 // ─────────────────────────────────────────────

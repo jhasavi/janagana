@@ -1,7 +1,7 @@
-# OrgFlow Deployment Guide
+# Jana Gana Deployment Guide
 
 ## 1. Production Overview
-OrgFlow is a monorepo with two deployable apps:
+Jana Gana is a monorepo with two deployable apps:
 - `apps/api` — NestJS backend
 - `apps/web` — Next.js frontend
 
@@ -27,12 +27,12 @@ Both apps share the same workspace and environment variables managed using `.env
 ## 4. PostgreSQL / Neon / Supabase
 Recommended settings:
 - Database host: from provider
-- Database name: `orgflow`
-- User: `orgflow`
+- Database name: `janagana`
+- User: `janagana`
 - Password: strong secret
 - SSL: enabled if required
 - `DATABASE_URL` example:
-  `postgresql://orgflow:your_password@host:5432/orgflow?schema=public`
+  `postgresql://janagana:your_password@host:5432/janagana?schema=public`
 
 ## 5. Upstash Redis
 Recommended settings:

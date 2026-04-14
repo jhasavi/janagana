@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getEvents, createEvent, deleteEvent, updateEvent, getMembers, registerForEvent, getMemberRegistrations } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, Trash2, Edit, Search, Calendar, Users, ChevronRight, UserPlus, CheckCircle, XCircle } from 'lucide-react'
 
 type Event = {
@@ -115,7 +116,7 @@ export default function EventsPage() {
       loadEvents()
     } catch (error) {
       console.error('Failed to save event:', error)
-      alert('Failed to save event. Please try again.')
+      toast.error('Failed to save event. Please try again.')
     }
   }
 
@@ -129,7 +130,7 @@ export default function EventsPage() {
       loadRegistrations(selectedEvent.id)
     } catch (error) {
       console.error('Failed to register member:', error)
-      alert(error instanceof Error ? error.message : 'Failed to register member. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Failed to register member. Please try again.')
     }
   }
 
@@ -140,7 +141,7 @@ export default function EventsPage() {
       loadEvents()
     } catch (error) {
       console.error('Failed to delete event:', error)
-      alert('Failed to delete event. Please try again.')
+      toast.error('Failed to delete event. Please try again.')
     }
   }
 

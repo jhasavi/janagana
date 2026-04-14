@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# OrgFlow Startup Script
+# Jana Gana Startup Script
 # This script starts all services in development mode
 
 set -e
@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== OrgFlow Development Startup ===${NC}"
+echo -e "${BLUE}=== Jana Gana Development Startup ===${NC}"
 echo ""
 
 # Check if .env file exists

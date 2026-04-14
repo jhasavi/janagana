@@ -1,10 +1,20 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { prisma } from '@/lib/prisma'
 import { generateMembershipCardQR } from '@/lib/actions'
 import { QrCode, Download } from 'lucide-react'
+import Image from 'next/image'
 
 export default async function ProfilePage() {
   const user = await currentUser()
-  const qrCode = user ? await generateMembershipCardQR(user.id) : null
+
+  // Look up the Member record that matches this Clerk user's email
+  const member = user?.emailAddresses[0]?.emailAddress
+    ? await prisma.member.findFirst({
+        where: { email: user.emailAddresses[0].emailAddress },
+      })
+    : null
+
+  const qrCode = member ? await generateMembershipCardQR(member.id) : null
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -13,9 +23,11 @@ export default async function ProfilePage() {
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <div className="flex items-center gap-6 mb-6">
           {user?.imageUrl && (
-            <img
+            <Image
               src={user.imageUrl}
               alt="Profile"
+              width={96}
+              height={96}
               className="w-24 h-24 rounded-full"
             />
           )}
@@ -55,7 +67,7 @@ export default async function ProfilePage() {
             <div className="flex items-center gap-6">
               {qrCode && (
                 <div className="bg-white p-4 rounded-lg">
-                  <img src={qrCode} alt="Membership QR Code" className="w-48 h-48" />
+                  <Image src={qrCode} alt="Membership QR Code" width={192} height={192} className="w-48 h-48" />
                 </div>
               )}
               <div className="flex-1">

@@ -1,6 +1,6 @@
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
-WORKDIR /orgflow
+WORKDIR /janagana
 
 # Copy package files
 COPY package.json package-lock.json turbo.json tsconfig.base.json ./
@@ -14,13 +14,13 @@ RUN npm ci --omit=dev --silent && \
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
-WORKDIR /orgflow
+WORKDIR /janagana
 
 # Copy dependencies from deps stage
-COPY --from=deps /orgflow/node_modules ./node_modules
-COPY --from=deps /orgflow/package*.json ./
-COPY --from=deps /orgflow/turbo.json ./
-COPY --from=deps /orgflow/tsconfig.base.json ./
+COPY --from=deps /janagana/node_modules ./node_modules
+COPY --from=deps /janagana/package*.json ./
+COPY --from=deps /janagana/turbo.json ./
+COPY --from=deps /janagana/tsconfig.base.json ./
 
 # Copy source code
 COPY apps/api ./apps/api
@@ -28,7 +28,7 @@ COPY apps/web ./apps/web
 COPY packages/database ./packages/database
 
 # Build the application with standalone output
-WORKDIR /orgflow/apps/web
+WORKDIR /janagana/apps/web
 RUN npm run build
 
 # Stage 3: Production Runner
@@ -41,15 +41,15 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-WORKDIR /orgflow/apps/web
+WORKDIR /janagana/apps/web
 
 # Copy built artifacts from standalone output
-COPY --from=builder /orgflow/apps/web/.next/standalone ./
-COPY --from=builder /orgflow/apps/web/.next/static ./.next/static
-COPY --from=builder /orgflow/apps/web/public ./public
+COPY --from=builder /janagana/apps/web/.next/standalone ./
+COPY --from=builder /janagana/apps/web/.next/static ./.next/static
+COPY --from=builder /janagana/apps/web/public ./public
 
 # Set ownership to non-root user
-RUN chown -R nodejs:nodejs /orgflow/apps/web
+RUN chown -R nodejs:nodejs /janagana/apps/web
 
 # Switch to non-root user
 USER nodejs

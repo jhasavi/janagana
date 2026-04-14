@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { getUserTenant, updateTenant } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Building2, Upload } from 'lucide-react'
+import Image from 'next/image'
 
 export default function OrganizationSettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -44,10 +46,10 @@ export default function OrganizationSettingsPage() {
     try {
       await updateTenant(formData)
       await loadTenant()
-      alert('Organization settings updated successfully!')
+      toast.success('Organization settings updated successfully!')
     } catch (error) {
       console.error('Failed to update tenant:', error)
-      alert('Failed to update organization settings. Please try again.')
+      toast.error('Failed to update organization settings. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -120,7 +122,7 @@ export default function OrganizationSettingsPage() {
             </div>
             {formData.logoUrl && (
               <div className="mt-2">
-                <img src={formData.logoUrl} alt="Logo preview" className="h-16 w-auto" />
+                <Image src={formData.logoUrl} alt="Logo preview" width={64} height={64} className="h-16 w-auto" />
               </div>
             )}
           </div>

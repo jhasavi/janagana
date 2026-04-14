@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getWebhooks, createWebhook, deleteWebhook, toggleWebhook } from '@/lib/actions'
+import { toast } from 'sonner'
 import { Plus, Trash2, Webhook, CheckCircle, XCircle, Copy, RefreshCw } from 'lucide-react'
 
 type Webhook = {
@@ -64,7 +65,7 @@ export default function WebhooksPage() {
       loadWebhooks()
     } catch (error) {
       console.error('Failed to create webhook:', error)
-      alert('Failed to create webhook. Please try again.')
+      toast.error('Failed to create webhook. Please try again.')
     }
   }
 
@@ -75,7 +76,7 @@ export default function WebhooksPage() {
       loadWebhooks()
     } catch (error) {
       console.error('Failed to delete webhook:', error)
-      alert('Failed to delete webhook. Please try again.')
+      toast.error('Failed to delete webhook. Please try again.')
     }
   }
 
@@ -85,7 +86,7 @@ export default function WebhooksPage() {
       loadWebhooks()
     } catch (error) {
       console.error('Failed to toggle webhook:', error)
-      alert('Failed to toggle webhook. Please try again.')
+      toast.error('Failed to toggle webhook. Please try again.')
     }
   }
 

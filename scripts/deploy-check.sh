@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# OrgFlow Deployment Verification Script
+# Jana Gana Deployment Verification Script
 # This script verifies all services are running correctly after deployment
 
 set -e
@@ -12,8 +12,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-API_URL="${API_URL:-https://api.orgflow.app}"
-WEB_URL="${WEB_URL:-https://orgflow.app}"
+API_URL="${API_URL:-https://api.janagana.app}"
+WEB_URL="${WEB_URL:-https://janagana.app}"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-30}"
 
 # Counter for passed/failed checks
@@ -223,7 +223,7 @@ check_response_time() {
 
 # Main execution
 echo "========================================="
-echo "  OrgFlow Deployment Verification"
+echo "  Jana Gana Deployment Verification"
 echo "========================================="
 echo ""
 echo "Checking deployment at:"
