@@ -9,7 +9,10 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "simulate:real-world": "tsx scripts/simulate-real-world.ts",
+    "simulate:real-world:details": "tsx scripts/simulate-real-world-details.ts",
+    "tenant:switch": "tsx scripts/switch-clerk-tenant.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
