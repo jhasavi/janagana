@@ -23,7 +23,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'cd ../apps/web && npx dotenv-cli -e ../.env npm run dev',
+    command: 'cd .. && pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120 * 1000,
