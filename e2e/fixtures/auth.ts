@@ -1,4 +1,4 @@
-import { test as base, Page } from '@playwright/test';
+import { test as base, Page, APIRequestContext } from '@playwright/test';
 
 type AuthFixtures = {
   loginAsAdmin: (page: Page, tenant: string) => Promise<void>;
@@ -6,70 +6,97 @@ type AuthFixtures = {
   createTestOrg: (page: Page) => Promise<void>;
 };
 
+async function signInTestUser(request: APIRequestContext, page: Page, params: {
+  email: string
+  password?: string
+  firstName?: string
+  lastName?: string
+  tenantSlug?: string
+  role?: string
+}) {
+  const response = await request.post('/api/test-login', {
+    data: JSON.stringify(params),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  const text = await response.text()
+  let body: any = null
+  try {
+    body = text ? JSON.parse(text) : null
+  } catch (error) {
+    throw new Error(`Test login failed: status=${response.status()} body=${text}`)
+  }
+
+  if (!response.ok) {
+    throw new Error(`Test login failed: status=${response.status()} error=${body?.error ?? JSON.stringify(body)} body=${text}`)
+  }
+
+  // Navigate to sign-in page and manually sign in
+  await page.goto('http://localhost:3000/sign-in')
+  
+  // Fill in email
+  await page.fill('input[name="emailAddress"]', params.email)
+  
+  // Fill in password
+  await page.fill('input[name="password"]', params.password || 'Test12345!')
+  
+  // Click continue
+  await page.click('button[type="submit"]')
+  
+  // Wait for navigation to complete
+  await page.waitForLoadState('networkidle')
+}
+
 export const test = base.extend<AuthFixtures>({
-  loginAsAdmin: async ({ page }, use) => {
+  loginAsAdmin: async ({ request, page }, use) => {
     const login = async (tenant: string) => {
-      // Navigate to the tenant's login page
-      await page.goto(`http://${tenant}.localhost:3000/login`);
-      
-      // Fill in admin credentials
-      await page.fill('input[name="email"]', 'admin@test.com');
-      await page.fill('input[name="password"]', 'test-password');
-      
-      // Submit login form
-      await page.click('button[type="submit"]');
-      
-      // Wait for redirect to dashboard
-      await page.waitForURL(`http://${tenant}.localhost:3000/dashboard`);
-      await page.waitForLoadState('networkidle');
-    };
-    
-    await use(login);
+      await signInTestUser(request, page, {
+        email: 'admin@test.com',
+        password: 'test-password',
+        firstName: 'Admin',
+        lastName: 'Test',
+        tenantSlug: tenant,
+        role: 'OWNER',
+      })
+      await page.waitForURL(/\/dashboard/, { timeout: 60000 })
+    }
+
+    await use(login)
   },
 
-  loginAsMember: async ({ page }, use) => {
+  loginAsMember: async ({ request, page }, use) => {
     const login = async (tenant: string) => {
-      // Navigate to the tenant's portal login page
-      await page.goto(`http://${tenant}.localhost:3000/portal/login`);
-      
-      // Fill in member credentials
-      await page.fill('input[name="email"]', 'member@test.com');
-      await page.fill('input[name="password"]', 'test-password');
-      
-      // Submit login form
-      await page.click('button[type="submit"]');
-      
-      // Wait for redirect to portal
-      await page.waitForURL(`http://${tenant}.localhost:3000/portal`);
-      await page.waitForLoadState('networkidle');
-    };
-    
-    await use(login);
+      await signInTestUser(request, page, {
+        email: 'member@test.com',
+        password: 'test-password',
+        firstName: 'Member',
+        lastName: 'Test',
+        tenantSlug: tenant,
+        role: 'STAFF',
+      })
+      await page.waitForURL(/\/dashboard|\/portal/, { timeout: 60000 })
+    }
+
+    await use(login)
   },
 
-  createTestOrg: async ({ page }, use) => {
+  createTestOrg: async ({ request, page }, use) => {
     const create = async () => {
-      // Navigate to marketing page
-      await page.goto('http://localhost:3000');
-      
-      // Click "Get Started" button
-      await page.click('text=Get Started');
-      
-      // Fill organization details
-      await page.fill('input[name="name"]', 'Test Organization');
-      await page.fill('input[name="slug"]', `test-${Date.now()}`);
-      await page.fill('input[name="email"]', 'admin@test.com');
-      await page.fill('input[name="password"]', 'test-password');
-      
-      // Submit form
-      await page.click('button[type="submit"]');
-      
-      // Wait for onboarding
-      await page.waitForURL(/\/onboarding/);
-      await page.waitForLoadState('networkidle');
-    };
-    
-    await use(create);
+      const email = `admin+${Date.now()}@test.com`
+      await signInTestUser(request, page, {
+        email,
+        password: 'Test12345!',
+        firstName: 'Test',
+        lastName: 'Admin',
+      })
+      await page.waitForURL(/\/dashboard|\/onboarding/, { timeout: 60000 })
+      await page.goto('http://localhost:3000/dashboard')
+      await page.waitForURL(/\/onboarding/, { timeout: 60000 })
+    }
+
+    await use(create)
   },
 });
 
