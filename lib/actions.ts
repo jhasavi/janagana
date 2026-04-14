@@ -73,6 +73,67 @@ export async function getDashboardStats() {
   return { memberCount, eventCount, volunteerCount, clubCount }
 }
 
+export async function isGlobalAdmin() {
+  const user = await currentUser()
+  if (!user) return false
+
+  const adminEmails = (process.env.GLOBAL_ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean)
+
+  const primaryEmail = user.emailAddresses?.[0]?.emailAddress?.toLowerCase()
+  return Boolean(primaryEmail && adminEmails.includes(primaryEmail))
+}
+
+export async function getAllTenantsForAdmin() {
+  if (!(await isGlobalAdmin())) {
+    throw new Error('Forbidden: global admin access required')
+  }
+
+  return await prisma.tenant.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: {
+        select: {
+          users: true,
+          members: true,
+          events: true,
+          volunteerOpportunities: true,
+          clubs: true,
+        },
+      },
+      subscription: {
+        include: { plan: true },
+      },
+    },
+  })
+}
+
+export async function getTenantForAdmin(slug: string) {
+  if (!(await isGlobalAdmin())) {
+    throw new Error('Forbidden: global admin access required')
+  }
+
+  return await prisma.tenant.findUnique({
+    where: { slug },
+    include: {
+      _count: {
+        select: {
+          users: true,
+          members: true,
+          events: true,
+          volunteerOpportunities: true,
+          clubs: true,
+        },
+      },
+      subscription: {
+        include: { plan: true },
+      },
+    },
+  })
+}
+
 // ─────────────────────────────────────────────
 // RBAC helper
 // ─────────────────────────────────────────────
