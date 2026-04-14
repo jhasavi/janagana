@@ -6,9 +6,15 @@
 ## Live Demo
 - Web: https://janagana.namasteneedham.com
 
-## 📚 Complete Setup Guide
+## 📚 Documentation
 
-**For detailed setup, deployment, and development instructions, see [COMPLETE_GUIDE.md](COMPLETE_GUIDE.md)**
+**All documentation is organized in the [docs/](docs/) directory. See [docs/INDEX.md](docs/INDEX.md) for the complete documentation index.**
+
+**Quick Links:**
+- 📖 [Complete Guide](docs/COMPLETE_GUIDE.md) - Setup, development, and deployment
+- 📋 [Roadmap](docs/TODO.md) - Implementation status and competitive analysis
+- 🔧 [Setup Guide](docs/SETUP.md) - Detailed setup instructions
+- 🚀 [Deployment](docs/DEPLOYMENT.md) - Production deployment guide
 
 ## Quick Start
 ```bash
