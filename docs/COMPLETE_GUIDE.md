@@ -47,6 +47,38 @@
 
 JanaGana is a **Next.js 15 App Router monolith** deployed on Vercel with Neon PostgreSQL.
 
+## Comparison with Commercial Membership/Event Tools
+
+JanaGana is designed to cover the core workflows of a membership/event management platform. The feature set currently includes:
+
+- Tenant isolation with separate org portals under `/portal/<slug>`
+- Member directory and membership tiers
+- Event creation, publishing, and self-registration
+- Volunteer opportunities and sign-ups
+- Stripe billing + customer portal integration
+- Global admin portal for platform oversight
+- Clerk auth + organization management
+- Email and SMS integrations
+- Audit logs and dashboard analytics
+
+Commercial tools typically also include:
+
+- Built-in per-org custom domain routing
+- Dedicated org owner/admin contact dashboards with contact details
+- Redirect/alias support after public slug changes
+- White-label branding and site theming per tenant
+- Advanced event ticketing (seat selection, ticket types, PDF tickets)
+- Built-in renewals and membership lifecycle automation
+- Reporting exports and role-based access control for org admins
+
+### Current gaps in JanaGana
+
+- Custom per-tenant domain aliases are not fully implemented.
+- Slug change redirect / alias handling is not implemented.
+- Owner/admin contact details in the global admin portal are now visible, but not yet fully expanded to email/contact pages.
+- Full white-label tenant site theming is not yet built.
+- Large-scale event ticketing and PDF ticket support is not included.
+
 ## Global Admin Portal
 
 The global admin portal is available under `/admin` for super-admin users defined by the `GLOBAL_ADMIN_EMAILS` environment variable. It shows:
