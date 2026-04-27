@@ -1,0 +1,62 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { UserPlus } from 'lucide-react'
+import { getMembers, getTiers, getMemberStats } from '@/lib/actions/members'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { MemberTable } from './_components/member-table'
+import { MemberFilters } from './_components/member-filters'
+import { ExportCsvButton, ImportCsvDialog } from './_components/csv-import-dialog'
+
+export const metadata: Metadata = { title: 'Members' }
+
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; status?: string; tier?: string }>
+}) {
+  const params = await searchParams
+  const [membersResult, tiersResult, statsResult] = await Promise.all([
+    getMembers({ search: params.search, status: params.status, tierId: params.tier }),
+    getTiers(),
+    getMemberStats(),
+  ])
+
+  const members = membersResult.data ?? []
+  const tiers = tiersResult.data ?? []
+  const stats = statsResult.data
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Members</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="secondary">{stats?.total ?? 0} total</Badge>
+            <Badge variant="success">{stats?.active ?? 0} active</Badge>
+            {(stats?.pending ?? 0) > 0 && (
+              <Badge variant="warning">{stats?.pending} pending</Badge>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <ExportCsvButton />
+          <ImportCsvDialog />
+          <Button asChild>
+            <Link href="/dashboard/members/new">
+              <UserPlus className="h-4 w-4" />
+              Add Member
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <MemberFilters tiers={tiers} />
+
+      {/* Table */}
+      <MemberTable members={members} />
+    </div>
+  )
+}

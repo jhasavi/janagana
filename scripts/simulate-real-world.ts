@@ -1,4 +1,16 @@
+#!/usr/bin/env tsx
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+
+const DRY_RUN = !!process.env.DRY_RUN
+if (DRY_RUN) {
+  console.log('DRY RUN: simulate-real-world would create tenants:')
+  console.log('- tenant-non-profit (Community Non-Profit)')
+  console.log('- tenant-business-club (Executive Business Club)')
+  console.log('- tenant-volunteer-group (City Volunteer Group)')
+  console.log('\nNo changes applied in DRY_RUN mode.')
+  process.exit(0)
+}
 
 const prisma = new PrismaClient()
 
@@ -6,363 +18,121 @@ function daysFromNow(days: number): Date {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000)
 }
 
-async function upsertTenant(input: { slug: string; name: string; primaryColor: string }) {
-  const tenant = await prisma.tenant.upsert({
-    where: { slug: input.slug },
-    update: {
-      name: input.name,
-      primaryColor: input.primaryColor,
-      isActive: true,
-    },
+async function upsertTenant(data: { slug: string; name: string; primaryColor: string }) {
+  return prisma.tenant.upsert({
+    where: { slug: data.slug },
+    update: { name: data.name, primaryColor: data.primaryColor, isActive: true },
     create: {
-      slug: input.slug,
-      name: input.name,
-      primaryColor: input.primaryColor,
+      slug: data.slug,
+      name: data.name,
+      primaryColor: data.primaryColor,
       isActive: true,
+      clerkOrgId: `demo_${data.slug}`,
+      planSlug: 'free',
     },
   })
-
-  // Keep one owner-style user per tenant so there is visible admin context in app data.
-  await prisma.user.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: tenant.id,
-        email: `owner+${input.slug}@example.com`,
-      },
-    },
-    update: {
-      fullName: `${input.name} Owner`,
-      role: 'OWNER',
-      isActive: true,
-    },
-    create: {
-      tenantId: tenant.id,
-      email: `owner+${input.slug}@example.com`,
-      fullName: `${input.name} Owner`,
-      role: 'OWNER',
-      isActive: true,
-    },
-  })
-
-  return tenant
 }
 
-async function createOrg1NonProfit() {
-  const tenant = await upsertTenant({
-    slug: 'tenant-non-profit',
-    name: 'Community Non-Profit',
-    primaryColor: '#1E7F5C',
+async function createNonProfit() {
+  const tenant = await upsertTenant({ slug: 'tenant-non-profit', name: 'Community Non-Profit', primaryColor: '#1E7F5C' })
+
+  const freeTier = await prisma.membershipTier.upsert({
+    where: { id: `${tenant.id}-free` },
+    update: { name: 'Free Membership', priceCents: 0, interval: 'ANNUAL' },
+    create: { id: `${tenant.id}-free`, tenantId: tenant.id, name: 'Free Membership', priceCents: 0, interval: 'ANNUAL' },
   })
 
-  await prisma.membershipTier.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'free-membership' } },
-    update: {
-      name: 'Free Membership',
-      description: 'Entry tier for all supporters',
-      monthlyPriceCents: 0,
-      annualPriceCents: 0,
-      isFree: true,
-      isPublic: true,
-      sortOrder: 1,
-    },
-    create: {
-      tenantId: tenant.id,
-      name: 'Free Membership',
-      slug: 'free-membership',
-      description: 'Entry tier for all supporters',
-      monthlyPriceCents: 0,
-      annualPriceCents: 0,
-      isFree: true,
-      isPublic: true,
-      sortOrder: 1,
-    },
+  const paidTier = await prisma.membershipTier.upsert({
+    where: { id: `${tenant.id}-annual-50` },
+    update: { name: '$50 / Year', priceCents: 5000, interval: 'ANNUAL' },
+    create: { id: `${tenant.id}-annual-50`, tenantId: tenant.id, name: '$50 / Year', priceCents: 5000, interval: 'ANNUAL' },
   })
 
-  await prisma.membershipTier.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'annual-50' } },
-    update: {
-      name: '$50 / Year',
-      description: 'Supporter tier',
-      monthlyPriceCents: 0,
-      annualPriceCents: 5000,
-      isFree: false,
-      isPublic: true,
-      sortOrder: 2,
-    },
-    create: {
-      tenantId: tenant.id,
-      name: '$50 / Year',
-      slug: 'annual-50',
-      description: 'Supporter tier',
-      monthlyPriceCents: 0,
-      annualPriceCents: 5000,
-      isFree: false,
-      isPublic: true,
-      sortOrder: 2,
-    },
-  })
-
-  const event = await prisma.event.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'community-open-house' } },
-    update: {
-      title: 'Community Open House',
-      description: 'Upcoming free event for community members',
-      status: 'PUBLISHED',
-      format: 'IN_PERSON',
-      location: 'Main Community Hall',
-      startsAt: daysFromNow(14),
-      endsAt: daysFromNow(14),
-      isPublic: true,
-    },
-    create: {
-      tenantId: tenant.id,
-      title: 'Community Open House',
-      slug: 'community-open-house',
-      description: 'Upcoming free event for community members',
-      status: 'PUBLISHED',
-      format: 'IN_PERSON',
-      location: 'Main Community Hall',
-      startsAt: daysFromNow(14),
-      endsAt: daysFromNow(14),
-      isPublic: true,
-    },
-  })
-
-  await prisma.eventTicket.upsert({
-    where: {
-      id: `${event.id}-free-general`,
-    },
-    update: {
-      name: 'General Admission',
-      description: 'Free ticket',
-      priceCents: 0,
-      isFree: true,
-      sortOrder: 1,
-    },
-    create: {
-      id: `${event.id}-free-general`,
-      eventId: event.id,
-      name: 'General Admission',
-      description: 'Free ticket',
-      priceCents: 0,
-      isFree: true,
-      sortOrder: 1,
-    },
-  })
-
-  return tenant
-}
-
-async function createOrg2BusinessClub() {
-  const tenant = await upsertTenant({
-    slug: 'tenant-business-club',
-    name: 'Executive Business Club',
-    primaryColor: '#1E3A8A',
-  })
-
-  const annualTier = await prisma.membershipTier.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'annual-500' } },
-    update: {
-      name: '$500 / Year',
-      description: 'Business club annual membership',
-      monthlyPriceCents: 0,
-      annualPriceCents: 50000,
-      isFree: false,
-      isPublic: true,
-      sortOrder: 1,
-    },
-    create: {
-      tenantId: tenant.id,
-      name: '$500 / Year',
-      slug: 'annual-500',
-      description: 'Business club annual membership',
-      monthlyPriceCents: 0,
-      annualPriceCents: 50000,
-      isFree: false,
-      isPublic: true,
-      sortOrder: 1,
-    },
-  })
-
-  const hostMember = await prisma.member.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: tenant.id,
-        email: 'host@executiveclub.example.com',
-      },
-    },
-    update: {
-      firstName: 'Morgan',
-      lastName: 'Lee',
-      status: 'ACTIVE',
-    },
-    create: {
-      tenantId: tenant.id,
-      email: 'host@executiveclub.example.com',
-      firstName: 'Morgan',
-      lastName: 'Lee',
-      status: 'ACTIVE',
-    },
-  })
-
-  await prisma.membershipSubscription.upsert({
-    where: {
-      id: `${tenant.id}-business-host-sub`,
-    },
-    update: {
-      status: 'ACTIVE',
-      billingInterval: 'ANNUAL',
-      tierId: annualTier.id,
-      memberId: hostMember.id,
-    },
-    create: {
-      id: `${tenant.id}-business-host-sub`,
-      tenantId: tenant.id,
-      memberId: hostMember.id,
-      tierId: annualTier.id,
-      status: 'ACTIVE',
-      billingInterval: 'ANNUAL',
-      startedAt: new Date(),
-      renewsAt: daysFromNow(365),
-    },
-  })
-
-  const event = await prisma.event.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'paid-networking-night' } },
-    update: {
-      title: 'Paid Networking Night',
-      description: 'Ticketed networking event for professionals',
-      status: 'PUBLISHED',
-      format: 'IN_PERSON',
-      location: 'Downtown Conference Center',
-      startsAt: daysFromNow(21),
-      endsAt: daysFromNow(21),
-      isPublic: true,
-    },
-    create: {
-      tenantId: tenant.id,
-      title: 'Paid Networking Night',
-      slug: 'paid-networking-night',
-      description: 'Ticketed networking event for professionals',
-      status: 'PUBLISHED',
-      format: 'IN_PERSON',
-      location: 'Downtown Conference Center',
-      startsAt: daysFromNow(21),
-      endsAt: daysFromNow(21),
-      isPublic: true,
-    },
-  })
-
-  await prisma.eventTicket.upsert({
-    where: {
-      id: `${event.id}-paid-standard`,
-    },
-    update: {
-      name: 'Standard Ticket',
-      description: 'Paid admission',
-      priceCents: 7500,
-      isFree: false,
-      sortOrder: 1,
-    },
-    create: {
-      id: `${event.id}-paid-standard`,
-      eventId: event.id,
-      name: 'Standard Ticket',
-      description: 'Paid admission',
-      priceCents: 7500,
-      isFree: false,
-      sortOrder: 1,
-    },
-  })
-
-  return tenant
-}
-
-async function createOrg3VolunteerGroup() {
-  const tenant = await upsertTenant({
-    slug: 'tenant-volunteer-group',
-    name: 'City Volunteer Group',
-    primaryColor: '#B45309',
-  })
-
-  const memberSeeds = [
-    { firstName: 'Ava', lastName: 'Patel', email: 'ava@cityvolunteers.example.com' },
-    { firstName: 'Noah', lastName: 'Garcia', email: 'noah@cityvolunteers.example.com' },
-    { firstName: 'Mia', lastName: 'Chen', email: 'mia@cityvolunteers.example.com' },
-    { firstName: 'Ethan', lastName: 'Nguyen', email: 'ethan@cityvolunteers.example.com' },
-    { firstName: 'Liam', lastName: 'Johnson', email: 'liam@cityvolunteers.example.com' },
+  const members = [
+    { id: `${tenant.id}-m1`, email: 'sarah@nonprofit.example.com', firstName: 'Sarah', lastName: 'Kim', tierId: freeTier.id },
+    { id: `${tenant.id}-m2`, email: 'david@nonprofit.example.com', firstName: 'David', lastName: 'Brown', tierId: freeTier.id },
+    { id: `${tenant.id}-m3`, email: 'nina@nonprofit.example.com', firstName: 'Nina', lastName: 'Alvarez', tierId: paidTier.id },
+    { id: `${tenant.id}-m4`, email: 'omar@nonprofit.example.com', firstName: 'Omar', lastName: 'Ali', tierId: paidTier.id },
   ]
 
-  for (const member of memberSeeds) {
-    await prisma.member.upsert({
-      where: {
-        tenantId_email: {
-          tenantId: tenant.id,
-          email: member.email,
-        },
-      },
-      update: {
-        firstName: member.firstName,
-        lastName: member.lastName,
-        status: 'ACTIVE',
-      },
-      create: {
-        tenantId: tenant.id,
-        email: member.email,
-        firstName: member.firstName,
-        lastName: member.lastName,
-        status: 'ACTIVE',
-      },
-    })
+  for (const m of members) {
+    await prisma.member.upsert({ where: { id: m.id }, update: {}, create: { ...m, tenantId: tenant.id, status: 'ACTIVE' } })
   }
 
-  await prisma.volunteerOpportunity.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'food-drive-support' } },
-    update: {
-      title: 'Food Drive Support',
-      description: 'Organize and distribute food packages',
-      location: 'Central Food Bank',
-      isVirtual: false,
-      isActive: true,
-      startsAt: daysFromNow(7),
-      endsAt: daysFromNow(37),
-    },
-    create: {
-      tenantId: tenant.id,
-      title: 'Food Drive Support',
-      slug: 'food-drive-support',
-      description: 'Organize and distribute food packages',
-      location: 'Central Food Bank',
-      isVirtual: false,
-      isActive: true,
-      startsAt: daysFromNow(7),
-      endsAt: daysFromNow(37),
-    },
+  const event = await prisma.event.upsert({
+    where: { id: `${tenant.id}-community-open-house` },
+    update: { title: 'Community Open House', startDate: daysFromNow(14), endDate: daysFromNow(14), status: 'PUBLISHED', format: 'IN_PERSON' },
+    create: { id: `${tenant.id}-community-open-house`, tenantId: tenant.id, title: 'Community Open House', description: 'Free community event', startDate: daysFromNow(14), status: 'PUBLISHED', format: 'IN_PERSON' },
   })
 
-  await prisma.volunteerOpportunity.upsert({
-    where: { tenantId_slug: { tenantId: tenant.id, slug: 'park-cleanup-crew' } },
-    update: {
-      title: 'Park Cleanup Crew',
-      description: 'Weekly cleanup effort at local parks',
-      location: 'Riverfront Park',
-      isVirtual: false,
-      isActive: true,
-      startsAt: daysFromNow(10),
-      endsAt: daysFromNow(40),
-    },
-    create: {
-      tenantId: tenant.id,
-      title: 'Park Cleanup Crew',
-      slug: 'park-cleanup-crew',
-      description: 'Weekly cleanup effort at local parks',
-      location: 'Riverfront Park',
-      isVirtual: false,
-      isActive: true,
-      startsAt: daysFromNow(10),
-      endsAt: daysFromNow(40),
-    },
+  // Register first two members
+  await prisma.eventRegistration.upsert({
+    where: { eventId_memberId: { eventId: event.id, memberId: members[0].id } },
+    update: {},
+    create: { eventId: event.id, memberId: members[0].id, paidAmount: 0 },
   })
+
+  await prisma.eventRegistration.upsert({
+    where: { eventId_memberId: { eventId: event.id, memberId: members[1].id } },
+    update: {},
+    create: { eventId: event.id, memberId: members[1].id, paidAmount: 0 },
+  })
+
+  return tenant
+}
+
+async function createBusinessClub() {
+  const tenant = await upsertTenant({ slug: 'tenant-business-club', name: 'Executive Business Club', primaryColor: '#1E3A8A' })
+
+  const annualTier = await prisma.membershipTier.upsert({
+    where: { id: `${tenant.id}-annual-500` },
+    update: { name: '$500 / Year', priceCents: 50000, interval: 'ANNUAL' },
+    create: { id: `${tenant.id}-annual-500`, tenantId: tenant.id, name: '$500 / Year', priceCents: 50000, interval: 'ANNUAL' },
+  })
+
+  const host = await prisma.member.upsert({ where: { id: `${tenant.id}-host` }, update: {}, create: { id: `${tenant.id}-host`, tenantId: tenant.id, email: 'host@executiveclub.example.com', firstName: 'Morgan', lastName: 'Lee', status: 'ACTIVE', tierId: annualTier.id } })
+
+  const event = await prisma.event.upsert({
+    where: { id: `${tenant.id}-paid-networking-night` },
+    update: { title: 'Paid Networking Night', startDate: daysFromNow(21), endDate: daysFromNow(21), status: 'PUBLISHED', format: 'IN_PERSON', priceCents: 7500 },
+    create: { id: `${tenant.id}-paid-networking-night`, tenantId: tenant.id, title: 'Paid Networking Night', description: 'Ticketed networking event', startDate: daysFromNow(21), status: 'PUBLISHED', format: 'IN_PERSON', priceCents: 7500 },
+  })
+
+  // create a few members
+  const members = [
+    { id: `${tenant.id}-m1`, email: 'morgan@executiveclub.example.com', firstName: 'Morgan', lastName: 'Lee', tierId: annualTier.id },
+    { id: `${tenant.id}-m2`, email: 'priya@executiveclub.example.com', firstName: 'Priya', lastName: 'Patel', tierId: annualTier.id },
+  ]
+
+  for (const m of members) {
+    await prisma.member.upsert({ where: { id: m.id }, update: {}, create: { ...m, tenantId: tenant.id, status: 'ACTIVE' } })
+  }
+
+  // register host
+  await prisma.eventRegistration.upsert({ where: { eventId_memberId: { eventId: event.id, memberId: host.id } }, update: {}, create: { eventId: event.id, memberId: host.id, paidAmount: event.priceCents } })
+
+  return tenant
+}
+
+async function createVolunteerGroup() {
+  const tenant = await upsertTenant({ slug: 'tenant-volunteer-group', name: 'City Volunteer Group', primaryColor: '#B45309' })
+
+  await prisma.membershipTier.upsert({ where: { id: `${tenant.id}-vol-free` }, update: { name: 'Volunteer Member', priceCents: 0 }, create: { id: `${tenant.id}-vol-free`, tenantId: tenant.id, name: 'Volunteer Member', priceCents: 0, interval: 'ANNUAL' } })
+
+  const memberSeeds = [
+    { id: `${tenant.id}-m1`, email: 'ava@cityvolunteers.example.com', firstName: 'Ava', lastName: 'Patel' },
+    { id: `${tenant.id}-m2`, email: 'noah@cityvolunteers.example.com', firstName: 'Noah', lastName: 'Garcia' },
+    { id: `${tenant.id}-m3`, email: 'mia@cityvolunteers.example.com', firstName: 'Mia', lastName: 'Chen' },
+  ]
+
+  for (const m of memberSeeds) {
+    await prisma.member.upsert({ where: { id: m.id }, update: {}, create: { ...m, tenantId: tenant.id, status: 'ACTIVE' } })
+  }
+
+  const opp1 = await prisma.volunteerOpportunity.upsert({ where: { id: `${tenant.id}-opp1` }, update: { title: 'Food Drive Support', date: daysFromNow(7), location: 'Central Food Bank' }, create: { id: `${tenant.id}-opp1`, tenantId: tenant.id, title: 'Food Drive Support', description: 'Help sort and distribute food donations.', date: daysFromNow(7), location: 'Central Food Bank' } })
+
+  // sign up a volunteer
+  await prisma.volunteerSignup.upsert({ where: { opportunityId_memberId: { opportunityId: opp1.id, memberId: memberSeeds[0].id } }, update: {}, create: { opportunityId: opp1.id, memberId: memberSeeds[0].id, status: 'CONFIRMED', hoursLogged: 4 } })
 
   return tenant
 }
@@ -370,24 +140,14 @@ async function createOrg3VolunteerGroup() {
 async function main() {
   console.log('Simulating real-world multi-tenant data...')
 
-  const [org1, org2, org3] = await Promise.all([
-    createOrg1NonProfit(),
-    createOrg2BusinessClub(),
-    createOrg3VolunteerGroup(),
-  ])
+  const [a, b, c] = await Promise.all([createNonProfit(), createBusinessClub(), createVolunteerGroup()])
 
-  console.log('Done.')
-  console.log(`Created/updated tenants:`)
-  console.log(`- ${org1.name} (${org1.slug})`)
-  console.log(`- ${org2.name} (${org2.slug})`)
-  console.log(`- ${org3.name} (${org3.slug})`)
+  console.log('Done. Created tenants:')
+  console.log(`- ${a.slug}`)
+  console.log(`- ${b.slug}`)
+  console.log(`- ${c.slug}`)
 }
 
 main()
-  .catch((error) => {
-    console.error('Simulation failed:', error)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+  .catch((e) => { console.error('Simulation failed:', e); process.exit(1) })
+  .finally(async () => { await prisma.$disconnect() })

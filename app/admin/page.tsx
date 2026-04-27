@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Building2, Users, CalendarDays, Heart, CheckCircle2, XCircle, ExternalLink } from 'lucide-react'
-import { getAllTenants } from '@/lib/actions/admin'
+import { getAllTenants, type TenantOwner } from '@/lib/actions/admin'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
@@ -70,9 +70,30 @@ export default async function AdminPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Owners:{' '}
-                        {tenant.owners?.length > 0
-                          ? tenant.owners.map((owner: { identifier: string }) => owner.identifier).join(', ')
-                          : 'None'}
+                        {tenant.owners?.length > 0 ? (
+                          tenant.owners.map((owner: TenantOwner, index: number) => (
+                            <span
+                              key={`${owner.identifier}-${owner.role}-${index}`}
+                              className="inline-flex flex-wrap items-center gap-1"
+                            >
+                              <span>{owner.fullName ?? owner.identifier}</span>
+                              {owner.email ? (
+                                <a
+                                  href={`mailto:${owner.email}`}
+                                  className="text-indigo-500 hover:underline"
+                                >
+                                  {owner.email}
+                                </a>
+                              ) : null}
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                                {owner.role.replace('org:', '')}
+                              </span>
+                              {index < tenant.owners.length - 1 ? <span className="text-slate-400">,&nbsp;</span> : null}
+                            </span>
+                          ))
+                        ) : (
+                          'None'
+                        )}
                       </p>
                     </div>
                   </div>

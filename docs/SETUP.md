@@ -1,364 +1,195 @@
-# Janagana Setup Guide
-
-This guide will walk you through setting up the Janagana development environment.
-
-## Table of Contents
-
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Service Configuration](#service-configuration)
-  - [Clerk Authentication](#clerk-authentication)
-  - [Database Setup](#database-setup)
-  - [Stripe Payments (Optional)](#stripe-payments-optional)
-  - [Sentry Error Tracking (Optional)](#sentry-error-tracking-optional)
-- [Local Development](#local-development)
-- [Production Deployment](#production-deployment)
-- [Troubleshooting](#troubleshooting)
+# JanaGana — Local Development Setup
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+- Node.js 18+ (`node --version`)
+- npm 9+
+- A [Neon](https://neon.tech) PostgreSQL database (free tier works)
+- A [Clerk](https://clerk.com) account (free tier works)
 
-- **Node.js** 20 or higher ([Download](https://nodejs.org/))
-- **npm** (comes with Node.js)
-- **Git** ([Download](https://git-scm.com/))
-- **PostgreSQL** (local installation or hosted database)
+---
 
 ## Quick Start
 
 ```bash
-# Clone the repository
+# 1. Clone and enter the project
 git clone https://github.com/your-org/janagana.git
 cd janagana
 
-# Install dependencies
-npm install
-
-# Copy environment variables template
+# 2. Copy and fill in environment variables
 cp .env.example .env.local
+# Edit .env.local with your DATABASE_URL, CLERK keys, etc.
 
-# Generate Prisma client
-npm run db:generate
+# 3. Run the startup script (installs deps, migrates DB, starts dev server)
+./start.sh
 
-# Run database migrations
+# Or with demo data:
+./start.sh --seed
+```
+
+The app will be available at **http://localhost:3000**.
+
+---
+
+## Manual Setup (step by step)
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Environment Variables
+
+```bash
+cp .env.example .env.local
+```
+
+Open `.env.local` and set:
+
+| Variable | Where to get it |
+|----------|----------------|
+| `DATABASE_URL` | [neon.tech](https://neon.tech) → your project → Connection string |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | [dashboard.clerk.com](https://dashboard.clerk.com) → API Keys |
+| `CLERK_SECRET_KEY` | [dashboard.clerk.com](https://dashboard.clerk.com) → API Keys |
+
+### 3. Set Up the Database
+
+```bash
+# Apply migrations (creates all tables)
 npm run db:migrate
 
-# (Optional) Seed database with demo data
-npm run seed
-
-# Start development server
-npm run dev
+# (Optional) Load demo data
+npm run db:seed
 ```
 
-Access the app at: http://localhost:3000
-
-## Service Configuration
-
-### Clerk Authentication
-
-Clerk provides user authentication and user management for Janagana.
-
-#### Setup Steps
-
-1. **Create a Clerk Account**
-   - Go to [clerk.com](https://clerk.com/)
-   - Click "Sign up" and create an account
-   - Verify your email address
-
-2. **Create a New Application**
-   - In the Clerk Dashboard, click "Add application"
-   - Give your application a name (e.g., "Janagana Dev")
-   - Choose "Email & Password" as the authentication method
-   - Click "Create application"
-
-3. **Get API Keys**
-   - In your application dashboard, go to "API Keys" in the left sidebar
-   - Copy the **Secret Key** (starts with `sk_test_...`)
-   - Copy the **Publishable Key** (starts with `pk_test_...`)
-
-4. **Configure Redirect URLs**
-   - Go to "Domains" in the left sidebar
-   - Add your development URLs:
-     - `http://localhost:3000`
-     - `http://localhost:3000/sign-in`
-     - `http://localhost:3000/sign-up`
-     - `http://localhost:3000/dashboard`
-   - For production, add your production domain
-
-#### Environment Variables
-
-Add these to `.env.local`:
-
-```bash
-CLERK_SECRET_KEY="sk_test_..."
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/onboarding"
-```
-
-### Database Setup
-
-Janagana uses PostgreSQL with Prisma ORM.
-
-#### Option 1: Local PostgreSQL
-
-1. **Install PostgreSQL**
-   - Mac: `brew install postgresql`
-   - Windows: Download from [postgresql.org](https://postgresql.org/download)
-   - Linux: Use your package manager
-
-2. **Create Database**
-   ```bash
-   psql postgres
-   CREATE DATABASE janagana_dev;
-   \q
-   ```
-
-3. **Set DATABASE_URL**
-   ```bash
-   DATABASE_URL="postgresql://postgres:password@localhost:5432/janagana_dev"
-   ```
-
-#### Option 2: Hosted PostgreSQL (Recommended)
-
-**Neon** (Serverless PostgreSQL):
-1. Go to [neon.tech](https://neon.tech)
-2. Create a free account
-3. Create a new project
-4. Copy the `DATABASE_URL` from the project settings
-
-**Supabase**:
-1. Go to [supabase.com](https://supabase.com)
-2. Create a free account
-3. Create a new project
-4. Copy the `DATABASE_URL` from project settings
-
-#### Environment Variables
-
-Add to `.env.local`:
-
-```bash
-DATABASE_URL="postgresql://..."
-```
-
-### Stripe Payments (Optional)
-
-Stripe handles payment processing for subscriptions and donations.
-
-#### Setup Steps
-
-1. **Create a Stripe Account**
-   - Go to [stripe.com](https://stripe.com/)
-   - Click "Start now" and create an account
-   - Complete the onboarding process
-
-2. **Get API Keys**
-   - In the Stripe Dashboard, go to "Developers" → "API keys"
-   - Copy the **Secret key** (starts with `sk_test_...`)
-   - Copy the **Publishable key** (starts with `pk_test_...`)
-
-3. **Set Up Webhook** (for production)
-   - Go to "Developers" → "Webhooks"
-   - Click "Add endpoint"
-   - Set the webhook URL to your production domain
-   - Select events to listen for
-
-#### Environment Variables
-
-Add these to `.env.local`:
-
-```bash
-STRIPE_SECRET_KEY="sk_test_..."
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
-```
-
-### Sentry Error Tracking (Optional)
-
-Sentry provides error tracking and performance monitoring.
-
-#### Setup Steps
-
-1. **Create a Sentry Account**
-   - Go to [sentry.io](https://sentry.io/)
-   - Click "Sign up" and create an account
-
-2. **Create a Project**
-   - Select "Next.js" as the platform
-   - Give your project a name
-   - Click "Create Project"
-
-3. **Get DSN**
-   - Copy the **DSN** (Data Source Name) from project settings
-
-#### Environment Variables
-
-Add these to `.env.local`:
-
-```bash
-SENTRY_DSN="https://..."
-NEXT_PUBLIC_SENTRY_DSN="https://..."
-```
-
-## Local Development
-
-### Starting the Development Server
+### 4. Start the Dev Server
 
 ```bash
 npm run dev
 ```
 
-Access the app at: http://localhost:3000
+---
 
-### Database Management
+## Clerk Configuration
 
-```bash
-# Generate Prisma client
-npm run db:generate
+In your Clerk Dashboard:
 
-# Run migrations
-npm run db:migrate
+1. Go to **Configure → Sessions**  
+   Enable **Organizations** (required for multi-tenant functionality).
 
-# Push schema changes (development only)
-npm run db:push
+2. Go to **Configure → Paths**  
+   Set these redirect URLs:
+   - Sign-in URL: `/sign-in`
+   - Sign-up URL: `/sign-up`
+   - After sign-in: `/dashboard`
+   - After sign-up: `/onboarding`
 
-# Seed database with demo data
-npm run seed
+3. Go to **Configure → Webhooks**  
+   Add an endpoint: `https://your-domain.com/api/webhooks/clerk`  
+   Subscribe to: `organization.created`, `organization.updated`, `organizationMembership.created`
 
-# Open Prisma Studio (database GUI)
-npm run db:studio
-```
+---
 
-### Code Quality
-
-```bash
-# Run ESLint
-npm run lint
-
-# Run TypeScript type check
-npm run typecheck
-
-# Run tests
-npm run test
-```
-
-### Build for Production
+## Available Scripts
 
 ```bash
-npm run build
-npm run start
+npm run dev          # Start dev server with Turbopack (hot reload)
+npm run build        # Production build
+npm run start        # Start production server
+npm run lint         # ESLint check
+npm run typecheck    # TypeScript type check (no emit)
+
+npm run db:generate  # Regenerate Prisma client after schema changes
+npm run db:push      # Push schema changes to DB without migration file (dev only)
+npm run db:migrate   # Create and apply migration (use in dev)
+npm run db:studio    # Open Prisma Studio GUI
+npm run db:seed      # Load demo data
+
+# E2E Tests (after configuring E2E_CLERK_EMAIL + E2E_CLERK_PASSWORD in .env)
+npm run test:e2e           # Run all E2E tests (headless)
+npm run test:e2e:headed    # Run with browser visible
+npm run test:e2e:ui        # Run with Playwright interactive UI
+npm run test:e2e:debug     # Debug mode
+
+# Run only public/no-auth tests (don't need Clerk credentials)
+npx playwright test --config=e2e/playwright.config.ts --project=no-auth
 ```
 
-## Production Deployment
+### E2E Test Credentials Setup
 
-### Vercel Deployment (Recommended)
-
-Janagana is currently deployed on Vercel. To deploy:
-
-1. **Install Vercel CLI**
-   ```bash
-   npm install -g vercel
-   vercel login
-   ```
-
-2. **Deploy**
-   ```bash
-   vercel --prod
-   ```
-
-3. **Configure Environment Variables**
-   - Add all required environment variables in Vercel dashboard
-   - Use production API keys (not test keys)
-   - Set `NEXT_PUBLIC_APP_URL` to your production domain
-
-### Environment Variables for Production
+To run the full authenticated E2E test suite, add these to `.env`:
 
 ```bash
-# Required
-DATABASE_URL=postgresql://...
-CLERK_SECRET_KEY=...
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
-
-# Application
-NEXT_PUBLIC_APP_URL=https://your-domain.com
-
-# Optional (Stripe)
-STRIPE_SECRET_KEY=...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
-
-# Optional (Sentry)
-SENTRY_DSN=...
-NEXT_PUBLIC_SENTRY_DSN=...
+# Create a dedicated test user in Clerk Dashboard first
+E2E_CLERK_EMAIL="e2e-test@yourdomain.com"
+E2E_CLERK_PASSWORD="your-test-password"
 ```
 
-### Deployment Checklist
+The test user must:
+1. Exist in your Clerk project
+2. Have password auth enabled (not social login only)
+3. Have already completed onboarding (or the global-setup will do it)
 
-- [ ] Update all API keys to production versions
-- [ ] Configure production database
-- [ ] Set `NEXT_PUBLIC_APP_URL` to production domain
-- [ ] Configure Clerk redirect URLs for production
-- [ ] Enable Sentry error tracking
-- [ ] Test all critical user flows
-- [ ] Set up monitoring and alerting
-- [ ] Configure backup strategy
+Public/no-auth tests always work without credentials:
+```bash
+npx playwright test --config=e2e/playwright.config.ts --project=no-auth
+```
+
+---
+
+## Project Structure
+
+```
+janagana/
+├── app/
+│   ├── (auth)/sign-in, sign-up     ← Clerk auth pages
+│   ├── (dashboard)/                ← Admin dashboard (auth protected)
+│   │   ├── dashboard/              ← Stats overview
+│   │   ├── members/                ← Member management
+│   │   ├── events/                 ← Event management
+│   │   ├── volunteers/             ← Volunteer opportunities
+│   │   └── settings/               ← Org settings
+│   ├── onboarding/                 ← New org setup wizard
+│   └── api/webhooks/               ← Stripe + Clerk webhooks
+├── components/
+│   ├── dashboard/                  ← Dashboard-specific components
+│   └── ui/                         ← shadcn/ui components
+├── lib/
+│   ├── actions/                    ← Server Actions (data mutations)
+│   │   ├── tenant.ts
+│   │   ├── members.ts
+│   │   ├── events.ts
+│   │   └── volunteers.ts
+│   ├── prisma.ts                   ← Prisma singleton
+│   └── utils.ts                    ← Shared utilities
+├── prisma/
+│   ├── schema.prisma               ← Database schema
+│   └── seed.ts                     ← Demo data
+├── e2e/tests/                      ← Playwright E2E tests
+├── docs/                           ← Documentation
+├── .env.example                    ← Environment variable template
+├── start.sh                        ← Local dev startup script
+└── middleware.ts                   ← Clerk auth middleware
+```
+
+---
 
 ## Troubleshooting
 
-### Common Issues
+| Problem | Fix |
+|---------|-----|
+| Clerk redirect loop | Clear browser cookies, check Clerk Dashboard redirect URLs |
+| Prisma client out of sync | Run `npm run db:generate` after any schema change |
+| Build fails with type errors | Run `npm run typecheck` to see all errors |
+| `Missing tenantId` error | Every DB query needs `where: { tenantId }` |
+| Port 3000 in use | Kill with `lsof -ti:3000 \| xargs kill -9` |
+| DB connection refused | Check `DATABASE_URL` in `.env.local`, ensure Neon project is active |
 
-#### Database connection errors
+---
 
-```bash
-# Verify DATABASE_URL is correct
-echo $DATABASE_URL
+## Next Steps
 
-# Test database connection
-psql $DATABASE_URL
-
-# Reset database (development only - deletes all data)
-npm run db:push --force-reset
-```
-
-#### Prisma client out of sync
-
-```bash
-# Regenerate Prisma client
-npm run db:generate
-```
-
-#### Clerk authentication not working
-
-- Verify the Clerk keys are correct
-- Check that redirect URLs are configured in Clerk Dashboard
-- Ensure you're using the correct environment (test vs production)
-
-#### Build errors
-
-```bash
-# Clear Next.js cache
-rm -rf .next
-
-# Clear node_modules and reinstall
-rm -rf node_modules
-npm install
-```
-
-### Getting Help
-
-If you encounter issues not covered here:
-
-1. Check the [TODO.md](../TODO.md) for known issues
-2. Review [legacy documentation](./legacy/) for reference
-3. Check service-specific documentation:
-   - [Clerk Docs](https://clerk.com/docs)
-   - [Prisma Docs](https://www.prisma.io/docs)
-   - [Next.js Docs](https://nextjs.org/docs)
-   - [Vercel Docs](https://vercel.com/docs)
-
-## Additional Resources
-
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Clerk Documentation](https://clerk.com/docs)
-- [Vercel Documentation](https://vercel.com/docs)
+- Read [ARCHITECTURE.md](./ARCHITECTURE.md) to understand the system design
+- Read [DEPLOYMENT.md](./DEPLOYMENT.md) to deploy to Vercel
+- See [TODO.md](../TODO.md) for planned features and roadmap

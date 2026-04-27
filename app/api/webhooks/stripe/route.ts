@@ -2,100 +2,92 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
+  apiVersion: '2025-02-24.acacia',
 })
 
-export async function POST(req: Request) {
-  const body = await req.text()
-  const signature = headers().get('stripe-signature')!
+export async function POST(request: Request) {
+  // Rate limit: 100 Stripe webhook calls per minute per IP
+  if (checkRateLimit(request, { maxRequests: 100, windowMs: 60_000 })) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
+  const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
+  if (!WEBHOOK_SECRET) {
+    console.error('[stripe webhook] STRIPE_WEBHOOK_SECRET not configured')
+    return NextResponse.json(
+      { error: 'STRIPE_WEBHOOK_SECRET not configured' },
+      { status: 500 }
+    )
+  }
+
+  const headersList = await headers()
+  const sig = headersList.get('stripe-signature')
+  if (!sig) {
+    return NextResponse.json({ error: 'Missing stripe-signature' }, { status: 400 })
+  }
+
+  const body = await request.text()
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    )
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message)
+    event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET)
+  } catch {
+    console.warn('[stripe webhook] Invalid signature')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        const tenantId = session.metadata?.tenantId
+  console.log(`[stripe webhook] type=${event.type} id=${event.id}`)
 
-        if (tenantId && session.subscription) {
-          await prisma.tenantSubscription.update({
-            where: { tenantId },
-            data: {
-              stripeSubscriptionId: session.subscription as string,
-              stripeCustomerId: session.customer as string,
-              status: 'ACTIVE',
-            },
-          })
-        }
-        break
-      }
-
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription
-        const subscriptionId = subscription.id
-
-        const tenantSub = await prisma.tenantSubscription.findFirst({
-          where: { stripeSubscriptionId: subscriptionId },
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object as Stripe.Checkout.Session
+      const tenantId = session.metadata?.tenantId
+      const memberId = session.metadata?.memberId
+      if (tenantId && memberId && session.customer) {
+        await prisma.member.update({
+          where: { id: memberId },
+          data: { stripeCustomerId: session.customer as string },
         })
-
-        if (tenantSub) {
-          const status = subscription.status === 'active' ? 'ACTIVE' :
-                        subscription.status === 'past_due' ? 'PAST_DUE' :
-                        subscription.status === 'canceled' ? 'CANCELED' :
-                        'TRIALING'
-
-          await prisma.tenantSubscription.update({
-            where: { id: tenantSub.id },
-            data: {
-              status,
-              currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-              currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-              cancelAtPeriodEnd: subscription.cancel_at_period_end,
-            },
-          })
-        }
-        break
       }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription
-        const subscriptionId = subscription.id
-
-        const tenantSub = await prisma.tenantSubscription.findFirst({
-          where: { stripeSubscriptionId: subscriptionId },
-        })
-
-        if (tenantSub) {
-          await prisma.tenantSubscription.update({
-            where: { id: tenantSub.id },
-            data: {
-              status: 'CANCELED',
-            },
-          })
-        }
-        break
-      }
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
+      break
     }
 
-    return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('Error processing webhook:', error)
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
+    case 'customer.subscription.updated': {
+      const sub = event.data.object as Stripe.Subscription
+      const memberId = sub.metadata?.memberId
+      if (memberId) {
+        await prisma.member.update({
+          where: { id: memberId },
+          data: {
+            stripeSubscriptionId: sub.id,
+            stripeCustomerId: typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
+            renewsAt: sub.current_period_end
+              ? new Date(sub.current_period_end * 1000)
+              : undefined,
+          },
+        })
+      }
+      break
+    }
+
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as Stripe.Subscription
+      const memberId = sub.metadata?.memberId
+      if (memberId) {
+        await prisma.member.update({
+          where: { id: memberId },
+          data: { stripeSubscriptionId: null, renewsAt: null },
+        })
+      }
+      break
+    }
+
+    default:
+      console.log(`[stripe webhook] unhandled event type: ${event.type}`)
   }
+
+  return NextResponse.json({ received: true })
 }

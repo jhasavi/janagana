@@ -24,9 +24,11 @@ export async function requireGlobalAdmin() {
   return user
 }
 
-type TenantOwner = {
+export type TenantOwner = {
   identifier: string
   role: string
+  fullName?: string
+  email?: string
 }
 
 type TenantWithOwners = Tenant & {
@@ -36,6 +38,46 @@ type TenantWithOwners = Tenant & {
     volunteerOpportunities: number
   }
   owners: TenantOwner[]
+}
+
+function getMembershipPrimaryEmail(membership: any): string | undefined {
+  return (
+    membership?.emailAddresses?.[0]?.emailAddress ??
+    membership?.emailAddress ??
+    membership?.primaryEmailAddress?.emailAddress ??
+    membership?.publicUserData?.email ??
+    membership?.public_user_data?.email ??
+    membership?.user?.emailAddress
+  )
+}
+
+function getMembershipFullName(membership: any): string | undefined {
+  const firstName =
+    membership?.publicUserData?.firstName ??
+    membership?.publicUserData?.first_name ??
+    membership?.public_user_data?.first_name ??
+    membership?.firstName ??
+    membership?.first_name ??
+    membership?.user?.firstName ??
+    membership?.user?.first_name
+
+  const lastName =
+    membership?.publicUserData?.lastName ??
+    membership?.publicUserData?.last_name ??
+    membership?.public_user_data?.last_name ??
+    membership?.lastName ??
+    membership?.last_name ??
+    membership?.user?.lastName ??
+    membership?.user?.last_name
+
+  const fallbackName =
+    membership?.publicUserData?.name ??
+    membership?.public_user_data?.name ??
+    membership?.user?.fullName ??
+    membership?.user?.name
+
+  const fullName = [firstName, lastName].filter(Boolean).join(' ')
+  return fullName || fallbackName
 }
 
 export async function getAllTenants(): Promise<TenantWithOwners[]> {
@@ -67,11 +109,24 @@ export async function getAllTenants(): Promise<TenantWithOwners[]> {
               String(membership.role).toLowerCase().includes(role.replace('org:', ''))
             )
           )
-          .map((membership) => ({
-            identifier:
-              membership.publicUserData?.identifier || String(membership.role),
-            role: String(membership.role),
-          }))
+          .map((membership) => {
+            const rawMembership = membership as any
+            const fullName = getMembershipFullName(rawMembership)
+            const email = getMembershipPrimaryEmail(rawMembership)
+            const identifier =
+              fullName ||
+              email ||
+              rawMembership?.userId ||
+              rawMembership?.user_id ||
+              String(membership.role)
+
+            return {
+              identifier,
+              role: String(membership.role),
+              fullName,
+              email,
+            }
+          })
 
         return { ...tenant, owners }
       } catch (error) {

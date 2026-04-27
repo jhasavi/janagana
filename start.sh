@@ -1,121 +1,198 @@
-#!/bin/bash
-
-# Jana Gana Startup Script
-# This script starts all services in development mode
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# JanaGana — Local Development Startup Script
+# Usage: ./start.sh [--reset] [--seed] [--skip-install]
+#
+#   --reset          Drop & recreate the local DB, run seed
+#   --seed           Run seed without resetting (add demo data)
+#   --skip-install   Skip npm install (faster if deps are up to date)
+# ─────────────────────────────────────────────────────────────────────────────
 
 set -e
 
-# Colors for output
+# ── Colours ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Colour
 
-echo -e "${BLUE}=== Jana Gana Development Startup ===${NC}"
-echo ""
+log()  { echo -e "${CYAN}[start.sh]${NC} $*"; }
+ok()   { echo -e "${GREEN}[start.sh] ✓${NC} $*"; }
+warn() { echo -e "${YELLOW}[start.sh] ⚠${NC} $*"; }
+fail() { echo -e "${RED}[start.sh] ✗${NC} $*"; exit 1; }
 
-# Check if .env file exists
-if [ ! -f ".env" ]; then
-    echo -e "${YELLOW}Warning: .env file not found. Using default values.${NC}"
+# ── Parse args ────────────────────────────────────────────────────────────────
+RESET=false
+SEED=false
+SKIP_INSTALL=false
+
+for arg in "$@"; do
+  case $arg in
+    --reset)        RESET=true ;;
+    --seed)         SEED=true ;;
+    --skip-install) SKIP_INSTALL=true ;;
+    *)              warn "Unknown argument: $arg" ;;
+  esac
+done
+
+# ── Check required tools ──────────────────────────────────────────────────────
+log "Checking required tools..."
+command -v node  >/dev/null 2>&1 || fail "node is not installed. Install via https://nodejs.org"
+command -v npm   >/dev/null 2>&1 || fail "npm is not installed."
+command -v npx   >/dev/null 2>&1 || fail "npx is not installed."
+
+NODE_VERSION=$(node --version | cut -d. -f1 | tr -d 'v')
+if [[ "$NODE_VERSION" -lt 18 ]]; then
+  fail "Node.js 18+ required. Current: $(node --version)"
 fi
+ok "Node.js $(node --version)"
 
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
+# ── Check env files ───────────────────────────────────────────────────────────
+log "Checking environment variables..."
+
+load_env_file() {
+  local file="$1"
+  local allow_empty="$2"
+
+  # Simple key=value parser (ignores comments and export prefixes)
+  while IFS='=' read -r raw_key raw_value; do
+    [[ "$raw_key" =~ ^#.*$ || -z "$raw_key" ]] && continue
+    local key
+    local value
+    key=$(echo "$raw_key" | sed 's/^export //' | xargs)
+    value=$(echo "$raw_value" | sed 's/^"//;s/"$//' | xargs)
+
+    if [[ -z "$value" && "$allow_empty" != "true" && -n "${!key:-}" ]]; then
+      continue
+    fi
+
+    export "$key=$value" 2>/dev/null || true
+  done < "$file"
 }
 
-# Check required commands
-if ! command_exists node; then
-    echo -e "${RED}Error: Node.js is not installed${NC}"
-    exit 1
-fi
+test_database_url() {
+  if ! command -v psql >/dev/null 2>&1; then
+    return 1
+  fi
 
-# Use npm as default (project is configured for npm)
-PKG_MANAGER=npm
-echo -e "${GREEN}Using package manager: $PKG_MANAGER${NC}"
-echo ""
+  if [[ -z "${DATABASE_URL:-}" ]]; then
+    return 1
+  fi
 
-# Install root dependencies if needed
-echo -e "${BLUE}Checking dependencies...${NC}"
-if [ ! -d "node_modules" ] || [ ! -f "node_modules/.package-lock.json" ]; then
-    echo "Installing root dependencies..."
-    $PKG_MANAGER install
-fi
+  PGPASSWORD="${PGPASSWORD:-}" psql "$DATABASE_URL" -c '\q' >/dev/null 2>&1
+}
 
-echo -e "${GREEN}✓ Dependencies installed${NC}"
-echo ""
-
-# Check if PostgreSQL is running
-echo -e "${BLUE}Checking PostgreSQL...${NC}"
-if command_exists pg_isready; then
-    if pg_isready -h localhost -p 5432 >/dev/null 2>&1; then
-        echo -e "${GREEN}✓ PostgreSQL is running${NC}"
-    else
-        echo -e "${YELLOW}Warning: PostgreSQL may not be running${NC}"
-    fi
+if [[ -f ".env.local" ]]; then
+  if [[ -f ".env" ]]; then
+    warn "Using both .env and .env.local. .env.local values override .env, but blank vars will fall back to .env."
+    load_env_file ".env" true
+    load_env_file ".env.local" false
+  else
+    warn "Using .env.local."
+    load_env_file ".env.local" true
+  fi
+elif [[ -f ".env" ]]; then
+  warn ".env.local not found. Using .env instead."
+  load_env_file ".env" true
 else
-    echo -e "${YELLOW}Warning: pg_isready not found, cannot check PostgreSQL status${NC}"
+  warn ".env.local not found. Creating from .env.example..."
+  if [[ -f ".env.example" ]]; then
+    cp .env.example .env.local
+    warn "Copied .env.example → .env.local. Fill in your secrets before continuing."
+    echo ""
+    echo "  Required vars to set in .env.local:"
+    echo "    DATABASE_URL"
+    echo "    CLERK_SECRET_KEY"
+    echo "    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+    echo ""
+    read -r -p "  Press ENTER once you have set the required vars, or Ctrl+C to exit..."
+    load_env_file ".env.local" true
+  else
+    fail ".env.example also missing. Create .env.local manually — see docs/SETUP.md"
+  fi
 fi
 
-# Check if Redis is running
-echo -e "${BLUE}Checking Redis...${NC}"
-if command_exists redis-cli; then
-    if redis-cli ping >/dev/null 2>&1; then
-        echo -e "${GREEN}✓ Redis is running${NC}"
-    else
-        echo -e "${YELLOW}Warning: Redis may not be running${NC}"
-    fi
+if [[ -f ".env.local" && -f ".env" && ("${DATABASE_URL:-}" == *localhost* || "${DATABASE_URL:-}" == *127.0.0.1*) ]] ; then
+  if ! test_database_url; then
+    warn "Local DATABASE_URL from .env.local is unreachable. Falling back to .env if available."
+    export DATABASE_URL=""
+    load_env_file ".env" true
+  fi
+fi
+
+MISSING=()
+[[ -z "${DATABASE_URL:-}" ]]                        && MISSING+=("DATABASE_URL")
+[[ -z "${CLERK_SECRET_KEY:-}" ]]                    && MISSING+=("CLERK_SECRET_KEY")
+[[ -z "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}" ]]   && MISSING+=("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  fail "Missing required environment variables"
+fi
+ok "Environment variables present"
+
+# ── Install dependencies ───────────────────────────────────────────────────────
+if [[ "$SKIP_INSTALL" == false ]]; then
+  log "Installing npm dependencies..."
+  npm install
+  ok "Dependencies installed"
 else
-    echo -e "${YELLOW}Warning: redis-cli not found, cannot check Redis status${NC}"
+  log "Skipping npm install (--skip-install)"
 fi
 
-echo ""
-
-# Run database migrations
-echo -e "${BLUE}Running database migrations...${NC}"
-npx prisma migrate dev --name init || echo -e "${YELLOW}Migration may have already run or failed${NC}"
+# ── Prisma setup ──────────────────────────────────────────────────────────────
+log "Generating Prisma client..."
 npx prisma generate
-echo -e "${GREEN}✓ Database migrations complete${NC}"
-echo ""
+ok "Prisma client generated"
 
-# Start services
-echo -e "${BLUE}Starting services...${NC}"
-echo ""
-
-# Kill any existing process on port 3000
-echo "Checking for existing process on port 3000..."
-if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "Found process on port 3000, killing it..."
-    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-    sleep 1
+if [[ "$RESET" == true ]]; then
+  warn "Resetting database (--reset flag)"
+  read -r -p "  This will DROP and recreate the DB. Continue? [y/N] " confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    npx prisma migrate reset --force
+    ok "Database reset and migrations applied"
+    SEED=true  # always seed after reset
+  else
+    log "Reset cancelled"
+  fi
+else
+  log "Applying pending migrations..."
+  npx prisma migrate deploy 2>/dev/null || {
+    warn "migrate deploy failed — falling back to db push (dev DB detected)"
+    npx prisma db push
+  }
+  ok "Database schema up to date"
 fi
 
-# Start Web in background
-echo "Starting Web server..."
-$PKG_MANAGER run dev > logs/web.log 2>&1 &
-WEB_PID=$!
+if [[ "$SEED" == true ]]; then
+  log "Seeding database with demo data..."
+  npm run db:seed
+  ok "Database seeded"
+fi
 
-echo ""
-echo -e "${GREEN}=== Services Started ===${NC}"
-echo ""
-echo "Web Server: http://localhost:3000"
-echo ""
-echo "Web PID: $WEB_PID"
-echo ""
-echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
-echo ""
+# ── TypeScript type-check ──────────────────────────────────────────────────────
+log "Running TypeScript type check..."
+if npx tsc --noEmit 2>&1; then
+  ok "TypeScript: no errors"
+else
+  warn "TypeScript errors found — review above before proceeding"
+fi
 
-# Function to cleanup on exit
-cleanup() {
-    echo -e "\n${YELLOW}Stopping services...${NC}"
-    kill $WEB_PID 2>/dev/null || true
-    echo -e "${GREEN}✓ Services stopped${NC}"
-    exit 0
+check_port_free() {
+  if command -v lsof >/dev/null 2>&1 && lsof -iTCP:3000 -sTCP:LISTEN -Pn >/dev/null 2>&1; then
+    fail "Port 3000 is already in use. Stop the process using it and rerun ./start.sh."
+  fi
 }
+check_port_free
 
-# Trap Ctrl+C
-trap cleanup SIGINT SIGTERM
+# ── Start dev server ───────────────────────────────────────────────────────────
+echo ""
+echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BOLD}${GREEN}  JanaGana is ready!${NC}"
+echo -e "${GREEN}  App:     http://localhost:3000${NC}"
+echo -e "${GREEN}  DB GUI:  run 'npm run db:studio' in another tab${NC}"
+echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
 
-# Wait for processes
-wait
+PORT=3000 npm run dev -- --port 3000
