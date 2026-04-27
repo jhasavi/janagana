@@ -134,22 +134,18 @@ git push origin main
    - Events section works
    - CRM section works
 
-## Step 4: Get Production API Key
+## Step 4: Get Production API Key (UI-Based)
 
-After JanaGana is deployed, you need to regenerate API keys with production credentials:
+After JanaGana is deployed, generate API keys through the dashboard:
 
-```bash
-cd /Users/Sanjeev/JanaGana
+1. Go to https://janagana.namasteneedham.com/
+2. Sign in with your admin account
+3. Navigate to Dashboard → Settings → API Keys
+4. Click "Generate New API Key"
+5. Copy the API key (format: `jg_live_...`)
+6. Store it securely in your environment variables
 
-# Set production database URL temporarily
-export DATABASE_URL="postgresql://neondb_owner:npg_Hoi1u4EwBZTh@ep-bitter-cloud-am3m8v8b.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require"
-
-# Regenerate API keys
-npx tsx scripts/generate-api-keys.ts
-
-# Copy the API key for "The Purple Wings"
-# It will be different from the local one
-```
+**Note:** Each organization has its own API key. Make sure you select the correct organization (e.g., "The Purple Wings") before generating the key.
 
 ## Step 5: Update TPW for Production
 
@@ -278,9 +274,11 @@ If API authentication fails:
    - Create new organization (e.g., "Vidhyabharti")
    - Note the organization slug
 
-2. **Generate Production API Key**
-   - Run API key generation script
-   - Copy the API key for the new organization
+2. **Generate Production API Key (UI)**
+   - Go to Dashboard → Settings → API Keys
+   - Select the organization
+   - Click "Generate New API Key"
+   - Copy the API key
 
 3. **Add to Website**
    - Add to website's `.env.local` and Vercel environment variables:
