@@ -4,11 +4,21 @@ import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-})
-
 export async function POST(request: Request) {
+  // Initialize Stripe at runtime to avoid build-time errors
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
+  if (!STRIPE_SECRET_KEY) {
+    console.error('[stripe webhook] STRIPE_SECRET_KEY not configured')
+    return NextResponse.json(
+      { error: 'STRIPE_SECRET_KEY not configured' },
+      { status: 500 }
+    )
+  }
+
+  const stripe = new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: '2025-02-24.acacia',
+  })
+
   // Rate limit: 100 Stripe webhook calls per minute per IP
   if (checkRateLimit(request, { maxRequests: 100, windowMs: 60_000 })) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
