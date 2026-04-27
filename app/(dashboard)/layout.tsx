@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { Sidebar } from '@/components/dashboard/sidebar'
+import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Header } from '@/components/dashboard/header'
 import { DashboardErrorBoundary } from '@/components/dashboard/error-boundary'
 import { getTenant } from '@/lib/tenant'
