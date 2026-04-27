@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useOrganizationList } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Users, ArrowRight, Loader2 } from 'lucide-react'
 import { completeOnboarding } from '@/lib/actions/tenant'
@@ -13,43 +13,42 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 
 export default function OnboardingClient() {
   const router = useRouter()
-  const { user } = useUser()
+  const { setActive, isLoaded } = useOrganizationList()
   const [isPending, startTransition] = useTransition()
   const [orgName, setOrgName] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!orgName.trim()) return
+    if (!orgName.trim() || !isLoaded) return
 
     startTransition(async () => {
       const result = await completeOnboarding(orgName.trim())
       if (result.success) {
         toast.success('Organization created! Welcome to Jana Gana.')
-        try {
-          const orgId = (result as any)?.data?.orgId
-          const tenantId = (result as any)?.data?.tenant?.id
-          if (orgId || tenantId) {
+        const orgId = result.data?.orgId
+        const tenantId = result.data?.tenant?.id
+
+        // Set the Clerk active org in the client session so auth().orgId
+        // is immediately available on the next server render.
+        if (orgId && setActive) {
+          try {
+            await setActive({ organization: orgId })
+          } catch (e) {
+            console.error('[onboarding] setActive failed', e)
+            // Fallback: set short-lived cookies so getTenant() can resolve
             try {
               await fetch('/api/active-org', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orgId, tenantId }),
               })
-            } catch (e) {
-              try {
-                if (orgId) document.cookie = `JG_ACTIVE_ORG=${orgId}; path=/; max-age=60`
-                if (tenantId) document.cookie = `JG_TENANT_ID=${tenantId}; path=/; max-age=60`
-              } catch (err) {
-                console.error('[onboarding] cookie fallback failed', err)
-              }
+            } catch (fetchErr) {
+              console.error('[onboarding] active-org cookie set failed', fetchErr)
             }
           }
-        } catch (e) {
-          console.error('[onboarding] active org cookie set failed', e)
         }
 
-        await user?.reload()
-        await router.push('/dashboard')
+        router.push('/dashboard')
       } else {
         toast.error(result.error ?? 'Failed to create organization')
       }

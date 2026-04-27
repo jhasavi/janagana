@@ -1,4 +1,16 @@
+#!/usr/bin/env tsx
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+
+const DRY_RUN = !!process.env.DRY_RUN
+if (DRY_RUN) {
+  console.log('DRY RUN: simulate-real-world-details would seed detailed activity data for tenants:')
+  console.log('- tenant-non-profit')
+  console.log('- tenant-business-club')
+  console.log('- tenant-volunteer-group')
+  console.log('\nNo changes applied in DRY_RUN mode.')
+  process.exit(0)
+}
 
 const prisma = new PrismaClient()
 
@@ -6,8 +18,10 @@ function daysFromNow(days: number): Date {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000)
 }
 
+const p: any = prisma as any
+
 async function requireTenant(slug: string) {
-  const tenant = await prisma.tenant.findUnique({ where: { slug } })
+  const tenant = await p.tenant.findUnique({ where: { slug } })
   if (!tenant) {
     throw new Error(`Tenant ${slug} not found. Run scripts/simulate-real-world.ts first.`)
   }
@@ -15,7 +29,7 @@ async function requireTenant(slug: string) {
 }
 
 async function upsertMember(tenantId: string, input: { email: string; firstName: string; lastName: string }) {
-  return prisma.member.upsert({
+  return p.member.upsert({
     where: {
       tenantId_email: {
         tenantId,
@@ -44,7 +58,7 @@ async function ensureMembershipSubscription(input: {
   tierId: string
   annual: boolean
 }) {
-  return prisma.membershipSubscription.upsert({
+  return p.membershipSubscription.upsert({
     where: { id: input.id },
     update: {
       tenantId: input.tenantId,
@@ -71,13 +85,13 @@ async function ensureMembershipSubscription(input: {
 
 async function seedNonProfitDetails() {
   const tenant = await requireTenant('tenant-non-profit')
-  const freeTier = await prisma.membershipTier.findUnique({
+  const freeTier = await p.membershipTier.findUnique({
     where: { tenantId_slug: { tenantId: tenant.id, slug: 'free-membership' } },
   })
-  const paidTier = await prisma.membershipTier.findUnique({
+  const paidTier = await p.membershipTier.findUnique({
     where: { tenantId_slug: { tenantId: tenant.id, slug: 'annual-50' } },
   })
-  const event = await prisma.event.findUnique({
+  const event = await p.event.findUnique({
     where: { tenantId_slug: { tenantId: tenant.id, slug: 'community-open-house' } },
   })
 
@@ -85,7 +99,7 @@ async function seedNonProfitDetails() {
     throw new Error('Non-profit base data missing. Run scripts/simulate-real-world.ts first.')
   }
 
-  const ticket = await prisma.eventTicket.findFirst({ where: { eventId: event.id } })
+  const ticket = await p.eventTicket.findFirst({ where: { eventId: event.id } })
 
   const members = await Promise.all([
     upsertMember(tenant.id, { email: 'sarah@nonprofit.example.com', firstName: 'Sarah', lastName: 'Kim' }),
@@ -126,7 +140,7 @@ async function seedNonProfitDetails() {
   ])
 
   for (const member of members.slice(0, 3)) {
-    await prisma.eventRegistration.upsert({
+    await p.eventRegistration.upsert({
       where: {
         eventId_memberId: {
           eventId: event.id,
@@ -155,10 +169,10 @@ async function seedNonProfitDetails() {
 
 async function seedBusinessClubDetails() {
   const tenant = await requireTenant('tenant-business-club')
-  const tier = await prisma.membershipTier.findUnique({
+  const tier = await p.membershipTier.findUnique({
     where: { tenantId_slug: { tenantId: tenant.id, slug: 'annual-500' } },
   })
-  const event = await prisma.event.findUnique({
+  const event = await p.event.findUnique({
     where: { tenantId_slug: { tenantId: tenant.id, slug: 'paid-networking-night' } },
   })
 
@@ -166,7 +180,7 @@ async function seedBusinessClubDetails() {
     throw new Error('Business club base data missing. Run scripts/simulate-real-world.ts first.')
   }
 
-  const ticket = await prisma.eventTicket.findFirst({ where: { eventId: event.id } })
+  const ticket = await p.eventTicket.findFirst({ where: { eventId: event.id } })
   if (!ticket) {
     throw new Error('Business club paid event ticket not found.')
   }
@@ -189,7 +203,7 @@ async function seedBusinessClubDetails() {
   }
 
   for (const member of members) {
-    await prisma.eventRegistration.upsert({
+    await p.eventRegistration.upsert({
       where: {
         eventId_memberId: {
           eventId: event.id,
@@ -225,7 +239,7 @@ async function ensureShift(input: {
   capacity: number
   location: string
 }) {
-  const existing = await prisma.volunteerShift.findFirst({
+  const existing = await p.volunteerShift.findFirst({
     where: {
       tenantId: input.tenantId,
       opportunityId: input.opportunityId,
@@ -234,7 +248,7 @@ async function ensureShift(input: {
   })
 
   if (existing) {
-    return prisma.volunteerShift.update({
+    return p.volunteerShift.update({
       where: { id: existing.id },
       data: {
         startsAt: input.startsAt,
@@ -246,7 +260,7 @@ async function ensureShift(input: {
     })
   }
 
-  return prisma.volunteerShift.create({
+  return p.volunteerShift.create({
     data: {
       tenantId: input.tenantId,
       opportunityId: input.opportunityId,
@@ -262,7 +276,7 @@ async function ensureShift(input: {
 
 async function seedVolunteerGroupDetails() {
   const tenant = await requireTenant('tenant-volunteer-group')
-  const opportunities = await prisma.volunteerOpportunity.findMany({
+  const opportunities = await p.volunteerOpportunity.findMany({
     where: { tenantId: tenant.id },
     orderBy: { createdAt: 'asc' },
   })
@@ -271,7 +285,7 @@ async function seedVolunteerGroupDetails() {
     throw new Error('Volunteer group opportunities missing. Run scripts/simulate-real-world.ts first.')
   }
 
-  const members = await prisma.member.findMany({ where: { tenantId: tenant.id }, orderBy: { createdAt: 'asc' } })
+  const members = await p.member.findMany({ where: { tenantId: tenant.id }, orderBy: { createdAt: 'asc' } })
   if (members.length < 5) {
     throw new Error('Volunteer group members missing. Run scripts/simulate-real-world.ts first.')
   }
@@ -305,7 +319,7 @@ async function seedVolunteerGroupDetails() {
       ? firstOpp
       : secondOpp
 
-    await prisma.volunteerApplication.upsert({
+    await p.volunteerApplication.upsert({
       where: {
         opportunityId_memberId: {
           opportunityId: targetOpp.id,
@@ -338,7 +352,7 @@ async function seedVolunteerGroupDetails() {
   ]
 
   for (const assignment of assignments) {
-    await prisma.volunteerShiftSignup.upsert({
+    await p.volunteerShiftSignup.upsert({
       where: {
         shiftId_memberId: {
           shiftId: assignment.shift.id,
@@ -358,7 +372,7 @@ async function seedVolunteerGroupDetails() {
       },
     })
 
-    const hourEntry = await prisma.volunteerHours.findFirst({
+    const hourEntry = await p.volunteerHours.findFirst({
       where: {
         tenantId: tenant.id,
         memberId: assignment.member.id,
@@ -367,7 +381,7 @@ async function seedVolunteerGroupDetails() {
     })
 
     if (hourEntry) {
-      await prisma.volunteerHours.update({
+      await p.volunteerHours.update({
         where: { id: hourEntry.id },
         data: {
           opportunityId: assignment.shift.opportunityId,
@@ -379,7 +393,7 @@ async function seedVolunteerGroupDetails() {
         },
       })
     } else {
-      await prisma.volunteerHours.create({
+      await p.volunteerHours.create({
         data: {
           tenantId: tenant.id,
           memberId: assignment.member.id,
@@ -412,5 +426,5 @@ main()
     process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect()
+    await p.$disconnect()
   })

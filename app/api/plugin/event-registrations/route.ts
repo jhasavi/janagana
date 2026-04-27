@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { verifyPluginApiKey } from '@/lib/plugin-auth'
+import { syncEventRegistrationToActivity } from '@/lib/crm-sync'
+
+// POST /api/plugin/event-registrations - Register for event
+export async function POST(request: NextRequest) {
+  try {
+    const tenant = await verifyPluginApiKey(request)
+    if (!tenant) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { eventId, email, firstName, lastName, phone } = body
+
+    if (!eventId || !email) {
+      return NextResponse.json(
+        { error: 'eventId and email are required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify event exists and belongs to tenant
+    const event = await prisma.event.findFirst({
+      where: { 
+        id: eventId,
+        tenantId: tenant.id,
+      },
+    })
+
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // Find or create member
+    let member = await prisma.member.findFirst({
+      where: { 
+        tenantId: tenant.id,
+        email 
+      },
+    })
+
+    if (!member) {
+      member = await prisma.member.create({
+        data: {
+          tenantId: tenant.id,
+          email,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          phone,
+          status: 'ACTIVE',
+        },
+      })
+    }
+
+    // Check if already registered
+    const existingRegistration = await prisma.eventRegistration.findUnique({
+      where: {
+        eventId_memberId: {
+          eventId,
+          memberId: member.id,
+        },
+      },
+    })
+
+    if (existingRegistration) {
+      return NextResponse.json(
+        { error: 'Already registered for this event' },
+        { status: 409 }
+      )
+    }
+
+    // Create registration
+    const registration = await prisma.eventRegistration.create({
+      data: {
+        eventId,
+        memberId: member.id,
+        status: 'CONFIRMED',
+      },
+      include: {
+        event: true,
+        member: true,
+      },
+    })
+
+    // Sync to CRM activity
+    await syncEventRegistrationToActivity(registration.id)
+
+    return NextResponse.json(registration, { status: 201 })
+  } catch (error) {
+    console.error('Plugin event registration error:', error)
+    return NextResponse.json(
+      { error: 'Failed to register for event' },
+      { status: 500 }
+    )
+  }
+}

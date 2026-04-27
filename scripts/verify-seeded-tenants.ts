@@ -1,3 +1,5 @@
+#!/usr/bin/env tsx
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -15,30 +17,26 @@ async function reportTenant(slug: string) {
     return
   }
 
-  const [members, tiers, subscriptions, events, registrations, volunteerOpportunities, shifts, shiftSignups, volunteerApplications, volunteerHours] = await Promise.all([
+  const [members, tiers, events, registrations, volunteerOpportunities, shifts, volunteerSignups, shiftSignups] = await Promise.all([
     prisma.member.count({ where: { tenantId: tenant.id } }),
     prisma.membershipTier.count({ where: { tenantId: tenant.id } }),
-    prisma.membershipSubscription.count({ where: { tenantId: tenant.id } }),
     prisma.event.count({ where: { tenantId: tenant.id } }),
-    prisma.eventRegistration.count({ where: { tenantId: tenant.id } }),
+    prisma.eventRegistration.count({ where: { event: { tenantId: tenant.id } } }),
     prisma.volunteerOpportunity.count({ where: { tenantId: tenant.id } }),
-    prisma.volunteerShift.count({ where: { tenantId: tenant.id } }),
-    prisma.volunteerShiftSignup.count({ where: { tenantId: tenant.id } }),
-    prisma.volunteerApplication.count({ where: { tenantId: tenant.id } }),
-    prisma.volunteerHours.count({ where: { tenantId: tenant.id } }),
+    prisma.volunteerShift.count({ where: { opportunity: { tenantId: tenant.id } } }),
+    prisma.volunteerSignup.count({ where: { opportunity: { tenantId: tenant.id } } }),
+    prisma.volunteerShiftSignup.count({ where: { shift: { opportunity: { tenantId: tenant.id } } } }),
   ])
 
   console.log(`\nTenant: ${tenant.name} (${tenant.slug})`)
   console.log(`  members: ${members}`)
   console.log(`  membership tiers: ${tiers}`)
-  console.log(`  membership subscriptions: ${subscriptions}`)
   console.log(`  events: ${events}`)
   console.log(`  registrations: ${registrations}`)
   console.log(`  volunteer opportunities: ${volunteerOpportunities}`)
   console.log(`  volunteer shifts: ${shifts}`)
+  console.log(`  volunteer signups: ${volunteerSignups}`)
   console.log(`  volunteer shift signups: ${shiftSignups}`)
-  console.log(`  volunteer applications: ${volunteerApplications}`)
-  console.log(`  volunteer hours: ${volunteerHours}`)
 }
 
 async function main() {

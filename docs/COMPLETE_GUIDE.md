@@ -75,7 +75,7 @@ Commercial tools typically also include:
 
 - Custom per-tenant domain aliases are not fully implemented.
 - Slug change redirect / alias handling is not implemented.
-- Owner/admin contact details in the global admin portal are now visible, but not yet fully expanded to email/contact pages.
+- Owner/admin contact details are now fully surfaced in the global admin portal with email links and role labels.
 - Full white-label tenant site theming is not yet built.
 - Large-scale event ticketing and PDF ticket support is not included.
 

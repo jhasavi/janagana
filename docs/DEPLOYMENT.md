@@ -1,93 +1,144 @@
-# Jana Gana Deployment Guide
+# JanaGana — Deployment Guide (Vercel)
 
-## 1. Production Overview
-Jana Gana is a monorepo with two deployable apps:
-- `apps/api` — NestJS backend
-- `apps/web` — Next.js frontend
+## Prerequisites
 
-Both apps share the same workspace and environment variables managed using `.env` files or CI secrets.
+- Production database on [Neon](https://neon.tech)
+- [Clerk](https://clerk.com) app configured for production
+- [Vercel](https://vercel.com) account
 
-## 2. Vercel Setup (Web)
-1. Create a new project in Vercel and connect to the repo.
-2. Set the root directory to `apps/web`.
-3. Build command: `npm run build --workspace apps/web`.
-4. Output directory: `.next`.
-5. Set environment variables from `apps/web/.env.example`.
-6. Add `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` if using Sentry.
-7. Add any custom domains and verify DNS settings.
+---
 
-## 3. Railway Setup (API)
-1. Create a new Railway project.
-2. Add PostgreSQL and Redis plugins.
-3. Add the API service using the `apps/api` Dockerfile or deployment from root.
-4. Set environment variables from `apps/api/.env.example`.
-5. Ensure `DATABASE_URL` points to the Railway Postgres instance.
-6. Ensure `REDIS_URL` points to the Railway Redis instance.
+## 1. Neon Database Setup
 
-## 4. PostgreSQL / Neon / Supabase
-Recommended settings:
-- Database host: from provider
-- Database name: `janagana`
-- User: `janagana`
-- Password: strong secret
-- SSL: enabled if required
-- `DATABASE_URL` example:
-  `postgresql://janagana:your_password@host:5432/janagana?schema=public`
+1. Create a new project at [neon.tech](https://neon.tech)
+2. Copy the **Connection string** (pooled connection recommended)
+3. Format: `postgresql://user:password@ep-xxx.region.neon.tech/neondb?sslmode=require`
 
-## 5. Upstash Redis
-Recommended settings:
-- Create a Redis database using Upstash.
-- Set `REDIS_URL` to the provided connection string.
-- Enable persistence if available.
-
-## 6. Clerk Setup
-1. Create a Clerk application.
-2. Copy the Publishable Key into `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`.
-3. Copy the Secret Key into `CLERK_SECRET_KEY`.
-4. Set Clerk redirect URLs to:
-   - `/sign-in`
-   - `/sign-up`
-   - `/dashboard`
-
-## 7. Stripe Setup
-1. Create a Stripe account.
-2. Add `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_CONNECT_WEBHOOK_SECRET`.
-3. Verify webhook endpoints in the deployment environment.
-4. Add plans and pricing for your SaaS tiers.
-
-## 8. DNS and Custom Domains
-1. Add DNS `A` / `CNAME` records for your frontend domain.
-2. Configure the API domain or reverse proxy target.
-3. For multi-tenant subdomains, point `*.yourdomain.com` to Vercel or your proxy.
-
-## 9. Local Docker Development
-Use `docker-compose.yml` for local containers.
-Use `docker-compose.prod.yml` for production-style containers.
-
-Example:
+Run migrations against production DB:
 ```bash
-docker compose -f docker-compose.prod.yml up --build
+DATABASE_URL="<production-url>" npx prisma migrate deploy
 ```
 
-## 10. Health and Monitoring
-- API health endpoint: `GET /api/health`
-- The health endpoint now checks:
-  - API service status
-  - PostgreSQL connectivity
-  - Redis connectivity
+---
 
-## 11. Sentry
-- Add `SENTRY_DSN` to both API and Web environments.
-- API uses Sentry in the Nest bootstrap and error filters.
-- Web captures client-side errors in the global `app/error.tsx` boundary.
+## 2. Clerk Production Setup
 
-## 12. CI/CD Notes
-- GitHub Actions pipeline is configured in `.github/workflows/deploy.yml`.
-- The pipeline runs lint, typecheck, tests, Prisma migrations, and deploys both apps.
-- Secrets should include:
-  - `DATABASE_URL`
-  - `RAILWAY_API_KEY`
-  - `RAILWAY_PROJECT_ID`
-  - `VERCEL_TOKEN`
-  - `VERCEL_ORG_ID`
-  - `VERCEL_PROJECT_ID`
+1. In Clerk Dashboard, switch to **Production** environment
+2. Get production API keys:
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (starts with `pk_live_...`)
+   - `CLERK_SECRET_KEY` (starts with `sk_live_...`)
+3. Configure **Allowed redirect URLs** to include your Vercel domain:
+   - `https://your-app.vercel.app/dashboard`
+   - `https://your-app.vercel.app/onboarding`
+4. Enable **Organizations** feature in Clerk settings
+5. Add Webhook endpoint: `https://your-app.vercel.app/api/webhooks/clerk`
+
+---
+
+## 3. Stripe Setup (Optional)
+
+1. Switch Stripe to live mode
+2. Get live keys from [dashboard.stripe.com](https://dashboard.stripe.com) → Developers → API keys
+3. Create webhook endpoint: `https://your-app.vercel.app/api/webhooks/stripe`
+4. Subscribe to events:
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `checkout.session.completed`
+5. Copy the webhook signing secret (`whsec_...`)
+
+---
+
+## 4. Deploy to Vercel
+
+### Via Vercel Dashboard
+
+1. Click **New Project** → Import from Git
+2. Select your repository
+3. Framework preset: **Next.js** (auto-detected)
+4. Add all environment variables (see table below)
+5. Click **Deploy**
+
+### Via Vercel CLI
+
+```bash
+npm install -g vercel
+vercel login
+vercel --prod
+```
+
+---
+
+## 5. Environment Variables on Vercel
+
+Go to **Project Settings → Environment Variables** and add:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ Yes | Neon PostgreSQL connection string |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅ Yes | Clerk live publishable key |
+| `CLERK_SECRET_KEY` | ✅ Yes | Clerk live secret key |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | ✅ Yes | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | ✅ Yes | `/sign-up` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | ✅ Yes | `/dashboard` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | ✅ Yes | `/onboarding` |
+| `NEXT_PUBLIC_APP_URL` | ✅ Yes | `https://your-app.vercel.app` |
+| `STRIPE_SECRET_KEY` | Optional | Stripe live secret key |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional | Stripe live publishable key |
+| `STRIPE_WEBHOOK_SECRET` | Optional | Stripe webhook signing secret |
+| `RESEND_API_KEY` | Optional | Resend API key for emails |
+| `EMAIL_FROM` | Optional | From email address |
+| `EMAIL_FROM_NAME` | Optional | From display name |
+
+---
+
+## 6. Post-Deploy Checklist
+
+- [ ] Visit `https://your-app.vercel.app` — should show landing page
+- [ ] Sign up for an account
+- [ ] Complete onboarding — creates a Clerk org and Tenant record
+- [ ] Visit `/dashboard` — should render stats page
+- [ ] Create a test member
+- [ ] Create a test event
+- [ ] Check Vercel logs for any errors: **Project → Deployments → Functions**
+- [ ] Test Stripe webhook: `stripe trigger checkout.session.completed`
+
+---
+
+## 7. Custom Domain
+
+1. In Vercel Project → **Settings → Domains**
+2. Add your custom domain
+3. Update DNS records as instructed
+4. Update `NEXT_PUBLIC_APP_URL` in Vercel env vars
+5. Update Clerk allowed redirect URLs to include the custom domain
+6. Update Stripe webhook endpoint URL
+
+---
+
+## 8. Monitoring
+
+- **Vercel Analytics**: Enable in Project Settings → Analytics
+- **Vercel Logs**: Project → Deployments → View Function Logs
+- **Prisma Pulse** (optional): Real-time DB change subscriptions
+- **Sentry** (optional): Add `SENTRY_DSN` and `@sentry/nextjs` for error tracking
+
+---
+
+## Database Migrations in Production
+
+Never use `db push` in production. Always use migrations:
+
+```bash
+# Create migration locally
+npm run db:migrate
+
+# Commit migration files
+git add prisma/migrations/
+git commit -m "Add new migration"
+git push
+
+# Vercel build command handles it via prisma generate
+# For explicit deploy migration:
+DATABASE_URL="<prod-url>" npx prisma migrate deploy
+```

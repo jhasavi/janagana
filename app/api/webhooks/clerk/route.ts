@@ -2,77 +2,89 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Webhook } from 'svix'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit } from '@/lib/rate-limit'
 
-export async function POST(req: Request) {
-  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET
+type ClerkOrganizationEvent = {
+  type: string
+  data: {
+    id: string
+    name: string
+    slug: string
+    image_url?: string
+  }
+}
 
-  if (!webhookSecret) {
-    console.error('CLERK_WEBHOOK_SECRET is not set')
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+export async function POST(request: Request) {
+  // Rate limit: 100 Clerk webhook calls per minute per IP
+  if (checkRateLimit(request, { maxRequests: 100, windowMs: 60_000 })) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  const headerPayload = headers()
-  const svixId = headerPayload.get('svix-id')
-  const svixTimestamp = headerPayload.get('svix-timestamp')
-  const svixSignature = headerPayload.get('svix-signature')
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
+  if (!WEBHOOK_SECRET) {
+    console.error('[clerk webhook] CLERK_WEBHOOK_SECRET not configured')
+    return NextResponse.json(
+      { error: 'CLERK_WEBHOOK_SECRET not configured' },
+      { status: 500 }
+    )
+  }
+
+  const headersList = await headers()
+  const svixId = headersList.get('svix-id')
+  const svixTimestamp = headersList.get('svix-timestamp')
+  const svixSignature = headersList.get('svix-signature')
 
   if (!svixId || !svixTimestamp || !svixSignature) {
     return NextResponse.json({ error: 'Missing svix headers' }, { status: 400 })
   }
 
-  const body = await req.text()
+  const body = await request.text()
+  const wh = new Webhook(WEBHOOK_SECRET)
 
-  let evt: { type: string; data: Record<string, any> }
+  let event: ClerkOrganizationEvent
   try {
-    const wh = new Webhook(webhookSecret)
-    evt = wh.verify(body, {
+    event = wh.verify(body, {
       'svix-id': svixId,
       'svix-timestamp': svixTimestamp,
       'svix-signature': svixSignature,
-    }) as typeof evt
-  } catch (err) {
-    console.error('Clerk webhook signature verification failed:', err)
+    }) as ClerkOrganizationEvent
+  } catch {
+    console.warn('[clerk webhook] Invalid svix signature')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  const { type, data } = evt
+  console.log(`[clerk webhook] type=${event.type}`)
 
-  try {
-    switch (type) {
-      case 'user.updated': {
-        const clerkId: string = data.id
-        const primaryEmail: string | undefined =
-          data.email_addresses?.find((e: any) => e.id === data.primary_email_address_id)?.email_address
-        const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ')
-
-        await prisma.user.updateMany({
-          where: { clerkId },
-          data: {
-            ...(primaryEmail ? { email: primaryEmail } : {}),
-            ...(fullName ? { fullName } : {}),
-            avatarUrl: data.image_url || undefined,
-          },
-        })
-        break
-      }
-
-      case 'user.deleted': {
-        const clerkId: string = data.id
-        await prisma.user.updateMany({
-          where: { clerkId },
-          data: { isActive: false },
-        })
-        break
-      }
-
-      default:
-        // Unhandled event types are ignored
-        break
-    }
-
-    return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('Error processing Clerk webhook:', error)
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
+  if (event.type === 'organization.created') {
+    const { id: clerkOrgId, name, slug } = event.data
+    await prisma.tenant.upsert({
+      where: { clerkOrgId },
+      create: {
+        clerkOrgId,
+        name,
+        slug: slug ?? clerkOrgId,
+      },
+      update: {
+        name,
+      },
+    })
   }
+
+  if (event.type === 'organization.updated') {
+    const { id: clerkOrgId, name } = event.data
+    await prisma.tenant.updateMany({
+      where: { clerkOrgId },
+      data: { name },
+    })
+  }
+
+  if (event.type === 'organization.deleted') {
+    const { id: clerkOrgId } = event.data
+    await prisma.tenant.updateMany({
+      where: { clerkOrgId },
+      data: { isActive: false },
+    })
+  }
+
+  return NextResponse.json({ received: true })
 }

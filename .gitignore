@@ -49,3 +49,6 @@ apps/mobile/dist/
 .render/
 .vercel
 .env*.local
+
+# clerk configuration (can include secrets)
+/.clerk/
