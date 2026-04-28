@@ -44,8 +44,8 @@ export async function POST(request: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET)
-  } catch {
-    console.warn('[stripe webhook] Invalid signature')
+  } catch (err) {
+    console.warn('[stripe webhook] Invalid signature:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -57,10 +57,14 @@ export async function POST(request: Request) {
       const tenantId = session.metadata?.tenantId
       const memberId = session.metadata?.memberId
       if (tenantId && memberId && session.customer) {
-        await prisma.member.update({
-          where: { id: memberId },
-          data: { stripeCustomerId: session.customer as string },
-        })
+        try {
+          await prisma.member.update({
+            where: { id: memberId },
+            data: { stripeCustomerId: session.customer as string },
+          })
+        } catch (error) {
+          console.error('[stripe webhook] Failed to update member stripeCustomerId:', error)
+        }
       }
       break
     }
@@ -69,16 +73,20 @@ export async function POST(request: Request) {
       const sub = event.data.object as Stripe.Subscription
       const memberId = sub.metadata?.memberId
       if (memberId) {
-        await prisma.member.update({
-          where: { id: memberId },
-          data: {
-            stripeSubscriptionId: sub.id,
-            stripeCustomerId: typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
-            renewsAt: sub.current_period_end
-              ? new Date(sub.current_period_end * 1000)
-              : undefined,
-          },
-        })
+        try {
+          await prisma.member.update({
+            where: { id: memberId },
+            data: {
+              stripeSubscriptionId: sub.id,
+              stripeCustomerId: typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
+              renewsAt: sub.current_period_end
+                ? new Date(sub.current_period_end * 1000)
+                : undefined,
+            },
+          })
+        } catch (error) {
+          console.error('[stripe webhook] Failed to update member subscription:', error)
+        }
       }
       break
     }
@@ -87,10 +95,14 @@ export async function POST(request: Request) {
       const sub = event.data.object as Stripe.Subscription
       const memberId = sub.metadata?.memberId
       if (memberId) {
-        await prisma.member.update({
-          where: { id: memberId },
-          data: { stripeSubscriptionId: null, renewsAt: null },
-        })
+        try {
+          await prisma.member.update({
+            where: { id: memberId },
+            data: { stripeSubscriptionId: null, renewsAt: null },
+          })
+        } catch (error) {
+          console.error('[stripe webhook] Failed to clear member subscription:', error)
+        }
       }
       break
     }

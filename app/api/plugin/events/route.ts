@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPluginApiKey } from '@/lib/plugin-auth'
 
+// Valid event statuses from Prisma schema
+const VALID_EVENT_STATUSES = ['DRAFT', 'PUBLISHED', 'CANCELED', 'COMPLETED'] as const
+
 // GET /api/plugin/events - List events
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +16,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'PUBLISHED'
 
+    // Validate status parameter
+    if (!VALID_EVENT_STATUSES.includes(status as any)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${VALID_EVENT_STATUSES.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
     const events = await prisma.event.findMany({
       where: { 
         tenantId: tenant.id,
-        status: status as any,
+        status: status as 'DRAFT' | 'PUBLISHED' | 'CANCELED' | 'COMPLETED',
       },
       orderBy: { startDate: 'asc' },
     })

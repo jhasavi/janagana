@@ -57,35 +57,30 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Check if already registered
-    const existingRegistration = await prisma.eventRegistration.findUnique({
-      where: {
-        eventId_memberId: {
+    // Create registration with conflict handling
+    let registration
+    try {
+      registration = await prisma.eventRegistration.create({
+        data: {
           eventId,
           memberId: member.id,
+          status: 'CONFIRMED',
         },
-      },
-    })
-
-    if (existingRegistration) {
-      return NextResponse.json(
-        { error: 'Already registered for this event' },
-        { status: 409 }
-      )
+        include: {
+          event: true,
+          member: true,
+        },
+      })
+    } catch (error: any) {
+      // Handle unique constraint violation (already registered)
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Already registered for this event' },
+          { status: 409 }
+        )
+      }
+      throw error
     }
-
-    // Create registration
-    const registration = await prisma.eventRegistration.create({
-      data: {
-        eventId,
-        memberId: member.id,
-        status: 'CONFIRMED',
-      },
-      include: {
-        event: true,
-        member: true,
-      },
-    })
 
     // Sync to CRM activity
     await syncEventRegistrationToActivity(registration.id)
