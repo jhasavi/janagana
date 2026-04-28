@@ -80,21 +80,27 @@ export async function syncEventRegistrationToActivity(
   })
 
   if (!contact) {
-    return null
+    console.error('[crm-sync] Failed to find contact after sync for member:', registration.member.id)
+    throw new Error('Contact not found after member sync')
   }
 
   // Create activity for event registration
-  return await prisma.activity.create({
-    data: {
-      tenantId: registration.event.tenantId,
-      contactId: contact.id,
-      type: 'MEETING',
-      title: `Registered for: ${registration.event.title}`,
-      description: `Event on ${registration.event.startDate.toDateString()}`,
-      completed: true,
-      completedAt: new Date(),
-    },
-  })
+  try {
+    return await prisma.activity.create({
+      data: {
+        tenantId: registration.event.tenantId,
+        contactId: contact.id,
+        type: 'MEETING',
+        title: `Registered for: ${registration.event.title}`,
+        description: `Event on ${registration.event.startDate.toDateString()}`,
+        completed: true,
+        completedAt: new Date(),
+      },
+    })
+  } catch (error) {
+    console.error('[crm-sync] Failed to create activity for event registration:', error)
+    throw error
+  }
 }
 
 /**
@@ -129,31 +135,45 @@ export async function syncDonationToActivity(donationId: string) {
 
   if (!contact) {
     // Create contact from donor info if no member
-    return await prisma.contact.create({
-      data: {
-        tenantId: donation.tenantId,
-        firstName: donation.donorName.split(' ')[0] || '',
-        lastName: donation.donorName.split(' ').slice(1).join(' ') || '',
-        email: donation.donorEmail,
-        source: 'donation',
-      },
-    })
+    try {
+      const nameParts = donation.donorName ? donation.donorName.trim().split(/\s+/) : ['', '']
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+      
+      return await prisma.contact.create({
+        data: {
+          tenantId: donation.tenantId,
+          firstName,
+          lastName,
+          email: donation.donorEmail,
+          source: 'donation',
+        },
+      })
+    } catch (error) {
+      console.error('[crm-sync] Failed to create contact from donor info:', error)
+      throw error
+    }
   }
 
   // Create activity for donation
-  return await prisma.activity.create({
-    data: {
-      tenantId: donation.tenantId,
-      contactId: contact.id,
-      type: 'OTHER',
-      title: `Donation: $${(donation.amountCents / 100).toFixed(2)}`,
-      description: donation.campaign
-        ? `Donation to campaign: ${donation.campaign.title}`
-        : 'General donation',
-      completed: true,
-      completedAt: donation.createdAt,
-    },
-  })
+  try {
+    return await prisma.activity.create({
+      data: {
+        tenantId: donation.tenantId,
+        contactId: contact.id,
+        type: 'OTHER',
+        title: `Donation: $${(donation.amountCents / 100).toFixed(2)}`,
+        description: donation.campaign
+          ? `Donation to campaign: ${donation.campaign.title}`
+          : 'General donation',
+        completed: true,
+        completedAt: donation.createdAt,
+      },
+    })
+  } catch (error) {
+    console.error('[crm-sync] Failed to create activity for donation:', error)
+    throw error
+  }
 }
 
 /**

@@ -7,27 +7,36 @@ import crypto from 'crypto'
  * API keys are stored in ApiKey model with tenant isolation
  */
 export async function verifyPluginApiKey(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key') || 
+  const apiKey = request.headers.get('x-api-key') ||
                  request.headers.get('authorization')?.replace('Bearer ', '')
 
   if (!apiKey) {
+    console.warn('[plugin-auth] Missing API key in request headers')
     return null
   }
 
   // Hash the API key to compare with stored hash
   const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
+  const keyPrefix = extractApiKeyPrefix(apiKey)
 
   const apiKeyRecord = await prisma.apiKey.findUnique({
     where: { keyHash },
     include: { tenant: true },
   })
 
-  if (!apiKeyRecord || !apiKeyRecord.isActive) {
+  if (!apiKeyRecord) {
+    console.warn(`[plugin-auth] Invalid API key: ${keyPrefix}`)
+    return null
+  }
+
+  if (!apiKeyRecord.isActive) {
+    console.warn(`[plugin-auth] Inactive API key: ${keyPrefix} for tenant: ${apiKeyRecord.tenant.slug}`)
     return null
   }
 
   // Check if key is expired
   if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
+    console.warn(`[plugin-auth] Expired API key: ${keyPrefix} for tenant: ${apiKeyRecord.tenant.slug}`)
     return null
   }
 

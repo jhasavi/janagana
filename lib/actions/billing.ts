@@ -38,9 +38,6 @@ export async function createMemberCheckoutSession(slug: string, priceId: string)
       customer_email: customerId ? undefined : member.email,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { tenantId: tenant.id, memberId: member.id },
-      subscription_data: {
-        metadata: { tenantId: tenant.id, memberId: member.id },
-      },
       success_url: successUrl,
       cancel_url: cancelUrl,
     })
@@ -48,7 +45,8 @@ export async function createMemberCheckoutSession(slug: string, priceId: string)
     return { success: true, url: session.url }
   } catch (e) {
     console.error('[createMemberCheckoutSession]', e)
-    return { success: false, error: 'Failed to create checkout session' }
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+    return { success: false, error: `Failed to create checkout session: ${errorMessage}` }
   }
 }
 
@@ -74,7 +72,8 @@ export async function createBillingPortalSession(slug: string) {
     return { success: true, url: session.url }
   } catch (e) {
     console.error('[createBillingPortalSession]', e)
-    return { success: false, error: 'Failed to open billing portal' }
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+    return { success: false, error: `Failed to open billing portal: ${errorMessage}` }
   }
 }
 
@@ -93,6 +92,7 @@ export async function getMemberSubscription(slug: string) {
     return { success: true, data: sub }
   } catch (e) {
     console.error('[getMemberSubscription]', e)
-    return { success: false, data: null }
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+    return { success: false, data: null, error: errorMessage }
   }
 }
