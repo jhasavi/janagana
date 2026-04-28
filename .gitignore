@@ -52,4 +52,3 @@ apps/mobile/dist/
 
 # clerk configuration (can include secrets)
 /.clerk/
-docs/
