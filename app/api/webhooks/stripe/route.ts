@@ -51,6 +51,8 @@ export async function POST(request: Request) {
 
   console.log(`[stripe webhook] type=${event.type} id=${event.id}`)
 
+  let dbError = false
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
           })
         } catch (error) {
           console.error('[stripe webhook] Failed to update member stripeCustomerId:', error)
+          dbError = true
         }
       }
       break
@@ -86,6 +89,7 @@ export async function POST(request: Request) {
           })
         } catch (error) {
           console.error('[stripe webhook] Failed to update member subscription:', error)
+          dbError = true
         }
       }
       break
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
           })
         } catch (error) {
           console.error('[stripe webhook] Failed to clear member subscription:', error)
+          dbError = true
         }
       }
       break
@@ -109,6 +114,14 @@ export async function POST(request: Request) {
 
     default:
       console.log(`[stripe webhook] unhandled event type: ${event.type}`)
+  }
+
+  // Return 500 if database operations failed to trigger Stripe retry
+  if (dbError) {
+    return NextResponse.json(
+      { error: 'Database operation failed' },
+      { status: 500 }
+    )
   }
 
   return NextResponse.json({ received: true })

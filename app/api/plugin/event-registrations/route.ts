@@ -82,8 +82,13 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    // Sync to CRM activity
-    await syncEventRegistrationToActivity(registration.id)
+    // Sync to CRM activity (non-blocking)
+    try {
+      await syncEventRegistrationToActivity(registration.id)
+    } catch (error) {
+      console.error('[event registration] Failed to sync to CRM activity:', error)
+      // Don't fail the request if CRM sync fails
+    }
 
     return NextResponse.json(registration, { status: 201 })
   } catch (error) {
