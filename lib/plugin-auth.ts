@@ -40,11 +40,16 @@ export async function verifyPluginApiKey(request: NextRequest) {
     return null
   }
 
-  // Update last used timestamp
-  await prisma.apiKey.update({
-    where: { id: apiKeyRecord.id },
-    data: { lastUsedAt: new Date() },
-  })
+  // Update last used timestamp (non-blocking)
+  try {
+    await prisma.apiKey.update({
+      where: { id: apiKeyRecord.id },
+      data: { lastUsedAt: new Date() },
+    })
+  } catch (error) {
+    console.error('[plugin-auth] Failed to update lastUsedAt:', error)
+    // Don't fail authentication if timestamp update fails
+  }
 
   return apiKeyRecord.tenant
 }
