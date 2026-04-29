@@ -28,7 +28,19 @@ export interface HelpContent {
  */
 export async function parseHelpContent(): Promise<HelpContent> {
   const filePath = path.join(process.cwd(), 'docs', 'HELP_CONTENT.md')
-  const fileContent = fs.readFileSync(filePath, 'utf-8')
+  
+  if (!fs.existsSync(filePath)) {
+    console.error(`Help content file not found: ${filePath}`)
+    return { categories: [], articles: [] }
+  }
+  
+  let fileContent: string
+  try {
+    fileContent = fs.readFileSync(filePath, 'utf-8')
+  } catch (error) {
+    console.error(`Error reading help content file: ${error}`)
+    return { categories: [], articles: [] }
+  }
 
   const lines = fileContent.split('\n')
   const categories: HelpCategory[] = []
@@ -45,13 +57,19 @@ export async function parseHelpContent(): Promise<HelpContent> {
     if (line.startsWith('## ') && !line.startsWith('###')) {
       // Save previous article if exists
       if (currentArticle && currentCategory) {
-        currentArticle.content = contentLines.join('\n').trim()
-        currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title!)}`
-        currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title!)}`
-        currentArticle.category = currentCategory.name
-        currentArticle.categorySlug = currentCategory.slug
-        articles.push(currentArticle as HelpArticle)
-        currentCategory.articles.push(currentArticle as HelpArticle)
+        if (!currentArticle.title) {
+          console.warn(`Article in category ${currentCategory.name} is missing a title, skipping`)
+          currentArticle = null
+          contentLines = []
+        } else {
+          currentArticle.content = contentLines.join('\n').trim()
+          currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title)}`
+          currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title)}`
+          currentArticle.category = currentCategory.name
+          currentArticle.categorySlug = currentCategory.slug
+          articles.push(currentArticle as HelpArticle)
+          currentCategory.articles.push(currentArticle as HelpArticle)
+        }
       }
 
       // Start new category
@@ -72,13 +90,17 @@ export async function parseHelpContent(): Promise<HelpContent> {
     else if (line.startsWith('### ')) {
       // Save previous article if exists
       if (currentArticle && currentCategory) {
-        currentArticle.content = contentLines.join('\n').trim()
-        currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title!)}`
-        currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title!)}`
-        currentArticle.category = currentCategory.name
-        currentArticle.categorySlug = currentCategory.slug
-        articles.push(currentArticle as HelpArticle)
-        currentCategory.articles.push(currentArticle as HelpArticle)
+        if (!currentArticle.title) {
+          console.warn(`Article in category ${currentCategory.name} is missing a title, skipping`)
+        } else {
+          currentArticle.content = contentLines.join('\n').trim()
+          currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title)}`
+          currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title)}`
+          currentArticle.category = currentCategory.name
+          currentArticle.categorySlug = currentCategory.slug
+          articles.push(currentArticle as HelpArticle)
+          currentCategory.articles.push(currentArticle as HelpArticle)
+        }
       }
 
       // Start new article
@@ -119,13 +141,17 @@ export async function parseHelpContent(): Promise<HelpContent> {
 
   // Save last article
   if (currentArticle && currentCategory) {
-    currentArticle.content = contentLines.join('\n').trim()
-    currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title!)}`
-    currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title!)}`
-    currentArticle.category = currentCategory.name
-    currentArticle.categorySlug = currentCategory.slug
-    articles.push(currentArticle as HelpArticle)
-    currentCategory.articles.push(currentArticle as HelpArticle)
+    if (!currentArticle.title) {
+      console.warn(`Article in category ${currentCategory.name} is missing a title, skipping`)
+    } else {
+      currentArticle.content = contentLines.join('\n').trim()
+      currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title)}`
+      currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title)}`
+      currentArticle.category = currentCategory.name
+      currentArticle.categorySlug = currentCategory.slug
+      articles.push(currentArticle as HelpArticle)
+      currentCategory.articles.push(currentArticle as HelpArticle)
+    }
   }
 
   return { categories, articles }

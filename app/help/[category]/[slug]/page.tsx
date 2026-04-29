@@ -61,8 +61,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 </Button>
               </Link>
             )}
-            {!prevArticle && <div />}
-
+            <div className="flex-1" />
             {nextArticle && (
               <Link href={`/help/${nextArticle.slug}`}>
                 <Button variant="outline" className="gap-2">

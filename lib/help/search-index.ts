@@ -6,12 +6,34 @@ export interface SearchResult {
   highlights: string[]
 }
 
+// Simple in-memory cache with 5-minute TTL
+let searchIndexCache: HelpArticle[] | null = null
+let cacheTimestamp: number = 0
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 /**
  * Build search index from all articles
  */
 export async function buildSearchIndex(): Promise<HelpArticle[]> {
+  const now = Date.now()
+  
+  // Return cached data if still valid
+  if (searchIndexCache && (now - cacheTimestamp) < CACHE_TTL) {
+    return searchIndexCache
+  }
+  
   const { articles } = await parseHelpContent()
+  searchIndexCache = articles
+  cacheTimestamp = now
   return articles
+}
+
+/**
+ * Clear the search index cache (call after content updates)
+ */
+export function clearSearchCache(): void {
+  searchIndexCache = null
+  cacheTimestamp = 0
 }
 
 /**
@@ -52,7 +74,7 @@ export async function searchArticles(query: string): Promise<SearchResult[]> {
         const matchIndex = contentLower.indexOf(normalizedQuery)
         if (matchIndex !== -1) {
           const start = Math.max(0, matchIndex - 30)
-          const end = Math.min(article.content.length, matchIndex + query.length + 30)
+          const end = Math.min(article.content.length, matchIndex + normalizedQuery.length + 30)
           const context = article.content.substring(start, end)
           highlights.push('...' + context + '...')
         }

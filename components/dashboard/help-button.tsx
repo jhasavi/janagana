@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { HelpCircle, X } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +21,8 @@ interface HelpButtonProps {
 export function HelpButton({ title, content, link }: HelpButtonProps) {
   const [open, setOpen] = useState(false)
 
+  const isInternalLink = link?.startsWith('/')
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -35,7 +38,15 @@ export function HelpButton({ title, content, link }: HelpButtonProps) {
         </DialogHeader>
         <div className="prose prose-sm max-w-none">
           <p className="text-muted-foreground whitespace-pre-line">{content}</p>
-          {link && (
+          {link && isInternalLink ? (
+            <Link
+              href={link}
+              className="text-primary hover:underline"
+              onClick={() => setOpen(false)}
+            >
+              Learn more →
+            </Link>
+          ) : link ? (
             <a
               href={link}
               target="_blank"
@@ -44,7 +55,7 @@ export function HelpButton({ title, content, link }: HelpButtonProps) {
             >
               Learn more →
             </a>
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
