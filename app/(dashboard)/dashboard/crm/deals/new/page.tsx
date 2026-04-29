@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { DealForm } from '../../../_components/deal-form'
+import { DealForm } from '../../_components/deal-form'
 
 export default async function NewDealPage() {
   const tenant = await getTenant()
