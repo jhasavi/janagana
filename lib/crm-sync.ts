@@ -203,3 +203,145 @@ export async function createDealFromLead(params: {
     },
   })
 }
+
+/**
+ * Sync a Volunteer Signup to an Activity record in the CRM
+ * This creates an Activity when a member signs up for volunteer work
+ */
+export async function syncVolunteerSignupToActivity(signupId: string) {
+  const signup = await prisma.volunteerSignup.findUnique({
+    where: { id: signupId },
+    include: {
+      opportunity: true,
+      member: {
+        include: { contact: true },
+      },
+    },
+  })
+
+  if (!signup) {
+    throw new Error('Volunteer signup not found')
+  }
+
+  // Only create activity if member has a contact
+  if (!signup.member.contact) {
+    // Auto-sync member to contact first
+    await syncMemberToContact(signup.member.id)
+  }
+
+  const contact = await prisma.contact.findUnique({
+    where: { memberId: signup.member.id },
+  })
+
+  if (!contact) {
+    console.error('[crm-sync] Failed to find contact after sync for member:', signup.member.id)
+    throw new Error('Contact not found after member sync')
+  }
+
+  // Create activity for volunteer signup
+  try {
+    return await prisma.activity.create({
+      data: {
+        tenantId: signup.opportunity.tenantId,
+        contactId: contact.id,
+        type: 'TASK',
+        title: `Volunteer Signup: ${signup.opportunity.title}`,
+        description: signup.opportunity.description || 'Volunteer opportunity',
+        completed: true,
+        completedAt: new Date(),
+      },
+    })
+  } catch (error) {
+    console.error('[crm-sync] Failed to create activity for volunteer signup:', error)
+    throw error
+  }
+}
+
+/**
+ * Sync a Form Submission to a Contact record in the CRM
+ * This creates or updates a Contact when someone submits a form
+ */
+export async function syncFormSubmissionToContact(params: {
+  tenantId: string
+  email: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+  formId?: string
+  source?: string
+}) {
+  // Check if contact already exists with this email
+  const existingContact = await prisma.contact.findFirst({
+    where: {
+      tenantId: params.tenantId,
+      email: params.email,
+    },
+  })
+
+  if (existingContact) {
+    // Update existing contact with new info
+    return await prisma.contact.update({
+      where: { id: existingContact.id },
+      data: {
+        firstName: params.firstName || existingContact.firstName,
+        lastName: params.lastName || existingContact.lastName,
+        phone: params.phone || existingContact.phone,
+        source: params.source || existingContact.source,
+      },
+    })
+  } else {
+    // Create new contact
+    return await prisma.contact.create({
+      data: {
+        tenantId: params.tenantId,
+        firstName: params.firstName || '',
+        lastName: params.lastName || '',
+        email: params.email,
+        phone: params.phone,
+        source: params.source || 'form',
+      },
+    })
+  }
+}
+
+/**
+ * Sync a Newsletter Subscription to a Contact record in the CRM
+ * This creates or updates a Contact when someone subscribes to newsletter
+ */
+export async function syncNewsletterSubscriptionToContact(params: {
+  tenantId: string
+  email: string
+  firstName?: string
+  lastName?: string
+}) {
+  // Check if contact already exists with this email
+  const existingContact = await prisma.contact.findFirst({
+    where: {
+      tenantId: params.tenantId,
+      email: params.email,
+    },
+  })
+
+  if (existingContact) {
+    // Update existing contact
+    return await prisma.contact.update({
+      where: { id: existingContact.id },
+      data: {
+        firstName: params.firstName || existingContact.firstName,
+        lastName: params.lastName || existingContact.lastName,
+        source: 'newsletter',
+      },
+    })
+  } else {
+    // Create new contact
+    return await prisma.contact.create({
+      data: {
+        tenantId: params.tenantId,
+        firstName: params.firstName || '',
+        lastName: params.lastName || '',
+        email: params.email,
+        source: 'newsletter',
+      },
+    })
+  }
+}

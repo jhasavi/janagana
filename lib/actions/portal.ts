@@ -2,6 +2,7 @@
 
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { syncEventRegistrationToActivity, syncVolunteerSignupToActivity } from '@/lib/crm-sync'
 import type { Member, MembershipTier, Tenant, EventRegistration, Event, VolunteerSignup, VolunteerOpportunity } from '@prisma/client'
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -124,6 +125,15 @@ export async function portalRegisterForEvent(slug: string, eventId: string) {
     const reg = await prisma.eventRegistration.create({
       data: { eventId, memberId: ctx.member.id, status: 'CONFIRMED' },
     })
+
+    // Sync to CRM
+    try {
+      await syncEventRegistrationToActivity(reg.id)
+    } catch (error) {
+      console.error('[portalRegisterForEvent] Failed to sync to CRM:', error)
+      // Don't fail the registration if CRM sync fails
+    }
+
     return { success: true, data: reg }
   } catch (e) {
     console.error('[portalRegisterForEvent]', e)
@@ -146,6 +156,15 @@ export async function portalSignupForVolunteer(slug: string, opportunityId: stri
     const signup = await prisma.volunteerSignup.create({
       data: { opportunityId, memberId: ctx.member.id, status: 'CONFIRMED' },
     })
+
+    // Sync to CRM
+    try {
+      await syncVolunteerSignupToActivity(signup.id)
+    } catch (error) {
+      console.error('[portalSignupForVolunteer] Failed to sync to CRM:', error)
+      // Don't fail the signup if CRM sync fails
+    }
+
     return { success: true, data: signup }
   } catch (e) {
     console.error('[portalSignupForVolunteer]', e)
