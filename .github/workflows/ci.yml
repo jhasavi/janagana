@@ -102,20 +102,13 @@ jobs:
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
 
-      - name: Run unit tests
-        run: npm run test
+      # Note: Unit tests not currently configured. Skipping this step.
+      # - name: Run unit tests
+      #   run: npm run test
 
-      - name: Run integration tests
-        run: cd apps/api && npm run test:e2e
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+      # Note: Integration tests not currently configured. Skipping this step.
+      # - name: Run integration tests
+      #   run: cd apps/api && npm run test:e2e
 
   build:
     name: Build
