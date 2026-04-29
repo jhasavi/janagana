@@ -1139,6 +1139,7 @@ model Contact {
   jobTitle    String?
   linkedinUrl String?
   avatarUrl   String?
+  companyName String?  // Simple text field for company name (optional)
 
   source      String?  // e.g. "website", "referral", "event"
   notes       String?  @db.Text

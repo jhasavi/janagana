@@ -13,23 +13,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, email, phone, jobTitle, linkedinUrl, companyId, source, notes } = body
+    const { firstName, lastName, email, phone, jobTitle, linkedinUrl, companyName, source, notes } = body
 
     // Validate required fields
     if (!firstName || !lastName || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
-
-    // Check if contact with same email already exists
-    const existingContact = await prisma.contact.findFirst({
-      where: {
-        tenantId: tenant.id,
-        email,
-      },
-    })
-
-    if (existingContact) {
-      return NextResponse.json({ error: 'Contact with this email already exists' }, { status: 409 })
     }
 
     // Create contact
@@ -42,7 +30,7 @@ export async function POST(request: NextRequest) {
         phone,
         jobTitle,
         linkedinUrl,
-        companyId,
+        companyName,
         source,
         notes,
       },

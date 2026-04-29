@@ -17,7 +17,7 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { firstName, lastName, email, phone, jobTitle, linkedinUrl, companyId, source, notes } = body
+    const { firstName, lastName, email, phone, jobTitle, linkedinUrl, companyName, source, notes } = body
 
     // Verify contact belongs to tenant
     const contact = await prisma.contact.findFirst({
@@ -53,7 +53,7 @@ export async function PUT(
         phone,
         jobTitle,
         linkedinUrl,
-        companyId,
+        companyName,
         source,
         notes,
       },
