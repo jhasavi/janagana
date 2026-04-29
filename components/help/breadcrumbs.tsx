@@ -4,6 +4,7 @@ import { ChevronRight, Home } from 'lucide-react'
 interface BreadcrumbItem {
   label: string
   href?: string
+  id?: string
 }
 
 interface BreadcrumbsProps {
@@ -17,7 +18,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
         <Home className="h-4 w-4" />
       </Link>
       {items.map((item, index) => (
-        <div key={index} className="flex items-center space-x-1">
+        <div key={item.id || item.label || index} className="flex items-center space-x-1">
           <ChevronRight className="h-4 w-4" />
           {item.href ? (
             <Link href={item.href} className="hover:text-foreground">
