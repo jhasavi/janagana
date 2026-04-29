@@ -536,20 +536,381 @@ That's it! See the full guide for more widgets.
 **Title:** Next.js Integration
 
 **Content:**
-Integrate JanaGana widgets into your Next.js application.
+This guide shows you how to integrate JanaGana into a Next.js website.
 
-**Quick Start:**
-1. Add the script to your layout or page
+## Who This Guide Is For
+
+This guide is for developers who:
+- Have a Next.js application (App Router or Pages Router)
+- Want to add JanaGana widgets (newsletter, events, courses, login)
+- Need TypeScript support
+- Want to integrate with their existing component structure
+
+## Prerequisites
+
+Before starting, make sure you have:
+- A Next.js application (version 13+ for App Router, or any version for Pages Router)
+- Your JanaGana tenant slug (from your organization settings)
+- Basic knowledge of React and Next.js
+- Node.js and npm installed
+
+## What JanaGana Widgets Can Do
+
+JanaGana provides these widgets for your website:
+- **Newsletter Widget:** Collect email signups
+- **Events Widget:** Display upcoming events with registration
+- **Course Widget:** Show course enrollment forms
+- **Login Widget:** Member login portal
+
+## Find Your Tenant Slug
+
+Your tenant slug is the unique identifier for your organization:
+
+1. Go to https://janagana.namasteneedham.com
+2. Sign in to your account
+3. Go to Settings → Organization
+4. Copy your slug (e.g., "purple-wings")
+
+You'll use this slug in the initialization code.
+
+## App Router Setup
+
+### Step 1: Add the Script to Your Layout
+
+Add the JanaGana script to your root layout file (`app/layout.tsx`):
+
+```tsx
+// app/layout.tsx
+import Script from 'next/script'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <head>
+        <Script
+          src="https://janagana.namasteneedham.com/janagana-embed.js"
+          strategy="afterInteractive"
+        />
+        <Script id="janagana-init" strategy="afterInteractive">
+          {`
+            Janagana.init({
+              tenantSlug: 'your-org-slug',
+              apiUrl: 'https://janagana.namasteneedham.com'
+            });
+          `}
+        </Script>
+      </head>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+Replace `your-org-slug` with your actual tenant slug.
+
+### Step 2: Create a Widget Component
+
+Create a component for the widget you want to use:
+
+```tsx
+// components/NewsletterWidget.tsx
+'use client'
+
+import { useEffect } from 'react'
+
+export function NewsletterWidget() {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Janagana) {
+      window.Janagana.newsletter('newsletter-widget', {
+        title: 'Subscribe to our newsletter',
+        description: 'Get updates delivered to your inbox'
+      })
+    }
+  }, [])
+
+  return <div id="newsletter-widget" />
+}
+```
+
+### Step 3: Use the Widget in Your Page
+
+```tsx
+// app/page.tsx
+import { NewsletterWidget } from '@/components/NewsletterWidget'
+
+export default function Home() {
+  return (
+    <main>
+      <h1>Welcome</h1>
+      <NewsletterWidget />
+    </main>
+  )
+}
+```
+
+## Pages Router Setup
+
+For Pages Router, add the script to `pages/_document.tsx`:
+
+```tsx
+// pages/_document.tsx
+import { Html, Head, Main, NextScript } from 'next/document'
+
+export default function Document() {
+  return (
+    <Html>
+      <Head>
+        <script
+          src="https://janagana.namasteneedham.com/janagana-embed.js"
+          async
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('load', function() {
+                Janagana.init({
+                  tenantSlug: 'your-org-slug',
+                  apiUrl: 'https://janagana.namasteneedham.com'
+                });
+              });
+            `
+          }}
+        />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  )
+}
+```
+
+## Widget Components
+
+### Newsletter Widget
+
+```tsx
+// components/NewsletterWidget.tsx
+'use client'
+
+import { useEffect } from 'react'
+
+interface NewsletterWidgetProps {
+  title?: string
+  description?: string
+}
+
+export function NewsletterWidget({ title, description }: NewsletterWidgetProps) {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Janagana) {
+      window.Janagana.newsletter('newsletter-widget', {
+        title: title || 'Subscribe to our newsletter',
+        description: description || 'Get updates delivered to your inbox'
+      })
+    }
+  }, [title, description])
+
+  return <div id="newsletter-widget" />
+}
+```
+
+**Usage:**
+```tsx
+<NewsletterWidget
+  title="Stay Updated"
+  description="Join our newsletter"
+/>
+```
+
+### Events Widget
+
+```tsx
+// components/EventsWidget.tsx
+'use client'
+
+import { useEffect } from 'react'
+
+interface EventsWidgetProps {
+  title?: string
+}
+
+export function EventsWidget({ title }: EventsWidgetProps) {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Janagana) {
+      window.Janagana.events('events-widget', {
+        title: title || 'Upcoming Events'
+      })
+    }
+  }, [title])
+
+  return <div id="events-widget" />
+}
+```
+
+**Usage:**
+```tsx
+<EventsWidget title="Our Events" />
+```
+
+### Course Widget
+
+```tsx
+// components/CourseWidget.tsx
+'use client'
+
+import { useEffect } from 'react'
+
+interface CourseWidgetProps {
+  title?: string
+  description?: string
+  courseId?: string
+}
+
+export function CourseWidget({ title, description, courseId }: CourseWidgetProps) {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Janagana) {
+      window.Janagana.course('course-widget', {
+        title: title || 'Enroll in Our Course',
+        description: description || 'Enter your details to get started',
+        courseId
+      })
+    }
+  }, [title, description, courseId])
+
+  return <div id="course-widget" />
+}
+```
+
+**Usage:**
+```tsx
+<CourseWidget
+  title="Course Enrollment"
+  description="Sign up for our course"
+  courseId="course-123"
+/>
+```
+
+### Login Widget
+
+```tsx
+// components/LoginWidget.tsx
+'use client'
+
+import { useEffect } from 'react'
+
+interface LoginWidgetProps {
+  title?: string
+}
+
+export function LoginWidget({ title }: LoginWidgetProps) {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Janagana) {
+      window.Janagana.login('login-widget', {
+        title: title || 'Member Login'
+      })
+    }
+  }, [title])
+
+  return <div id="login-widget" />
+}
+```
+
+**Usage:**
+```tsx
+<LoginWidget title="Sign In" />
+```
+
+## Environment Variables
+
+Store your configuration in environment variables:
+
+```env
+# .env.local
+NEXT_PUBLIC_JANAGANA_TENANT_SLUG=your-org-slug
+NEXT_PUBLIC_JANAGANA_API_URL=https://janagana.namasteneedham.com
+```
+
+**Usage in layout:**
+```tsx
+<Script id="janagana-init" strategy="afterInteractive">
+  {`
+    Janagana.init({
+      tenantSlug: '${process.env.NEXT_PUBLIC_JANAGANA_TENANT_SLUG}',
+      apiUrl: '${process.env.NEXT_PUBLIC_JANAGANA_API_URL}'
+    });
+  `}
+</Script>
+```
+
+## TypeScript Type Definitions
+
+Add this to your `types/janagana.d.ts` file to get TypeScript support:
+
+```typescript
+declare global {
+  interface Window {
+    Janagana: {
+      init: (options: { tenantSlug: string; apiUrl?: string; debug?: boolean }) => void
+      newsletter: (containerId: string, options?: { title?: string; description?: string }) => void
+      events: (containerId: string, options?: { title?: string }) => void
+      course: (containerId: string, options?: { title?: string; description?: string; courseId?: string }) => void
+      login: (containerId: string, options?: { title?: string }) => void
+    }
+  }
+}
+
+export {}
+```
+
+## Common Troubleshooting
+
+### Widget Not Showing
+
+**Check:**
+1. Is the script loaded? Check browser console for errors
+2. Is `window.Janagana` available? Add `console.log(window.Janagana)` in useEffect
+3. Is the container ID unique?
+4. Is the tenant slug correct?
+
+### TypeScript Errors
+
+**Add type definitions** (see Type Definitions section above)
+
+### Script Not Loading
+
+**Check:**
+1. Is the URL correct? `https://janagana.namasteneedham.com/janagana-embed.js`
+2. Is there a CORS error? The script should load from any domain
+3. Is Next.js blocking external scripts? Use `strategy="afterInteractive"`
+
+## Multiple Widgets
+
+You can use multiple widgets on the same page with different container IDs:
+
+```tsx
+export default function Page() {
+  return (
+    <div>
+      <NewsletterWidget />
+      <EventsWidget />
+      <LoginWidget />
+    </div>
+  )
+}
+```
+
+Just make sure each widget component uses a unique container ID.
+
+## Next Steps
+
+1. Add the script to your layout
 2. Create widget components
-3. Initialize widgets in useEffect
+3. Add widgets to your pages
+4. Test by subscribing yourself
+5. Check JanaGana CRM to verify leads are captured
 
-**For detailed instructions including:**
-- App Router integration
-- Pages Router integration
-- TypeScript support
-- Server-side rendering considerations
-
-See the [Website Embed Guide](./WEBSITE_EMBED_GUIDE.md)
+For more information on other integration options, see the Website Integration Quick Start guide.
 
 ---
 
@@ -608,18 +969,79 @@ Show your events on your website:
 **Content:**
 Integrate JanaGana widgets into your WordPress site to display events, newsletter forms, and member portals.
 
-**Quick Start:**
+## Quick Start
+
 1. Install "Insert Headers and Footers" plugin
 2. Add JanaGana script to header
 3. Add widgets using Custom HTML blocks
 
-**For detailed instructions including:**
-- Theme editor integration
-- Page builder support (Elementor, Divi, Gutenberg)
-- Custom styling options
-- Troubleshooting common issues
+## Detailed Setup
 
-See the [WordPress Integration Guide](./WORDPRESS_INTEGRATION.md)
+### Add the Script
+
+Using "Insert Headers and Footers" plugin:
+1. Go to Settings → Insert Headers and Footers
+2. Add this to the "Header" section:
+
+```html
+<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script>
+  Janagana.init({
+    tenantSlug: 'your-slug',
+    apiUrl: 'https://janagana.namasteneedham.com'
+  });
+</script>
+```
+
+### Add Widgets
+
+Using Custom HTML blocks:
+1. Edit any page or post
+2. Add a Custom HTML block
+3. Paste the widget code:
+
+```html
+<div id="newsletter-widget"></div>
+<script>
+  Janagana.newsletter('newsletter-widget', {
+    title: 'Subscribe to our newsletter',
+    description: 'Get updates delivered to your inbox'
+  });
+</script>
+```
+
+### Page Builder Support
+
+**Elementor:**
+1. Add HTML widget
+2. Paste widget code in HTML widget
+
+**Divi:**
+1. Add Code module
+2. Paste widget code in Code module
+
+**Gutenberg:**
+1. Add Custom HTML block
+2. Paste widget code
+
+### Theme Editor Integration
+
+For advanced users, edit `header.php` in your theme:
+1. Go to Appearance → Theme Editor
+2. Select `header.php`
+3. Add script before closing `</head>` tag
+
+### Troubleshooting
+
+**Widget not showing:**
+- Check browser console for errors
+- Verify tenant slug is correct
+- Ensure script is loaded (view page source)
+
+**Script conflicts:**
+- Some plugins may block external scripts
+- Try different plugin for script insertion
+- Contact support if issues persist
 
 ---
 
@@ -630,19 +1052,73 @@ See the [WordPress Integration Guide](./WORDPRESS_INTEGRATION.md)
 **Content:**
 Add JanaGana widgets to your Shopify store to display events and collect newsletter signups.
 
-**Quick Start:**
+## Quick Start
+
 1. Go to Online Store → Themes → Customize
 2. Edit theme.liquid to add the script
 3. Add widgets using Custom Liquid sections
 4. Create dedicated events pages
 
-**For detailed instructions including:**
-- Theme customization
-- Product page integration
-- Liquid variable usage
-- Advanced Velo integration
+## Detailed Setup
 
-See the [Shopify Integration Guide](./SHOPIFY_INTEGRATION.md)
+### Add the Script
+
+1. Go to Online Store → Themes
+2. Click "..." on your theme → Edit code
+3. Open `theme.liquid`
+4. Add this before closing `</head>`:
+
+```html
+<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script>
+  Janagana.init({
+    tenantSlug: 'your-slug',
+    apiUrl: 'https://janagana.namasteneedham.com'
+  });
+</script>
+```
+
+### Add Widgets Using Custom Liquid
+
+1. Go to Online Store → Themes → Customize
+2. Add a Custom Liquid section
+3. Paste widget code:
+
+```html
+<div id="newsletter-widget"></div>
+<script>
+  Janagana.newsletter('newsletter-widget', {
+    title: 'Subscribe to our newsletter',
+    description: 'Get updates delivered to your inbox'
+  });
+</script>
+```
+
+### Product Page Integration
+
+Add widgets to product pages:
+1. Go to Customize → Products
+2. Add Custom Liquid section to product template
+3. Paste widget code
+
+### Theme Customization
+
+Match widget styling to your theme:
+- Use Liquid variables for colors
+- Customize widget titles and descriptions
+- Add CSS to match your brand
+
+### Troubleshooting
+
+**Widget not appearing:**
+- Check theme.liquid for script errors
+- Verify tenant slug is correct
+- Clear Shopify cache
+
+**Theme conflicts:**
+- Some themes may override widget styles
+- Use CSS to override theme styles
+- Test on different page templates
 
 ---
 
@@ -653,7 +1129,8 @@ See the [Shopify Integration Guide](./SHOPIFY_INTEGRATION.md)
 **Content:**
 Embed JanaGana widgets on your Wix site using the embed code feature.
 
-**Quick Start:**
+## Quick Start
+
 1. Go to Settings → Tracking & Analytics
 2. Click "New Tool" → "Custom"
 3. Paste JanaGana script in "Head" section
@@ -661,13 +1138,86 @@ Embed JanaGana widgets on your Wix site using the embed code feature.
 5. Paste widget code in embed element
 6. Save and publish
 
-**For detailed instructions including:**
-- Velo (Dev Mode) integration
-- Dynamic widget loading
-- Conditional display
-- Advanced features
+## Detailed Setup
 
-See the [Wix Integration Guide](./WIX_INTEGRATION.md)
+### Add the Script
+
+1. Go to Settings in your Wix dashboard
+2. Click Tracking & Analytics
+3. Click "New Tool" → "Custom"
+4. Name it "JanaGana"
+5. Paste this in "Head" section:
+
+```html
+<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script>
+  Janagana.init({
+    tenantSlug: 'your-slug',
+    apiUrl: 'https://janagana.namasteneedham.com'
+  });
+</script>
+```
+
+6. Click "Apply"
+
+### Add Widget to Page
+
+1. Open your site editor
+2. Add "Embed Code" element to any page
+3. Paste widget code:
+
+```html
+<div id="newsletter-widget"></div>
+<script>
+  Janagana.newsletter('newsletter-widget', {
+    title: 'Subscribe to our newsletter',
+    description: 'Get updates delivered to your inbox'
+  });
+</script>
+```
+
+4. Click "Update"
+5. Save and publish
+
+### Velo (Dev Mode) Integration
+
+For advanced users using Velo:
+
+```javascript
+// In your page code
+$w.onReady(function () {
+  if (typeof Janagana !== 'undefined') {
+    Janagana.newsletter('newsletter-widget', {
+      title: 'Subscribe to our newsletter',
+      description: 'Get updates delivered to your inbox'
+    });
+  }
+});
+```
+
+### Dynamic Widget Loading
+
+Load widgets conditionally:
+
+```javascript
+// Show widget only on specific pages
+if (wixLocation.path.includes('contact')) {
+  Janagana.newsletter('newsletter-widget');
+}
+```
+
+### Troubleshooting
+
+**Widget not showing:**
+- Check Tracking & Analytics settings
+- Verify script is in "Head" section
+- Clear browser cache
+- Check browser console for errors
+
+**Script not loading:**
+- Ensure Custom tool is enabled
+- Check for conflicting scripts
+- Contact Wix support if issues persist
 
 ---
 
@@ -678,20 +1228,94 @@ See the [Wix Integration Guide](./WIX_INTEGRATION.md)
 **Content:**
 Add JanaGana widgets to your Squarespace site using code blocks and code injection.
 
-**Quick Start:**
+## Quick Start
+
 1. Go to Settings → Advanced → Code Injection
 2. Paste JanaGana script in "Header" section
 3. Add "Code" block to any page
 4. Paste widget code in the block
 5. Save and publish
 
-**For detailed instructions including:**
-- Developer Mode usage
-- JSON-T templating
-- Mobile-specific widgets
-- Commerce integration
+## Detailed Setup
 
-See the [Squarespace Integration Guide](./SQUARESPACE_INTEGRATION.md)
+### Add the Script
+
+1. Go to Settings → Advanced → Code Injection
+2. Paste this in "Header" section:
+
+```html
+<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script>
+  Janagana.init({
+    tenantSlug: 'your-slug',
+    apiUrl: 'https://janagana.namasteneedham.com'
+  });
+</script>
+```
+
+3. Click "Save"
+
+### Add Widget to Page
+
+1. Edit any page
+2. Add a "Code" block
+3. Paste widget code:
+
+```html
+<div id="newsletter-widget"></div>
+<script>
+  Janagana.newsletter('newsletter-widget', {
+    title: 'Subscribe to our newsletter',
+    description: 'Get updates delivered to your inbox'
+  });
+</script>
+```
+
+4. Click "Apply"
+5. Save and publish
+
+### Developer Mode
+
+For advanced users, enable Developer Mode:
+1. Go to Settings → Advanced → Developer Mode
+2. Enable Developer Mode
+3. Access template files for deeper integration
+
+### JSON-T Templating
+
+Use JSON-T for dynamic widgets:
+- Access collection data
+- Create conditional widgets
+- Build custom widget layouts
+
+### Mobile-Specific Widgets
+
+Target mobile devices:
+```javascript
+if (window.matchMedia('(max-width: 768px)').matches) {
+  // Mobile-specific widget
+}
+```
+
+### Commerce Integration
+
+Add widgets to product pages:
+1. Edit product page
+2. Add Code block in product description
+3. Show events related to products
+
+### Troubleshooting
+
+**Widget not appearing:**
+- Check Code Injection settings
+- Verify script is in "Header" section
+- Clear Squarespace cache
+- Check browser console for errors
+
+**Script conflicts:**
+- Some templates may override scripts
+- Test on different page templates
+- Contact Squarespace support if issues persist
 
 ---
 
