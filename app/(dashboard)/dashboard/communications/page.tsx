@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Communications' }
 
@@ -29,9 +30,16 @@ export default async function CommunicationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Communications</h1>
-          <p className="text-muted-foreground text-sm mt-1">Email campaigns for your members.</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Communications</h1>
+            <p className="text-muted-foreground text-sm mt-1">Email campaigns for your members.</p>
+          </div>
+          <HelpButton
+            title="Email Campaigns"
+            content="Create and send email campaigns to your members. Schedule campaigns, track delivery, and manage recipient lists. You can also send SMS blasts for urgent communications."
+            link="/dashboard/help"
+          />
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">

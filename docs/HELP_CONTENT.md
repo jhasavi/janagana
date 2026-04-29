@@ -531,6 +531,28 @@ That's it! See the full guide for more widgets.
 
 ---
 
+### Next.js Integration
+
+**Title:** Next.js Integration
+
+**Content:**
+Integrate JanaGana widgets into your Next.js application.
+
+**Quick Start:**
+1. Add the script to your layout or page
+2. Create widget components
+3. Initialize widgets in useEffect
+
+**For detailed instructions including:**
+- App Router integration
+- Pages Router integration
+- TypeScript support
+- Server-side rendering considerations
+
+See the [Website Embed Guide](./WEBSITE_EMBED_GUIDE.md)
+
+---
+
 ### Newsletter Widget
 
 **Title:** Newsletter Widget

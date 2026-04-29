@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Forum' }
 
@@ -34,11 +35,18 @@ export default async function ForumPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Forum</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {threads.length} discussion{threads.length !== 1 ? 's' : ''}
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Forum</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {threads.length} discussion{threads.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <HelpButton
+            title="Forum"
+            content="Manage community discussions. Create categories, pin important threads, and moderate member conversations. The forum is accessible through the member portal."
+            link="/dashboard/help"
+          />
         </div>
         <Button asChild size="sm">
           <Link href="/dashboard/forum/new">

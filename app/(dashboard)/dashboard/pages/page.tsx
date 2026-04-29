@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Pages' }
 
@@ -20,11 +21,18 @@ export default async function PagesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pages</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Create public pages for your member portal (About, FAQ, Contact, etc.)
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Pages</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Create public pages for your member portal (About, FAQ, Contact, etc.)
+            </p>
+          </div>
+          <HelpButton
+            title="Portal Pages"
+            content="Create custom pages for your member portal. Add About, FAQ, Contact, and other informational pages. Pages can be published and shown in the portal navigation."
+            link="/dashboard/help"
+          />
         </div>
         <Button asChild>
           <Link href="/dashboard/pages/new">

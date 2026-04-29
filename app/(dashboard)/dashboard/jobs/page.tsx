@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Job Board' }
 
@@ -34,12 +35,19 @@ export default async function JobsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Job Board</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="default">{published} published</Badge>
-            {drafts > 0 && <Badge variant="secondary">{drafts} drafts</Badge>}
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Job Board</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="default">{published} published</Badge>
+              {drafts > 0 && <Badge variant="secondary">{drafts} drafts</Badge>}
+            </div>
           </div>
+          <HelpButton
+            title="Job Board"
+            content="Post job opportunities for your organization. Create job listings, manage applications, and track hiring progress. Jobs can be published to your member portal."
+            link="/dashboard/help"
+          />
         </div>
         <Button asChild size="sm">
           <Link href="/dashboard/jobs/new">

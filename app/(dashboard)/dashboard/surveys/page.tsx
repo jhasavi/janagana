@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Surveys' }
 
@@ -19,11 +20,18 @@ export default async function SurveysPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Surveys & Polls</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Collect feedback and run polls with your members.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Surveys & Polls</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Collect feedback and run polls with your members.
+            </p>
+          </div>
+          <HelpButton
+            title="Surveys & Polls"
+            content="Create surveys and polls to collect feedback from your members. Build custom questions, publish surveys, and view response analytics."
+            link="/dashboard/help"
+          />
         </div>
         <Button asChild>
           <Link href="/dashboard/surveys/new"><Plus className="h-4 w-4" /> New Survey</Link>
