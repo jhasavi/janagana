@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
 import { GalleryActions } from './_components/gallery-actions'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Photo Gallery' }
 
@@ -20,11 +21,18 @@ export default async function GalleryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Photo Gallery</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Organize photos into albums. Publish albums to make them visible on your member portal.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Photo Gallery</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Organize photos into albums. Publish albums to make them visible on your member portal.
+            </p>
+          </div>
+          <HelpButton
+            title="Photo Gallery"
+            content="Create photo albums to share with your members. Upload photos, organize them into albums, and publish them to the member portal."
+            link="/dashboard/help"
+          />
         </div>
         <GalleryActions />
       </div>
