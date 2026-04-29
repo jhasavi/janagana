@@ -4,9 +4,13 @@ This guide shows you how to integrate JanaGana into a Next.js website.
 
 ## Quick Start (3 Steps)
 
-### Step 1: Add the Script to Your Layout
+### Step 1: Add the Script to Your Site
 
-Add the JanaGana script to your root layout file (`app/layout.tsx` or `pages/_document.tsx`):
+You have two options for adding the JanaGana script to your Next.js site:
+
+**Option A: Global Layout (Recommended for multiple widgets)**
+
+Add the script to your root layout file to load it once across your entire site:
 
 ```tsx
 // app/layout.tsx
@@ -35,9 +39,48 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-### Step 2: Create a Widget Component
+**Option B: Per-Component (For single widget use)**
 
-Create a component for the widget you want to use:
+Load the script only on specific pages or components:
+
+```tsx
+// components/NewsletterWidget.tsx
+'use client'
+
+import { useEffect } from 'react'
+import Script from 'next/script'
+
+export function NewsletterWidget() {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Janagana) {
+      window.Janagana.init({
+        tenantSlug: 'your-org-slug',
+        apiUrl: 'https://janagana.namasteneedham.com'
+      })
+      window.Janagana.newsletter('newsletter-widget', {
+        title: 'Subscribe to our newsletter',
+        description: 'Get updates delivered to your inbox'
+      })
+    }
+  }, [])
+
+  return (
+    <>
+      <Script
+        src="https://janagana.namasteneedham.com/janagana-embed.js"
+        strategy="afterInteractive"
+      />
+      <div id="newsletter-widget" />
+    </>
+  )
+}
+```
+
+**Recommendation:** Use Option A (Global Layout) if you plan to use multiple widgets across your site. Use Option B (Per-Component) if you only need widgets on specific pages.
+
+### Step 2: Create Widget Components
+
+Create components for the widgets you want to use:
 
 ```tsx
 // components/NewsletterWidget.tsx

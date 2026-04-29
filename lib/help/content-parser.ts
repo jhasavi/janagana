@@ -49,19 +49,17 @@ export async function parseHelpContent(): Promise<HelpContent> {
   let currentCategory: HelpCategory | null = null
   let currentArticle: Partial<HelpArticle> | null = null
   let contentLines: string[] = []
+  let inArticleContent = false
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
 
-    // Category header (## Category Name)
-    if (line.startsWith('## ') && !line.startsWith('###')) {
-      // Save previous article if exists
-      if (currentArticle && currentCategory) {
-        if (!currentArticle.title) {
-          console.warn(`Article in category ${currentCategory.name} is missing a title, skipping`)
-          currentArticle = null
-          contentLines = []
-        } else {
+    // Category header (## Category Name) - only when NOT in article content
+    if (line.startsWith('## ') && !line.startsWith('###') && !inArticleContent) {
+      // Save previous category's articles
+      if (currentCategory) {
+        // Save last article in category
+        if (currentArticle && currentArticle.title) {
           currentArticle.content = contentLines.join('\n').trim()
           currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title)}`
           currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title)}`
@@ -84,12 +82,83 @@ export async function parseHelpContent(): Promise<HelpContent> {
       categories.push(currentCategory)
       currentArticle = null
       contentLines = []
+      inArticleContent = false
     }
 
-    // Article header (### Article Name)
-    else if (line.startsWith('### ')) {
-      // Save previous article if exists
-      if (currentArticle && currentCategory) {
+    // ## headers inside article content are treated as content
+    else if (line.startsWith('## ') && inArticleContent && currentArticle) {
+      contentLines.push(line)
+    }
+
+    // Article header (### Article Name) - only if followed by **Title:** and NOT in article content
+    else if (line.startsWith('### ') && !inArticleContent) {
+      // Check if next non-empty line is **Title:** - if so, it's a new article
+      let isArticleHeader = false
+      for (let j = i + 1; j < lines.length; j++) {
+        const nextLine = lines[j].trim()
+        if (nextLine === '') continue
+        if (nextLine.startsWith('**Title:**')) {
+          isArticleHeader = true
+          break
+        }
+        break // Found non-empty line that's not **Title:**
+      }
+
+      if (isArticleHeader) {
+        // Save previous article if exists and has title
+        if (currentArticle && currentCategory) {
+          if (!currentArticle.title) {
+            console.warn(`Article in category ${currentCategory.name} is missing a title, skipping`)
+          } else {
+            currentArticle.content = contentLines.join('\n').trim()
+            currentArticle.id = `${currentCategory.slug}-${slugify(currentArticle.title)}`
+            currentArticle.slug = `${currentCategory.slug}/${slugify(currentArticle.title)}`
+            currentArticle.category = currentCategory.name
+            currentArticle.categorySlug = currentCategory.slug
+            articles.push(currentArticle as HelpArticle)
+            currentCategory.articles.push(currentArticle as HelpArticle)
+          }
+        }
+
+        // Start new article
+        currentArticle = {}
+        contentLines = []
+        inArticleContent = false
+      }
+    }
+
+    // ### headers inside article content are treated as content
+    else if (line.startsWith('### ') && inArticleContent && currentArticle) {
+      contentLines.push(line)
+    }
+
+    // Title line - only accepted before content starts
+    else if (!inArticleContent && line.startsWith('**Title:**')) {
+      if (!currentArticle) {
+        currentArticle = {}
+      }
+      currentArticle.title = line.replace('**Title:**', '').trim()
+    }
+
+    // Content line - only accepted before content starts
+    else if (!inArticleContent && line === '**Content:**') {
+      if (currentArticle) {
+        inArticleContent = true
+      }
+      continue
+    }
+
+    // Link line - only accepted before content starts
+    else if (!inArticleContent && line.startsWith('**Link:**')) {
+      if (currentArticle) {
+        currentArticle.link = line.replace('**Link:**', '').trim()
+      }
+    }
+
+    // Skip separator lines - they end article content
+    else if (line === '---' || line === '----') {
+      if (inArticleContent && currentArticle && currentCategory) {
+        // Save current article
         if (!currentArticle.title) {
           console.warn(`Article in category ${currentCategory.name} is missing a title, skipping`)
         } else {
@@ -101,41 +170,18 @@ export async function parseHelpContent(): Promise<HelpContent> {
           articles.push(currentArticle as HelpArticle)
           currentCategory.articles.push(currentArticle as HelpArticle)
         }
+        currentArticle = null
+        contentLines = []
+        inArticleContent = false
       }
-
-      // Start new article
-      currentArticle = {}
-      contentLines = []
-    }
-
-    // Title line
-    else if (line.startsWith('**Title:**')) {
-      if (currentArticle) {
-        currentArticle.title = line.replace('**Title:**', '').trim()
-      }
-    }
-
-    // Content line
-    else if (line.startsWith('**Content:**')) {
-      // Content starts on next line
       continue
     }
 
-    // Link line
-    else if (line.startsWith('**Link:**')) {
-      if (currentArticle) {
-        currentArticle.link = line.replace('**Link:**', '').trim()
-      }
-    }
-
-    // Content body (after **Content:** until next header)
-    else if (currentArticle && !line.startsWith('**') && !line.startsWith('##') && !line.startsWith('---')) {
+    // Content body (after **Content:** until next ### article header)
+    // Allow all other content including ## headers, --- separators, and **bold** text
+    // Only exclude new article headers (###)
+    else if (currentArticle && inArticleContent && !line.startsWith('###')) {
       contentLines.push(line)
-    }
-
-    // Skip separator lines
-    else if (line === '---') {
-      continue
     }
   }
 

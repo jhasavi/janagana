@@ -538,7 +538,7 @@ That's it! See the full guide for more widgets.
 **Content:**
 This guide shows you how to integrate JanaGana into a Next.js website.
 
-## Who This Guide Is For
+Who This Guide Is For
 
 This guide is for developers who:
 - Have a Next.js application (App Router or Pages Router)
@@ -546,7 +546,7 @@ This guide is for developers who:
 - Need TypeScript support
 - Want to integrate with their existing component structure
 
-## Prerequisites
+Prerequisites
 
 Before starting, make sure you have:
 - A Next.js application (version 13+ for App Router, or any version for Pages Router)
@@ -554,15 +554,15 @@ Before starting, make sure you have:
 - Basic knowledge of React and Next.js
 - Node.js and npm installed
 
-## What JanaGana Widgets Can Do
+What JanaGana Widgets Can Do
 
 JanaGana provides these widgets for your website:
-- **Newsletter Widget:** Collect email signups
-- **Events Widget:** Display upcoming events with registration
-- **Course Widget:** Show course enrollment forms
-- **Login Widget:** Member login portal
+- Newsletter Widget: Collect email signups
+- Events Widget: Display upcoming events with registration
+- Course Widget: Show course enrollment forms
+- Login Widget: Member login portal
 
-## Find Your Tenant Slug
+Find Your Tenant Slug
 
 Your tenant slug is the unique identifier for your organization:
 
@@ -573,9 +573,7 @@ Your tenant slug is the unique identifier for your organization:
 
 You'll use this slug in the initialization code.
 
-## App Router Setup
-
-### Step 1: Add the Script to Your Layout
+App Router Setup
 
 Add the JanaGana script to your root layout file (`app/layout.tsx`):
 
@@ -608,9 +606,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 Replace `your-org-slug` with your actual tenant slug.
 
-### Step 2: Create a Widget Component
-
-Create a component for the widget you want to use:
+Create a widget component:
 
 ```tsx
 // components/NewsletterWidget.tsx
@@ -632,7 +628,7 @@ export function NewsletterWidget() {
 }
 ```
 
-### Step 3: Use the Widget in Your Page
+Use the widget in your page:
 
 ```tsx
 // app/page.tsx
@@ -648,7 +644,7 @@ export default function Home() {
 }
 ```
 
-## Pages Router Setup
+Pages Router Setup
 
 For Pages Router, add the script to `pages/_document.tsx`:
 
@@ -686,9 +682,9 @@ export default function Document() {
 }
 ```
 
-## Widget Components
+Widget Components
 
-### Newsletter Widget
+Newsletter Widget
 
 ```tsx
 // components/NewsletterWidget.tsx
@@ -715,7 +711,7 @@ export function NewsletterWidget({ title, description }: NewsletterWidgetProps) 
 }
 ```
 
-**Usage:**
+Usage:
 ```tsx
 <NewsletterWidget
   title="Stay Updated"
@@ -723,7 +719,7 @@ export function NewsletterWidget({ title, description }: NewsletterWidgetProps) 
 />
 ```
 
-### Events Widget
+Events Widget
 
 ```tsx
 // components/EventsWidget.tsx
@@ -748,12 +744,12 @@ export function EventsWidget({ title }: EventsWidgetProps) {
 }
 ```
 
-**Usage:**
+Usage:
 ```tsx
 <EventsWidget title="Our Events" />
 ```
 
-### Course Widget
+Course Widget
 
 ```tsx
 // components/CourseWidget.tsx
@@ -782,7 +778,7 @@ export function CourseWidget({ title, description, courseId }: CourseWidgetProps
 }
 ```
 
-**Usage:**
+Usage:
 ```tsx
 <CourseWidget
   title="Course Enrollment"
@@ -791,7 +787,7 @@ export function CourseWidget({ title, description, courseId }: CourseWidgetProps
 />
 ```
 
-### Login Widget
+Login Widget
 
 ```tsx
 // components/LoginWidget.tsx
@@ -816,12 +812,12 @@ export function LoginWidget({ title }: LoginWidgetProps) {
 }
 ```
 
-**Usage:**
+Usage:
 ```tsx
 <LoginWidget title="Sign In" />
 ```
 
-## Environment Variables
+Environment Variables
 
 Store your configuration in environment variables:
 
@@ -831,7 +827,7 @@ NEXT_PUBLIC_JANAGANA_TENANT_SLUG=your-org-slug
 NEXT_PUBLIC_JANAGANA_API_URL=https://janagana.namasteneedham.com
 ```
 
-**Usage in layout:**
+Usage in layout:
 ```tsx
 <Script id="janagana-init" strategy="afterInteractive">
   {`
@@ -843,7 +839,7 @@ NEXT_PUBLIC_JANAGANA_API_URL=https://janagana.namasteneedham.com
 </Script>
 ```
 
-## TypeScript Type Definitions
+TypeScript Type Definitions
 
 Add this to your `types/janagana.d.ts` file to get TypeScript support:
 
@@ -863,28 +859,28 @@ declare global {
 export {}
 ```
 
-## Common Troubleshooting
+Common Troubleshooting
 
-### Widget Not Showing
+Widget Not Showing
 
-**Check:**
+Check:
 1. Is the script loaded? Check browser console for errors
 2. Is `window.Janagana` available? Add `console.log(window.Janagana)` in useEffect
 3. Is the container ID unique?
 4. Is the tenant slug correct?
 
-### TypeScript Errors
+TypeScript Errors
 
-**Add type definitions** (see Type Definitions section above)
+Add type definitions (see Type Definitions section above)
 
-### Script Not Loading
+Script Not Loading
 
-**Check:**
+Check:
 1. Is the URL correct? `https://janagana.namasteneedham.com/janagana-embed.js`
 2. Is there a CORS error? The script should load from any domain
 3. Is Next.js blocking external scripts? Use `strategy="afterInteractive"`
 
-## Multiple Widgets
+Multiple Widgets
 
 You can use multiple widgets on the same page with different container IDs:
 
@@ -902,7 +898,7 @@ export default function Page() {
 
 Just make sure each widget component uses a unique container ID.
 
-## Next Steps
+Next Steps
 
 1. Add the script to your layout
 2. Create widget components
