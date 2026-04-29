@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -212,9 +213,9 @@ export function ContactForm({ companies, initialData, contactId }: ContactFormPr
                   {companies.length === 0 ? (
                     <div className="p-2 text-sm text-muted-foreground">
                       No companies yet.{' '}
-                      <a href="/dashboard/crm/companies/new" className="text-blue-600 hover:underline">
+                      <Link href="/dashboard/crm/companies/new" className="text-blue-600 hover:underline">
                         Create one
-                      </a>
+                      </Link>
                     </div>
                   ) : (
                     <>
