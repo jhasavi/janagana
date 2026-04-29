@@ -52,7 +52,7 @@ export default async function EditCompanyPage({
           state: company.state || '',
           postalCode: company.postalCode || '',
           country: company.country || 'US',
-          notes: company.notes || '',
+          description: company.description || '',
         }}
         companyId={id}
       />
