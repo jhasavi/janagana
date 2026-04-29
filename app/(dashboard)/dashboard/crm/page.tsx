@@ -4,8 +4,7 @@ import { getTenant } from '@/lib/tenant'
 import { redirect } from 'next/navigation'
 
 export default async function CRMPage() {
-  const { orgId } = await auth()
-  const tenant = await getTenant({ orgId })
+  const tenant = await getTenant()
 
   if (!tenant) {
     redirect('/onboarding')
