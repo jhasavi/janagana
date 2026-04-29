@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -25,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { Company } from '@prisma/client'
 
 const contactSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -34,7 +32,7 @@ const contactSchema = z.object({
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
   linkedinUrl: z.string().optional(),
-  companyId: z.string().optional(),
+  companyName: z.string().optional(),
   source: z.string().optional(),
   notes: z.string().optional(),
 }).refine((data) => {
@@ -55,12 +53,11 @@ const contactSchema = z.object({
 type ContactFormValues = z.infer<typeof contactSchema>
 
 interface ContactFormProps {
-  companies: Company[]
   initialData?: Partial<ContactFormValues>
   contactId?: string
 }
 
-export function ContactForm({ companies, initialData, contactId }: ContactFormProps) {
+export function ContactForm({ initialData, contactId }: ContactFormProps) {
   const router = useRouter()
   const [isSubmitting, startSubmit] = useTransition()
 
@@ -73,7 +70,7 @@ export function ContactForm({ companies, initialData, contactId }: ContactFormPr
       phone: initialData?.phone || '',
       jobTitle: initialData?.jobTitle || '',
       linkedinUrl: initialData?.linkedinUrl || '',
-      companyId: initialData?.companyId || '',
+      companyName: initialData?.companyName || '',
       source: initialData?.source || '',
       notes: initialData?.notes || '',
     },
@@ -199,35 +196,13 @@ export function ContactForm({ companies, initialData, contactId }: ContactFormPr
 
         <FormField
           control={form.control}
-          name="companyId"
+          name="companyName"
           render={({ field }: { field: any }) => (
             <FormItem>
               <FormLabel>Company (where they work)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a company (optional)" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {companies.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      No companies yet.{' '}
-                      <Link href="/dashboard/crm/companies/new" className="text-blue-600 hover:underline">
-                        Create one
-                      </Link>
-                    </div>
-                  ) : (
-                    <>
-                      {companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input placeholder="e.g. Google, Microsoft" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

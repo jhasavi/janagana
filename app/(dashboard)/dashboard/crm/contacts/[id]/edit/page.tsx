@@ -27,11 +27,6 @@ export default async function EditContactPage({
     notFound()
   }
 
-  const companies = await prisma.company.findMany({
-    where: { tenantId: tenant.id },
-    orderBy: { name: 'asc' },
-  })
-
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -48,7 +43,6 @@ export default async function EditContactPage({
       </div>
 
       <ContactForm
-        companies={companies}
         initialData={{
           firstName: contact.firstName,
           lastName: contact.lastName,
@@ -56,7 +50,7 @@ export default async function EditContactPage({
           phone: contact.phone || '',
           jobTitle: contact.jobTitle || '',
           linkedinUrl: contact.linkedinUrl || '',
-          companyId: contact.companyId || '',
+          companyName: contact.companyName || '',
           source: contact.source || '',
           notes: contact.notes || '',
         }}

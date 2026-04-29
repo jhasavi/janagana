@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma'
 import { getTenant } from '@/lib/tenant'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -12,11 +11,6 @@ export default async function NewContactPage() {
   if (!tenant) {
     redirect('/onboarding')
   }
-
-  const companies = await prisma.company.findMany({
-    where: { tenantId: tenant.id },
-    orderBy: { name: 'asc' },
-  })
 
   return (
     <div className="p-6">
@@ -33,7 +27,7 @@ export default async function NewContactPage() {
         </p>
       </div>
 
-      <ContactForm companies={companies} />
+      <ContactForm />
     </div>
   )
 }
