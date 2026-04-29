@@ -21,7 +21,9 @@ This guide shows you how to integrate JanaGana widgets into your Wix site. You c
 
 ### Step 2: Add the JanaGana Script
 
-**Using Wix Editor:**
+**Option A: Using Wix Editor (Recommended)**
+
+Use the built-in Tracking & Analytics settings:
 
 1. Go to your Wix Dashboard
 2. Click "Edit Site" to open the Wix Editor
@@ -46,6 +48,16 @@ This guide shows you how to integrate JanaGana widgets into your Wix site. You c
 Replace `your-tenant-slug` with your actual tenant slug.
 
 8. Click "Apply" and "Save"
+
+**Option B: Using Wix Velo (Advanced)**
+
+For programmatic control, use Wix Velo (Dev Mode):
+
+1. Enable Velo (Dev Mode) in the Wix Editor
+2. Add the script via Tracking & Analytics as shown in Option A
+3. Use Velo code to initialize widgets (see "Using Wix Velo" section below)
+
+**Recommendation:** Use Option A (Wix Editor) for most cases. Use Option B (Velo) only if you need dynamic widget loading or conditional display based on user state.
 
 ### Step 3: Add Widgets to Pages
 

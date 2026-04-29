@@ -21,7 +21,9 @@ This guide shows you how to integrate JanaGana widgets into your Squarespace sit
 
 ### Step 2: Add the JanaGana Script
 
-**Using Squarespace Settings:**
+**Option A: Using Code Injection (Recommended)**
+
+Use the built-in Code Injection settings:
 
 1. Log in to your Squarespace account
 2. Go to "Settings" → "Advanced" → "Code Injection"
@@ -42,6 +44,19 @@ This guide shows you how to integrate JanaGana widgets into your Squarespace sit
 Replace `your-tenant-slug` with your actual tenant slug.
 
 4. Click "Save"
+
+**Option B: Using Developer Mode (Advanced)**
+
+For more control, enable Developer Mode to edit template files directly:
+
+1. Go to "Settings" → "Advanced" → "Developer Mode"
+2. Click "Enable" (Note: This cannot be undone)
+3. Go to "Pages" → "Tools" → "Developer Tools" → "Edit Files"
+4. Open `site.region` or page-specific templates
+5. Add the embed script in the head section
+6. Add widget code in the body where desired
+
+**Recommendation:** Use Option A (Code Injection) for most cases. Use Option B (Developer Mode) only if you need advanced template customization or conditional widget loading.
 
 ### Step 3: Add Widgets to Pages
 

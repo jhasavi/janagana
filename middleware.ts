@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/help(.*)', // Public help center
   '/api/webhooks(.*)',
   '/api/plugin(.*)', // Plugin API routes use API key authentication
+  '/api/embed(.*)', // Public embed API for widgets
 ])
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])

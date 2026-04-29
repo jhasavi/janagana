@@ -25,6 +25,8 @@ In WordPress, you have two options to add the embed script:
 
 **Option A: Using a Plugin (Recommended)**
 
+Use a plugin to add the script without editing theme files:
+
 1. Install a plugin like "Insert Headers and Footers" or "WPCode"
 2. Go to the plugin settings
 3. Add the following script to the header section:
@@ -35,7 +37,7 @@ In WordPress, you have two options to add the embed script:
 
 **Option B: Using functions.php**
 
-Add this to your theme's `functions.php` file:
+Add the script directly in your theme's functions file:
 
 ```php
 function janagana_embed_script() {
@@ -43,6 +45,8 @@ function janagana_embed_script() {
 }
 add_action('wp_head', 'janagana_embed_script');
 ```
+
+**Recommendation:** Use Option A (Plugin) for easier maintenance and to avoid losing changes during theme updates. Use Option B (functions.php) only if you're comfortable editing theme files and using a child theme.
 
 ### Step 3: Initialize JanaGana
 
