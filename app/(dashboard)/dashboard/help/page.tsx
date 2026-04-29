@@ -83,6 +83,7 @@ const helpCategories = [
     description: 'Embed JanaGana on your website.',
     articles: [
       { title: 'Quick Start Guide', slug: 'integrations/quick-start' },
+      { title: 'Next.js Integration', slug: 'integrations/nextjs' },
       { title: 'Newsletter Widget', slug: 'integrations/newsletter' },
       { title: 'Events Widget', slug: 'integrations/events' },
       { title: 'WordPress Setup', slug: 'integrations/wordpress' },

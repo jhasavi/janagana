@@ -1,13 +1,13 @@
 /**
  * JanaGana Embed SDK
  * Add this script to any website to embed JanaGana features
- * 
+ *
  * Usage:
- * <script src="https://your-domain.com/janagana-embed.js"></script>
+ * <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
  * <script>
  *   Janagana.init({
  *     tenantSlug: 'your-org-slug',
- *     apiUrl: 'https://your-api-domain.com'
+ *     apiUrl: 'https://janagana.namasteneedham.com'
  *   });
  * </script>
  */
@@ -18,7 +18,7 @@
   const Janagana = {
     config: {
       tenantSlug: null,
-      apiUrl: 'https://janagana-api.vercel.app',
+      apiUrl: 'https://janagana.namasteneedham.com',
       debug: false
     },
 

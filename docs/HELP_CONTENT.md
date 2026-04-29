@@ -506,11 +506,11 @@ Add JanaGana to your website in 3 steps:
 
 **Step 1: Add the script**
 ```html
-<script src="https://janagana-api.vercel.app/janagana-embed.js"></script>
+<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'your-slug',
-    apiUrl: 'https://janagana-api.vercel.app'
+    apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
