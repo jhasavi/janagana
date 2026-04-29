@@ -36,6 +36,7 @@ export default async function PortalLayout({
 
   const nav = [
     { label: 'My Profile', href: `/portal/${slug}`, icon: LayoutDashboard },
+    { label: 'Edit Profile', href: `/portal/${slug}/profile/edit`, icon: LayoutDashboard },
     { label: 'Events', href: `/portal/${slug}/events`, icon: CalendarDays },
     { label: 'Volunteer', href: `/portal/${slug}/volunteers`, icon: Heart },
     { label: 'Directory', href: `/portal/${slug}/directory`, icon: Users },
