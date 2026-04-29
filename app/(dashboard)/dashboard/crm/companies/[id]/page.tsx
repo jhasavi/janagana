@@ -104,10 +104,10 @@ export default async function CompanyDetailPage({
                   </div>
                 </div>
               )}
-              {company.notes && (
+              {company.description && (
                 <div className="pt-4 border-t">
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {company.notes}
+                    {company.description}
                   </p>
                 </div>
               )}

@@ -27,7 +27,7 @@ const companySchema = z.object({
   state: z.string().optional(),
   postalCode: z.string().optional(),
   country: z.string().default('US'),
-  notes: z.string().optional(),
+  description: z.string().optional(),
 })
 
 type CompanyFormValues = z.infer<typeof companySchema>
@@ -52,7 +52,7 @@ export function CompanyForm({ initialData, companyId }: CompanyFormProps) {
       state: initialData?.state || '',
       postalCode: initialData?.postalCode || '',
       country: initialData?.country || 'US',
-      notes: initialData?.notes || '',
+      description: initialData?.description || '',
     },
   })
 
@@ -206,10 +206,10 @@ export function CompanyForm({ initialData, companyId }: CompanyFormProps) {
 
         <FormField
           control={form.control}
-          name="notes"
+          name="description"
           render={({ field }: { field: any }) => (
             <FormItem>
-              <FormLabel>Notes</FormLabel>
+              <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Additional information about this company..."
