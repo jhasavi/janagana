@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/help(.*)', // Public help center
   '/api/webhooks(.*)',
   '/api/plugin(.*)', // Plugin API routes use API key authentication
 ])
