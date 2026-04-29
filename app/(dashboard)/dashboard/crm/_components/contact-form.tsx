@@ -32,10 +32,23 @@ const contactSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
-  linkedinUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  linkedinUrl: z.string().optional(),
   companyId: z.string().optional(),
   source: z.string().optional(),
   notes: z.string().optional(),
+}).refine((data) => {
+  if (data.linkedinUrl && data.linkedinUrl.trim() !== '') {
+    try {
+      new URL(data.linkedinUrl)
+      return true
+    } catch {
+      return false
+    }
+  }
+  return true
+}, {
+  message: 'Invalid LinkedIn URL',
+  path: ['linkedinUrl']
 })
 
 type ContactFormValues = z.infer<typeof contactSchema>
@@ -89,6 +102,7 @@ export function ContactForm({ companies, initialData, contactId }: ContactFormPr
           toast.error(result.error || 'Failed to save contact')
         }
       } catch (error) {
+        console.error('Error saving contact:', error)
         toast.error('Failed to save contact')
       }
     })
@@ -187,19 +201,30 @@ export function ContactForm({ companies, initialData, contactId }: ContactFormPr
           name="companyId"
           render={({ field }: { field: any }) => (
             <FormItem>
-              <FormLabel>Company</FormLabel>
+              <FormLabel>Company (where they work)</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a company" />
+                    <SelectValue placeholder="Select a company (optional)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
+                  {companies.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No companies yet.{' '}
+                      <a href="/dashboard/crm/companies/new" className="text-blue-600 hover:underline">
+                        Create one
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
