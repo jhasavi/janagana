@@ -254,7 +254,7 @@ The widgets use a default purple color (#4F46E5). To change colors, add custom C
 <script>
   Janagana.init({
     tenantSlug: 'your-org-slug',
-    apiUrl: 'https://janagana-api.vercel.app',
+    apiUrl: 'https://janagana.namasteneedham.com',
     debug: true  // This will show logs in browser console
   });
 </script>
@@ -279,11 +279,11 @@ Here's a complete example of a page with all widgets:
 <head>
   <title>My Organization</title>
   <!-- JanaGana Script -->
-  <script src="https://janagana-api.vercel.app/janagana-embed.js"></script>
+  <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
   <script>
     Janagana.init({
       tenantSlug: 'purple-wings',
-      apiUrl: 'https://janagana-api.vercel.app'
+      apiUrl: 'https://janagana.namasteneedham.com'
     });
   </script>
 </head>

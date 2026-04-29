@@ -9,7 +9,7 @@ This file contains all help content for the JanaGana documentation system.
 **Title:** Sign Up & Create Organization
 
 **Content:**
-1. Go to janagana-api.vercel.app
+1. Go to janagana.namasteneedham.com
 2. Click "Sign Up"
 3. Sign in with your email or Google account
 4. Enter your organization name (e.g., "Purple Wings")
@@ -643,7 +643,7 @@ JanaGana provides REST APIs for:
 - Volunteer Opportunities
 
 **Base URL:**
-`https://janagana-api.vercel.app/api`
+`https://janagana.namasteneedham.com/api`
 
 **Authentication:**
 - Use API keys from Settings → API Keys
@@ -669,7 +669,7 @@ JanaGana provides REST APIs for:
 **Use API key:**
 ```bash
 curl -H "X-API-Key: your-key" \
-  https://janagana-api.vercel.app/api/dashboard/crm/contacts
+  https://janagana.namasteneedham.com/api/dashboard/crm/contacts
 ```
 
 **Security:**
