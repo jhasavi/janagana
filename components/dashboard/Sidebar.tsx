@@ -40,6 +40,7 @@ const navItems = [
   { label: 'Gallery', href: '/dashboard/gallery', icon: Images },
   { label: 'Surveys', href: '/dashboard/surveys', icon: ClipboardCheck },
   { label: 'CRM', href: '/dashboard/crm', icon: UserCircle },
+  { label: 'Deals', href: '/dashboard/crm/deals', icon: BarChart2 },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart2 },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
