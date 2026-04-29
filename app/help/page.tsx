@@ -1,4 +1,4 @@
-import { Search, MessageCircle, FileText } from 'lucide-react'
+import { Search, MessageCircle, FileText, User, Code, Users, Layout } from 'lucide-react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +10,49 @@ const quickLinks = [
   { title: 'How do I create an event?', slug: 'events/create-an-event' },
   { title: 'How do I embed on my website?', slug: 'integrations/quick-start-guide' },
   { title: 'How do I invite team members?', slug: 'getting-started/invite-team-members' },
+]
+
+const roleBasedEntryPoints = [
+  {
+    title: 'I\'m an Organization Admin',
+    description: 'Manage your organization, members, events, and settings',
+    icon: User,
+    links: [
+      { title: 'Getting Started Guide', slug: 'getting-started/sign-up-create-organization' },
+      { title: 'Organization Settings', slug: 'settings/organization-settings' },
+      { title: 'CRM Overview', slug: 'crm/crm-overview' },
+    ]
+  },
+  {
+    title: 'I\'m a Member',
+    description: 'Access the member portal, register for events, and manage your profile',
+    icon: Users,
+    links: [
+      { title: 'Member Portal Guide', slug: 'members/member-portal' },
+      { title: 'Register for Events', slug: 'events/event-registration' },
+      { title: 'Update Your Profile', slug: 'getting-started/complete-your-profile' },
+    ]
+  },
+  {
+    title: 'I\'m Integrating JanaGana',
+    description: 'Embed widgets on your website or use the API',
+    icon: Code,
+    links: [
+      { title: 'Quick Start Integration', slug: 'integrations/quick-start-guide' },
+      { title: 'Next.js Integration', slug: 'integrations/nextjs-integration' },
+      { title: 'WordPress Setup', slug: 'integrations/wordpress-setup' },
+    ]
+  },
+  {
+    title: 'I\'m Using the API',
+    description: 'Build custom integrations with our REST API',
+    icon: Layout,
+    links: [
+      { title: 'API Overview', slug: 'api/api-overview' },
+      { title: 'Authentication', slug: 'api/authentication' },
+      { title: 'Webhooks', slug: 'api/webhooks' },
+    ]
+  },
 ]
 
 export default async function HelpPage() {
@@ -37,6 +80,42 @@ export default async function HelpPage() {
                 />
               </div>
             </Link>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-semibold mb-6">I am...</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {roleBasedEntryPoints.map((entry) => {
+                const Icon = entry.icon
+                return (
+                  <Card key={entry.title} className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Icon className="h-5 w-5" />
+                        {entry.title}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {entry.description}
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-2">
+                        {entry.links.map((link) => (
+                          <li key={link.slug}>
+                            <Link
+                              href={`/help/${link.slug}`}
+                              className="text-sm text-muted-foreground hover:text-foreground hover:underline block"
+                            >
+                              {link.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
           </div>
 
           <Card>

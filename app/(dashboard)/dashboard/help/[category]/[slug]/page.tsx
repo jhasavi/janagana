@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getArticle, getCategoryArticles, getCategory } from '@/lib/help/content-parser'
 import { ArticleContent } from '@/components/help/article-content'
+import { Breadcrumbs } from '@/components/help/breadcrumbs'
+import { ArticleFeedback } from '@/components/help/article-feedback'
 
 interface ArticlePageProps {
   params: Promise<{
@@ -29,15 +31,15 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   return (
     <div className="space-y-8">
-      <Link href="/dashboard/help" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="h-4 w-4 mr-1" />
-        Back to Help Center
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: 'Help Center', href: '/dashboard/help' },
+          { label: categoryData?.name || '', href: `/dashboard/help/${category}` },
+          { label: article.title }
+        ]}
+      />
 
       <div>
-        <div className="text-sm text-muted-foreground mb-2">
-          {categoryData?.name}
-        </div>
         <h1 className="text-3xl font-bold">{article.title}</h1>
       </div>
 
@@ -46,6 +48,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           <ArticleContent article={article} />
         </CardContent>
       </Card>
+
+      <ArticleFeedback />
 
       <div className="flex items-center justify-between">
         {prevArticle && (
