@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Building2,
   UserCircle,
+  CheckSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -41,6 +42,8 @@ const navItems = [
   { label: 'Surveys', href: '/dashboard/surveys', icon: ClipboardCheck },
   { label: 'CRM', href: '/dashboard/crm', icon: UserCircle },
   { label: 'Deals', href: '/dashboard/crm/deals', icon: BarChart2 },
+  { label: 'Tasks', href: '/dashboard/crm/tasks', icon: CheckSquare },
+  { label: 'Companies', href: '/dashboard/crm/companies', icon: Building2 },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart2 },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
