@@ -31,8 +31,10 @@ export default async function CRMPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">CRM</h1>
-        <p className="text-muted-foreground">Manage contacts and activities</p>
+        <h1 className="text-3xl font-bold">CRM Contacts</h1>
+        <p className="text-muted-foreground">
+          Track all contacts including members, donors, and external people
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
