@@ -5,6 +5,7 @@ import { SettingsForm } from './_components/settings-form'
 import { getTenantSettings } from '@/lib/actions/tenant'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -13,11 +14,18 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your organization profile and preferences.
-        </p>
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Manage your organization profile and preferences.
+          </p>
+        </div>
+        <HelpButton
+          title="Organization Settings"
+          content="Configure your organization's profile, branding, and contact information. These settings appear on the member portal and in communications."
+          link="/dashboard/help/settings/organization-settings"
+        />
       </div>
       <SettingsForm initialData={result.success ? result.data : null} />
 
