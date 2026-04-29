@@ -16,19 +16,20 @@ This guide shows you how to add JanaGana features to your website in minutes - n
 Copy and paste this code into your website's HTML (usually in the `<head>` section or before the closing `</body>` tag):
 
 ```html
-<script src="https://janagana-api.vercel.app/janagana-embed.js"></script>
+<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'your-org-slug',  // Replace with your organization slug
-    apiUrl: 'https://janagana-api.vercel.app'
+    apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
 
 **How to find your tenant slug:**
-1. Log in to your JanaGana dashboard
-2. Look at the URL - it will show something like `janagana-api.vercel.app/dashboard/your-org-slug`
-3. The part after `/dashboard/` is your tenant slug
+1. Log in to your JanaGana dashboard at janagana.namasteneedham.com
+2. Go to Settings → Organization
+3. Your slug is shown there (e.g., "purple-wings")
+4. You can customize it to something easy to remember
 
 ### Step 2: Add a Container Div
 
