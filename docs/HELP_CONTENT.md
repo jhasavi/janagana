@@ -584,21 +584,43 @@ Show your events on your website:
 **Title:** WordPress Integration
 
 **Content:**
-**Option 1: Using a plugin**
+Integrate JanaGana widgets into your WordPress site to display events, newsletter forms, and member portals.
+
+**Quick Start:**
 1. Install "Insert Headers and Footers" plugin
 2. Add JanaGana script to header
 3. Add widgets using Custom HTML blocks
 
-**Option 2: Theme editor**
-1. Go to Appearance → Editor
-2. Edit header.php
-3. Add script before </head>
-4. Add widgets using Custom HTML blocks
+**For detailed instructions including:**
+- Theme editor integration
+- Page builder support (Elementor, Divi, Gutenberg)
+- Custom styling options
+- Troubleshooting common issues
 
-**Find your slug:**
-- Log in to JanaGana
-- Look at URL: dashboard/YOUR-SLUG
-- Use that slug in the widget code
+See the [WordPress Integration Guide](./WORDPRESS_INTEGRATION.md)
+
+---
+
+### Shopify Setup
+
+**Title:** Shopify Integration
+
+**Content:**
+Add JanaGana widgets to your Shopify store to display events and collect newsletter signups.
+
+**Quick Start:**
+1. Go to Online Store → Themes → Customize
+2. Edit theme.liquid to add the script
+3. Add widgets using Custom Liquid sections
+4. Create dedicated events pages
+
+**For detailed instructions including:**
+- Theme customization
+- Product page integration
+- Liquid variable usage
+- Advanced Velo integration
+
+See the [Shopify Integration Guide](./SHOPIFY_INTEGRATION.md)
 
 ---
 
@@ -607,12 +629,23 @@ Show your events on your website:
 **Title:** Wix Integration
 
 **Content:**
+Embed JanaGana widgets on your Wix site using the embed code feature.
+
+**Quick Start:**
 1. Go to Settings → Tracking & Analytics
 2. Click "New Tool" → "Custom"
 3. Paste JanaGana script in "Head" section
 4. Add "Embed Code" element to page
 5. Paste widget code in embed element
 6. Save and publish
+
+**For detailed instructions including:**
+- Velo (Dev Mode) integration
+- Dynamic widget loading
+- Conditional display
+- Advanced features
+
+See the [Wix Integration Guide](./WIX_INTEGRATION.md)
 
 ---
 
@@ -621,11 +654,22 @@ Show your events on your website:
 **Title:** Squarespace Integration
 
 **Content:**
+Add JanaGana widgets to your Squarespace site using code blocks and code injection.
+
+**Quick Start:**
 1. Go to Settings → Advanced → Code Injection
 2. Paste JanaGana script in "Header" section
 3. Add "Code" block to any page
 4. Paste widget code in the block
 5. Save and publish
+
+**For detailed instructions including:**
+- Developer Mode usage
+- JSON-T templating
+- Mobile-specific widgets
+- Commerce integration
+
+See the [Squarespace Integration Guide](./SQUARESPACE_INTEGRATION.md)
 
 ---
 

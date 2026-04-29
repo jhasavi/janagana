@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { HelpButton } from '@/components/dashboard/help-button'
 
 export const metadata: Metadata = { title: 'Fundraising' }
 
@@ -26,11 +27,18 @@ export default async function FundraisingPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Fundraising</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Manage donation campaigns and track progress.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Fundraising</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Manage donation campaigns and track progress.
+            </p>
+          </div>
+          <HelpButton
+            title="Fundraising Campaigns"
+            content="Create donation campaigns to raise funds for your organization. Track donations, set goals, and view campaign progress. Donations can be made through the portal or embedded widgets."
+            link="/dashboard/help/fundraising/create-donation-campaign"
+          />
         </div>
         <Button asChild>
           <Link href="/dashboard/fundraising/new">
