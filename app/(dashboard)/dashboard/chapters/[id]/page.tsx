@@ -57,13 +57,13 @@ export default async function ChapterDetailPage({ params }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Members ({chapter._count.memberships})
+            Members ({chapter._count.chapterMemberships})
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ChapterMembersClient
             chapterId={chapter.id}
-            memberships={chapter.memberships}
+            memberships={chapter.chapterMemberships}
           />
         </CardContent>
       </Card>

@@ -85,10 +85,12 @@ export async function POST(request: NextRequest) {
       notes,
     } = body
 
-    // Check if contact already exists
-    const existing = await prisma.contact.findUnique({
-      where: { tenantId_email: { tenantId: tenant.id, email } },
-    })
+    // Check if contact already exists by primary email
+    const existing = email
+      ? await prisma.contact.findFirst({
+          where: { tenantId: tenant.id, email },
+        })
+      : null
 
     if (existing) {
       return NextResponse.json(

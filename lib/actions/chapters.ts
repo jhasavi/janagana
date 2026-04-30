@@ -13,7 +13,7 @@ export async function getChapters() {
     const chapters = await prisma.chapter.findMany({
       where: { tenantId: tenant.id },
       include: {
-        _count: { select: { members: true, memberships: true } },
+        _count: { select: { members: true, chapterMemberships: true } },
       },
       orderBy: { name: 'asc' },
     })
@@ -30,11 +30,11 @@ export async function getChapter(id: string) {
     const chapter = await prisma.chapter.findFirst({
       where: { id, tenantId: tenant.id },
       include: {
-        memberships: {
+        chapterMemberships: {
           include: { member: true },
           orderBy: { joinedAt: 'asc' },
         },
-        _count: { select: { members: true, memberships: true } },
+        _count: { select: { members: true, chapterMemberships: true } },
       },
     })
     if (!chapter) return { success: false, error: 'Not found', data: null }

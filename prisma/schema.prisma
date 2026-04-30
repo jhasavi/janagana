@@ -131,6 +131,9 @@ enum JobType {
   PART_TIME
   CONTRACT
   INTERNSHIP
+  // VOLUNTEER kept for backward compat — new volunteer postings use VolunteerOpportunity
+  // Do NOT use for new records; filter it out in UI queries
+  VOLUNTEER
 }
 
 enum ForumCategory {
@@ -156,6 +159,40 @@ enum FormFieldType {
   FILE
   HEADING
   PARAGRAPH
+}
+
+enum LifecycleStage {
+  PROSPECT
+  ENGAGED
+  APPLICANT
+  MEMBER
+  VOLUNTEER
+  DONOR
+  LAPSED
+  ADVOCATE
+}
+
+enum OfficerTermStatus {
+  ACTIVE
+  COMPLETED
+  RESIGNED
+  REMOVED
+}
+
+enum JobApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DuplicateStatus {
+  PENDING
+  MERGED
+  DISMISSED
 }
 
 // ─── TENANT ──────────────────────────────────────────────────────────────────
@@ -209,6 +246,12 @@ model Tenant {
   deals                  Deal[]
   activities             Activity[]
   tasks                  Task[]
+  governanceOffices      GovernanceOffice[]
+  officerTerms           OfficerTerm[]
+  committees             Committee[]
+  committeeMemberships   CommitteeMembership[]
+  jobApplications        JobApplication[]
+  duplicateSuggestions   DuplicateSuggestion[]
 
   @@index([clerkOrgId])
 }
@@ -878,6 +921,8 @@ model JobPosting {
   postedByContactId String?
   postedByContact  Contact? @relation("ContactJobPostings", fields: [postedByContactId], references: [id], onDelete: SetNull)
 
+  applications     JobApplication[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -1218,6 +1263,168 @@ model SurveyAnswer {
   @@index([questionId])
 }
 
+// ─── GOVERNANCE OFFICES & COMMITTEES ─────────────────────────────────────────
+// Separate from volunteer roles — models board, executive, and committee positions.
+
+model GovernanceOffice {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  title       String   // e.g. "President", "Secretary", "Board Member"
+  description String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  terms       OfficerTerm[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, title])
+  @@index([tenantId])
+}
+
+model OfficerTerm {
+  id          String            @id @default(cuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  officeId    String
+  office      GovernanceOffice  @relation(fields: [officeId], references: [id], onDelete: Cascade)
+
+  contactId   String
+  contact     Contact           @relation("ContactOfficerTerms", fields: [contactId], references: [id], onDelete: Cascade)
+
+  startDate   DateTime
+  endDate     DateTime?
+  status      OfficerTermStatus @default(ACTIVE)
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([officeId])
+  @@index([tenantId, status])
+}
+
+model Committee {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+
+  memberships CommitteeMembership[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model CommitteeMembership {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  committeeId String
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  contactId   String
+  contact     Contact  @relation("ContactCommitteeMemberships", fields: [contactId], references: [id], onDelete: Cascade)
+
+  role        String?  // e.g. "Chair", "Member", "Secretary"
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([committeeId, contactId, startDate])
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([committeeId])
+}
+
+// ─── JOB APPLICATIONS ────────────────────────────────────────────────────────
+// Lightweight applicant intake — separate lifecycle from JobPosting.
+
+model JobApplication {
+  id            String               @id @default(cuid())
+  tenantId      String
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  jobPostingId  String
+  jobPosting    JobPosting           @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  contactId     String?              // linked after matching/creation
+  contact       Contact?             @relation("ContactJobApplications", fields: [contactId], references: [id], onDelete: SetNull)
+
+  // Applicant info (captured from form, before contact link)
+  firstName     String
+  lastName      String
+  email         String
+  phone         String?
+  resumeUrl     String?              // Cloudinary or external URL
+  coverLetter   String?              @db.Text
+
+  status        JobApplicationStatus @default(SUBMITTED)
+  source        String?              // "website", "referral", "portal"
+  notes         String?              @db.Text
+  rejectionReason String?
+
+  submittedAt   DateTime             @default(now())
+  reviewedAt    DateTime?
+  hiredAt       DateTime?
+
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([tenantId])
+  @@index([jobPostingId])
+  @@index([contactId])
+  @@index([tenantId, status])
+  @@index([email])
+}
+
+// ─── CONTACT DEDUP / MERGE ───────────────────────────────────────────────────
+// Soft-warning dedup — admin reviews and merges manually. Preserves history.
+
+model DuplicateSuggestion {
+  id            String          @id @default(cuid())
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  contactAId    String
+  contactA      Contact         @relation("DuplicateA", fields: [contactAId], references: [id], onDelete: Cascade)
+
+  contactBId    String
+  contactB      Contact         @relation("DuplicateB", fields: [contactBId], references: [id], onDelete: Cascade)
+
+  confidenceScore Int           @default(0)   // 0–100; higher = more confident match
+  matchReason    String?                       // "email", "phone", "name+zip", "external_id"
+  status         DuplicateStatus @default(PENDING)
+
+  resolvedBy     String?         // Clerk user ID of admin who resolved
+  resolvedAt     DateTime?
+  mergedIntoId   String?         // surviving contact after merge
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([tenantId, contactAId, contactBId])
+  @@index([tenantId, status])
+  @@index([contactAId])
+  @@index([contactBId])
+}
+
 // ─── CRM MODELS ─────────────────────────────────────────────────────────────────
 
 enum DealStage {
@@ -1291,6 +1498,9 @@ model Contact {
 
   // Identity
   externalIds Json?    // { stripeCustomerId: "...", externalSystemId: "..." }
+  // Legacy scalar fields — kept for backward compat during migration to arrays
+  email       String?  // @deprecated — migrate data to emails[] then remove
+  phone       String?  // @deprecated — migrate data to phones[] then remove
   emails      String[] // Primary email at index 0, support multiple
   phones      String[]
   firstName   String
@@ -1317,7 +1527,8 @@ model Contact {
   companyName String?  // Simple text field for company name (optional)
 
   source      String?  // "website", "referral", "event", "import"
-  lifecycleStage String? // "Prospect", "Engaged", "Member", "Donor", "Volunteer"
+  lifecycleStage LifecycleStage?
+  engagementScore Int    @default(0) // computed score based on events, hours, donations, renewals
   tags        String[] @default([])
   notes       String?  @db.Text
 
@@ -1341,6 +1552,17 @@ model Contact {
   forumReplies ForumReply[] @relation("ContactForumReplies")
   documents   ContactDocument[]
   chapterMemberships ChapterMember[] @relation("ContactChapterMemberships")
+
+  // Governance
+  officerTerms          OfficerTerm[]         @relation("ContactOfficerTerms")
+  committeeMemberships  CommitteeMembership[] @relation("ContactCommitteeMemberships")
+
+  // Careers
+  jobApplications       JobApplication[]      @relation("ContactJobApplications")
+
+  // Dedup
+  duplicatesAsA         DuplicateSuggestion[] @relation("DuplicateA")
+  duplicatesAsB         DuplicateSuggestion[] @relation("DuplicateB")
 
   // CRM relationships
   deals       Deal[]

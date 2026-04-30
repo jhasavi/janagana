@@ -64,7 +64,7 @@ async function migrateMember(member: any) {
       postalCode: member.postalCode,
       country: member.country,
       source: 'migration',
-      lifecycleStage: member.status === 'ACTIVE' ? 'Member' : 'Prospect',
+      lifecycleStage: (member.status === 'ACTIVE' ? 'MEMBER' : 'PROSPECT') as import('@prisma/client').LifecycleStage,
       clerkUserId: member.clerkUserId,
       companyId: null, // Will be updated from existing Contact if exists
       jobTitle: null,

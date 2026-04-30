@@ -46,7 +46,7 @@ export default async function EditContactPage({
         initialData={{
           firstName: contact.firstName,
           lastName: contact.lastName,
-          email: contact.email,
+          email: contact.email ?? contact.emails?.[0] ?? '',
           phone: contact.phone || '',
           jobTitle: contact.jobTitle || '',
           linkedinUrl: contact.linkedinUrl || '',
