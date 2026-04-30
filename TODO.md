@@ -29,7 +29,7 @@
 Status: In-progress — onboarding creates Clerk org and DB tenant but user remains on `/onboarding` instead of landing on `/dashboard`.
 
 Executive summary
-- The server action that creates the Clerk organization and tenant record is executing and persisting data, but the client-side routing or session state that should set the active organization and redirect the user is not completing.
+- The server action that creates the Clerk organization and  tenant record is executing and persisting data, but the client-side routing or session state that should set the active organization and redirect the user is not completing.
 - Root suspects: (1) client code not using the server action response to redirect; (2) `auth()`/Clerk session lacks `orgId` so `getTenant()` can't resolve tenant; (3) Clerk redirect settings or cookies interfering with final redirect.
 
 Quick reproduction steps
