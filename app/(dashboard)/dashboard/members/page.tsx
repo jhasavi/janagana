@@ -29,6 +29,19 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-6">
+      {/* Info Banner */}
+      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100">Understanding People vs Memberships</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+              <strong>People</strong> are your master contact records - individuals who engage with your organization in any way (donors, volunteers, event attendees, etc.). 
+              <strong>Memberships</strong> are enrollment records that link people to membership tiers. A person can have multiple memberships over time, but only one active membership at a time.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
