@@ -173,13 +173,25 @@ model Household {
 
 ### Migration Steps
 
-#### Step 1: Schema Preparation
-1. Add new models (Contact, MembershipEnrollment, Household)
-2. Add migration fields to existing models
-3. Create foreign key relationships
-4. Run `prisma migrate dev --name prepare-contact-first`
+#### Step 1: Schema Preparation ✅ COMPLETED
+1. Add new models (Contact, MembershipEnrollment, Household) ✅
+2. Add migration fields to existing models ✅
+3. Create foreign key relationships ✅
+4. Run `prisma migrate dev --name add-contact-first-models` ⚠️ Deferred to maintenance window
 
 #### Step 2: Data Migration
+**Script Location:** `scripts/migrate-contact-first.ts`
+
+**Usage:**
+```bash
+# Dry run to test
+DRY_RUN=true npx tsx scripts/migrate-contact-first.ts
+
+# Actual migration
+npx tsx scripts/migrate-contact-first.ts
+```
+
+**Migration Process:**
 1. **Migrate Member → Contact**
    - Create Contact record for each Member
    - Copy personal data (name, email, phone, address)
@@ -209,7 +221,16 @@ model Household {
    - Find all JobPosting with jobType = VOLUNTEER
    - Create VolunteerOpportunity records
    - Migrate signups to VolunteerSignup
-   - Remove VOLUNTEER from JobType enum
+   - Remove VOLUNTEER from JobType enum ✅
+
+**Rollback Script:** `scripts/rollback-contact-first.ts`
+```bash
+# Dry run to test
+DRY_RUN=true npx tsx scripts/rollback-contact-first.ts
+
+# Actual rollback
+npx tsx scripts/rollback-contact-first.ts
+```
 
 #### Step 3: Validation
 1. Verify all data migrated correctly
