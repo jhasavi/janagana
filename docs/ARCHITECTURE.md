@@ -33,19 +33,38 @@ Each tenant maps to a **Clerk Organization**. When a user signs up and completes
 
 1. A Clerk org is created (`orgId` stored in Clerk)
 2. A `Tenant` record is created in the database linking to the Clerk org via `clerkOrgId`
-3. All subsequent data (members, events, volunteers) is scoped with `tenantId`
+3. All subsequent data (contacts, events, volunteers) is scoped with `tenantId`
 
 ```
 Clerk User
   └── Clerk Organization (orgId)
         └── Tenant (clerkOrgId = orgId)
-              ├── Members
+              ├── Contacts (People)
+              ├── MembershipEnrollments
               ├── MembershipTiers
               ├── Events
               └── VolunteerOpportunities
 ```
 
 **Every Prisma query MUST include `tenantId`** — this is the core multi-tenancy enforcement.
+
+## Contact-First Architecture
+
+JanaGana uses a **Contact-first data model** where Contact is the canonical master record for all individuals:
+
+- **Contact (People)**: Master person record with identity info (name, email, phone, address)
+- **MembershipEnrollment**: Links Contact to membership tiers (a person can have multiple enrollments over time)
+- **EventRegistration**: Links Contact to events
+- **VolunteerSignup**: Links Contact to volunteer opportunities
+- **Donation**: Links Contact to donations
+
+This separation allows:
+- People to have multiple roles (member, donor, volunteer, etc.)
+- Historical tracking of membership enrollments
+- Shared family emails (multiple contacts can share an email)
+- Clear separation between identity (Contact) and engagement (enrollments, registrations, etc.)
+
+See [DATA_MODEL_MIGRATION_PLAN.md](./DATA_MODEL_MIGRATION_PLAN.md) for migration details.
 
 ---
 

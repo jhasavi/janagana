@@ -76,6 +76,8 @@ Comprehensive documentation for the JanaGana multi-tenant SaaS platform.
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guidelines and code standards |
 | [ASSESSMENT.md](./ASSESSMENT.md) | Project assessment and technical debt |
 | [AUDIT_REPORT.md](./AUDIT_REPORT.md) | Security and performance audit report |
+| [DATA_MODEL_MIGRATION_PLAN.md](./DATA_MODEL_MIGRATION_PLAN.md) | Contact-first architecture migration plan |
+| [CODEBASE_MIGRATION_GUIDE.md](./CODEBASE_MIGRATION_GUIDE.md) | Codebase migration guide for Contact-first architecture |
 
 ## Help Center
 
