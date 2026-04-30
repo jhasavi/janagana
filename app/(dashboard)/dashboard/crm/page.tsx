@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { getTenant } from '@/lib/tenant'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { UserPlus, HelpCircle } from 'lucide-react'
+import { UserPlus, GitMerge } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContactTable } from './_components/contact-table'
 import { HelpButton } from '@/components/dashboard/help-button'
@@ -52,12 +52,20 @@ export default async function CRMPage() {
             link="/dashboard/help/people/add-manage-people"
           />
         </div>
-        <Button asChild>
-          <Link href="/dashboard/crm/contacts/new">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Person
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/dashboard/crm/duplicates">
+              <GitMerge className="h-4 w-4 mr-2" />
+              Duplicates
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/dashboard/crm/contacts/new">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Person
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <ContactTable contacts={contacts} />

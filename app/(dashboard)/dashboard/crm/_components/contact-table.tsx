@@ -51,7 +51,8 @@ export function ContactTable({ contacts }: ContactTableProps) {
     (contact) =>
       contact.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (contact.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (contact.emails?.[0] ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (contact.phone && contact.phone.includes(searchQuery)) ||
       (contact.jobTitle && contact.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()))
   )

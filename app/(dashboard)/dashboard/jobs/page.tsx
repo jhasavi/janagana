@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Plus, Briefcase } from 'lucide-react'
+import { Plus, Briefcase, FileText } from 'lucide-react'
 import { getJobPostings } from '@/lib/actions/jobs'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -48,12 +48,20 @@ export default async function JobsPage() {
             link="/dashboard/help/careers/job-board"
           />
         </div>
-        <Button asChild size="sm">
-          <Link href="/dashboard/jobs/new">
-            <Plus className="h-4 w-4" />
-            Post a Job
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/jobs/applications">
+              <FileText className="h-4 w-4 mr-2" />
+              Applications
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/dashboard/jobs/new">
+              <Plus className="h-4 w-4" />
+              Post a Job
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {jobs.length === 0 ? (

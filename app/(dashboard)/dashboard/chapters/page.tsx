@@ -65,7 +65,7 @@ async function ChaptersList() {
               )}
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3 w-3" />
-                {chapter._count.memberships} member{chapter._count.memberships !== 1 ? 's' : ''}
+                {chapter._count.chapterMemberships} member{chapter._count.chapterMemberships !== 1 ? 's' : ''}
               </div>
               <p className="text-xs text-muted-foreground mt-1">/{chapter.slug}</p>
             </CardContent>
