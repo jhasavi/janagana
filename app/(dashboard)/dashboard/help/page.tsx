@@ -8,7 +8,7 @@ import { parseHelpContent } from '@/lib/help/content-parser'
 const quickLinks = [
   { title: 'How do I add a contact?', slug: 'crm/add-manage-contacts' },
   { title: 'How do I create an event?', slug: 'events/create-an-event' },
-  { title: 'How do I embed on my website?', slug: 'integrations/quick-start-guide' },
+  { title: 'How do I embed on my website?', slug: 'integrations/website-integration-quick-start' },
   { title: 'How do I invite team members?', slug: 'getting-started/invite-team-members' },
 ]
 
@@ -25,7 +25,7 @@ export default async function HelpPage() {
       </div>
 
       <div className="max-w-2xl">
-        <SearchBar placeholder="Search for help..." className="w-full" />
+        <SearchBar placeholder="Search for help..." className="w-full" basePath="/dashboard/help" />
       </div>
 
       <Card>

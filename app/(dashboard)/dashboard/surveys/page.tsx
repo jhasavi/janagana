@@ -30,7 +30,7 @@ export default async function SurveysPage() {
           <HelpButton
             title="Surveys & Polls"
             content="Create surveys and polls to collect feedback from your members. Build custom questions, publish surveys, and view response analytics."
-            link="/dashboard/help"
+            link="/dashboard/help/features/surveys-polls"
           />
         </div>
         <Button asChild>

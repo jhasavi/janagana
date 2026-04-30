@@ -38,7 +38,7 @@ export default async function CommunicationsPage() {
           <HelpButton
             title="Email Campaigns"
             content="Create and send email campaigns to your members. Schedule campaigns, track delivery, and manage recipient lists. You can also send SMS blasts for urgent communications."
-            link="/dashboard/help"
+            link="/dashboard/help/features/email-campaigns"
           />
         </div>
         <div className="flex gap-2">

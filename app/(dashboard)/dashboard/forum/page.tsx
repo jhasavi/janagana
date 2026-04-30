@@ -45,7 +45,7 @@ export default async function ForumPage() {
           <HelpButton
             title="Forum"
             content="Manage community discussions. Create categories, pin important threads, and moderate member conversations. The forum is accessible through the member portal."
-            link="/dashboard/help"
+            link="/dashboard/help/features/community-forum"
           />
         </div>
         <Button asChild size="sm">

@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input'
 interface SearchBarProps {
   placeholder?: string
   className?: string
+  basePath?: string
 }
 
-export function SearchBar({ placeholder = 'Search for help...', className }: SearchBarProps) {
+export function SearchBar({ placeholder = 'Search for help...', className, basePath = '/help' }: SearchBarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
@@ -18,7 +19,7 @@ export function SearchBar({ placeholder = 'Search for help...', className }: Sea
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim()) {
-      router.push(`/help/search?q=${encodeURIComponent(query.trim())}`)
+      router.push(`${basePath}/search?q=${encodeURIComponent(query.trim())}`)
     }
   }
 
