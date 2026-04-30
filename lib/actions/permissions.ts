@@ -40,7 +40,8 @@ export async function requireTenantAdminAccess(
     }
 
     const role = String(membership.role ?? '').toLowerCase()
-    const isAdmin = role.includes('admin') || role.includes('owner')
+    // Use exact match to prevent unintended role matches (e.g., "adminassistant")
+    const isAdmin = role === 'admin' || role === 'owner'
 
     if (!isAdmin) {
       return { success: false, error: 'Access denied: admin role required' }

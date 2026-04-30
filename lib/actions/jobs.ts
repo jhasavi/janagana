@@ -17,7 +17,7 @@ const JobSchema = z.object({
   applyEmail: z.string().email('Must be a valid email').optional().or(z.literal('')),
   salaryMin: z.number().int().min(0).optional().nullable(),
   salaryMax: z.number().int().min(0).optional().nullable(),
-  jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'VOLUNTEER', 'INTERNSHIP']).default('FULL_TIME'),
+  jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP']).default('FULL_TIME'),
   status: z.enum(['DRAFT', 'PUBLISHED', 'CLOSED', 'FILLED']).default('DRAFT'),
   isFeatured: z.boolean().default(false),
   expiresAt: z.string().optional().nullable(),
@@ -29,7 +29,10 @@ const JobSchema = z.object({
 export async function getJobPostings(params?: { status?: string; search?: string }) {
   try {
     const tenant = await requireTenant()
-    const where: Record<string, unknown> = { tenantId: tenant.id }
+    const where: Record<string, unknown> = {
+      tenantId: tenant.id,
+      jobType: { not: 'VOLUNTEER' },
+    }
 
     if (params?.status && params.status !== 'all') where.status = params.status
     if (params?.search) {
@@ -57,6 +60,7 @@ export async function getPublicJobPostings(tenantId: string) {
     const jobs = await prisma.jobPosting.findMany({
       where: {
         tenantId,
+        jobType: { not: 'VOLUNTEER' },
         status: 'PUBLISHED',
         OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
       },
@@ -72,7 +76,9 @@ export async function getPublicJobPostings(tenantId: string) {
 export async function getJobPosting(id: string) {
   try {
     const tenant = await requireTenant()
-    const job = await prisma.jobPosting.findFirst({ where: { id, tenantId: tenant.id } })
+    const job = await prisma.jobPosting.findFirst({
+      where: { id, tenantId: tenant.id, jobType: { not: 'VOLUNTEER' } },
+    })
     if (!job) return { success: false, error: 'Job not found', data: null }
     return { success: true, data: job }
   } catch (error) {
@@ -100,6 +106,7 @@ export async function createJobPosting(input: unknown) {
         salaryMax: data.salaryMax ?? null,
         jobType: data.jobType,
         status: data.status,
+        isPaid: true,
         isFeatured: data.isFeatured,
         tags: data.tags,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
@@ -122,6 +129,9 @@ export async function updateJobPosting(id: string, input: unknown) {
 
     const existing = await prisma.jobPosting.findFirst({ where: { id, tenantId: tenant.id } })
     if (!existing) return { success: false, error: 'Job not found' }
+    if (existing.jobType === 'VOLUNTEER') {
+      return { success: false, error: 'Volunteer postings are managed under Volunteering' }
+    }
 
     const job = await prisma.jobPosting.update({
       where: { id },
@@ -137,6 +147,7 @@ export async function updateJobPosting(id: string, input: unknown) {
         salaryMax: data.salaryMax ?? null,
         jobType: data.jobType,
         status: data.status,
+        isPaid: true,
         isFeatured: data.isFeatured,
         tags: data.tags,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,

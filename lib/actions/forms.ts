@@ -254,6 +254,53 @@ export async function submitForm(formId: string, data: Record<string, unknown>, 
       }
     }
 
+    const rawEmail = (meta.email ?? (typeof data.email === 'string' ? data.email : '')).trim().toLowerCase()
+    const rawPhone = typeof data.phone === 'string' ? data.phone.trim() : undefined
+    const rawName = (meta.name ?? (typeof data.name === 'string' ? data.name : '')).trim()
+
+    if (rawEmail) {
+      const [firstName, ...rest] = rawName ? rawName.split(' ') : ['Form', 'Submitter']
+      const lastName = rest.join(' ') || 'Submitter'
+
+      const existingContact = await prisma.contact.findFirst({
+        where: {
+          tenantId: form.tenantId,
+          OR: [{ email: rawEmail }, { emails: { has: rawEmail } }],
+        },
+      })
+
+      if (existingContact) {
+        await prisma.contact.update({
+          where: { id: existingContact.id },
+          data: {
+            emails: Array.from(new Set([...(existingContact.emails ?? []), rawEmail])),
+            phones: Array.from(
+              new Set([...(existingContact.phones ?? []), rawPhone].filter(Boolean))
+            ) as string[],
+            notes: [
+              existingContact.notes,
+              `Form submission: ${form.title} (${new Date().toISOString()})`,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+          },
+        })
+      } else {
+        await prisma.contact.create({
+          data: {
+            tenantId: form.tenantId,
+            firstName,
+            lastName,
+            email: rawEmail,
+            emails: [rawEmail],
+            phones: rawPhone ? [rawPhone] : [],
+            source: 'form_submission',
+            notes: `Form submission: ${form.title}`,
+          },
+        })
+      }
+    }
+
     await prisma.formSubmission.create({
       data: {
         formId,

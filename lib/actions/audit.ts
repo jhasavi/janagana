@@ -6,6 +6,39 @@ import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import type { AuditAction } from '@prisma/client'
 
+// ─── AUDIT FAILURE TRACKING ─────────────────────────────────────────────────
+
+let auditFailureCount = 0
+let lastAuditFailureTime: Date | null = null
+const AUDIT_FAILURE_ALERT_THRESHOLD = 10
+const AUDIT_FAILURE_ALERT_WINDOW_MS = 5 * 60 * 1000 // 5 minutes
+
+/**
+ * Track audit failures and alert if they exceed threshold within time window.
+ * This helps detect database issues or configuration problems affecting audit logging.
+ */
+function trackAuditFailure() {
+  auditFailureCount++
+  const now = new Date()
+  
+  if (lastAuditFailureTime && 
+      now.getTime() - lastAuditFailureTime.getTime() > AUDIT_FAILURE_ALERT_WINDOW_MS) {
+    // Reset counter if outside time window
+    auditFailureCount = 1
+  }
+  
+  lastAuditFailureTime = now
+  
+  if (auditFailureCount >= AUDIT_FAILURE_ALERT_THRESHOLD) {
+    console.error(
+      `[AUDIT FAILURE ALERT] ${auditFailureCount} audit log failures in last ${AUDIT_FAILURE_ALERT_WINDOW_MS / 1000} seconds. ` +
+      'This may indicate database issues or configuration problems.'
+    )
+    // Reset after alerting to avoid spam
+    auditFailureCount = 0
+  }
+}
+
 // ─── LOG AUDIT ───────────────────────────────────────────────────────────────
 
 interface LogAuditParams {
@@ -19,7 +52,7 @@ interface LogAuditParams {
 
 /**
  * Fire-and-forget audit logger. Never throws — errors are swallowed so they
- * don't break the calling server action.
+ * don't break the calling server action. Tracks failures and alerts on repeated issues.
  */
 export async function logAudit(params: LogAuditParams): Promise<void> {
   try {
@@ -37,6 +70,7 @@ export async function logAudit(params: LogAuditParams): Promise<void> {
     })
   } catch (error) {
     console.error('[logAudit]', error)
+    trackAuditFailure()
   }
 }
 
