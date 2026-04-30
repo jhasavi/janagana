@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
+import { ensureContactForMember } from '@/lib/contact-linking'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -169,6 +170,20 @@ export async function signUpForOpportunity(opportunityId: string, memberId: stri
     if (!opportunity) return { success: false, error: 'Opportunity not found' }
     if (!member) return { success: false, error: 'Member not found' }
 
+    const contact = await ensureContactForMember({
+      id: member.id,
+      tenantId: member.tenantId,
+      email: member.email,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      phone: member.phone,
+      address: member.address,
+      city: member.city,
+      state: member.state,
+      postalCode: member.postalCode,
+      country: member.country,
+    })
+
     // Check capacity
     if (opportunity.capacity) {
       const count = await prisma.volunteerSignup.count({
@@ -181,8 +196,8 @@ export async function signUpForOpportunity(opportunityId: string, memberId: stri
 
     const signup = await prisma.volunteerSignup.upsert({
       where: { opportunityId_memberId: { opportunityId, memberId } },
-      create: { opportunityId, memberId, status: 'CONFIRMED' },
-      update: { status: 'CONFIRMED' },
+      create: { opportunityId, memberId, contactId: contact.id, status: 'CONFIRMED' },
+      update: { status: 'CONFIRMED', contactId: contact.id },
     })
 
     revalidatePath(`/dashboard/volunteers/${opportunityId}`)

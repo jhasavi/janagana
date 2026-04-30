@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import { sendEventReminder } from '@/lib/sms'
+import { ensureContactForMember } from '@/lib/contact-linking'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -191,6 +192,20 @@ export async function registerMemberForEvent(eventId: string, memberId: string) 
     if (!event) return { success: false, error: 'Event not found' }
     if (!member) return { success: false, error: 'Member not found' }
 
+    const contact = await ensureContactForMember({
+      id: member.id,
+      tenantId: member.tenantId,
+      email: member.email,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      phone: member.phone,
+      address: member.address,
+      city: member.city,
+      state: member.state,
+      postalCode: member.postalCode,
+      country: member.country,
+    })
+
     // Check capacity
     if (event.capacity) {
       const count = await prisma.eventRegistration.count({
@@ -203,8 +218,8 @@ export async function registerMemberForEvent(eventId: string, memberId: string) 
 
     const registration = await prisma.eventRegistration.upsert({
       where: { eventId_memberId: { eventId, memberId } },
-      create: { eventId, memberId, status: 'CONFIRMED' },
-      update: { status: 'CONFIRMED' },
+      create: { eventId, memberId, contactId: contact.id, status: 'CONFIRMED' },
+      update: { status: 'CONFIRMED', contactId: contact.id },
     })
 
     revalidatePath(`/dashboard/events/${eventId}`)

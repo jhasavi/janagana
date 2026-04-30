@@ -100,6 +100,7 @@ export async function updateCampaign(id: string, input: Partial<z.infer<typeof C
 
 const DonationSchema = z.object({
   campaignId: z.string().optional(),
+  contactId: z.string().optional(),
   donorName: z.string().min(1),
   donorEmail: z.string().email(),
   amountCents: z.number().int().positive(),
@@ -111,6 +112,15 @@ export async function recordDonation(input: z.infer<typeof DonationSchema>) {
   try {
     const tenant = await requireTenant()
     const data = DonationSchema.parse(input)
+    
+    // If contactId provided, verify it belongs to tenant
+    if (data.contactId) {
+      const contact = await prisma.contact.findFirst({
+        where: { id: data.contactId, tenantId: tenant.id },
+      })
+      if (!contact) return { success: false, error: 'Contact not found' }
+    }
+    
     const donation = await prisma.donation.create({
       data: { ...data, tenantId: tenant.id, status: 'COMPLETED' },
     })
