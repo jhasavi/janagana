@@ -24,6 +24,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <div className="space-y-8">
       <Breadcrumbs
+        homeHref="/dashboard/help"
         items={[
           { label: 'Help Center', href: '/dashboard/help' },
           { label: categoryData.name }

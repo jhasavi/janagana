@@ -23,6 +23,7 @@ import {
   UserCircle,
   CheckSquare,
   HelpCircle,
+  PlugZap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -46,6 +47,7 @@ const navItems = [
   { label: 'Tasks', href: '/dashboard/crm/tasks', icon: CheckSquare },
   { label: 'Companies', href: '/dashboard/crm/companies', icon: Building2 },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart2 },
+  { label: 'Integrations', href: '/dashboard/integrations', icon: PlugZap },
   { label: 'Help', href: '/dashboard/help', icon: HelpCircle },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]

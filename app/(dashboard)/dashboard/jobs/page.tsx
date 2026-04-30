@@ -46,7 +46,7 @@ export default async function JobsPage() {
           <HelpButton
             title="Job Board"
             content="Post job opportunities for your organization. Create job listings, manage applications, and track hiring progress. Jobs can be published to your member portal."
-            link="/dashboard/help"
+            link="/dashboard/help/features/job-board"
           />
         </div>
         <Button asChild size="sm">

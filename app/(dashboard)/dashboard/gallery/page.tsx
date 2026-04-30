@@ -31,7 +31,7 @@ export default async function GalleryPage() {
           <HelpButton
             title="Photo Gallery"
             content="Create photo albums to share with your members. Upload photos, organize them into albums, and publish them to the member portal."
-            link="/dashboard/help"
+            link="/dashboard/help/features/photo-gallery"
           />
         </div>
         <GalleryActions />

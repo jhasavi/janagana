@@ -502,32 +502,63 @@ Members access their portal at:
 **Title:** Website Integration Quick Start
 
 **Content:**
-Add JanaGana to your website in 3 steps:
+Who this is for:
+- Nontechnical or semi-technical website owners
+- Anyone who wants a copy-paste embed setup
 
-**Step 1: Add the script**
+Prerequisites:
+- JanaGana organization and tenant slug
+- Edit access to your website HTML or CMS code block
+
+Canonical values:
+- Script URL: https://janagana.namasteneedham.com/janagana-embed.js
+- API base URL: https://janagana.namasteneedham.com
+
+How to find your tenant slug:
+1. Sign in to JanaGana
+2. Go to Settings → Organization
+3. Copy the slug value (example: purple-wings)
+
+Step 1: Add the script once on your site
 ```html
 <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
-    tenantSlug: 'your-slug',
+    tenantSlug: 'purple-wings',
     apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
 
-**Step 2: Add a container**
+Step 2: Add a widget container where you want it
 ```html
 <div id="newsletter-widget"></div>
 ```
 
-**Step 3: Initialize widget**
+Step 3: Initialize the widget
 ```html
 <script>
-  Janagana.newsletter('newsletter-widget');
+  Janagana.newsletter('newsletter-widget', {
+    title: 'Subscribe to our newsletter',
+    description: 'Get updates delivered to your inbox'
+  });
 </script>
 ```
 
-That's it! See the full guide for more widgets.
+Copy-paste widgets you can use today:
+- Newsletter: Janagana.newsletter(containerId, { title?, description? })
+- Events: Janagana.events(containerId, { title? })
+- Login button: Janagana.login(containerId, { title? })
+- Course/lead capture: Janagana.course(containerId, { title?, description?, courseId? })
+
+Troubleshooting:
+1. "Janagana is not defined" means script is not loaded
+2. "Organization not found" usually means wrong tenant slug
+3. Events show empty if there are no published upcoming events
+
+Next steps:
+- Pick your platform article below (WordPress, Shopify, Wix, Squarespace, Next.js)
+- Use "What Data Syncs to CRM" to verify post-install behavior
 
 ---
 
@@ -536,63 +567,26 @@ That's it! See the full guide for more widgets.
 **Title:** Next.js Integration
 
 **Content:**
-This guide shows you how to integrate JanaGana into a Next.js website.
+Who this is for:
+- Developers integrating JanaGana into a Next.js app
 
-Who This Guide Is For
+Prerequisites:
+- Next.js app
+- Your tenant slug from Settings → Organization
 
-This guide is for developers who:
-- Have a Next.js application (App Router or Pages Router)
-- Want to add JanaGana widgets (newsletter, events, courses, login)
-- Need TypeScript support
-- Want to integrate with their existing component structure
-
-Prerequisites
-
-Before starting, make sure you have:
-- A Next.js application (version 13+ for App Router, or any version for Pages Router)
-- Your JanaGana tenant slug (from your organization settings)
-- Basic knowledge of React and Next.js
-- Node.js and npm installed
-
-What JanaGana Widgets Can Do
-
-JanaGana provides these widgets for your website:
-- Newsletter Widget: Collect email signups
-- Events Widget: Display upcoming events with registration
-- Course Widget: Show course enrollment forms
-- Login Widget: Member login portal
-
-Find Your Tenant Slug
-
-Your tenant slug is the unique identifier for your organization:
-
-1. Go to https://janagana.namasteneedham.com
-2. Sign in to your account
-3. Go to Settings → Organization
-4. Copy your slug (e.g., "purple-wings")
-
-You'll use this slug in the initialization code.
-
-App Router Setup
-
-Add the JanaGana script to your root layout file (`app/layout.tsx`):
-
+Step 1: Load and initialize once in your root layout
 ```tsx
-// app/layout.tsx
 import Script from 'next/script'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html>
       <head>
-        <Script
-          src="https://janagana.namasteneedham.com/janagana-embed.js"
-          strategy="afterInteractive"
-        />
+        <Script src="https://janagana.namasteneedham.com/janagana-embed.js" strategy="afterInteractive" />
         <Script id="janagana-init" strategy="afterInteractive">
           {`
             Janagana.init({
-              tenantSlug: 'your-org-slug',
+              tenantSlug: 'purple-wings',
               apiUrl: 'https://janagana.namasteneedham.com'
             });
           `}
@@ -604,12 +598,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-Replace `your-org-slug` with your actual tenant slug.
-
-Create a widget component:
-
+Step 2: Add client widget components
 ```tsx
-// components/NewsletterWidget.tsx
 'use client'
 
 import { useEffect } from 'react'
@@ -619,7 +609,7 @@ export function NewsletterWidget() {
     if (typeof window !== 'undefined' && window.Janagana) {
       window.Janagana.newsletter('newsletter-widget', {
         title: 'Subscribe to our newsletter',
-        description: 'Get updates delivered to your inbox'
+        description: 'Get updates delivered to your inbox',
       })
     }
   }, [])
@@ -628,285 +618,32 @@ export function NewsletterWidget() {
 }
 ```
 
-Use the widget in your page:
-
+Step 3: Render widgets in pages
 ```tsx
-// app/page.tsx
 import { NewsletterWidget } from '@/components/NewsletterWidget'
 
-export default function Home() {
-  return (
-    <main>
-      <h1>Welcome</h1>
-      <NewsletterWidget />
-    </main>
-  )
-}
-```
-
-Pages Router Setup
-
-For Pages Router, add the script to `pages/_document.tsx`:
-
-```tsx
-// pages/_document.tsx
-import { Html, Head, Main, NextScript } from 'next/document'
-
-export default function Document() {
-  return (
-    <Html>
-      <Head>
-        <script
-          src="https://janagana.namasteneedham.com/janagana-embed.js"
-          async
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.addEventListener('load', function() {
-                Janagana.init({
-                  tenantSlug: 'your-org-slug',
-                  apiUrl: 'https://janagana.namasteneedham.com'
-                });
-              });
-            `
-          }}
-        />
-      </Head>
-      <body>
-        <Main />
-        <NextScript />
-      </body>
-    </Html>
-  )
-}
-```
-
-Widget Components
-
-Newsletter Widget
-
-```tsx
-// components/NewsletterWidget.tsx
-'use client'
-
-import { useEffect } from 'react'
-
-interface NewsletterWidgetProps {
-  title?: string
-  description?: string
-}
-
-export function NewsletterWidget({ title, description }: NewsletterWidgetProps) {
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.newsletter('newsletter-widget', {
-        title: title || 'Subscribe to our newsletter',
-        description: description || 'Get updates delivered to your inbox'
-      })
-    }
-  }, [title, description])
-
-  return <div id="newsletter-widget" />
-}
-```
-
-Usage:
-```tsx
-<NewsletterWidget
-  title="Stay Updated"
-  description="Join our newsletter"
-/>
-```
-
-Events Widget
-
-```tsx
-// components/EventsWidget.tsx
-'use client'
-
-import { useEffect } from 'react'
-
-interface EventsWidgetProps {
-  title?: string
-}
-
-export function EventsWidget({ title }: EventsWidgetProps) {
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.events('events-widget', {
-        title: title || 'Upcoming Events'
-      })
-    }
-  }, [title])
-
-  return <div id="events-widget" />
-}
-```
-
-Usage:
-```tsx
-<EventsWidget title="Our Events" />
-```
-
-Course Widget
-
-```tsx
-// components/CourseWidget.tsx
-'use client'
-
-import { useEffect } from 'react'
-
-interface CourseWidgetProps {
-  title?: string
-  description?: string
-  courseId?: string
-}
-
-export function CourseWidget({ title, description, courseId }: CourseWidgetProps) {
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.course('course-widget', {
-        title: title || 'Enroll in Our Course',
-        description: description || 'Enter your details to get started',
-        courseId
-      })
-    }
-  }, [title, description, courseId])
-
-  return <div id="course-widget" />
-}
-```
-
-Usage:
-```tsx
-<CourseWidget
-  title="Course Enrollment"
-  description="Sign up for our course"
-  courseId="course-123"
-/>
-```
-
-Login Widget
-
-```tsx
-// components/LoginWidget.tsx
-'use client'
-
-import { useEffect } from 'react'
-
-interface LoginWidgetProps {
-  title?: string
-}
-
-export function LoginWidget({ title }: LoginWidgetProps) {
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.login('login-widget', {
-        title: title || 'Member Login'
-      })
-    }
-  }, [title])
-
-  return <div id="login-widget" />
-}
-```
-
-Usage:
-```tsx
-<LoginWidget title="Sign In" />
-```
-
-Environment Variables
-
-Store your configuration in environment variables:
-
-```env
-# .env.local
-NEXT_PUBLIC_JANAGANA_TENANT_SLUG=your-org-slug
-NEXT_PUBLIC_JANAGANA_API_URL=https://janagana.namasteneedham.com
-```
-
-Usage in layout:
-```tsx
-<Script id="janagana-init" strategy="afterInteractive">
-  {`
-    Janagana.init({
-      tenantSlug: '${process.env.NEXT_PUBLIC_JANAGANA_TENANT_SLUG}',
-      apiUrl: '${process.env.NEXT_PUBLIC_JANAGANA_API_URL}'
-    });
-  `}
-</Script>
-```
-
-TypeScript Type Definitions
-
-Add this to your `types/janagana.d.ts` file to get TypeScript support:
-
-```typescript
-declare global {
-  interface Window {
-    Janagana: {
-      init: (options: { tenantSlug: string; apiUrl?: string; debug?: boolean }) => void
-      newsletter: (containerId: string, options?: { title?: string; description?: string }) => void
-      events: (containerId: string, options?: { title?: string }) => void
-      course: (containerId: string, options?: { title?: string; description?: string; courseId?: string }) => void
-      login: (containerId: string, options?: { title?: string }) => void
-    }
-  }
-}
-
-export {}
-```
-
-Common Troubleshooting
-
-Widget Not Showing
-
-Check:
-1. Is the script loaded? Check browser console for errors
-2. Is `window.Janagana` available? Add `console.log(window.Janagana)` in useEffect
-3. Is the container ID unique?
-4. Is the tenant slug correct?
-
-TypeScript Errors
-
-Add type definitions (see Type Definitions section above)
-
-Script Not Loading
-
-Check:
-1. Is the URL correct? `https://janagana.namasteneedham.com/janagana-embed.js`
-2. Is there a CORS error? The script should load from any domain
-3. Is Next.js blocking external scripts? Use `strategy="afterInteractive"`
-
-Multiple Widgets
-
-You can use multiple widgets on the same page with different container IDs:
-
-```tsx
 export default function Page() {
-  return (
-    <div>
-      <NewsletterWidget />
-      <EventsWidget />
-      <LoginWidget />
-    </div>
-  )
+  return <NewsletterWidget />
 }
 ```
 
-Just make sure each widget component uses a unique container ID.
+Supported widget methods:
+- window.Janagana.newsletter(containerId, { title?, description? })
+- window.Janagana.events(containerId, { title? })
+- window.Janagana.login(containerId, { title? })
+- window.Janagana.course(containerId, { title?, description?, courseId? })
 
-Next Steps
+Troubleshooting:
+1. If window.Janagana is undefined, check script loading order
+2. If API calls fail, verify tenantSlug and apiUrl
+3. Use debug mode during testing:
+```js
+Janagana.init({ tenantSlug: 'purple-wings', apiUrl: 'https://janagana.namasteneedham.com', debug: true })
+```
 
-1. Add the script to your layout
-2. Create widget components
-3. Add widgets to your pages
-4. Test by subscribing yourself
-5. Check JanaGana CRM to verify leads are captured
-
-For more information on other integration options, see the Website Integration Quick Start guide.
+Next steps:
+- Add events, login, or course widgets
+- Verify CRM contact/activity behavior after test submissions
 
 ---
 
@@ -929,8 +666,16 @@ Add a newsletter signup to your site:
 
 **What it does:**
 - Collects name and email
-- Adds subscribers to CRM
+- Creates or updates CRM contact with source=newsletter
 - Shows success/error messages
+
+Best for:
+- Home page footer
+- Blog and campaign pages
+
+Troubleshooting:
+1. Missing tenant slug returns Organization not found
+2. If nothing is created in CRM, verify API base URL and slug
 
 ---
 
@@ -956,6 +701,14 @@ Show your events on your website:
 - Register button opens portal
 - Auto-updates when you add events
 
+Important behavior:
+- Only published upcoming events are shown
+- Registration happens in your portal events page
+
+Troubleshooting:
+1. Empty list means no published upcoming events
+2. Verify your tenant slug if events are expected but not visible
+
 ---
 
 ### WordPress Setup
@@ -963,39 +716,27 @@ Show your events on your website:
 **Title:** WordPress Integration
 
 **Content:**
-Integrate JanaGana widgets into your WordPress site to display events, newsletter forms, and member portals.
+Who this is for:
+- WordPress admins using Gutenberg, Elementor, or Divi
 
-## Quick Start
+Prerequisites:
+- WordPress admin access
+- Tenant slug from JanaGana Settings → Organization
 
-1. Install "Insert Headers and Footers" plugin
-2. Add JanaGana script to header
-3. Add widgets using Custom HTML blocks
-
-## Detailed Setup
-
-### Add the Script
-
-Using "Insert Headers and Footers" plugin:
-1. Go to Settings → Insert Headers and Footers
-2. Add this to the "Header" section:
-
+Step 1: Add script and init in header
+1. Install "WPCode" or "Insert Headers and Footers"
+2. Add this to header scripts:
 ```html
 <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
-    tenantSlug: 'your-slug',
+    tenantSlug: 'purple-wings',
     apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
 
-### Add Widgets
-
-Using Custom HTML blocks:
-1. Edit any page or post
-2. Add a Custom HTML block
-3. Paste the widget code:
-
+Step 2: Add widget via Custom HTML block
 ```html
 <div id="newsletter-widget"></div>
 <script>
@@ -1006,38 +747,19 @@ Using Custom HTML blocks:
 </script>
 ```
 
-### Page Builder Support
+Supported widget methods in WordPress:
+- Janagana.newsletter(...)
+- Janagana.events(...)
+- Janagana.login(...)
+- Janagana.course(...)
 
-**Elementor:**
-1. Add HTML widget
-2. Paste widget code in HTML widget
+Troubleshooting:
+1. If widget does not render, confirm script appears in page source
+2. If requests fail, check slug and API URL values
 
-**Divi:**
-1. Add Code module
-2. Paste widget code in Code module
-
-**Gutenberg:**
-1. Add Custom HTML block
-2. Paste widget code
-
-### Theme Editor Integration
-
-For advanced users, edit `header.php` in your theme:
-1. Go to Appearance → Theme Editor
-2. Select `header.php`
-3. Add script before closing `</head>` tag
-
-### Troubleshooting
-
-**Widget not showing:**
-- Check browser console for errors
-- Verify tenant slug is correct
-- Ensure script is loaded (view page source)
-
-**Script conflicts:**
-- Some plugins may block external scripts
-- Try different plugin for script insertion
-- Contact support if issues persist
+Next steps:
+- Add an events widget page
+- Test one newsletter signup and confirm contact in CRM
 
 ---
 
@@ -1046,75 +768,40 @@ For advanced users, edit `header.php` in your theme:
 **Title:** Shopify Integration
 
 **Content:**
-Add JanaGana widgets to your Shopify store to display events and collect newsletter signups.
+Who this is for:
+- Shopify store admins using theme customization
 
-## Quick Start
+Prerequisites:
+- Access to Online Store → Themes
+- Tenant slug from JanaGana settings
 
-1. Go to Online Store → Themes → Customize
-2. Edit theme.liquid to add the script
-3. Add widgets using Custom Liquid sections
-4. Create dedicated events pages
-
-## Detailed Setup
-
-### Add the Script
-
-1. Go to Online Store → Themes
-2. Click "..." on your theme → Edit code
-3. Open `theme.liquid`
-4. Add this before closing `</head>`:
-
+Step 1: Add script and init in theme head
 ```html
 <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
-    tenantSlug: 'your-slug',
+    tenantSlug: 'purple-wings',
     apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
 
-### Add Widgets Using Custom Liquid
-
-1. Go to Online Store → Themes → Customize
-2. Add a Custom Liquid section
-3. Paste widget code:
-
+Step 2: Add a Custom Liquid block with widget code
 ```html
-<div id="newsletter-widget"></div>
+<div id="events-widget"></div>
 <script>
-  Janagana.newsletter('newsletter-widget', {
-    title: 'Subscribe to our newsletter',
-    description: 'Get updates delivered to your inbox'
-  });
+  Janagana.events('events-widget', { title: 'Upcoming Events' });
 </script>
 ```
 
-### Product Page Integration
+Step 3: Publish and test
+1. Open storefront page with the widget
+2. Confirm widget renders
+3. Submit a test lead (newsletter/course) and verify CRM contact
 
-Add widgets to product pages:
-1. Go to Customize → Products
-2. Add Custom Liquid section to product template
-3. Paste widget code
-
-### Theme Customization
-
-Match widget styling to your theme:
-- Use Liquid variables for colors
-- Customize widget titles and descriptions
-- Add CSS to match your brand
-
-### Troubleshooting
-
-**Widget not appearing:**
-- Check theme.liquid for script errors
-- Verify tenant slug is correct
-- Clear Shopify cache
-
-**Theme conflicts:**
-- Some themes may override widget styles
-- Use CSS to override theme styles
-- Test on different page templates
+Troubleshooting:
+1. If widget is blank, confirm script loads on storefront (not only theme editor)
+2. If events empty, confirm events are published and upcoming
 
 ---
 
@@ -1123,97 +810,43 @@ Match widget styling to your theme:
 **Title:** Wix Integration
 
 **Content:**
-Embed JanaGana widgets on your Wix site using the embed code feature.
+Who this is for:
+- Wix site owners using no-code embed blocks
 
-## Quick Start
+Prerequisites:
+- Wix site editor access
+- Tenant slug from JanaGana
 
-1. Go to Settings → Tracking & Analytics
-2. Click "New Tool" → "Custom"
-3. Paste JanaGana script in "Head" section
-4. Add "Embed Code" element to page
-5. Paste widget code in embed element
-6. Save and publish
-
-## Detailed Setup
-
-### Add the Script
-
-1. Go to Settings in your Wix dashboard
-2. Click Tracking & Analytics
-3. Click "New Tool" → "Custom"
-4. Name it "JanaGana"
-5. Paste this in "Head" section:
-
+Step 1: Add script globally
+1. Wix Settings → Tracking & Analytics
+2. Add Custom tool in Head
+3. Paste:
 ```html
 <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
-    tenantSlug: 'your-slug',
+    tenantSlug: 'purple-wings',
     apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
 
-6. Click "Apply"
-
-### Add Widget to Page
-
-1. Open your site editor
-2. Add "Embed Code" element to any page
-3. Paste widget code:
-
+Step 2: Add Embed Code element to a page
 ```html
-<div id="newsletter-widget"></div>
+<div id="login-widget"></div>
 <script>
-  Janagana.newsletter('newsletter-widget', {
-    title: 'Subscribe to our newsletter',
-    description: 'Get updates delivered to your inbox'
-  });
+  Janagana.login('login-widget', { title: 'Member Login' });
 </script>
 ```
 
-4. Click "Update"
-5. Save and publish
+Step 3: Publish and test
+1. Open live site page
+2. Confirm button/widget renders
+3. For lead widgets, submit once and verify CRM contact
 
-### Velo (Dev Mode) Integration
-
-For advanced users using Velo:
-
-```javascript
-// In your page code
-$w.onReady(function () {
-  if (typeof Janagana !== 'undefined') {
-    Janagana.newsletter('newsletter-widget', {
-      title: 'Subscribe to our newsletter',
-      description: 'Get updates delivered to your inbox'
-    });
-  }
-});
-```
-
-### Dynamic Widget Loading
-
-Load widgets conditionally:
-
-```javascript
-// Show widget only on specific pages
-if (wixLocation.path.includes('contact')) {
-  Janagana.newsletter('newsletter-widget');
-}
-```
-
-### Troubleshooting
-
-**Widget not showing:**
-- Check Tracking & Analytics settings
-- Verify script is in "Head" section
-- Clear browser cache
-- Check browser console for errors
-
-**Script not loading:**
-- Ensure Custom tool is enabled
-- Check for conflicting scripts
-- Contact Wix support if issues persist
+Troubleshooting:
+1. If Janagana is undefined, global script was not injected
+2. If API errors appear, re-check slug and apiUrl
 
 ---
 
@@ -1222,96 +855,118 @@ if (wixLocation.path.includes('contact')) {
 **Title:** Squarespace Integration
 
 **Content:**
-Add JanaGana widgets to your Squarespace site using code blocks and code injection.
+Who this is for:
+- Squarespace admins using code injection and code blocks
 
-## Quick Start
+Prerequisites:
+- Squarespace admin access
+- Tenant slug from JanaGana settings
 
-1. Go to Settings → Advanced → Code Injection
-2. Paste JanaGana script in "Header" section
-3. Add "Code" block to any page
-4. Paste widget code in the block
-5. Save and publish
-
-## Detailed Setup
-
-### Add the Script
-
-1. Go to Settings → Advanced → Code Injection
-2. Paste this in "Header" section:
-
+Step 1: Add global script in Code Injection (Header)
 ```html
 <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
-    tenantSlug: 'your-slug',
+    tenantSlug: 'purple-wings',
     apiUrl: 'https://janagana.namasteneedham.com'
   });
 </script>
 ```
 
-3. Click "Save"
-
-### Add Widget to Page
-
-1. Edit any page
-2. Add a "Code" block
-3. Paste widget code:
-
+Step 2: Add a Code block on your page
 ```html
-<div id="newsletter-widget"></div>
+<div id="course-widget"></div>
 <script>
-  Janagana.newsletter('newsletter-widget', {
-    title: 'Subscribe to our newsletter',
-    description: 'Get updates delivered to your inbox'
+  Janagana.course('course-widget', {
+    title: 'Enroll in Course',
+    description: 'Enter your details to get started'
   });
 </script>
 ```
 
-4. Click "Apply"
-5. Save and publish
+Step 3: Test submission and CRM sync
+1. Publish page
+2. Submit test lead
+3. Confirm contact in CRM
 
-### Developer Mode
+Troubleshooting:
+1. If widget not shown, verify script in Header injection
+2. If submission fails, verify API URL and tenant slug
 
-For advanced users, enable Developer Mode:
-1. Go to Settings → Advanced → Developer Mode
-2. Enable Developer Mode
-3. Access template files for deeper integration
+---
 
-### JSON-T Templating
+### CRM Behavior After Integration
 
-Use JSON-T for dynamic widgets:
-- Access collection data
-- Create conditional widgets
-- Build custom widget layouts
+**Title:** What Data Syncs to CRM
 
-### Mobile-Specific Widgets
+**Content:**
+Use this as your post-install checklist.
 
-Target mobile devices:
-```javascript
-if (window.matchMedia('(max-width: 768px)').matches) {
-  // Mobile-specific widget
-}
+Newsletter widget:
+- Endpoint: POST /api/embed/newsletter
+- Result: creates or updates CRM contact (source=newsletter)
+
+Course widget:
+- Endpoint: POST /api/embed/course
+- Result: creates or updates CRM contact (source=course_enrollment)
+
+Events widget:
+- Endpoint: GET /api/embed/events
+- Result: reads published upcoming events (no contact creation by itself)
+
+Event registration via portal/plugin flow:
+- Result: creates CRM activity for registration
+
+Portal/member flows:
+- Profile and membership data map to member/contact records
+- Event and volunteer actions create CRM timeline activity
+
+How to verify after install:
+1. Submit newsletter or course lead on your site
+2. Open CRM → Contacts and confirm record
+3. Register for an event and confirm activity timeline entry
+
+---
+
+### API Integration Quick Start
+
+**Title:** API Integration Quick Start
+
+**Content:**
+Who this is for:
+- Technical teams building custom integrations
+
+Use these APIs for server-to-server integrations:
+- Plugin API base: https://janagana.namasteneedham.com/api/plugin
+
+Do not expose your API key in browser JavaScript.
+
+Step 1: Generate API key
+1. Dashboard → Settings → API Keys
+2. Create key and copy once
+
+Step 2: Make authenticated request
+```bash
+curl -H "X-API-Key: your-key" \
+  https://janagana.namasteneedham.com/api/plugin/events
 ```
 
-### Commerce Integration
+Step 3: Create CRM contact
+```bash
+curl -X POST https://janagana.namasteneedham.com/api/plugin/crm/contacts \
+  -H "X-API-Key: your-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Priya",
+    "lastName": "Shah",
+    "email": "priya@example.com",
+    "source": "website"
+  }'
+```
 
-Add widgets to product pages:
-1. Edit product page
-2. Add Code block in product description
-3. Show events related to products
-
-### Troubleshooting
-
-**Widget not appearing:**
-- Check Code Injection settings
-- Verify script is in "Header" section
-- Clear Squarespace cache
-- Check browser console for errors
-
-**Script conflicts:**
-- Some templates may override scripts
-- Test on different page templates
-- Contact Squarespace support if issues persist
+Troubleshooting:
+1. 401 Unauthorized means invalid/revoked/expired key
+2. 409 on create means record conflict (for example duplicate email)
 
 ---
 
@@ -1328,16 +983,20 @@ JanaGana provides REST APIs for:
 - Members, Donations
 - Volunteer Opportunities
 
-**Base URL:**
-`https://janagana.namasteneedham.com/api`
+Recommended for external integrations:
+- Base URL: `https://janagana.namasteneedham.com/api/plugin`
+- Auth: API key via `X-API-Key` header
 
-**Authentication:**
-- Use API keys from Settings → API Keys
-- Include in header: `X-API-Key: your-key`
+Dashboard API routes are primarily internal app routes and not the main external integration surface.
 
-**Rate limits:**
-- 100 requests per minute
-- 10,000 requests per day
+Core plugin paths:
+- `GET /events`
+- `POST /event-registrations`
+- `GET|POST /crm/contacts`
+- `GET|POST /crm/activities`
+- `GET|POST /crm/deals`
+- `GET|POST /crm/tasks`
+- `GET|POST /crm/companies`
 
 ---
 
@@ -1348,14 +1007,14 @@ JanaGana provides REST APIs for:
 **Content:**
 **Get API key:**
 1. Go to Settings → API Keys
-2. Click "Generate API Key"
+2. Click "New API Key"
 3. Copy the key
 4. Store securely
 
 **Use API key:**
 ```bash
 curl -H "X-API-Key: your-key" \
-  https://janagana.namasteneedham.com/api/dashboard/crm/contacts
+  https://janagana.namasteneedham.com/api/plugin/crm/contacts
 ```
 
 **Security:**
@@ -1372,33 +1031,22 @@ curl -H "X-API-Key: your-key" \
 **Content:**
 **List contacts:**
 ```bash
-GET /api/dashboard/crm/contacts
+GET /api/plugin/crm/contacts?page=1&limit=50
 ```
 
 **Create contact:**
 ```bash
-POST /api/dashboard/crm/contacts
+POST /api/plugin/crm/contacts
 {
   "firstName": "John",
   "lastName": "Doe",
   "email": "john@example.com",
-  "phone": "+1234567890"
+  "phone": "+1234567890",
+  "source": "website"
 }
 ```
 
-**Update contact:**
-```bash
-PUT /api/dashboard/crm/contacts/{id}
-{
-  "firstName": "Jane",
-  "lastName": "Doe"
-}
-```
-
-**Delete contact:**
-```bash
-DELETE /api/dashboard/crm/contacts/{id}
-```
+If a contact with the same email already exists for your tenant, create may return a conflict.
 
 ---
 
@@ -1409,19 +1057,7 @@ DELETE /api/dashboard/crm/contacts/{id}
 **Content:**
 **List events:**
 ```bash
-GET /api/dashboard/events
-```
-
-**Create event:**
-```bash
-POST /api/dashboard/events
-{
-  "title": "Annual Gala",
-  "description": "Our yearly celebration",
-  "startDate": "2024-12-01T19:00:00Z",
-  "location": "Main Hall",
-  "priceCents": 5000
-}
+GET /api/plugin/events?status=PUBLISHED
 ```
 
 **Register for event:**
@@ -1429,9 +1065,13 @@ POST /api/dashboard/events
 POST /api/plugin/event-registrations
 {
   "eventId": "event-id",
-  "memberEmail": "member@example.com"
+  "email": "member@example.com",
+  "firstName": "Member",
+  "lastName": "Name"
 }
 ```
+
+Successful registration creates CRM activity via sync.
 
 ---
 
@@ -1441,10 +1081,10 @@ POST /api/plugin/event-registrations
 
 **Content:**
 Webhooks notify your system of events:
-- Contact created/updated
-- Event registration
-- Donation received
-- Member signup
+- member.created / member.updated / member.deleted
+- event.published / event.canceled
+- payment.completed / payment.failed
+- volunteer.signup / volunteer.hours_logged
 
 **Setup:**
 1. Go to Settings → Webhooks
@@ -1456,7 +1096,7 @@ Webhooks notify your system of events:
 **Webhook payload:**
 ```json
 {
-  "event": "contact.created",
+  "event": "member.created",
   "data": { ... },
   "timestamp": "2024-01-01T00:00:00Z"
 }
@@ -1562,3 +1202,169 @@ Webhooks send data to external systems:
 - Click "Test" next to webhook
 - Sends test payload to your endpoint
 - Check logs for response
+
+---
+
+## Features
+
+### Photo Gallery
+
+**Title:** Photo Gallery
+
+**Content:**
+Create photo albums to share with your members.
+
+**Create an album:**
+1. Go to Gallery → New Album
+2. Enter album title and description
+3. Upload photos (JPEG, PNG, WebP)
+4. Set visibility (members only or public)
+5. Click "Publish"
+
+**Manage photos:**
+- Drag to reorder photos in an album
+- Click a photo to edit caption or delete
+- Download individual photos or the full album
+
+**Member portal:**
+- Members view published albums at `/portal/[your-slug]/gallery`
+- Share direct album links with members
+
+**Tips:**
+- Compress large photos before uploading to improve load times
+- Use descriptive album names so members can find them easily
+
+---
+
+### Email Campaigns
+
+**Title:** Email Campaigns
+
+**Content:**
+Send email campaigns and SMS blasts to your members.
+
+**Create a campaign:**
+1. Go to Communications → New Campaign
+2. Choose campaign type (Email or SMS)
+3. Enter subject and body
+4. Choose recipient list (all members, tier, or filtered segment)
+5. Schedule or send immediately
+6. Click "Send" or "Schedule"
+
+**Campaign statuses:**
+- **Draft:** Saved but not sent
+- **Scheduled:** Queued for future delivery
+- **Sent:** Delivered to recipients
+
+**SMS blasts:**
+- Useful for urgent time-sensitive updates
+- Keep messages under 160 characters for single-segment delivery
+- Members must have a valid phone number on file
+
+**Track results:**
+- View delivery and open counts in campaign list
+- Click a sent campaign for per-recipient status
+
+**Tips:**
+- Test with your own email before sending to all members
+- Use segments to target relevant groups and reduce unsubscribes
+
+---
+
+### Job Board
+
+**Title:** Job Board
+
+**Content:**
+Post job opportunities for your organization or community.
+
+**Create a job listing:**
+1. Go to Jobs → New Job
+2. Enter job title, department, and location
+3. Add description and requirements
+4. Set job type (Full-time, Part-time, Contract, Volunteer)
+5. Set status to Published when ready
+6. Click "Save"
+
+**Manage applications:**
+1. Go to Jobs → [Job Title] → Applications
+2. Review applicant details
+3. Move through hiring stages (Applied → Reviewed → Interview → Offer → Hired/Rejected)
+
+**Member portal:**
+- Published jobs appear at `/portal/[your-slug]/jobs`
+- Members apply directly in the portal
+
+**Tips:**
+- Keep job descriptions specific to reduce unqualified applications
+- Archive filled positions to keep the board current
+
+---
+
+### Community Forum
+
+**Title:** Community Forum
+
+**Content:**
+Host community discussions for your members.
+
+**Create a category:**
+1. Go to Forum → New Category
+2. Enter category name and description
+3. Set visibility (all members, specific tier)
+4. Click "Save"
+
+**Manage threads:**
+- Pin important threads to the top of a category
+- Lock threads to prevent further replies
+- Delete or hide posts that violate community guidelines
+
+**Moderation:**
+1. Go to Forum → [Category] → [Thread]
+2. Use the moderation menu on any post
+3. Delete, hide, or flag content
+4. Manage reported posts from Forum → Reports
+
+**Member portal:**
+- Members access the forum at `/portal/[your-slug]/forum`
+- Members can create threads and reply to others
+
+**Tips:**
+- Create a "General" and "Announcements" category to start
+- Pin a community guidelines post in each category
+
+---
+
+### Surveys & Polls
+
+**Title:** Surveys & Polls
+
+**Content:**
+Collect feedback from your members using surveys and polls.
+
+**Create a survey:**
+1. Go to Surveys → New Survey
+2. Enter survey title and description
+3. Add questions (multiple choice, text, rating scale, yes/no)
+4. Set survey status to Published when ready
+5. Click "Save"
+
+**Question types:**
+- **Multiple choice:** Select one option
+- **Checkboxes:** Select multiple options
+- **Text:** Free-form written answer
+- **Rating scale:** 1–5 or 1–10 scale
+- **Yes/No:** Simple boolean response
+
+**View responses:**
+1. Go to Surveys → [Survey Name] → Responses
+2. See individual responses or aggregate stats
+3. Export to CSV
+
+**Member portal:**
+- Published surveys appear at `/portal/[your-slug]/surveys`
+- Members complete surveys directly in the portal
+
+**Tips:**
+- Keep surveys short (5 questions or fewer) for better completion rates
+- Use rating scales for satisfaction questions so you can track trends

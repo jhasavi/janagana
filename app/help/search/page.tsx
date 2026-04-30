@@ -31,15 +31,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
           <div>
             <h1 className="text-3xl font-bold mb-4">Search Results</h1>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                name="q"
-                defaultValue={query}
-                placeholder="Search for help..."
-                className="pl-10 h-12 text-lg"
-              />
-            </div>
+            <form action="/help/search" method="GET">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Search for help..."
+                  className="pl-10 h-12 text-lg"
+                />
+              </div>
+            </form>
           </div>
 
           <div>

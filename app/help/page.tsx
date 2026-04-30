@@ -8,7 +8,7 @@ import { parseHelpContent } from '@/lib/help/content-parser'
 const quickLinks = [
   { title: 'How do I add a contact?', slug: 'crm/add-manage-contacts' },
   { title: 'How do I create an event?', slug: 'events/create-an-event' },
-  { title: 'How do I embed on my website?', slug: 'integrations/quick-start-guide' },
+  { title: 'How do I embed on my website?', slug: 'integrations/website-integration-quick-start' },
   { title: 'How do I invite team members?', slug: 'getting-started/invite-team-members' },
 ]
 
@@ -38,9 +38,9 @@ const roleBasedEntryPoints = [
     description: 'Embed widgets on your website or use the API',
     icon: Code,
     links: [
-      { title: 'Quick Start Integration', slug: 'integrations/quick-start-guide' },
+      { title: 'Quick Start Integration', slug: 'integrations/website-integration-quick-start' },
       { title: 'Next.js Integration', slug: 'integrations/nextjs-integration' },
-      { title: 'WordPress Setup', slug: 'integrations/wordpress-setup' },
+      { title: 'WordPress Setup', slug: 'integrations/wordpress-integration' },
     ]
   },
   {
@@ -49,7 +49,7 @@ const roleBasedEntryPoints = [
     icon: Layout,
     links: [
       { title: 'API Overview', slug: 'api/api-overview' },
-      { title: 'Authentication', slug: 'api/authentication' },
+      { title: 'Authentication', slug: 'api/api-authentication' },
       { title: 'Webhooks', slug: 'api/webhooks' },
     ]
   },

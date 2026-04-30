@@ -32,6 +32,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   return (
     <div className="space-y-8">
       <Breadcrumbs
+        homeHref="/dashboard/help"
         items={[
           { label: 'Help Center', href: '/dashboard/help' },
           { label: categoryData?.name || '', href: `/dashboard/help/${category}` },
