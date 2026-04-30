@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
+import { ensureContactForMember } from '@/lib/contact-linking'
 
 const ClubSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -96,10 +97,19 @@ export async function addClubMember(clubId: string, memberId: string, role: 'MEM
     const tenant = await requireTenant()
     const club = await prisma.club.findFirst({ where: { id: clubId, tenantId: tenant.id } })
     if (!club) return { success: false, error: 'Club not found' }
+
+    // Contact-first dual-write
+    const member = await prisma.member.findFirst({ where: { id: memberId, tenantId: tenant.id } })
+    let contactId: string | undefined
+    if (member) {
+      const contact = await ensureContactForMember(member)
+      contactId = contact.id
+    }
+
     const membership = await prisma.clubMembership.upsert({
       where: { clubId_memberId: { clubId, memberId } },
-      update: { role },
-      create: { clubId, memberId, role },
+      update: { role, ...(contactId ? { contactId } : {}) },
+      create: { clubId, memberId, role, ...(contactId ? { contactId } : {}) },
     })
     revalidatePath(`/dashboard/clubs/${clubId}`)
     return { success: true, data: membership }
@@ -132,7 +142,18 @@ export async function createClubPost(clubId: string, memberId: string, content: 
     const tenant = await requireTenant()
     const club = await prisma.club.findFirst({ where: { id: clubId, tenantId: tenant.id } })
     if (!club) return { success: false, error: 'Club not found' }
-    const post = await prisma.clubPost.create({ data: { clubId, memberId, content } })
+
+    // Contact-first dual-write
+    const member = await prisma.member.findFirst({ where: { id: memberId, tenantId: tenant.id } })
+    let contactId: string | undefined
+    if (member) {
+      const contact = await ensureContactForMember(member)
+      contactId = contact.id
+    }
+
+    const post = await prisma.clubPost.create({
+      data: { clubId, memberId, content, ...(contactId ? { contactId } : {}) },
+    })
     revalidatePath(`/dashboard/clubs/${clubId}`)
     return { success: true, data: post }
   } catch (e) {
