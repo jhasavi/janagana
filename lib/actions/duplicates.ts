@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
+import { requireTenantAdminAccess } from '@/lib/actions/permissions'
+import { logAudit } from '@/lib/actions/audit'
 
 // ─── LIST ─────────────────────────────────────────────────────────────────────
 
@@ -53,8 +54,22 @@ export async function getDuplicateSuggestion(id: string) {
 
 export async function dismissDuplicate(id: string) {
   try {
-    const tenant = await requireTenant()
-    const { userId } = await auth()
+    const access = await requireTenantAdminAccess('dismissDuplicate')
+    if (!access.success) return access
+    const { tenant, userId } = access
+
+    const existing = await prisma.duplicateSuggestion.findFirst({
+      where: { id, tenantId: tenant.id },
+      include: {
+        contactA: { select: { firstName: true, lastName: true } },
+        contactB: { select: { firstName: true, lastName: true } },
+      },
+    })
+    if (!existing) return { success: false, error: 'Suggestion not found' }
+    if (existing.status !== 'PENDING') {
+      return { success: false, error: 'Only pending suggestions can be dismissed' }
+    }
+
     const suggestion = await prisma.duplicateSuggestion.update({
       where: { id, tenantId: tenant.id },
       data: {
@@ -63,6 +78,16 @@ export async function dismissDuplicate(id: string) {
         resolvedAt: new Date(),
       },
     })
+
+    await logAudit({
+      tenantId: tenant.id,
+      action: 'UPDATE',
+      resourceType: 'DuplicateSuggestion',
+      resourceId: suggestion.id,
+      resourceName: `${existing.contactA.firstName} ${existing.contactA.lastName} <> ${existing.contactB.firstName} ${existing.contactB.lastName}`,
+      metadata: { statusFrom: existing.status, statusTo: 'DISMISSED' },
+    })
+
     revalidatePath('/dashboard/crm/duplicates')
     return { success: true, data: suggestion }
   } catch (e) {
@@ -88,21 +113,41 @@ const MergeSchema = z.object({
  */
 export async function mergeContacts(suggestionId: string, input: unknown) {
   try {
-    const tenant = await requireTenant()
-    const { userId } = await auth()
+    const access = await requireTenantAdminAccess('mergeContacts')
+    if (!access.success) return access
+    const { tenant, userId } = access
+
     const { survivorId, mergedId } = MergeSchema.parse(input)
 
     if (survivorId === mergedId) {
       return { success: false, error: 'Survivor and merged contact cannot be the same' }
     }
 
-    const [survivor, merged] = await Promise.all([
+    const [suggestion, survivor, merged] = await Promise.all([
+      prisma.duplicateSuggestion.findFirst({
+        where: { id: suggestionId, tenantId: tenant.id },
+      }),
       prisma.contact.findFirst({ where: { id: survivorId, tenantId: tenant.id } }),
       prisma.contact.findFirst({ where: { id: mergedId,   tenantId: tenant.id } }),
     ])
 
+    if (!suggestion) return { success: false, error: 'Duplicate suggestion not found' }
+    if (suggestion.status !== 'PENDING') {
+      return { success: false, error: 'Only pending suggestions can be merged' }
+    }
+
+    const isSuggestedPair =
+      (suggestion.contactAId === survivorId && suggestion.contactBId === mergedId) ||
+      (suggestion.contactAId === mergedId && suggestion.contactBId === survivorId)
+    if (!isSuggestedPair) {
+      return { success: false, error: 'Selected contacts do not match this suggestion' }
+    }
+
     if (!survivor) return { success: false, error: 'Survivor contact not found' }
     if (!merged)   return { success: false, error: 'Merged contact not found' }
+    if (merged.tags?.includes('__merged__')) {
+      return { success: false, error: 'Merged contact is already archived from a prior merge' }
+    }
 
     // Merge emails and phones — deduplicate
     const mergedEmails = Array.from(
@@ -113,6 +158,94 @@ export async function mergeContacts(suggestionId: string, input: unknown) {
     ) as string[]
 
     await prisma.$transaction(async (tx) => {
+      // Prevent unique collisions by deleting merged records that conflict with
+      // an already-existing survivor record for the same parent entity.
+      const [mergedEventRegs, mergedVolunteerSignups, mergedClubMemberships, mergedEnrollments] = await Promise.all([
+        tx.eventRegistration.findMany({
+          where: { contactId: mergedId },
+          select: { id: true, eventId: true },
+        }),
+        tx.volunteerSignup.findMany({
+          where: { contactId: mergedId },
+          select: { id: true, opportunityId: true },
+        }),
+        tx.clubMembership.findMany({
+          where: { contactId: mergedId },
+          select: { id: true, clubId: true },
+        }),
+        tx.membershipEnrollment.findMany({
+          where: { tenantId: tenant.id, contactId: mergedId },
+          select: { id: true, tierId: true, startDate: true },
+        }),
+      ])
+
+      if (mergedEventRegs.length > 0) {
+        const survivorRegs = await tx.eventRegistration.findMany({
+          where: {
+            contactId: survivorId,
+            eventId: { in: mergedEventRegs.map((r) => r.eventId) },
+          },
+          select: { eventId: true },
+        })
+        const conflictEventIds = new Set(survivorRegs.map((r) => r.eventId))
+        const conflictingMergedIds = mergedEventRegs
+          .filter((r) => conflictEventIds.has(r.eventId))
+          .map((r) => r.id)
+        if (conflictingMergedIds.length > 0) {
+          await tx.eventRegistration.deleteMany({ where: { id: { in: conflictingMergedIds } } })
+        }
+      }
+
+      if (mergedVolunteerSignups.length > 0) {
+        const survivorSignups = await tx.volunteerSignup.findMany({
+          where: {
+            contactId: survivorId,
+            opportunityId: { in: mergedVolunteerSignups.map((s) => s.opportunityId) },
+          },
+          select: { opportunityId: true },
+        })
+        const conflictOpportunityIds = new Set(survivorSignups.map((s) => s.opportunityId))
+        const conflictingMergedIds = mergedVolunteerSignups
+          .filter((s) => conflictOpportunityIds.has(s.opportunityId))
+          .map((s) => s.id)
+        if (conflictingMergedIds.length > 0) {
+          await tx.volunteerSignup.deleteMany({ where: { id: { in: conflictingMergedIds } } })
+        }
+      }
+
+      if (mergedClubMemberships.length > 0) {
+        const survivorMemberships = await tx.clubMembership.findMany({
+          where: {
+            contactId: survivorId,
+            clubId: { in: mergedClubMemberships.map((m) => m.clubId) },
+          },
+          select: { clubId: true },
+        })
+        const conflictClubIds = new Set(survivorMemberships.map((m) => m.clubId))
+        const conflictingMergedIds = mergedClubMemberships
+          .filter((m) => conflictClubIds.has(m.clubId))
+          .map((m) => m.id)
+        if (conflictingMergedIds.length > 0) {
+          await tx.clubMembership.deleteMany({ where: { id: { in: conflictingMergedIds } } })
+        }
+      }
+
+      if (mergedEnrollments.length > 0) {
+        const survivorEnrollments = await tx.membershipEnrollment.findMany({
+          where: { tenantId: tenant.id, contactId: survivorId },
+          select: { tierId: true, startDate: true },
+        })
+        const survivorEnrollmentKeys = new Set(
+          survivorEnrollments.map((e) => `${e.tierId ?? 'none'}::${e.startDate.toISOString()}`)
+        )
+        const conflictingMergedIds = mergedEnrollments
+          .filter((e) => survivorEnrollmentKeys.has(`${e.tierId ?? 'none'}::${e.startDate.toISOString()}`))
+          .map((e) => e.id)
+        if (conflictingMergedIds.length > 0) {
+          await tx.membershipEnrollment.deleteMany({ where: { id: { in: conflictingMergedIds } } })
+        }
+      }
+
       // Re-point relations from merged → survivor
       await tx.donation.updateMany({
         where: { tenantId: tenant.id, contactId: mergedId },
@@ -140,6 +273,14 @@ export async function mergeContacts(suggestionId: string, input: unknown) {
       })
       await tx.committeeMembership.updateMany({
         where: { tenantId: tenant.id, contactId: mergedId },
+        data:  { contactId: survivorId },
+      })
+      await tx.contactDocument.updateMany({
+        where: { tenantId: tenant.id, contactId: mergedId },
+        data:  { contactId: survivorId },
+      })
+      await tx.contactCustomFieldValue.updateMany({
+        where: { contactId: mergedId },
         data:  { contactId: survivorId },
       })
       await tx.jobApplication.updateMany({
@@ -189,6 +330,20 @@ export async function mergeContacts(suggestionId: string, input: unknown) {
           resolvedAt: new Date(),
         },
       })
+    })
+
+    await logAudit({
+      tenantId: tenant.id,
+      action: 'UPDATE',
+      resourceType: 'DuplicateSuggestion',
+      resourceId: suggestionId,
+      resourceName: `${survivor.firstName} ${survivor.lastName} <- ${merged.firstName} ${merged.lastName}`,
+      metadata: {
+        statusFrom: suggestion.status,
+        statusTo: 'MERGED',
+        survivorId,
+        mergedId,
+      },
     })
 
     revalidatePath('/dashboard/crm/duplicates')
