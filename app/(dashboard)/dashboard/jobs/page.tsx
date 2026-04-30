@@ -8,13 +8,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { formatDistanceToNow } from 'date-fns'
 import { HelpButton } from '@/components/dashboard/help-button'
 
-export const metadata: Metadata = { title: 'Job Board' }
+export const metadata: Metadata = { title: 'Careers' }
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   FULL_TIME: 'Full-time',
   PART_TIME: 'Part-time',
   CONTRACT: 'Contract',
-  VOLUNTEER: 'Volunteer',
   INTERNSHIP: 'Internship',
 }
 
@@ -37,16 +36,16 @@ export default async function JobsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Job Board</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Careers</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="default">{published} published</Badge>
               {drafts > 0 && <Badge variant="secondary">{drafts} drafts</Badge>}
             </div>
           </div>
           <HelpButton
-            title="Job Board"
-            content="Post job opportunities for your organization. Create job listings, manage applications, and track hiring progress. Jobs can be published to your member portal."
-            link="/dashboard/help/features/job-board"
+            title="Careers"
+            content="Post paid job opportunities for your organization. Create job listings, manage applications, and track hiring progress. Careers are for paid employment only - volunteer opportunities are in the Volunteering section."
+            link="/dashboard/help/careers/job-board"
           />
         </div>
         <Button asChild size="sm">
@@ -63,7 +62,7 @@ export default async function JobsPage() {
             <Briefcase className="h-10 w-10 text-muted-foreground mb-3" />
             <p className="font-medium">No job postings yet</p>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Post job opportunities for your members and the community to discover.
+              Post paid job opportunities for your organization and the community to discover.
             </p>
             <Button asChild className="mt-4" size="sm">
               <Link href="/dashboard/jobs/new">

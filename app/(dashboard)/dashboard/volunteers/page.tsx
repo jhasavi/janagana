@@ -8,7 +8,7 @@ import { VolunteerList } from './_components/volunteer-list'
 import { VolunteerFilters } from './_components/volunteer-filters'
 import { HelpButton } from '@/components/dashboard/help-button'
 
-export const metadata: Metadata = { title: 'Volunteers' }
+export const metadata: Metadata = { title: 'Volunteering' }
 
 export default async function VolunteersPage({
   searchParams,
@@ -29,7 +29,7 @@ export default async function VolunteersPage({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Volunteers</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Volunteering</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant="secondary">{stats?.totalOpportunities ?? 0} opportunities</Badge>
               <Badge variant="success">{stats?.openOpportunities ?? 0} open</Badge>
@@ -38,9 +38,9 @@ export default async function VolunteersPage({
             </div>
           </div>
           <HelpButton
-            title="Volunteer Management"
-            content="Create volunteer opportunities and track signups. Volunteers can sign up through the member portal, and you can track their hours and contributions."
-            link="/dashboard/help/volunteers/create-volunteer-opportunity"
+            title="Volunteering Management"
+            content="Create volunteer opportunities and track signups. People can sign up through the public website or portal, and you can track their hours and contributions."
+            link="/dashboard/help/volunteering/create-volunteer-opportunity"
           />
         </div>
         <Button asChild>

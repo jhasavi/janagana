@@ -9,7 +9,7 @@ import { MemberFilters } from './_components/member-filters'
 import { ExportCsvButton, ImportCsvDialog } from './_components/csv-import-dialog'
 import { HelpButton } from '@/components/dashboard/help-button'
 
-export const metadata: Metadata = { title: 'Organization Members' }
+export const metadata: Metadata = { title: 'Memberships' }
 
 export default async function MembersPage({
   searchParams,
@@ -33,9 +33,9 @@ export default async function MembersPage({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Organization Members</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Memberships</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              People who have signed up for your organization (may have paid memberships)
+              Manage membership enrollments and tiers. People can have multiple membership enrollments over time.
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary">{stats?.total ?? 0} total</Badge>
@@ -46,9 +46,9 @@ export default async function MembersPage({
             </div>
           </div>
           <HelpButton
-            title="Member Management"
-            content="Manage your organization members, create membership tiers, and track member activity. Members can access the portal to register for events and view their membership status."
-            link="/dashboard/help/members/member-management"
+            title="Membership Management"
+            content="Manage membership enrollments, create membership tiers, and track membership activity. Memberships are enrollment records linked to people in the People section."
+            link="/dashboard/help/members/membership-management"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export default async function MembersPage({
           <Button asChild>
             <Link href="/dashboard/members/new">
               <UserPlus className="h-4 w-4" />
-              Add Member
+              Add Membership
             </Link>
           </Button>
         </div>
