@@ -126,7 +126,7 @@ export default function Home() {
 // components/NewsletterWidget.tsx
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface NewsletterWidgetProps {
   title?: string
@@ -134,16 +134,31 @@ interface NewsletterWidgetProps {
 }
 
 export function NewsletterWidget({ title, description }: NewsletterWidgetProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.newsletter('newsletter-widget', {
-        title: title || 'Subscribe to our newsletter',
-        description: description || 'Get updates delivered to your inbox'
-      })
+    const checkInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.Janagana && containerRef.current) {
+        clearInterval(checkInterval)
+        window.Janagana.newsletter('newsletter-widget', {
+          title: title || 'Subscribe to our newsletter',
+          description: description || 'Get updates delivered to your inbox'
+        })
+      }
+    }, 100)
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval)
+      console.error('JanaGana script failed to load or container not found')
+    }, 5000)
+
+    return () => {
+      clearInterval(checkInterval)
+      clearTimeout(timeout)
     }
   }, [title, description])
 
-  return <div id="newsletter-widget" />
+  return <div id="newsletter-widget" ref={containerRef} />
 }
 ```
 
@@ -161,22 +176,37 @@ export function NewsletterWidget({ title, description }: NewsletterWidgetProps) 
 // components/EventsWidget.tsx
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface EventsWidgetProps {
   title?: string
 }
 
 export function EventsWidget({ title }: EventsWidgetProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.events('events-widget', {
-        title: title || 'Upcoming Events'
-      })
+    const checkInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.Janagana && containerRef.current) {
+        clearInterval(checkInterval)
+        window.Janagana.events('events-widget', {
+          title: title || 'Upcoming Events'
+        })
+      }
+    }, 100)
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval)
+      console.error('JanaGana script failed to load or container not found')
+    }, 5000)
+
+    return () => {
+      clearInterval(checkInterval)
+      clearTimeout(timeout)
     }
   }, [title])
 
-  return <div id="events-widget" />
+  return <div id="events-widget" ref={containerRef} />
 }
 ```
 
@@ -191,7 +221,7 @@ export function EventsWidget({ title }: EventsWidgetProps) {
 // components/CourseWidget.tsx
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface CourseWidgetProps {
   title?: string
@@ -200,17 +230,32 @@ interface CourseWidgetProps {
 }
 
 export function CourseWidget({ title, description, courseId }: CourseWidgetProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.course('course-widget', {
-        title: title || 'Enroll in Our Course',
-        description: description || 'Enter your details to get started',
-        courseId
-      })
+    const checkInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.Janagana && containerRef.current) {
+        clearInterval(checkInterval)
+        window.Janagana.course('course-widget', {
+          title: title || 'Enroll in Our Course',
+          description: description || 'Enter your details to get started',
+          courseId
+        })
+      }
+    }, 100)
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval)
+      console.error('JanaGana script failed to load or container not found')
+    }, 5000)
+
+    return () => {
+      clearInterval(checkInterval)
+      clearTimeout(timeout)
     }
   }, [title, description, courseId])
 
-  return <div id="course-widget" />
+  return <div id="course-widget" ref={containerRef} />
 }
 ```
 
@@ -229,22 +274,37 @@ export function CourseWidget({ title, description, courseId }: CourseWidgetProps
 // components/LoginWidget.tsx
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface LoginWidgetProps {
   title?: string
 }
 
 export function LoginWidget({ title }: LoginWidgetProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Janagana) {
-      window.Janagana.login('login-widget', {
-        title: title || 'Member Login'
-      })
+    const checkInterval = setInterval(() => {
+      if (typeof window !== 'undefined' && window.Janagana && containerRef.current) {
+        clearInterval(checkInterval)
+        window.Janagana.login('login-widget', {
+          title: title || 'Member Login'
+        })
+      }
+    }, 100)
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval)
+      console.error('JanaGana script failed to load or container not found')
+    }, 5000)
+
+    return () => {
+      clearInterval(checkInterval)
+      clearTimeout(timeout)
     }
   }, [title])
 
-  return <div id="login-widget" />
+  return <div id="login-widget" ref={containerRef} />
 }
 ```
 
