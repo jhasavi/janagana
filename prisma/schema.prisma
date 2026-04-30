@@ -130,7 +130,6 @@ enum JobType {
   FULL_TIME
   PART_TIME
   CONTRACT
-  VOLUNTEER
   INTERNSHIP
 }
 
@@ -181,6 +180,8 @@ model Tenant {
 
   members                Member[]
   membershipTiers        MembershipTier[]
+  membershipEnrollments  MembershipEnrollment[]
+  households             Household[]
   events                 Event[]
   volunteerOpportunities VolunteerOpportunity[]
   clubs                  Club[]
@@ -191,10 +192,12 @@ model Tenant {
   webhookEndpoints       WebhookEndpoint[]
   emailCampaigns         EmailCampaign[]
   customFields           MemberCustomField[]
+  contactCustomFields    ContactCustomField[]
   jobPostings            JobPosting[]
   forumThreads           ForumThread[]
   forms                  CustomForm[]
   memberDocuments        MemberDocument[]
+  contactDocuments       ContactDocument[]
   contentPages           ContentPage[]
   photoAlbums            PhotoAlbum[]
   photos                 Photo[]
@@ -210,7 +213,26 @@ model Tenant {
   @@index([clerkOrgId])
 }
 
-// ─── MEMBER ──────────────────────────────────────────────────────────────────
+// ─── HOUSEHOLD ───────────────────────────────────────────────────────────────
+
+model Household {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name           String
+  primaryContactId String?
+  primaryContact Contact? @relation(fields: [primaryContactId], references: [id])
+
+  contacts       Contact[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// ─── MEMBER (Legacy - to be migrated to Contact + MembershipEnrollment) ─────
 
 model Member {
   id          String       @id @default(cuid())
@@ -240,7 +262,7 @@ model Member {
 
   stripeCustomerId        String?
   stripeSubscriptionId    String?
-  clerkUserId             String?  // for portal self-service auth matching
+  clerkUserId             String?
   smsOptIn                Boolean  @default(false)
 
   chapterId            String?
@@ -265,6 +287,46 @@ model Member {
 
   @@unique([tenantId, email])
   @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+// ─── MEMBERSHIP ENROLLMENT (New canonical model) ─────────────────────────────
+
+model MembershipEnrollment {
+  id          String       @id @default(cuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId   String
+  contact     Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  tierId      String?
+  tier        MembershipTier? @relation(fields: [tierId], references: [id])
+
+  status      MemberStatus @default(ACTIVE)
+  startDate   DateTime     @default(now())
+  endDate     DateTime?
+  renewalDate DateTime?
+
+  // Billing
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  paymentStatus        String?
+
+  // Membership-specific
+  memberNumber String?
+  benefits    String[] @default([])
+  notes       String?  @db.Text
+
+  // Chapter (if applicable)
+  chapterId   String?
+  chapter     Chapter?   @relation(fields: [chapterId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([contactId, tierId, startDate])
+  @@index([tenantId])
+  @@index([contactId])
   @@index([tenantId, status])
 }
 
@@ -680,7 +742,7 @@ model EmailLog {
   @@index([campaignId])
 }
 
-// ─── MEMBER CUSTOM FIELDS ────────────────────────────────────────────────────
+// ─── MEMBER CUSTOM FIELDS (Legacy) ────────────────────────────────────────────
 
 model MemberCustomField {
   id        String    @id @default(cuid())
@@ -720,6 +782,48 @@ model MemberCustomFieldValue {
   @@unique([fieldId, memberId])
   @@index([fieldId])
   @@index([memberId])
+}
+
+// ─── CONTACT CUSTOM FIELDS (New canonical model) ───────────────────────────────
+
+model ContactCustomField {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  fieldName  String
+  fieldKey   String          // slugified identifier, used as key in values
+  fieldType  FieldType       @default(TEXT)
+  isRequired Boolean         @default(false)
+  isActive   Boolean         @default(true)
+  options    String[]        @default([]) // for SELECT type
+  sortOrder  Int             @default(0)
+  helpText   String?
+
+  values    ContactCustomFieldValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, fieldKey])
+  @@index([tenantId])
+}
+
+model ContactCustomFieldValue {
+  id       String              @id @default(cuid())
+  fieldId  String
+  field    ContactCustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  value    String              @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fieldId, contactId])
+  @@index([fieldId])
+  @@index([contactId])
 }
 
 // ─── JOB BOARD ───────────────────────────────────────────────────────────────
@@ -875,7 +979,7 @@ model FormSubmission {
   @@index([formId, createdAt])
 }
 
-// ─── MEMBER DOCUMENTS ────────────────────────────────────────────────────────
+// ─── MEMBER DOCUMENTS (Legacy) ────────────────────────────────────────────────
 
 enum DocumentType {
   GENERAL
@@ -910,6 +1014,32 @@ model MemberDocument {
 
   @@index([tenantId])
   @@index([memberId])
+}
+
+// ─── CONTACT DOCUMENTS (New canonical model) ─────────────────────────────────────
+
+model ContactDocument {
+  id           String       @id @default(cuid())
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  fileName     String
+  fileUrl      String       // Cloudinary secure_url
+  publicId     String       // Cloudinary public_id for deletion
+  fileType     String       // MIME type e.g. application/pdf
+  fileSizeBytes Int?
+  documentType DocumentType @default(GENERAL)
+  description  String?
+
+  uploadedBy   String?      // Clerk user ID of uploader (admin)
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([tenantId])
+  @@index([contactId])
 }
 
 // ─── CMS PAGES ───────────────────────────────────────────────────────────────
@@ -1126,24 +1256,61 @@ model Contact {
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  memberId    String?  @unique  // Link to Member if exists (1:1)
+  // Legacy link to Member during migration
+  memberId    String?  @unique
   member      Member?  @relation("MemberContact", fields: [memberId], references: [id], onDelete: SetNull)
 
-  companyId   String?
-  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-
+  // Identity
+  externalIds Json?    // { stripeCustomerId: "...", externalSystemId: "..." }
+  emails      String[] // Primary email at index 0, support multiple
+  phones      String[]
   firstName   String
   lastName    String
-  email       String
-  phone       String?
+  avatarUrl   String?
+  dateOfBirth DateTime?
+
+  // Address
+  address     String?
+  city        String?
+  state       String?
+  postalCode  String?
+  country     String   @default("US")
+
+  // Household
+  householdId String?
+  household   Household? @relation(fields: [householdId], references: [id], onDelete: SetNull)
+
+  // CRM fields
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
   jobTitle    String?
   linkedinUrl String?
-  avatarUrl   String?
   companyName String?  // Simple text field for company name (optional)
 
-  source      String?  // e.g. "website", "referral", "event"
+  source      String?  // "website", "referral", "event", "import"
+  lifecycleStage String? // "Prospect", "Engaged", "Member", "Donor", "Volunteer"
+  tags        String[] @default([])
   notes       String?  @db.Text
 
+  // Portal auth
+  clerkUserId String?  @unique
+
+  // Relationships (to be migrated from Member)
+  enrollments MembershipEnrollment[]
+  donations   Donation[]
+  eventRegistrations EventRegistration[]
+  volunteerSignups VolunteerSignup[]
+  clubMemberships ClubMembership[]
+  clubPosts    ClubPost[]
+  notifications Notification[]
+  customFieldValues ContactCustomFieldValue[]
+  jobPostings JobPosting[]
+  forumThreads ForumThread[]
+  forumReplies ForumReply[]
+  documents   ContactDocument[]
+  chapterMemberships ChapterMember[]
+
+  // CRM relationships
   deals       Deal[]
   activities  Activity[]
   tasks       Task[]
@@ -1151,9 +1318,12 @@ model Contact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([tenantId, email])
+  // Soft uniqueness - allow shared emails via array
   @@index([tenantId])
-  @@index([memberId])
+  @@index([tenantId, emails])
+  @@index([clerkUserId])
+  @@index([householdId])
+  @@index([memberId]) // Legacy during migration
   @@index([companyId])
 }
 
