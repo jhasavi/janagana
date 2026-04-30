@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import { sendMembershipRenewalReminder } from '@/lib/sms'
+import { ensureContactForMember } from '@/lib/contact-linking'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,95 @@ const TierSchema = z.object({
   benefits: z.array(z.string()).default([]),
   isActive: z.boolean().default(true),
 })
+
+async function syncEnrollmentForMember(member: {
+  id: string
+  tenantId: string
+  tierId: string | null
+  status: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'BANNED'
+  joinedAt: Date
+  renewsAt: Date | null
+  notes: string | null
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+  chapterId: string | null
+}, contactId: string) {
+  const latest = await prisma.membershipEnrollment.findFirst({
+    where: { tenantId: member.tenantId, contactId },
+    orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
+  })
+
+  if (!latest) {
+    await prisma.membershipEnrollment.create({
+      data: {
+        tenantId: member.tenantId,
+        contactId,
+        tierId: member.tierId,
+        status: member.status,
+        startDate: member.joinedAt,
+        renewalDate: member.renewsAt,
+        stripeCustomerId: member.stripeCustomerId,
+        stripeSubscriptionId: member.stripeSubscriptionId,
+        paymentStatus: member.stripeSubscriptionId ? 'active' : null,
+        notes: member.notes,
+        chapterId: member.chapterId,
+      },
+    })
+    return
+  }
+
+  const tierChanged = latest.tierId !== member.tierId
+
+  if (tierChanged && !latest.endDate) {
+    await prisma.membershipEnrollment.update({
+      where: { id: latest.id },
+      data: { endDate: new Date(), status: member.status },
+    })
+
+    const newEnrollment = await prisma.membershipEnrollment.create({
+      data: {
+        tenantId: member.tenantId,
+        contactId,
+        tierId: member.tierId,
+        status: member.status,
+        startDate: new Date(),
+        renewalDate: member.renewsAt,
+        stripeCustomerId: member.stripeCustomerId,
+        stripeSubscriptionId: member.stripeSubscriptionId,
+        paymentStatus: member.stripeSubscriptionId ? 'active' : null,
+        notes: member.notes,
+        chapterId: member.chapterId,
+      },
+    })
+
+    await prisma.membershipEnrollmentChange.create({
+      data: {
+        tenantId: member.tenantId,
+        enrollmentId: newEnrollment.id,
+        fromTierId: latest.tierId,
+        toTierId: member.tierId,
+        fromStatus: latest.status,
+        toStatus: member.status,
+        reason: 'tier-change via member update',
+      },
+    })
+    return
+  }
+
+  await prisma.membershipEnrollment.update({
+    where: { id: latest.id },
+    data: {
+      tierId: member.tierId,
+      status: member.status,
+      renewalDate: member.renewsAt,
+      stripeCustomerId: member.stripeCustomerId,
+      stripeSubscriptionId: member.stripeSubscriptionId,
+      paymentStatus: member.stripeSubscriptionId ? 'active' : latest.paymentStatus,
+      notes: member.notes,
+      chapterId: member.chapterId,
+    },
+  })
+}
 
 // ─── MEMBER ACTIONS ──────────────────────────────────────────────────────────
 
@@ -130,6 +220,22 @@ export async function createMember(input: unknown) {
       },
     })
 
+    const contact = await ensureContactForMember({
+      id: member.id,
+      tenantId: member.tenantId,
+      email: member.email,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      phone: member.phone,
+      address: member.address,
+      city: member.city,
+      state: member.state,
+      postalCode: member.postalCode,
+      country: member.country,
+    })
+
+    await syncEnrollmentForMember(member, contact.id)
+
     revalidatePath('/dashboard/members')
     return { success: true, data: member }
   } catch (error) {
@@ -167,6 +273,22 @@ export async function updateMember(id: string, input: unknown) {
         tierId: data.tierId || null,
       },
     } as Parameters<typeof prisma.member.update>[0])
+
+    const contact = await ensureContactForMember({
+      id: member.id,
+      tenantId: member.tenantId,
+      email: member.email,
+      firstName: member.firstName,
+      lastName: member.lastName,
+      phone: member.phone,
+      address: member.address,
+      city: member.city,
+      state: member.state,
+      postalCode: member.postalCode,
+      country: member.country,
+    })
+
+    await syncEnrollmentForMember(member, contact.id)
 
     revalidatePath('/dashboard/members')
     revalidatePath(`/dashboard/members/${id}`)

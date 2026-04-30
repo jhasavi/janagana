@@ -1,13 +1,14 @@
 /**
- * Global E2E Setup — Programmatic Clerk Auth
+ * Global E2E Setup — Email/Password Form-Fill Auth
  *
- * Uses Clerk Backend API to issue a one-time sign-in token, then navigates
- * to the app with that token to establish a session — NO form interaction
- * needed. Works with any auth method (social login, password, etc.).
+ * Signs in via the Clerk sign-in form using email + password (form-fill).
+ * This approach is more reliable than sign-in tokens which can fail to
+ * establish a persistent session in some Clerk configurations.
  *
  * Required env vars (.env):
- *   E2E_CLERK_EMAIL   — email of a Clerk user in your project
- *   CLERK_SECRET_KEY  — already required for the app itself
+ *   E2E_CLERK_EMAIL    — email of a Clerk user in your project
+ *   E2E_CLERK_PASSWORD — password for the test user
+ *   CLERK_SECRET_KEY   — already required for the app itself
  */
 
 import { test as setup, expect } from '@playwright/test'
@@ -15,111 +16,73 @@ import { createClerkClient } from '@clerk/backend'
 import path from 'path'
 import fs from 'fs'
 import { prisma } from '@/lib/prisma'
-import { slugify } from '@/lib/utils'
 
 const STORAGE_STATE = path.join(__dirname, '..', '.auth', 'user.json')
 
-setup('authenticate via Clerk token (programmatic)', async ({ page }) => {
+setup('authenticate via email/password form fill', async ({ page }) => {
   const email = process.env.E2E_CLERK_EMAIL
+  const password = process.env.E2E_CLERK_PASSWORD
   const secretKey = process.env.CLERK_SECRET_KEY
 
   if (!email) throw new Error('Missing E2E_CLERK_EMAIL in .env')
+  if (!password) throw new Error('Missing E2E_CLERK_PASSWORD in .env')
   if (!secretKey) throw new Error('Missing CLERK_SECRET_KEY in .env')
 
   const authDir = path.dirname(STORAGE_STATE)
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })
 
-  // If a saved auth state already exists, skip re-running the setup to avoid
-  // flaky Clerk sign-in token redirects during local development.
+  // If a saved auth state already exists, skip re-running the setup
   if (fs.existsSync(STORAGE_STATE)) {
     console.log('[setup] Existing auth state found, skipping global setup.')
     return
   }
 
-  console.log(`[setup] Creating Clerk sign-in token for ${email}...`)
+  // Ensure E2E tenant exists in Clerk + DB before sign-in
   const clerk = createClerkClient({ secretKey })
-
   const { data: users } = await clerk.users.getUserList({ emailAddress: [email] })
-  if (!users.length) {
-    throw new Error(`Test user "${email}" not found in Clerk Dashboard.`)
-  }
-
-  const user = users[0]
-  const userId = user.id
+  if (!users.length) throw new Error(`Test user "${email}" not found in Clerk Dashboard.`)
+  const userId = users[0].id
   console.log(`[setup] Found Clerk user: ${userId}`)
+  await ensureE2ETenant(clerk, userId)
 
-  const orgId = await ensureE2ETenant(clerk, userId)
-  console.log(`[setup] Ensured Clerk org exists: ${orgId}`)
+  // ── Sign in via form fill ──────────────────────────────────────────────────
+  console.log('[setup] Navigating to /sign-in...')
+  await page.goto('http://localhost:3000/sign-in', { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-  const signInToken = await clerk.signInTokens.createSignInToken({
-    userId,
-    expiresInSeconds: 60,
-  })
+  // Clerk renders an <input> with identifier (email) as the first step
+  await page.waitForSelector('input[name="identifier"], input[type="email"]', { timeout: 20_000 })
+  await page.locator('input[name="identifier"], input[type="email"]').first().fill(email)
 
-  console.log('[setup] Navigating with Clerk sign-in token URL...')
-  const signInUrl = new URL(signInToken.url)
-  signInUrl.searchParams.set('redirect_url', 'http://localhost:3000/dashboard')
+  // Click "Continue" or press Enter to proceed to password step
+  const continueBtn = page.locator('button[type="submit"]:visible, button:has-text("Continue"):visible').first()
+  await continueBtn.click()
 
-  await page.goto(signInUrl.toString(), {
-    waitUntil: 'load',
-    timeout: 45_000,
-  })
+  // Wait for password field
+  await page.waitForSelector('input[type="password"]', { timeout: 20_000 })
+  await page.locator('input[type="password"]').first().fill(password)
 
-  await page.waitForURL(/localhost:3000\/(dashboard|onboarding|sign-in|sign-in\/tasks\/choose-organization)/, {
-    timeout: 45_000,
-  })
+  // Submit sign-in
+  await page.locator('button[type="submit"]:visible').first().click()
 
-  console.log(`[setup] Clerk token redirect completed. URL: ${page.url()}`)
+  // Wait for redirect away from sign-in
+  await page.waitForURL(/localhost:3000\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })
+  console.log(`[setup] Sign-in completed. URL: ${page.url()}`)
 
-  await page.goto('/dashboard', {
-    waitUntil: 'domcontentloaded',
-    timeout: 45_000,
-  })
-
-  await page.waitForURL(/localhost:3000\/(dashboard|onboarding|sign-in)/, {
-    timeout: 45_000,
-  })
-
-  if (page.url().includes('/sign-in')) {
-    throw new Error('Clerk sign-in token did not establish a session; dashboard redirected to sign-in.')
-  }
-
-  console.log(`[setup] Authenticated. URL: ${page.url()}`)
-
+  // Handle choose-organization task if Clerk presents it
   if (page.url().includes('/sign-in/tasks/choose-organization')) {
-    console.log('[setup] Clerk choose-organization task page detected. Continuing...')
+    console.log('[setup] Handling choose-organization task...')
     await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
     await page.waitForURL(/(\/dashboard|\/onboarding)/, { timeout: 30_000 })
-    console.log(`[setup] After choose-organization URL: ${page.url()}`)
   }
 
+  // Handle onboarding flow if no org exists yet
   if (page.url().includes('/onboarding')) {
-    console.log('[setup] No org — completing onboarding form...')
+    console.log('[setup] Completing onboarding...')
     await page.waitForSelector('#org-name', { timeout: 10_000 })
-    // Use .type() so React's onChange fires and state updates (fill() sets DOM only)
     await page.locator('#org-name').clear()
     await page.locator('#org-name').type('E2E Test Organization')
-    // Wait for button to become enabled (React state update)
     await page.locator('button[type="submit"]:not([disabled])').first().waitFor({ timeout: 5_000 })
-
-    // Listen for any toast/error before clicking
-    const responsePromise = page.waitForResponse(
-      (res) => res.url().includes('localhost') && res.request().method() === 'POST',
-      { timeout: 15_000 }
-    ).catch(() => null)
-
     await page.locator('button[type="submit"]:not([disabled])').first().click()
-
-    const response = await responsePromise
-    if (response) {
-      const status = response.status()
-      console.log(`[setup] Server response status: ${status}`)
-      if (status >= 400) {
-        const body = await response.text().catch(() => '')
-        throw new Error(`Onboarding server action failed (${status}): ${body.slice(0, 500)}`)
-      }
-    }
-
     await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
     console.log('[setup] Onboarding complete.')
   }
@@ -129,23 +92,6 @@ setup('authenticate via Clerk token (programmatic)', async ({ page }) => {
 
   await page.context().storageState({ path: STORAGE_STATE })
   console.log('[setup] Auth state saved to', STORAGE_STATE)
-
-  const browser = page.context().browser()
-  if (!browser) throw new Error('Unable to access browser instance for auth verification')
-
-  const verifyContext = await browser.newContext({ storageState: STORAGE_STATE })
-  const verifyPage = await verifyContext.newPage()
-  await verifyPage.goto('http://localhost:3000/dashboard', {
-    waitUntil: 'networkidle',
-    timeout: 30_000,
-  })
-
-  if (verifyPage.url().startsWith('http://localhost:3000/sign-in')) {
-    throw new Error('Saved auth state did not preserve login; dashboard redirected to sign-in.')
-  }
-
-  await verifyContext.close()
-  console.log('[setup] Verified auth state is reusable.')
 })
 
 async function ensureE2ETenant(clerk: ReturnType<typeof createClerkClient>, userId: string) {

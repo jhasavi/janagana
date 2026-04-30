@@ -22,7 +22,9 @@ const prisma = new PrismaClient();
 
 // Configuration
 const BATCH_SIZE = 100;
-const DRY_RUN = process.env.DRY_RUN === 'true';
+// Accept --dry-run CLI flag OR DRY_RUN=true env var
+const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
+const MIGRATION_SOURCE = 'backfill-v1';
 
 interface MigrationStats {
   membersProcessed: number;
@@ -45,6 +47,14 @@ const stats: MigrationStats = {
  */
 async function migrateMember(member: any) {
   try {
+    // Idempotency: skip if contact with this memberId already exists
+    const existing = await prisma.contact.findFirst({ where: { memberId: member.id } });
+    if (existing) {
+      console.log(`[skip] Member ${member.id} already has Contact ${existing.id}`);
+      stats.membersProcessed++;
+      return;
+    }
+
     // Step 1: Create Contact record
     const contactData = {
       tenantId: member.tenantId,
@@ -87,32 +97,42 @@ async function migrateMember(member: any) {
 
     // Step 2: Create MembershipEnrollment record
     if (member.tierId || member.status === 'ACTIVE') {
-      const enrollmentData = {
-        tenantId: member.tenantId,
-        contactId: contact.id,
-        tierId: member.tierId,
-        status: member.status,
-        startDate: member.joinedAt,
-        endDate: null,
-        renewalDate: member.renewsAt,
-        stripeCustomerId: member.stripeCustomerId,
-        stripeSubscriptionId: member.stripeSubscriptionId,
-        paymentStatus: 'active',
-        memberNumber: null,
-        benefits: [],
-        notes: member.notes,
-        chapterId: member.chapterId,
-      };
-
-      if (!DRY_RUN) {
-        await prisma.membershipEnrollment.create({
-          data: enrollmentData,
-        });
-        stats.enrollmentsCreated++;
-      } else {
-        console.log(`[DRY RUN] Would create MembershipEnrollment for Contact ${contact.id}`);
+        if (!DRY_RUN) {
+          const enrollment = await prisma.membershipEnrollment.create({
+            data: {
+              tenantId: member.tenantId,
+              contactId: contact.id,
+              tierId: member.tierId,
+              status: member.status,
+              startDate: member.joinedAt,
+              endDate: null,
+              renewalDate: member.renewsAt,
+              stripeCustomerId: member.stripeCustomerId,
+              stripeSubscriptionId: member.stripeSubscriptionId,
+              paymentStatus: 'active',
+              memberNumber: null,
+              benefits: [],
+              notes: member.notes,
+              chapterId: member.chapterId,
+              legacyMemberId: member.id,
+              migrationSource: MIGRATION_SOURCE,
+              migratedAt: new Date(),
+            },
+          });
+          await prisma.membershipEnrollmentChange.create({
+            data: {
+              tenantId: member.tenantId,
+              enrollmentId: enrollment.id,
+              toStatus: member.status,
+              toTierId: member.tierId,
+              reason: `created by ${MIGRATION_SOURCE}`,
+            },
+          });
+          stats.enrollmentsCreated++;
+        } else {
+          console.log(`[DRY RUN] Would create MembershipEnrollment + ChangeHistory for Member ${member.id}`);
+        }
       }
-    }
 
     // Step 3: Update foreign keys in related tables
     await updateForeignKeys(member.id, contact.id);
@@ -293,11 +313,9 @@ async function main() {
   try {
     // Step 1: Migrate all Members to Contacts
     console.log('Step 1: Migrating Members to Contacts...');
+    // Idempotent: skip members that already have a Contact linked
     const members = await prisma.member.findMany({
-      where: {
-        // Skip members that already have a Contact linked
-        contact: null,
-      },
+      where: { contact: null },
     });
 
     console.log(`Found ${members.length} members to migrate`);

@@ -26,7 +26,7 @@ const schema = z.object({
   applyEmail: z.string().optional(),
   salaryMin: z.coerce.number().int().min(0).optional().nullable(),
   salaryMax: z.coerce.number().int().min(0).optional().nullable(),
-  jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'VOLUNTEER', 'INTERNSHIP']),
+  jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP']),
   status: z.enum(['DRAFT', 'PUBLISHED', 'CLOSED', 'FILLED']),
   isFeatured: z.boolean().default(false),
   expiresAt: z.string().optional(),
@@ -116,7 +116,6 @@ export function JobForm({ job }: Props) {
                       <SelectItem value="FULL_TIME">Full-time</SelectItem>
                       <SelectItem value="PART_TIME">Part-time</SelectItem>
                       <SelectItem value="CONTRACT">Contract</SelectItem>
-                      <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
                       <SelectItem value="INTERNSHIP">Internship</SelectItem>
                     </SelectContent>
                   </Select>

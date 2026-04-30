@@ -364,6 +364,14 @@ model MembershipEnrollment {
   chapterId   String?
   chapter     Chapter?   @relation("MembershipEnrollmentChapter", fields: [chapterId], references: [id])
 
+  // Migration provenance — set during backfill, null for organic enrollments
+  legacyMemberId   String?
+  migrationSource  String?   // e.g. "backfill-v1", "api-sync"
+  migratedAt       DateTime?
+
+  // Change history
+  changes     MembershipEnrollmentChange[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -371,6 +379,27 @@ model MembershipEnrollment {
   @@index([tenantId])
   @@index([contactId])
   @@index([tenantId, status])
+}
+
+// ─── MEMBERSHIP ENROLLMENT CHANGE HISTORY ────────────────────────────────────
+
+model MembershipEnrollmentChange {
+  id           String               @id @default(cuid())
+  tenantId     String
+  enrollmentId String
+  enrollment   MembershipEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  fromStatus   String?
+  toStatus     String?
+  fromTierId   String?
+  toTierId     String?
+  actorClerkId String?   // Clerk user ID who made the change (null = system/backfill)
+  reason       String?   @db.Text
+
+  createdAt    DateTime @default(now())
+
+  @@index([enrollmentId])
+  @@index([tenantId])
 }
 
 // ─── MEMBERSHIP TIER ─────────────────────────────────────────────────────────
