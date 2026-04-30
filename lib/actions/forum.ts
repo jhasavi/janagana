@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 
@@ -70,7 +71,13 @@ export async function getForumThread(id: string) {
 export async function createForumThread(input: unknown) {
   try {
     const tenant = await requireTenant()
+    const { userId: clerkUserId } = await auth()
     const data = ThreadSchema.parse(input)
+
+    // Contact-first: find the Contact for the current Clerk user
+    const authorContact = clerkUserId
+      ? await prisma.contact.findFirst({ where: { tenantId: tenant.id, clerkUserId } })
+      : null
 
     const thread = await prisma.forumThread.create({
       data: {
@@ -81,6 +88,7 @@ export async function createForumThread(input: unknown) {
         isPinned: data.isPinned,
         isLocked: data.isLocked,
         tags: data.tags,
+        ...(authorContact ? { authorContactId: authorContact.id } : {}),
       },
     })
 
@@ -168,17 +176,23 @@ export async function lockForumThread(id: string, isLocked: boolean) {
 export async function addForumReply(threadId: string, input: unknown) {
   try {
     const tenant = await requireTenant()
+    const { userId: clerkUserId } = await auth()
     const data = ReplySchema.parse(input)
 
     const thread = await prisma.forumThread.findFirst({ where: { id: threadId, tenantId: tenant.id } })
     if (!thread) return { success: false, error: 'Thread not found' }
     if (thread.isLocked) return { success: false, error: 'Thread is locked' }
 
+    const authorContact = clerkUserId
+      ? await prisma.contact.findFirst({ where: { tenantId: tenant.id, clerkUserId } })
+      : null
+
     const reply = await prisma.forumReply.create({
       data: {
         threadId,
         body: data.body,
         isAdminReply: data.isAdminReply,
+        ...(authorContact ? { authorContactId: authorContact.id } : {}),
       },
     })
 

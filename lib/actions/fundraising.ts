@@ -112,17 +112,46 @@ export async function recordDonation(input: z.infer<typeof DonationSchema>) {
   try {
     const tenant = await requireTenant()
     const data = DonationSchema.parse(input)
-    
-    // If contactId provided, verify it belongs to tenant
-    if (data.contactId) {
+
+    let resolvedContactId = data.contactId
+
+    // Auto-link by donor email if contactId not provided
+    if (!resolvedContactId && data.donorEmail) {
+      const byEmail = await prisma.contact.findFirst({
+        where: {
+          tenantId: tenant.id,
+          emails: { has: data.donorEmail },
+        },
+      })
+      if (byEmail) {
+        resolvedContactId = byEmail.id
+      } else {
+        // Create a minimal Contact for the donor
+        const [firstName, ...rest] = (data.donorName ?? '').trim().split(' ')
+        const created = await prisma.contact.create({
+          data: {
+            tenantId: tenant.id,
+            firstName: firstName ?? '',
+            lastName: rest.join(' ') || '',
+            emails: [data.donorEmail],
+            lifecycleStage: 'DONOR',
+            source: 'donation',
+          },
+        })
+        resolvedContactId = created.id
+      }
+    }
+
+    // If contactId provided explicitly, verify it belongs to tenant
+    if (data.contactId && data.contactId !== resolvedContactId) {
       const contact = await prisma.contact.findFirst({
         where: { id: data.contactId, tenantId: tenant.id },
       })
       if (!contact) return { success: false, error: 'Contact not found' }
     }
-    
+
     const donation = await prisma.donation.create({
-      data: { ...data, tenantId: tenant.id, status: 'COMPLETED' },
+      data: { ...data, contactId: resolvedContactId, tenantId: tenant.id, status: 'COMPLETED' },
     })
     // update raisedCents on campaign
     if (data.campaignId) {
