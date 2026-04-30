@@ -222,9 +222,9 @@ model Household {
 
   name           String
   primaryContactId String?
-  primaryContact Contact? @relation(fields: [primaryContactId], references: [id])
+  primaryContact Contact? @relation("HouseholdPrimaryContact", fields: [primaryContactId], references: [id])
 
-  contacts       Contact[]
+  contacts       Contact[] @relation("ContactHousehold")
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -297,10 +297,10 @@ model MembershipEnrollment {
   tenantId    String
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contactId   String
-  contact     Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contact     Contact      @relation("ContactEnrollments", fields: [contactId], references: [id], onDelete: Cascade)
 
   tierId      String?
-  tier        MembershipTier? @relation(fields: [tierId], references: [id])
+  tier        MembershipTier? @relation("MembershipEnrollmentTier", fields: [tierId], references: [id])
 
   status      MemberStatus @default(ACTIVE)
   startDate   DateTime     @default(now())
@@ -319,7 +319,7 @@ model MembershipEnrollment {
 
   // Chapter (if applicable)
   chapterId   String?
-  chapter     Chapter?   @relation(fields: [chapterId], references: [id])
+  chapter     Chapter?   @relation("MembershipEnrollmentChapter", fields: [chapterId], references: [id])
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -348,6 +348,7 @@ model MembershipTier {
   stripePriceId String?
 
   members     Member[]
+  enrollments MembershipEnrollment[] @relation("MembershipEnrollmentTier")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -394,6 +395,8 @@ model EventRegistration {
   event       Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   memberId    String
   member      Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  contactId   String?
+  contact     Contact?           @relation("ContactEventRegistrations", fields: [contactId], references: [id], onDelete: SetNull)
 
   status      RegistrationStatus @default(CONFIRMED)
   ticketCode  String             @unique @default(cuid())
@@ -404,8 +407,10 @@ model EventRegistration {
   updatedAt   DateTime           @updatedAt
 
   @@unique([eventId, memberId])
+  @@unique([eventId, contactId])
   @@index([eventId])
   @@index([memberId])
+  @@index([contactId])
 }
 
 // ─── VOLUNTEER OPPORTUNITY ───────────────────────────────────────────────────
@@ -444,6 +449,8 @@ model VolunteerSignup {
   opportunity   VolunteerOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   memberId      String
   member        Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  contactId     String?
+  contact       Contact?      @relation("ContactVolunteerSignups", fields: [contactId], references: [id], onDelete: SetNull)
 
   status        SignupStatus  @default(CONFIRMED)
   hoursLogged   Float?
@@ -455,8 +462,10 @@ model VolunteerSignup {
   updatedAt     DateTime      @updatedAt
 
   @@unique([opportunityId, memberId])
+  @@unique([opportunityId, contactId])
   @@index([opportunityId])
   @@index([memberId])
+  @@index([contactId])
   @@index([hoursStatus])
 }
 
@@ -510,14 +519,18 @@ model ClubMembership {
   club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   memberId String
   member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact  Contact? @relation("ContactClubMemberships", fields: [contactId], references: [id], onDelete: SetNull)
 
   role     ClubRole @default(MEMBER)
 
   joinedAt DateTime @default(now())
 
   @@unique([clubId, memberId])
+  @@unique([clubId, contactId])
   @@index([clubId])
   @@index([memberId])
+  @@index([contactId])
 }
 
 model ClubPost {
@@ -526,6 +539,8 @@ model ClubPost {
   club     Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
   memberId String
   member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact  Contact? @relation("ContactClubPosts", fields: [contactId], references: [id], onDelete: SetNull)
 
   content  String  @db.Text
   isPinned Boolean @default(false)
@@ -535,6 +550,7 @@ model ClubPost {
 
   @@index([clubId])
   @@index([memberId])
+  @@index([contactId])
 }
 
 // ─── FUNDRAISING ─────────────────────────────────────────────────────────────
@@ -570,6 +586,8 @@ model Donation {
   campaign     DonationCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   memberId     String?
   member       Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  contactId    String?
+  contact      Contact?       @relation("ContactDonations", fields: [contactId], references: [id], onDelete: SetNull)
 
   amountCents  Int
   donorName    String
@@ -584,6 +602,7 @@ model Donation {
   @@index([tenantId])
   @@index([campaignId])
   @@index([memberId])
+  @@index([contactId])
 }
 
 // ─── VOLUNTEER SHIFTS ────────────────────────────────────────────────────────
@@ -652,6 +671,8 @@ model Notification {
   tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   memberId     String?          // null = admin/system notification
   member       Member?          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  contactId    String?
+  contact      Contact?         @relation("ContactNotifications", fields: [contactId], references: [id], onDelete: SetNull)
 
   title        String
   body         String
@@ -665,6 +686,7 @@ model Notification {
 
   @@index([tenantId, isRead])
   @@index([tenantId, memberId])
+  @@index([tenantId, contactId])
 }
 
 // ─── WEBHOOK ENDPOINTS ────────────────────────────────────────────────────────
@@ -853,6 +875,8 @@ model JobPosting {
 
   postedByMemberId String?
   postedByMember   Member?  @relation("MemberJobPostings", fields: [postedByMemberId], references: [id], onDelete: SetNull)
+  postedByContactId String?
+  postedByContact  Contact? @relation("ContactJobPostings", fields: [postedByContactId], references: [id], onDelete: SetNull)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -881,6 +905,8 @@ model ForumThread {
 
   authorMemberId String?
   author         Member?    @relation(fields: [authorMemberId], references: [id], onDelete: SetNull)
+  authorContactId String?
+  authorContact  Contact?   @relation("ContactForumThreads", fields: [authorContactId], references: [id], onDelete: SetNull)
 
   lastReplyAt DateTime?
   replies     ForumReply[]
@@ -903,12 +929,15 @@ model ForumReply {
 
   authorMemberId String?
   author         Member? @relation(fields: [authorMemberId], references: [id], onDelete: SetNull)
+  authorContactId String?
+  authorContact  Contact? @relation("ContactForumReplies", fields: [authorContactId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([threadId])
   @@index([authorMemberId])
+  @@index([authorContactId])
 }
 
 // ─── FORM BUILDER ────────────────────────────────────────────────────────────
@@ -1278,7 +1307,7 @@ model Contact {
 
   // Household
   householdId String?
-  household   Household? @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  household   Household? @relation("ContactHousehold", fields: [householdId], references: [id], onDelete: SetNull)
 
   // CRM fields
   companyId   String?
@@ -1295,20 +1324,23 @@ model Contact {
   // Portal auth
   clerkUserId String?  @unique
 
-  // Relationships (to be migrated from Member)
-  enrollments MembershipEnrollment[]
-  donations   Donation[]
-  eventRegistrations EventRegistration[]
-  volunteerSignups VolunteerSignup[]
-  clubMemberships ClubMembership[]
-  clubPosts    ClubPost[]
-  notifications Notification[]
+  // Household relationships
+  householdsAsPrimary Household[] @relation("HouseholdPrimaryContact")
+
+  // Relationships (to be migrated from Member - added after migration)
+  enrollments MembershipEnrollment[] @relation("ContactEnrollments")
+  donations   Donation[] @relation("ContactDonations")
+  eventRegistrations EventRegistration[] @relation("ContactEventRegistrations")
+  volunteerSignups VolunteerSignup[] @relation("ContactVolunteerSignups")
+  clubMemberships ClubMembership[] @relation("ContactClubMemberships")
+  clubPosts    ClubPost[] @relation("ContactClubPosts")
+  notifications Notification[] @relation("ContactNotifications")
   customFieldValues ContactCustomFieldValue[]
-  jobPostings JobPosting[]
-  forumThreads ForumThread[]
-  forumReplies ForumReply[]
+  jobPostings JobPosting[] @relation("ContactJobPostings")
+  forumThreads ForumThread[] @relation("ContactForumThreads")
+  forumReplies ForumReply[] @relation("ContactForumReplies")
   documents   ContactDocument[]
-  chapterMemberships ChapterMember[]
+  chapterMemberships ChapterMember[] @relation("ContactChapterMemberships")
 
   // CRM relationships
   deals       Deal[]
@@ -1446,7 +1478,8 @@ model Chapter {
   isActive    Boolean  @default(true)
 
   members     Member[]
-  memberships ChapterMember[]
+  chapterMemberships ChapterMember[]
+  membershipEnrollments MembershipEnrollment[] @relation("MembershipEnrollmentChapter")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1463,12 +1496,16 @@ model ChapterMember {
   chapter   Chapter           @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   memberId  String
   member    Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact?          @relation("ContactChapterMemberships", fields: [contactId], references: [id], onDelete: SetNull)
 
   role      ChapterMemberRole @default(MEMBER)
   joinedAt  DateTime          @default(now())
 
   @@unique([chapterId, memberId])
+  @@unique([chapterId, contactId])
   @@index([tenantId])
   @@index([chapterId])
   @@index([memberId])
+  @@index([contactId])
 }
