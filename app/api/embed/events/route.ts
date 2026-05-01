@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { resolveEventDetailsUrl } from '@/lib/embed/events-utils'
+import { toPublicEventShape } from '@/lib/embed/public-event-shape'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -55,19 +55,9 @@ export async function GET(request: NextRequest) {
       take: maxItems,
     })
 
-    const fallbackPortalUrl = `/portal/${tenantSlug}/events`
-
     return jsonWithCors({
       success: true,
-      data: events.map((event) => ({
-        ...event,
-        detailsUrl: resolveEventDetailsUrl(
-          { detailsUrl: null, virtualLink: event.virtualLink },
-          `${fallbackPortalUrl}#event-${event.id}`,
-        ),
-        portalUrl: fallbackPortalUrl,
-        isVirtual: event.format !== 'IN_PERSON' || Boolean(event.virtualLink),
-      })),
+      data: events.map((event) => toPublicEventShape(event, tenantSlug)),
     })
   } catch (error) {
     console.error('Events fetch error:', error)

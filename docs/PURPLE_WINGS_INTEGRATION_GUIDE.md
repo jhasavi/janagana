@@ -206,7 +206,42 @@ GET https://janagana.namasteneedham.com/api/embed/past-events?tenantSlug=purple-
 ```
 
 Returns events with `status=COMPLETED` (or past-dated `PUBLISHED`) in reverse chronological order.
-Same field shape as upcoming events (minus `detailsUrl`/`portalUrl`/`isVirtual`).
+Same field shape as upcoming events, including `detailsUrl`, `registrationUrl`, `portalUrl`, and `isVirtual`.
+
+### Recommended Source-of-Truth Model
+
+For Purple Wings and future website integrations, use this pattern:
+
+1. Upcoming events: render from `GET /api/embed/events`
+2. Past events: render from `GET /api/embed/past-events`
+3. Temporary fallback archive: keep local-only data behind a non-primary fallback path until migration is validated
+
+This gives a single operational source of truth in JanaGana while preserving historical continuity during cutover.
+
+### Migration and Rollback (Purple Wings)
+
+Run from the JanaGana repo:
+
+```bash
+# Dry-run import from ../tpw/past-events-import.csv
+npm run scripts:import-tpw-events
+
+# Apply import (idempotent create/update)
+npm run scripts:import-tpw-events -- --apply
+
+# Dry-run rollback (only rows tagged tpw-migrated)
+npm run scripts:rollback-tpw-events
+
+# Apply rollback
+npm run scripts:rollback-tpw-events -- --apply
+```
+
+Importer behavior:
+- Uses tenant slug `purple-wings` by default
+- Upserts by title + event date window (safe re-run)
+- Marks imported rows with the `tpw-migrated` tag
+- Stores historical records as `COMPLETED`
+- Preserves speaker, attendance, location, description, image, and category/topic tags
 
 ### Example Implementation (Next.js — Upcoming Events)
 

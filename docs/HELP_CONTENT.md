@@ -950,6 +950,21 @@ Events widget:
 Event registration via portal/plugin flow:
 - Result: creates CRM activity for registration
 
+Public website rendering strategy:
+- Upcoming cards: `GET /api/embed/events?tenantSlug=...`
+- Past cards: `GET /api/embed/past-events?tenantSlug=...`
+- For migration cutovers, keep local archive data only as temporary fallback (not active source of truth)
+
+Website-ready event fields checklist:
+- Title
+- Short summary (1-2 sentence card blurb)
+- Cover image URL
+- Date/time and location
+- Speaker/presenter
+- Tags (topic/category)
+- Price (`0` for free)
+- Attendee count for completed events
+
 Portal/member flows:
 - Profile and membership data map to member/contact records
 - Event and volunteer actions create CRM timeline activity
