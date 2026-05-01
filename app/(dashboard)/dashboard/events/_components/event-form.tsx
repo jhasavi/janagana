@@ -29,6 +29,8 @@ const schema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional().nullable(),
   location: z.string().optional(),
+  speakerName: z.string().optional(),
+  attendeeCount: z.coerce.number().int().min(0).optional().nullable(),
   virtualLink: z.string().optional(),
   capacity: z.coerce.number().int().positive().optional().nullable(),
   priceCents: z.coerce.number().int().min(0).default(0),
@@ -76,6 +78,8 @@ export function EventForm({ event }: EventFormProps) {
       startDate: toDatetimeLocal(event?.startDate) || toDatetimeLocal(new Date()),
       endDate: toDatetimeLocal(event?.endDate) || null,
       location: event?.location ?? '',
+      speakerName: event?.speakerName ?? '',
+      attendeeCount: event?.attendeeCount ?? null,
       virtualLink: event?.virtualLink ?? '',
       capacity: event?.capacity ?? null,
       priceCents: event?.priceCents ?? 0,
@@ -203,6 +207,15 @@ export function EventForm({ event }: EventFormProps) {
               </div>
 
               <div className="space-y-1.5">
+                <Label htmlFor="speakerName">Speaker</Label>
+                <Input
+                  id="speakerName"
+                  {...register('speakerName')}
+                  placeholder="e.g. Vikram - Investment Specialist"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="virtualLink">Virtual Link</Label>
                 <Input
                   id="virtualLink"
@@ -265,6 +278,18 @@ export function EventForm({ event }: EventFormProps) {
                   placeholder="Unlimited"
                   {...register('capacity')}
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="attendeeCount">Attendee Count</Label>
+                <Input
+                  id="attendeeCount"
+                  type="number"
+                  min="0"
+                  placeholder="For completed events"
+                  {...register('attendeeCount')}
+                />
+                <p className="text-xs text-muted-foreground">Populate this for past events to show attendance stats.</p>
               </div>
 
               <div className="space-y-1.5">

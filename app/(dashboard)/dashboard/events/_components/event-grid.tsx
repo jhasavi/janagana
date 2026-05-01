@@ -91,7 +91,7 @@ export function EventGrid({ events }: EventGridProps) {
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {events.map((event) => {
           const status = statusConfig[event.status]
           const fmt = formatConfig[event.format]
@@ -103,23 +103,35 @@ export function EventGrid({ events }: EventGridProps) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={event.coverImageUrl}
-                  alt=""
-                  className="h-36 w-full object-cover"
+                  alt={event.title ?? 'Event cover'}
+                  className="h-40 w-full object-cover"
                 />
               ) : (
-                <div className="h-36 bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                <div className="h-40 bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
                   <span className="text-4xl">📅</span>
                 </div>
               )}
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {event.tags.slice(0, 2).map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-[11px] uppercase">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                     <Link
                       href={`/dashboard/events/${event.id}`}
-                      className="font-semibold text-sm leading-tight line-clamp-2 hover:underline block"
+                      className="font-semibold text-base leading-tight line-clamp-2 hover:underline block"
                     >
                       {event.title}
                     </Link>
+                    {event.description ? (
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {event.description}
+                      </p>
+                    ) : null}
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -158,30 +170,43 @@ export function EventGrid({ events }: EventGridProps) {
                   </DropdownMenu>
                 </div>
 
-                <p className="text-xs text-muted-foreground">
-                  {formatDateTime(event.startDate)}
-                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.15em]">Date</p>
+                    <p className="text-sm font-medium text-slate-900">{formatDateTime(event.startDate)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500 uppercase tracking-[0.15em]">Location</p>
+                    <p className="text-sm font-medium text-slate-900">{event.location || 'TBD'}</p>
+                  </div>
+                  {event.speakerName ? (
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 uppercase tracking-[0.15em]">Speaker</p>
+                      <p className="text-sm font-medium text-slate-900">{event.speakerName}</p>
+                    </div>
+                  ) : null}
+                  {event.attendeeCount != null ? (
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 uppercase tracking-[0.15em]">Attended</p>
+                      <p className="text-sm font-medium text-slate-900">{event.attendeeCount}</p>
+                    </div>
+                  ) : null}
+                </div>
 
-                {event.location && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    📍 {event.location}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <Badge variant={status.variant} className="text-xs">
                       {status.label}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <FmtIcon className="h-3 w-3 mr-1" />
+                    <Badge variant="outline" className="text-xs flex items-center gap-1">
+                      <FmtIcon className="h-3 w-3" />
                       {fmt.label}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Users className="h-3 w-3" />
                     {event._count.registrations}
-                    {event.capacity && `/${event.capacity}`}
+                    {event.capacity ? `/${event.capacity}` : ''}
                   </div>
                 </div>
 
