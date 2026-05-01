@@ -1,14 +1,14 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useTransition, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Upload, Link2, X } from 'lucide-react'
 import Link from 'next/link'
-import { createEvent, updateEvent } from '@/lib/actions/events'
+import { createEvent, updateEvent, uploadEventCoverImage } from '@/lib/actions/events'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,6 +58,9 @@ interface EventFormProps {
 export function EventForm({ event }: EventFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [coverTab, setCoverTab] = useState<'url' | 'upload'>('url')
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -96,6 +99,26 @@ export function EventForm({ event }: EventFormProps) {
         toast.error(result.error ?? 'Something went wrong')
       }
     })
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const result = await uploadEventCoverImage(fd)
+      if (result.success && result.url) {
+        setValue('coverImageUrl', result.url)
+        toast.success('Image uploaded')
+      } else {
+        toast.error(result.error ?? 'Upload failed')
+      }
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   return (
@@ -262,16 +285,74 @@ export function EventForm({ event }: EventFormProps) {
             <CardHeader>
               <CardTitle className="text-base">Cover Image</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5">
-                <Label htmlFor="coverImageUrl">Image URL</Label>
-                <Input
-                  id="coverImageUrl"
-                  type="url"
-                  {...register('coverImageUrl')}
-                  placeholder="https://..."
-                />
+            <CardContent className="space-y-3">
+              <div className="flex rounded-md border overflow-hidden text-sm">
+                <button
+                  type="button"
+                  onClick={() => setCoverTab('url')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 transition-colors ${coverTab === 'url' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                  URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoverTab('upload')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 transition-colors ${coverTab === 'upload' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload
+                </button>
               </div>
+
+              {coverTab === 'url' ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="coverImageUrl">Image URL</Label>
+                  <Input
+                    id="coverImageUrl"
+                    type="url"
+                    {...register('coverImageUrl')}
+                    placeholder="https://..."
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label>Upload Image</Label>
+                  <label className="flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-muted-foreground/30 p-6 cursor-pointer hover:border-muted-foreground/60 transition-colors">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {isUploading ? 'Uploading…' : 'Click to select an image'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">JPEG, PNG, WebP, GIF · max 10 MB</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="sr-only"
+                      disabled={isUploading}
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {watch('coverImageUrl') && (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={watch('coverImageUrl')}
+                    alt="Cover preview"
+                    className="w-full h-36 object-cover rounded-md border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setValue('coverImageUrl', '')}
+                    className="absolute top-1 right-1 rounded-full bg-background/80 p-0.5 hover:bg-background"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

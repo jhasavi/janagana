@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import { sendEventReminder } from '@/lib/sms'
 import { ensureContactForMember } from '@/lib/contact-linking'
+import { uploadFile } from '@/lib/upload'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,29 @@ export async function updateEvent(id: string, input: unknown) {
     }
     console.error('[updateEvent]', error)
     return { success: false, error: 'Failed to update event' }
+  }
+}
+
+export async function uploadEventCoverImage(formData: FormData) {
+  try {
+    await requireTenant()
+
+    const file = formData.get('file') as File | null
+    if (!file || file.size === 0) return { success: false, error: 'No file provided' }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      return { success: false, error: 'Only JPEG, PNG, WebP, and GIF images are allowed.' }
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { success: false, error: 'Image is too large. Maximum size is 10 MB.' }
+    }
+
+    const uploaded = await uploadFile(file, 'janagana/events')
+    return { success: true, url: uploaded.secure_url }
+  } catch (e) {
+    console.error('[uploadEventCoverImage]', e)
+    return { success: false, error: 'Failed to upload image' }
   }
 }
 
