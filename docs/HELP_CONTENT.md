@@ -547,7 +547,7 @@ Step 3: Initialize the widget
 
 Copy-paste widgets you can use today:
 - Newsletter: Janagana.newsletter(containerId, { title?, description? })
-- Events: Janagana.events(containerId, { title? })
+- Events: Janagana.events(containerId, { title?, showDetails?, showCalendar?, maxItems?, emptyStateText? })
 - Login button: Janagana.login(containerId, { title? })
 - Course/lead capture: Janagana.course(containerId, { title?, description?, courseId? })
 
@@ -578,17 +578,38 @@ Step 1: Load and initialize once in your root layout
 ```tsx
 import Script from 'next/script'
 
+const janaganaTenantSlug = process.env.NEXT_PUBLIC_JANAGANA_TENANT_SLUG || 'your-org-slug'
+const janaganaApiUrl = process.env.NEXT_PUBLIC_JANAGANA_API_URL || 'https://janagana.namasteneedham.com'
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html>
       <head>
-        <Script src="https://janagana.namasteneedham.com/janagana-embed.js" strategy="afterInteractive" />
+        <Script src={`${janaganaApiUrl}/janagana-embed.js`} strategy="afterInteractive" />
         <Script id="janagana-init" strategy="afterInteractive">
           {`
-            Janagana.init({
-              tenantSlug: 'purple-wings',
-              apiUrl: 'https://janagana.namasteneedham.com'
-            });
+            (function initJanagana() {
+              if (typeof window === 'undefined') return;
+
+              var attempts = 0;
+              var maxAttempts = 20;
+              var tenantSlug = ${JSON.stringify(janaganaTenantSlug)};
+              var apiUrl = ${JSON.stringify(janaganaApiUrl)};
+
+              var tryInit = function() {
+                if (window.Janagana && typeof window.Janagana.init === 'function') {
+                  window.Janagana.init({ tenantSlug: tenantSlug, apiUrl: apiUrl });
+                  return;
+                }
+
+                attempts += 1;
+                if (attempts < maxAttempts) {
+                  window.setTimeout(tryInit, 250);
+                }
+              };
+
+              tryInit();
+            })();
           `}
         </Script>
       </head>
@@ -629,9 +650,14 @@ export default function Page() {
 
 Supported widget methods:
 - window.Janagana.newsletter(containerId, { title?, description? })
-- window.Janagana.events(containerId, { title? })
+- window.Janagana.events(containerId, { title?, showDetails?, showCalendar?, maxItems?, emptyStateText? })
 - window.Janagana.login(containerId, { title? })
 - window.Janagana.course(containerId, { title?, description?, courseId? })
+
+Environment variables:
+- Client embed (public): `NEXT_PUBLIC_JANAGANA_TENANT_SLUG`, `NEXT_PUBLIC_JANAGANA_API_URL`
+- Server/plugin API (private): `JANAGANA_API_URL`, `JANAGANA_API_KEY`
+- Never expose `JANAGANA_API_KEY` in client/browser code.
 
 Troubleshooting:
 1. If window.Janagana is undefined, check script loading order
@@ -690,15 +716,21 @@ Show your events on your website:
 <div id="events-widget"></div>
 <script>
   Janagana.events('events-widget', {
-    title: 'Upcoming Events'
+    title: 'Upcoming Events',
+    showDetails: true,
+    showCalendar: true,
+    maxItems: 6,
+    emptyStateText: 'No events are scheduled yet. Please check back soon.'
   });
 </script>
 ```
 
 **What it does:**
 - Shows published events
-- Displays date, location, price
-- Register button opens portal
+- Displays date/time, location or virtual indicator, and free/price badge
+- Details button uses event-specific URL when available
+- Add to Calendar offers Google Calendar and ICS download
+- Register button opens portal events page
 - Auto-updates when you add events
 
 Important behavior:
@@ -708,6 +740,7 @@ Important behavior:
 Troubleshooting:
 1. Empty list means no published upcoming events
 2. Verify your tenant slug if events are expected but not visible
+3. If calendar links fail, allow pop-ups/downloads and verify event start date/time is valid
 
 ---
 

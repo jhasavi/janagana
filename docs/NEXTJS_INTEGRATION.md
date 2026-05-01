@@ -180,9 +180,13 @@ import { useEffect, useRef } from 'react'
 
 interface EventsWidgetProps {
   title?: string
+  showDetails?: boolean
+  showCalendar?: boolean
+  maxItems?: number
+  emptyStateText?: string
 }
 
-export function EventsWidget({ title }: EventsWidgetProps) {
+export function EventsWidget({ title, showDetails = true, showCalendar = true, maxItems, emptyStateText }: EventsWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -190,7 +194,11 @@ export function EventsWidget({ title }: EventsWidgetProps) {
       if (typeof window !== 'undefined' && window.Janagana && containerRef.current) {
         clearInterval(checkInterval)
         window.Janagana.events('events-widget', {
-          title: title || 'Upcoming Events'
+          title: title || 'Upcoming Events',
+          showDetails,
+          showCalendar,
+          maxItems,
+          emptyStateText,
         })
       }
     }, 100)
@@ -204,7 +212,7 @@ export function EventsWidget({ title }: EventsWidgetProps) {
       clearInterval(checkInterval)
       clearTimeout(timeout)
     }
-  }, [title])
+  }, [title, showDetails, showCalendar, maxItems, emptyStateText])
 
   return <div id="events-widget" ref={containerRef} />
 }
@@ -213,6 +221,14 @@ export function EventsWidget({ title }: EventsWidgetProps) {
 **Usage:**
 ```tsx
 <EventsWidget title="Our Events" />
+
+<EventsWidget
+  title="Community Events"
+  showDetails={true}
+  showCalendar={true}
+  maxItems={6}
+  emptyStateText="No events are scheduled yet. Please check back soon."
+/>
 ```
 
 ### Course Widget
@@ -323,7 +339,28 @@ declare global {
     Janagana: {
       init: (options: { tenantSlug: string; apiUrl?: string; debug?: boolean }) => void
       newsletter: (containerId: string, options?: { title?: string; description?: string }) => void
-      events: (containerId: string, options?: { title?: string }) => void
+      events: (containerId: string, options?: {
+        title?: string
+        showDetails?: boolean
+        showCalendar?: boolean
+        maxItems?: number
+        emptyStateText?: string
+        onEventAction?: (payload: {
+          action: string
+          tenantSlug: string
+          containerId: string | null
+          timestamp: string
+          event: {
+            id: string | null
+            title: string | null
+            startDate: string | null
+            endDate: string | null
+            location: string | null
+            detailsUrl: string | null
+          } | null
+          metadata?: Record<string, unknown>
+        }) => void
+      }) => void
       course: (containerId: string, options?: { title?: string; description?: string; courseId?: string }) => void
       login: (containerId: string, options?: { title?: string }) => void
     }
@@ -342,6 +379,15 @@ Store your configuration in environment variables:
 NEXT_PUBLIC_JANAGANA_TENANT_SLUG=your-org-slug
 NEXT_PUBLIC_JANAGANA_API_URL=https://janagana.namasteneedham.com
 ```
+
+Use private plugin API variables only for server routes/scripts:
+
+```env
+JANAGANA_API_URL=https://janagana.namasteneedham.com/api/plugin
+JANAGANA_API_KEY=your_private_plugin_api_key
+```
+
+Do not expose `JANAGANA_API_KEY` in browser code.
 
 **Usage in layout:**
 ```tsx
@@ -365,7 +411,7 @@ The widgets come with default styles. To customize, add CSS:
   background: #your-color !important;
 }
 
-.janagana-events-widget .register-btn {
+.janagana-events-widget .janagana-btn-primary {
   background: #your-color !important;
 }
 ```

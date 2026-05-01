@@ -98,6 +98,109 @@ test.describe('Embed API CORS', () => {
   })
 })
 
+// ── Embed widget behavior (browser rendering) ──────────────────────────────
+
+test.describe('Embed Events Widget', () => {
+  test('renders details and calendar actions with fallback details URL', async ({ page }) => {
+    await page.goto('/help', { waitUntil: 'domcontentloaded' })
+
+    await page.addScriptTag({ url: '/janagana-embed.js' })
+
+    await page.evaluate(() => {
+      document.body.innerHTML = '<div id="events-widget"></div>'
+
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.includes('/api/embed/events')) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: [
+                {
+                  id: 'evt_1',
+                  title: 'Spring Community Meetup',
+                  startDate: '2026-05-15T18:00:00.000Z',
+                  endDate: null,
+                  location: null,
+                  virtualLink: null,
+                  detailsUrl: null,
+                  portalUrl: '/portal/purple-wings/events',
+                  isVirtual: true,
+                  priceCents: 0,
+                  description: 'Monthly member meetup',
+                },
+              ],
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )
+        }
+
+        return originalFetch(input, init)
+      }
+
+      ;(window as any).Janagana.init({
+        tenantSlug: 'purple-wings',
+        apiUrl: window.location.origin,
+      })
+
+      ;(window as any).Janagana.events('events-widget', {
+        title: 'Upcoming Events',
+        showDetails: true,
+        showCalendar: true,
+      })
+    })
+
+    await expect(page.locator('text=Spring Community Meetup')).toBeVisible()
+    await expect(page.locator('a', { hasText: 'Details' })).toBeVisible()
+    await expect(page.locator('summary', { hasText: 'Add to Calendar' })).toBeVisible()
+
+    const detailsHref = await page.locator('a', { hasText: 'Details' }).first().getAttribute('href')
+    expect(detailsHref).toContain('/portal/purple-wings/events')
+  })
+
+  test('passes maxItems option to embed events API', async ({ page }) => {
+    await page.goto('/help', { waitUntil: 'domcontentloaded' })
+    await page.addScriptTag({ url: '/janagana-embed.js' })
+
+    await page.evaluate(() => {
+      document.body.innerHTML = '<div id="events-widget"></div>'
+      ;(window as Window & { __lastEventsUrl?: string }).__lastEventsUrl = ''
+
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.includes('/api/embed/events')) {
+          ;(window as Window & { __lastEventsUrl?: string }).__lastEventsUrl = url
+          return new Response(JSON.stringify({ success: true, data: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        return originalFetch(input, init)
+      }
+
+      ;(window as any).Janagana.init({
+        tenantSlug: 'purple-wings',
+        apiUrl: window.location.origin,
+      })
+
+      ;(window as any).Janagana.events('events-widget', {
+        maxItems: 3,
+      })
+    })
+
+    const lastEventsUrl = await page.evaluate(() => {
+      return (window as Window & { __lastEventsUrl?: string }).__lastEventsUrl ?? ''
+    })
+
+    expect(lastEventsUrl).toContain('maxItems=3')
+  })
+})
+
 // ── Dashboard help (requires auth via storageState) ────────────────────────
 
 test.describe('Dashboard Help Center', () => {

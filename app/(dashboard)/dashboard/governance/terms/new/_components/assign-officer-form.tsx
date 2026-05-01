@@ -5,6 +5,7 @@ import { useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { createOfficerTerm } from '@/lib/actions/governance'
 import { Button } from '@/components/ui/button'
@@ -101,9 +102,9 @@ export function AssignOfficerForm({ offices, contacts }: Props) {
             {contacts.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No contacts yet.{' '}
-                <a href="/dashboard/crm/contacts/new" className="underline">
+                <Link href="/dashboard/crm/contacts/new" className="underline">
                   Add a person first.
-                </a>
+                </Link>
               </p>
             ) : (
               <Select onValueChange={(v) => form.setValue('contactId', v)}>

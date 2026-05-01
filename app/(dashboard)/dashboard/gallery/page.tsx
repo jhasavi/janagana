@@ -61,7 +61,7 @@ export default async function GalleryPage() {
       {albums.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
-            <Image className="h-12 w-12 text-muted-foreground/30" />
+            <Image className="h-12 w-12 text-muted-foreground/30" alt="No albums icon" />
             <p className="text-muted-foreground">No albums yet</p>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
               Create an album and upload photos to share with your members.
@@ -83,7 +83,7 @@ export default async function GalleryPage() {
                 </div>
               ) : (
                 <div className="h-40 bg-muted flex items-center justify-center">
-                  <Image className="h-12 w-12 text-muted-foreground/30" />
+                  <Image className="h-12 w-12 text-muted-foreground/30" alt="No cover image" />
                 </div>
               )}
               <CardHeader className="flex flex-row items-start justify-between pb-2">
