@@ -1,6 +1,8 @@
 import type { Event } from '@prisma/client'
 import { resolveEventDetailsUrl } from '@/lib/embed/events-utils'
 
+const PUBLIC_APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://janagana.namasteneedham.com'
+
 type PublicEventShape = {
   id: string
   title: string
@@ -29,7 +31,8 @@ function shouldExposeRegistration(event: Event): boolean {
 }
 
 export function toPublicEventShape(event: Event, tenantSlug: string): PublicEventShape {
-  const fallbackPortalUrl = `/portal/${tenantSlug}/events`
+  const fallbackPortalPath = `/portal/${tenantSlug}/events`
+  const fallbackPortalUrl = `${PUBLIC_APP_ORIGIN}${fallbackPortalPath}`
   const detailsUrl = resolveEventDetailsUrl(
     { detailsUrl: null, virtualLink: event.virtualLink },
     `${fallbackPortalUrl}#event-${event.id}`,
