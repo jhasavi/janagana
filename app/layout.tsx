@@ -14,6 +14,21 @@ export const metadata: Metadata = {
   },
   description:
     'Membership, Event, and Volunteer management for non-profit and for-profit organizations.',
+  metadataBase: new URL('https://janagana.org'),
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Jana Gana — Membership & Event Management',
+    description: 'Membership, Event, and Volunteer management for non-profit and for-profit organizations.',
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://janagana.org',
+  },
 }
 
 export default function RootLayout({

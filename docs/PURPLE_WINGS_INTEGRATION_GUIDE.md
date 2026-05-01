@@ -173,58 +173,173 @@ export async function handleSignup(formData: FormData) {
 
 ## Step 5: Display Events from JanaGana
 
-### API Endpoint
+### Upcoming Events — Public Embed API (no API key required)
+
 ```
-GET https://janagana.namasteneedham.com/api/plugin/events?status=PUBLISHED
+GET https://janagana.namasteneedham.com/api/embed/events?tenantSlug=purple-wings&maxItems=10
 ```
 
-### Example Implementation (Next.js)
+Response shape per event includes all fields admins fill in:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | Unique event ID |
+| `title` | string | Event title |
+| `shortSummary` | string\|null | 1–2 sentence blurb shown on cards |
+| `description` | string\|null | Full rich text description |
+| `startDate` | ISO datetime | Event start |
+| `endDate` | ISO datetime\|null | Event end (defaults to +1h in widgets) |
+| `location` | string\|null | Venue name + address |
+| `speakerName` | string\|null | e.g. `"Vikram - Investment Specialist"` |
+| `attendeeCount` | number\|null | Post-event attendance count |
+| `coverImageUrl` | string\|null | Card hero image URL |
+| `tags` | string[] | Category labels, e.g. `["Investing"]` |
+| `priceCents` | number | 0 = free |
+| `isVirtual` | boolean | Computed from format + virtualLink |
+| `detailsUrl` | string | Deep link to portal event card |
+| `portalUrl` | string | Portal events page URL |
+
+### Past Events — Public Embed API
+
+```
+GET https://janagana.namasteneedham.com/api/embed/past-events?tenantSlug=purple-wings&maxItems=20
+```
+
+Returns events with `status=COMPLETED` (or past-dated `PUBLISHED`) in reverse chronological order.
+Same field shape as upcoming events (minus `detailsUrl`/`portalUrl`/`isVirtual`).
+
+### Example Implementation (Next.js — Upcoming Events)
 
 ```typescript
 // app/events/page.tsx
-async function getEvents() {
+interface JanaGanaEvent {
+  id: string
+  title: string
+  shortSummary: string | null
+  startDate: string
+  endDate: string | null
+  location: string | null
+  speakerName: string | null
+  attendeeCount: number | null
+  coverImageUrl: string | null
+  tags: string[]
+  priceCents: number
+  isVirtual: boolean
+  detailsUrl: string
+  portalUrl: string
+}
+
+async function getUpcomingEvents(): Promise<JanaGanaEvent[]> {
   const response = await fetch(
-    `${process.env.JANAGANA_API_URL}/events?status=PUBLISHED`,
-    {
-      headers: {
-        'x-api-key': process.env.JANAGANA_API_KEY!,
-      },
-      next: { revalidate: 300 } // Cache for 5 minutes
-    }
+    'https://janagana.namasteneedham.com/api/embed/events?tenantSlug=purple-wings&maxItems=10',
+    { next: { revalidate: 300 } } // Cache 5 minutes — no API key needed
   )
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch events')
-  }
-
+  if (!response.ok) return []
   const data = await response.json()
-  return data.events
+  return data.data ?? []
+}
+
+async function getPastEvents(): Promise<JanaGanaEvent[]> {
+  const response = await fetch(
+    'https://janagana.namasteneedham.com/api/embed/past-events?tenantSlug=purple-wings&maxItems=20',
+    { next: { revalidate: 3600 } }
+  )
+  if (!response.ok) return []
+  const data = await response.json()
+  return data.data ?? []
 }
 
 export default async function EventsPage() {
-  const events = await getEvents()
+  const [upcoming, past] = await Promise.all([getUpcomingEvents(), getPastEvents()])
 
   return (
-    <div>
-      <h1>Upcoming Events</h1>
-      {events.length === 0 ? (
-        <p>No events scheduled</p>
-      ) : (
-        <div className="grid">
-          {events.map((event: any) => (
-            <div key={event.id} className="event-card">
-              <h2>{event.title}</h2>
-              <p>{new Date(event.startDate).toLocaleDateString()}</p>
-              <p>{event.location}</p>
-              <button>Register</button>
-            </div>
+    <main>
+      <section>
+        <h2>Upcoming Events</h2>
+        {upcoming.length === 0 ? (
+          <p>Check back soon for new events!</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {upcoming.map((event) => (
+              <article key={event.id} className="rounded-2xl border overflow-hidden shadow-sm">
+                {event.coverImageUrl && (
+                  <img src={event.coverImageUrl} alt={event.title} className="w-full h-44 object-cover" />
+                )}
+                <div className="p-5">
+                  {event.tags.slice(0, 1).map((tag) => (
+                    <span key={tag} className="text-xs font-bold uppercase text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">{tag}</span>
+                  ))}
+                  <h3 className="mt-2 font-bold text-lg">{event.title}</h3>
+                  {event.shortSummary && <p className="text-sm text-slate-600 mt-1">{event.shortSummary}</p>}
+                  <p className="text-sm mt-2">📅 {new Date(event.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  {event.location && <p className="text-sm">📍 {event.location}</p>}
+                  {event.speakerName && <p className="text-sm font-medium mt-1">Speaker: {event.speakerName}</p>}
+                  <div className="mt-4 flex gap-2">
+                    <a href={event.detailsUrl} className="btn-primary">Register Free</a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-16">
+        <h2>Our Past Events</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {past.map((event) => (
+            <article key={event.id} className="rounded-2xl border overflow-hidden">
+              {event.coverImageUrl && (
+                <img src={event.coverImageUrl} alt={event.title} className="w-full h-44 object-cover" />
+              )}
+              <div className="p-5">
+                {event.tags.slice(0, 1).map((tag) => (
+                  <span key={tag} className="text-xs font-bold uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
+                ))}
+                {event.attendeeCount && (
+                  <span className="ml-2 text-xs text-slate-500">{event.attendeeCount} attended</span>
+                )}
+                <h3 className="mt-2 font-bold text-lg">{event.title}</h3>
+                {event.shortSummary && <p className="text-sm text-slate-600 mt-1">{event.shortSummary}</p>}
+                <p className="text-sm mt-2">📅 {new Date(event.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                {event.location && <p className="text-sm">📍 {event.location}</p>}
+                {event.speakerName && <p className="text-sm font-medium mt-1">Speaker: {event.speakerName}</p>}
+              </div>
+            </article>
           ))}
         </div>
-      )}
-    </div>
+      </section>
+    </main>
   )
 }
 ```
+
+### Admin Workflow — Creating Rich Event Cards
+
+When creating or editing an event in JanaGana Dashboard, fill in these fields for the best card appearance:
+
+| Field | Purpose | Example |
+|---|---|---|
+| **Title** | Card heading | `Basics of Finance` |
+| **Short Summary** | 1–2 sentence teaser on card | `Essential intro to personal finance: banking, credit, budgeting.` |
+| **Description** | Full event details (rich text) | Full agenda, what attendees will learn |
+| **Cover Image URL** | Card hero image | Upload to `/images/` folder and paste URL |
+| **Speaker Name** | Speaker credit line | `Bank of America Financial Education Team` |
+| **Tags** | Category badge (first tag shown) | `Financial Basics`, `Investing`, `Real Estate` |
+| **Attendee Count** | Post-event stat (fill after event) | `45` |
+| **Status** | `PUBLISHED` = upcoming, `COMPLETED` = past | |
+| **Location** | Venue + address | `High Rock School, 77 Ferndale Road, Needham, MA` |
+
+### Migrating Hardcoded Past Events
+
+To move Purple Wings historical events from hardcoded React data into JanaGana:
+
+1. In JanaGana Dashboard → Events → **New Event**
+2. Set `status = COMPLETED`
+3. Fill in: title, shortSummary, speakerName, startDate, location, attendeeCount, coverImageUrl, tags
+4. The past events component above will automatically fetch and render them
+
+Once migrated, remove the hardcoded data array from the Purple Wings codebase.
 
 ---
 

@@ -363,16 +363,33 @@
           ? this.escapeHtml(event.location)
           : ((event.isVirtual || event.virtualLink) ? 'Virtual event' : 'Location to be announced');
         const isFree = Number(event.priceCents || 0) <= 0;
+        const coverImg = event.coverImageUrl && this.isSafeUrl(event.coverImageUrl)
+          ? this.escapeHtml(event.coverImageUrl) : '';
+        const hasSpeaker = Boolean(event.speakerName && String(event.speakerName).trim());
+        const hasShortSummary = Boolean(event.shortSummary && String(event.shortSummary).trim());
+        const tags = Array.isArray(event.tags) ? event.tags.slice(0, 3) : [];
+        const attendeeCount = Number.isFinite(Number(event.attendeeCount)) && Number(event.attendeeCount) > 0
+          ? Number(event.attendeeCount) : null;
 
         return `
           <article class="janagana-event-card" data-event-index="${index}">
-            <div class="janagana-event-content">
-              <div class="janagana-event-top-row">
-                <h4 class="janagana-event-title">${this.escapeHtml(event.title || 'Untitled Event')}</h4>
+            ${coverImg ? `
+              <div class="janagana-event-image-wrap">
+                <img class="janagana-event-image" src="${coverImg}" alt="${this.escapeHtml(event.title || '')}" loading="lazy" />
                 <span class="janagana-event-price-badge ${isFree ? 'is-free' : 'is-paid'}">${isFree ? 'Free' : `$${(Number(event.priceCents || 0) / 100).toFixed(2)}`}</span>
               </div>
+            ` : ''}
+            <div class="janagana-event-content">
+              ${tags.length ? `<div class="janagana-event-tags">${tags.map(t => `<span class="janagana-event-tag">${this.escapeHtml(t)}</span>`).join('')}</div>` : ''}
+              <div class="janagana-event-top-row">
+                <h4 class="janagana-event-title">${this.escapeHtml(event.title || 'Untitled Event')}</h4>
+                ${!coverImg ? `<span class="janagana-event-price-badge ${isFree ? 'is-free' : 'is-paid'}">${isFree ? 'Free' : `$${(Number(event.priceCents || 0) / 100).toFixed(2)}`}</span>` : ''}
+              </div>
+              ${hasShortSummary ? `<p class="janagana-event-summary">${this.escapeHtml(event.shortSummary)}</p>` : ''}
               <p class="janagana-event-meta"><strong>Date:</strong> ${this.escapeHtml(this.formatEventDate(event.startDate, event.endDate))}</p>
               <p class="janagana-event-meta"><strong>Location:</strong> ${locationLabel}</p>
+              ${hasSpeaker ? `<p class="janagana-event-meta"><strong>Speaker:</strong> ${this.escapeHtml(event.speakerName)}</p>` : ''}
+              ${attendeeCount !== null ? `<p class="janagana-event-meta janagana-event-attendees">${attendeeCount} attended</p>` : ''}
             </div>
             <div class="janagana-event-actions">
               <a class="janagana-btn janagana-btn-primary" href="${this.escapeHtml(registerUrl)}" target="_blank" rel="noopener noreferrer">Register</a>
@@ -481,10 +498,7 @@
             border-radius: 14px;
             background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-            padding: 16px;
-            display: flex;
-            gap: 14px;
-            justify-content: space-between;
+            overflow: hidden;
           }
           .janagana-events-widget .janagana-event-content {
             min-width: 0;
@@ -527,14 +541,6 @@
           .janagana-events-widget .janagana-event-price-badge.is-paid {
             background: #eff6ff;
             color: #1e40af;
-          }
-          .janagana-events-widget .janagana-event-actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            align-items: flex-start;
-            gap: 8px;
-            min-width: 250px;
           }
           .janagana-events-widget .janagana-btn {
             display: inline-flex;
@@ -649,17 +655,71 @@
           .janagana-events-widget .janagana-retry-btn:hover {
             background: #f8fafc;
           }
+          .janagana-events-widget .janagana-event-image-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px 10px 0 0;
+            margin: -16px -16px 12px -16px;
+            aspect-ratio: 16/7;
+          }
+          .janagana-events-widget .janagana-event-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+          .janagana-events-widget .janagana-event-image-wrap .janagana-event-price-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+          }
+          .janagana-events-widget .janagana-event-card {
+            display: block;
+            padding: 16px;
+          }
+          .janagana-events-widget .janagana-event-content {
+            margin-bottom: 12px;
+          }
+          .janagana-events-widget .janagana-event-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+          }
+          .janagana-events-widget .janagana-event-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            background: #ede9fe;
+            color: #5b21b6;
+            text-transform: uppercase;
+          }
+          .janagana-events-widget .janagana-event-summary {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #475569;
+          }
+          .janagana-events-widget .janagana-event-attendees {
+            color: #64748b;
+            font-style: italic;
+          }
+          .janagana-events-widget .janagana-event-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-start;
+          }
           @media (max-width: 700px) {
             .janagana-events-widget .janagana-events-header {
               font-size: 20px;
             }
-            .janagana-events-widget .janagana-event-card {
-              flex-direction: column;
-            }
             .janagana-events-widget .janagana-event-actions {
-              min-width: 0;
               width: 100%;
-              justify-content: flex-start;
             }
             .janagana-events-widget .janagana-calendar-menu-items {
               left: 0;

@@ -436,12 +436,15 @@ model Event {
   tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   title          String
+  shortSummary   String?
   description    String?     @db.Text
   startDate      DateTime
   endDate        DateTime?
   location       String?
   virtualLink    String?
   capacity       Int?
+  attendeeCount  Int?
+  speakerName    String?
   coverImageUrl  String?
   priceCents     Int         @default(0)
   tags           String[]    @default([])
