@@ -103,7 +103,7 @@ function getWidgetSnippet(baseUrl: string, tenantSlug: string, widget: Widget) {
   }
 
   if (widget === 'events') {
-    return `<div id="events-widget"></div>\n<script>\n  Janagana.events('events-widget', { title: 'Upcoming Events' });\n</script>`
+    return `<div id="events-widget"></div>\n<script>\n  Janagana.events('events-widget', {\n    title: 'Upcoming Events',\n    showDetails: true,\n    showCalendar: true,\n    maxItems: 6,\n    emptyStateText: 'No events scheduled yet. Please check back soon.'\n  });\n</script>`
   }
 
   if (widget === 'login') {

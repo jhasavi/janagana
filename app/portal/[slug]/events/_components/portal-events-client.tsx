@@ -58,7 +58,7 @@ export function PortalEventsClient({ events, registeredEventIds: initial, slug }
         const isFull = event.capacity != null && event._count.registrations >= event.capacity
 
         return (
-          <Card key={event.id}>
+          <Card key={event.id} id={`event-${event.id}`}>
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-2">

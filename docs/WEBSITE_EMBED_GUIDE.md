@@ -94,10 +94,45 @@ That's it! The widget will now appear on your website.
 </script>
 ```
 
+**HTML (details + calendar + limits):**
+```html
+<div id="events-widget"></div>
+<script>
+  Janagana.events('events-widget', {
+    title: 'Community Events',
+    showDetails: true,
+    showCalendar: true,
+    maxItems: 6,
+    emptyStateText: 'No events are scheduled yet. Please check back soon.'
+  });
+</script>
+```
+
+**Optional: track event widget actions**
+```html
+<script>
+  Janagana.events('events-widget', {
+    title: 'Community Events',
+    onEventAction: function(payload) {
+      // payload.action examples:
+      // register_click, details_click, calendar_google_click, calendar_ics_download, events_loaded, events_load_failed
+      console.log('JanaGana event action', payload);
+    }
+  });
+
+  // Or listen globally:
+  window.addEventListener('janagana:event-action', function(e) {
+    console.log('Global event action', e.detail);
+  });
+</script>
+```
+
 **What it does:**
 - Shows your published events from JanaGana
-- Displays event date, location, and price
-- "Register" button opens your JanaGana portal
+- Displays event date/time, location (or virtual indicator), and free/price badge
+- "Details" button links to event-specific URL when available, otherwise your portal events page
+- "Add to Calendar" includes Google Calendar and downloadable ICS
+- "Register" button opens your JanaGana portal events page
 - Automatically updates when you add events in JanaGana
 
 **Where to use:**
@@ -266,6 +301,14 @@ The widgets use a default purple color (#4F46E5). To change colors, add custom C
 1. Are your events published in JanaGana?
 2. Are the event dates in the future?
 3. Is the tenant slug correct?
+
+### Calendar Links Not Working
+
+**Check:**
+1. Event start date/time is valid and in the future
+2. Pop-ups are allowed for your site (Google Calendar opens in a new tab)
+3. Your browser allows downloads for ICS files
+4. If event details are missing, JanaGana falls back to your portal events page
 
 ---
 

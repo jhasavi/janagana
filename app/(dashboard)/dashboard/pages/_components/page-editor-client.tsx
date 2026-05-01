@@ -97,7 +97,7 @@ export function PageEditorClient({ page }: Props) {
     if (editor && page) {
       editor.commands.setContent(page.content ?? '')
     }
-  }, [editor, page?.content])
+  }, [editor, page])
 
   const insertSnippet = (text: string) => {
     if (editor) {

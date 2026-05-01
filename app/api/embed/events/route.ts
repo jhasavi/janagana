@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveEventDetailsUrl } from '@/lib/embed/events-utils'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const tenantSlug = searchParams.get('tenantSlug')
+    const requestedMaxItems = Number.parseInt(searchParams.get('maxItems') ?? '10', 10)
+    const maxItems = Number.isFinite(requestedMaxItems)
+      ? Math.min(Math.max(requestedMaxItems, 1), 50)
+      : 10
 
     if (!tenantSlug) {
       return jsonWithCors({ error: 'Missing tenantSlug' }, { status: 400 })
@@ -47,10 +52,23 @@ export async function GET(request: NextRequest) {
         startDate: { gte: new Date() },
       },
       orderBy: { startDate: 'asc' },
-      take: 10,
+      take: maxItems,
     })
 
-    return jsonWithCors({ success: true, data: events })
+    const fallbackPortalUrl = `/portal/${tenantSlug}/events`
+
+    return jsonWithCors({
+      success: true,
+      data: events.map((event) => ({
+        ...event,
+        detailsUrl: resolveEventDetailsUrl(
+          { detailsUrl: null, virtualLink: event.virtualLink },
+          `${fallbackPortalUrl}#event-${event.id}`,
+        ),
+        portalUrl: fallbackPortalUrl,
+        isVirtual: event.format !== 'IN_PERSON' || Boolean(event.virtualLink),
+      })),
+    })
   } catch (error) {
     console.error('Events fetch error:', error)
     return jsonWithCors({ error: 'Failed to fetch events' }, { status: 500 })
