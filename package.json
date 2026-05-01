@@ -27,7 +27,9 @@
     "scripts:generate-secrets": "node scripts/generate-secrets.js",
     "scripts:simulate-real-world": "tsx scripts/simulate-real-world.ts",
     "scripts:simulate-real-world-details": "tsx scripts/simulate-real-world-details.ts",
-    "scripts:verify-seeded-tenants": "tsx scripts/verify-seeded-tenants.ts"
+    "scripts:verify-seeded-tenants": "tsx scripts/verify-seeded-tenants.ts",
+    "scripts:import-tpw-events": "tsx scripts/import-tpw-past-events.ts",
+    "scripts:rollback-tpw-events": "tsx scripts/rollback-tpw-past-events.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.2",

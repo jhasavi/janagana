@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { toPublicEventShape } from '@/lib/embed/public-event-shape'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -60,21 +61,7 @@ export async function GET(request: NextRequest) {
 
     return jsonWithCors({
       success: true,
-      data: events.map((event) => ({
-        id: event.id,
-        title: event.title,
-        shortSummary: event.shortSummary,
-        description: event.description,
-        startDate: event.startDate,
-        endDate: event.endDate,
-        location: event.location,
-        coverImageUrl: event.coverImageUrl,
-        speakerName: event.speakerName,
-        attendeeCount: event.attendeeCount,
-        tags: event.tags,
-        format: event.format,
-        priceCents: event.priceCents,
-      })),
+      data: events.map((event) => toPublicEventShape(event, tenantSlug)),
     })
   } catch (error) {
     console.error('Past events fetch error:', error)

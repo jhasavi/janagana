@@ -218,6 +218,46 @@ export function EventsWidget({ title, showDetails = true, showCalendar = true, m
 }
 ```
 
+### Branded Custom Event Cards (Recommended for Marketing Sites)
+
+Use this when you want a custom design while keeping JanaGana as the source of truth.
+
+```tsx
+// app/events/page.tsx (Server Component)
+async function fetchEvents(path: 'events' | 'past-events') {
+  const tenantSlug = process.env.NEXT_PUBLIC_JANAGANA_TENANT_SLUG
+  const baseUrl = process.env.NEXT_PUBLIC_JANAGANA_API_URL || 'https://janagana.namasteneedham.com'
+  const res = await fetch(`${baseUrl}/api/embed/${path}?tenantSlug=${tenantSlug}&maxItems=20`, {
+    next: { revalidate: 300 },
+  })
+  if (!res.ok) return []
+  const json = await res.json()
+  return json.success ? (json.data ?? []) : []
+}
+
+export default async function EventsPage() {
+  const [upcoming, past] = await Promise.all([
+    fetchEvents('events'),
+    fetchEvents('past-events'),
+  ])
+
+  return (
+    <main>
+      <section>{/* Render your branded upcoming event cards */}</section>
+      <section>{/* Render your branded past event cards */}</section>
+    </main>
+  )
+}
+```
+
+Recommended field usage for polished cards:
+- `coverImageUrl`, `title`, `tags`, `shortSummary`
+- `startDate`, `location`, `speakerName`
+- `detailsUrl`, `registrationUrl`, `priceCents`
+- `attendeeCount` for past events
+
+Use the widget when speed is the priority, and custom cards when brand consistency is the priority.
+
 **Usage:**
 ```tsx
 <EventsWidget title="Our Events" />
