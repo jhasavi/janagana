@@ -2,11 +2,11 @@ import { prisma } from '@/lib/prisma'
 import { getTenant } from '@/lib/tenant'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, Building2, Linkedin, Edit, Calendar, MessageSquare, DollarSign, CheckSquare } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, Building2, Linkedin, Edit, Calendar, MessageSquare, DollarSign, CheckSquare, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import { ActivityTimeline } from '../../_components/activity-timeline'
 import { ActivityQuickAdd } from '../../_components/activity-quick-add'
 
@@ -38,12 +38,35 @@ export default async function ContactDetailPage({
       tasks: {
         orderBy: { createdAt: 'desc' },
       },
+      enrollments: {
+        orderBy: { startDate: 'desc' },
+        include: { tier: true },
+      },
+      donations: {
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+      },
+      volunteerSignups: {
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        include: { opportunity: true },
+      },
+      eventRegistrations: {
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        include: { event: true },
+      },
     },
   })
 
   if (!contact) {
     notFound()
   }
+
+  const totalDonations = contact.donations.reduce((sum, donation) => sum + donation.amountCents, 0)
+  const upcomingEvents = contact.eventRegistrations.filter((registration) => registration.event.startDate >= new Date())
+  const openTasks = contact.tasks.filter((task) => !task.completed && task.status !== 'COMPLETED').length
+  const activeMemberships = contact.enrollments.filter((enrollment) => enrollment.status === 'ACTIVE' && !enrollment.endDate)
 
   return (
     <div className="p-6">
@@ -57,6 +80,7 @@ export default async function ContactDetailPage({
         </Button>
         <div className="flex items-center justify-between">
           <div>
+            <p className="text-xs text-muted-foreground mb-1">Contact {'>'} Profile</p>
             <h1 className="text-3xl font-bold">
               {contact.firstName} {contact.lastName}
             </h1>
@@ -165,14 +189,14 @@ export default async function ContactDetailPage({
         {/* Activities & Related */}
         <div className="lg:col-span-2 space-y-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-2xl font-bold">{contact.activities.length}</p>
-                    <p className="text-xs text-muted-foreground">Activities</p>
+                    <p className="text-2xl font-bold">{activeMemberships.length}</p>
+                    <p className="text-xs text-muted-foreground">Active memberships</p>
                   </div>
                 </div>
               </CardContent>
@@ -182,8 +206,19 @@ export default async function ContactDetailPage({
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-2xl font-bold">{contact.deals.length}</p>
-                    <p className="text-xs text-muted-foreground">Deals</p>
+                    <p className="text-2xl font-bold">{formatCurrency(totalDonations)}</p>
+                    <p className="text-xs text-muted-foreground">Total donations</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-2xl font-bold">{upcomingEvents.length}</p>
+                    <p className="text-xs text-muted-foreground">Upcoming events</p>
                   </div>
                 </div>
               </CardContent>
@@ -193,13 +228,59 @@ export default async function ContactDetailPage({
                 <div className="flex items-center gap-2">
                   <CheckSquare className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-2xl font-bold">{contact.tasks.length}</p>
-                    <p className="text-xs text-muted-foreground">Tasks</p>
+                    <p className="text-2xl font-bold">{openTasks}</p>
+                    <p className="text-xs text-muted-foreground">Open tasks</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-2xl font-bold">{contact.volunteerSignups.length}</p>
+                    <p className="text-xs text-muted-foreground">Volunteer shifts</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Memberships</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {contact.enrollments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No enrollment records linked yet.</p>
+              ) : (
+                contact.enrollments.map((enrollment) => (
+                  <div key={enrollment.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                      <p className="text-sm font-medium">{enrollment.tier?.name ?? 'No Tier Assigned'}</p>
+                      <p className="text-xs text-muted-foreground">Started {formatDate(enrollment.startDate)}</p>
+                    </div>
+                    <Badge variant={enrollment.status === 'ACTIVE' ? 'success' : 'secondary'}>{enrollment.status}</Badge>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Engagement Links</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>Contact {'>'} Memberships: {contact.enrollments.length}</p>
+              <p>Contact {'>'} Events: {contact.eventRegistrations.length}</p>
+              <p>Contact {'>'} Donations: {contact.donations.length}</p>
+              <p>Contact {'>'} Volunteer: {contact.volunteerSignups.length}</p>
+              <p>Contact {'>'} Deals: {contact.deals.length}</p>
+              <p>Contact {'>'} Tasks: {contact.tasks.length}</p>
+            </CardContent>
+          </Card>
 
           {/* Activity Timeline */}
           <Card>

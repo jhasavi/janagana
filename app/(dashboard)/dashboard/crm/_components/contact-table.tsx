@@ -36,6 +36,14 @@ import type { Contact, Member, Company } from '@prisma/client'
 type ContactWithRelations = Contact & {
   member: Member | null
   company: Company | null
+  _count: {
+    donations: number
+    volunteerSignups: number
+    eventRegistrations: number
+    deals: number
+    tasks: number
+    enrollments: number
+  }
 }
 
 interface ContactTableProps {
@@ -46,16 +54,39 @@ export function ContactTable({ contacts }: ContactTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, startDelete] = useTransition()
   const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'members' | 'donors' | 'volunteers' | 'attendees' | 'leads'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all')
+  const [tagFilter, setTagFilter] = useState('')
 
-  const filteredContacts = contacts.filter(
-    (contact) =>
+  const filteredContacts = contacts.filter((contact) => {
+    const searchMatches =
       contact.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (contact.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (contact.emails?.[0] ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (contact.phone && contact.phone.includes(searchQuery)) ||
       (contact.jobTitle && contact.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+
+    const isArchived = contact.tags.includes('archived')
+    const statusMatches =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && !isArchived) ||
+      (statusFilter === 'archived' && isArchived)
+
+    const roleMatches =
+      roleFilter === 'all' ||
+      (roleFilter === 'members' && (contact.member !== null || contact._count.enrollments > 0)) ||
+      (roleFilter === 'donors' && contact._count.donations > 0) ||
+      (roleFilter === 'volunteers' && contact._count.volunteerSignups > 0) ||
+      (roleFilter === 'attendees' && contact._count.eventRegistrations > 0) ||
+      (roleFilter === 'leads' && contact._count.deals > 0 && contact._count.enrollments === 0)
+
+    const tagMatches =
+      tagFilter.trim() === '' ||
+      contact.tags.some((tag) => tag.toLowerCase().includes(tagFilter.toLowerCase()))
+
+    return searchMatches && statusMatches && roleMatches && tagMatches
+  })
 
   const handleDelete = () => {
     if (!deleteId) return
@@ -97,13 +128,100 @@ export function ContactTable({ contacts }: ContactTableProps) {
 
   return (
     <>
-      <div className="mb-4">
+      <div className="mb-4 space-y-3">
         <Input
           placeholder="Search contacts..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"
         />
+
+        <div className="flex flex-wrap gap-2">
+          {[
+            ['all', 'All Contacts'],
+            ['members', 'Members'],
+            ['donors', 'Donors'],
+            ['volunteers', 'Volunteers'],
+            ['attendees', 'Attendees'],
+            ['leads', 'Leads'],
+          ].map(([value, label]) => (
+            <Button
+              key={value}
+              size="sm"
+              variant={roleFilter === value ? 'default' : 'outline'}
+              onClick={() => setRoleFilter(value as typeof roleFilter)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button
+            size="sm"
+            variant={statusFilter === 'all' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('all')}
+          >
+            All Statuses
+          </Button>
+          <Button
+            size="sm"
+            variant={statusFilter === 'active' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('active')}
+          >
+            Active
+          </Button>
+          <Button
+            size="sm"
+            variant={statusFilter === 'archived' ? 'secondary' : 'outline'}
+            onClick={() => setStatusFilter('archived')}
+          >
+            Archived
+          </Button>
+          <Input
+            placeholder="Filter by tag"
+            value={tagFilter}
+            onChange={(event) => setTagFilter(event.target.value)}
+            className="max-w-[200px]"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Saved filters:</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setRoleFilter('donors')
+              setStatusFilter('active')
+              setTagFilter('')
+            }}
+          >
+            Active Donors
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setRoleFilter('leads')
+              setStatusFilter('active')
+              setTagFilter('')
+            }}
+          >
+            Open Leads
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setRoleFilter('all')
+              setStatusFilter('archived')
+              setTagFilter('')
+            }}
+          >
+            Archived Contacts
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden">
@@ -232,11 +350,11 @@ export function ContactTable({ contacts }: ContactTableProps) {
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Contact</DialogTitle>
+            <DialogTitle>Archive Contact</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete this contact? This action cannot be undone. All
-            associated activities, deals, and tasks will also be removed.
+            This moves the contact into an archived state for safer cleanup workflows.
+            You can restore archived contacts from Organization Console data cleanup tools.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>
@@ -247,7 +365,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete Contact'}
+              {isDeleting ? 'Archiving...' : 'Archive Contact'}
             </Button>
           </DialogFooter>
         </DialogContent>

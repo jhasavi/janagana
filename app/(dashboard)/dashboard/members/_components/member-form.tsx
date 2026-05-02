@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Search } from 'lucide-react'
 import Link from 'next/link'
 import { createMember, updateMember } from '@/lib/actions/members'
 import { Button } from '@/components/ui/button'
@@ -53,6 +53,7 @@ interface MemberFormProps {
 export function MemberForm({ member, tiers }: MemberFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isLookingUpContact, startLookupTransition] = useTransition()
 
   const {
     register,
@@ -87,6 +88,45 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
     },
   })
 
+  const lookupExistingContact = () => {
+    const email = watch('email')
+    if (!email) {
+      toast.error('Enter an email first to search contacts')
+      return
+    }
+
+    startLookupTransition(async () => {
+      try {
+        const response = await fetch(`/api/dashboard/crm/contacts/search?q=${encodeURIComponent(email)}`)
+        const result = await response.json()
+
+        if (!response.ok || !result.success) {
+          toast.error(result.error ?? 'Failed to search contacts')
+          return
+        }
+
+        const match = (result.contacts ?? [])[0]
+        if (!match) {
+          toast.info('No existing contact found. A new contact will be created with this membership.')
+          return
+        }
+
+        setValue('firstName', match.firstName || watch('firstName'))
+        setValue('lastName', match.lastName || watch('lastName'))
+        if (!watch('phone')) setValue('phone', match.phone || '')
+        if (!watch('address')) setValue('address', match.address || '')
+        if (!watch('city')) setValue('city', match.city || '')
+        if (!watch('state')) setValue('state', match.state || '')
+        if (!watch('postalCode')) setValue('postalCode', match.postalCode || '')
+        if (!watch('country')) setValue('country', match.country || 'US')
+
+        toast.success(`Using existing contact: ${match.firstName} ${match.lastName}`)
+      } catch {
+        toast.error('Failed to search contacts')
+      }
+    })
+  }
+
   const onSubmit = (data: FormData) => {
     startTransition(async () => {
       const result = member
@@ -94,7 +134,7 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
         : await createMember(data)
 
       if (result.success) {
-        toast.success(member ? 'Member updated' : 'Member created')
+        toast.success(member ? 'Membership updated' : 'Membership created')
         router.push('/dashboard/members')
       } else {
         toast.error(result.error ?? 'Something went wrong')
@@ -113,17 +153,17 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            {member ? 'Edit Member' : 'Add Member'}
+            {member ? 'Edit Membership' : 'Add Membership'}
           </h1>
           <p className="text-muted-foreground text-sm">
             {member
               ? `Editing ${member.firstName} ${member.lastName}`
-              : 'Add a new member to your organization'}
+              : 'Search for an existing contact first, then create membership enrollment'}
           </p>
         </div>
         <Button type="submit" disabled={isPending}>
           <Save className="h-4 w-4" />
-          {isPending ? 'Saving...' : 'Save Member'}
+          {isPending ? 'Saving...' : 'Save Membership'}
         </Button>
       </div>
 
@@ -133,7 +173,7 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
           {/* Basic info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Basic Information</CardTitle>
+              <CardTitle className="text-base">Contact & Identity</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -158,12 +198,21 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
 
               <div className="space-y-1.5">
                 <Label htmlFor="email">
-                  Email <span className="text-destructive">*</span>
+                  Contact Email <span className="text-destructive">*</span>
                 </Label>
-                <Input id="email" type="email" {...register('email')} />
+                <div className="flex items-center gap-2">
+                  <Input id="email" type="email" {...register('email')} />
+                  <Button type="button" variant="outline" onClick={lookupExistingContact} disabled={isLookingUpContact}>
+                    <Search className="h-4 w-4" />
+                    {isLookingUpContact ? 'Searching...' : 'Find Contact'}
+                  </Button>
+                </div>
                 {errors.email && (
                   <p className="text-xs text-destructive">{errors.email.message}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Search for an existing contact first. If none exists, a new contact will be created inline.
+                </p>
               </div>
 
               <div className="space-y-1.5">

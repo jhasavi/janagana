@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
-    const { orgId } = await auth()
+    await auth()
     const tenant = await getTenant()
 
     if (!tenant) {
@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
         firstName,
         lastName,
         email,
+        emails: [email],
         phone,
+        phones: phone ? [phone] : [],
         jobTitle,
         linkedinUrl,
         companyName,

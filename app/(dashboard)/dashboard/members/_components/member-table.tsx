@@ -69,12 +69,12 @@ export function MemberTable({ members }: MemberTableProps) {
         <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
           <span className="text-2xl">👥</span>
         </div>
-        <h3 className="font-semibold text-lg mb-1">No members yet</h3>
+        <h3 className="font-semibold text-lg mb-1">No memberships yet</h3>
         <p className="text-muted-foreground text-sm mb-4">
-          Get started by adding your first member.
+          Memberships are enrollment records linked to contacts. Add a contact first, or create one while adding a membership.
         </p>
         <Button asChild size="sm">
-          <Link href="/dashboard/members/new">Add Member</Link>
+          <Link href="/dashboard/members/new">Add Membership</Link>
         </Button>
       </div>
     )

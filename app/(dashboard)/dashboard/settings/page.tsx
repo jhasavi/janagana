@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { FileClock, Key, Webhook, LayoutList } from 'lucide-react'
+import { FileClock, Key, Webhook, LayoutList, ShieldCheck } from 'lucide-react'
 import { SettingsForm } from './_components/settings-form'
 import { getTenantSettings } from '@/lib/actions/tenant'
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,12 @@ export default async function SettingsPage() {
       <div className="space-y-3">
         <h2 className="text-base font-semibold">Administration</h2>
         <div className="flex flex-wrap gap-3">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/settings/organization-console">
+              <ShieldCheck className="h-4 w-4" />
+              Organization Console
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/dashboard/settings/custom-fields">
               <LayoutList className="h-4 w-4" />

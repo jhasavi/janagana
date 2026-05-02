@@ -2,6 +2,7 @@ import { UserButton, OrganizationSwitcher } from '@clerk/nextjs'
 import { getAdminNotifications, getUnreadNotificationCount } from '@/lib/actions/communications'
 import { NotificationsBell } from '@/components/dashboard/notifications-bell'
 import { ThemeToggle } from '@/components/dashboard/theme-toggle'
+import { GlobalCreate } from '@/components/dashboard/global-create'
 
 interface HeaderProps {
   title?: string
@@ -30,6 +31,7 @@ export async function Header({ title }: HeaderProps) {
         )}
       </div>
       <div className="flex items-center gap-3">
+        <GlobalCreate />
         <ThemeToggle />
         <NotificationsBell initialNotifications={notifications} initialUnread={unread} />
         <OrganizationSwitcher

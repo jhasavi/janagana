@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   },
   description:
     'Membership, Event, and Volunteer management for non-profit and for-profit organizations.',
+  icons: {
+    icon: '/images/icon.png',
+    shortcut: '/images/icon.png',
+    apple: '/images/icon.png',
+  },
   metadataBase: new URL('https://janagana.org'),
   alternates: {
     canonical: '/',
