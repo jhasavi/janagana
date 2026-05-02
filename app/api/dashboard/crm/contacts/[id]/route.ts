@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { getTenant } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
+const SYSTEM_ARCHIVE_TAG = '__system_archived'
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -91,7 +93,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
     }
 
-    const archivedTags = Array.from(new Set([...(contact.tags ?? []), 'archived']))
+    const archivedTags = Array.from(new Set([...(contact.tags ?? []), SYSTEM_ARCHIVE_TAG]))
 
     await prisma.contact.update({
       where: { id },

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Save, Search } from 'lucide-react'
 import Link from 'next/link'
 import { createMember, updateMember } from '@/lib/actions/members'
+import { applyContactToMembershipDraft } from '@/lib/membership-flow'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -111,14 +112,28 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
           return
         }
 
-        setValue('firstName', match.firstName || watch('firstName'))
-        setValue('lastName', match.lastName || watch('lastName'))
-        if (!watch('phone')) setValue('phone', match.phone || '')
-        if (!watch('address')) setValue('address', match.address || '')
-        if (!watch('city')) setValue('city', match.city || '')
-        if (!watch('state')) setValue('state', match.state || '')
-        if (!watch('postalCode')) setValue('postalCode', match.postalCode || '')
-        if (!watch('country')) setValue('country', match.country || 'US')
+        const mergedDraft = applyContactToMembershipDraft(
+          {
+            firstName: watch('firstName') || '',
+            lastName: watch('lastName') || '',
+            phone: watch('phone') || '',
+            address: watch('address') || '',
+            city: watch('city') || '',
+            state: watch('state') || '',
+            postalCode: watch('postalCode') || '',
+            country: watch('country') || '',
+          },
+          match
+        )
+
+        setValue('firstName', mergedDraft.firstName)
+        setValue('lastName', mergedDraft.lastName)
+        setValue('phone', mergedDraft.phone)
+        setValue('address', mergedDraft.address)
+        setValue('city', mergedDraft.city)
+        setValue('state', mergedDraft.state)
+        setValue('postalCode', mergedDraft.postalCode)
+        setValue('country', mergedDraft.country)
 
         toast.success(`Using existing contact: ${match.firstName} ${match.lastName}`)
       } catch {
