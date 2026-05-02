@@ -31,17 +31,21 @@ export async function getEvents(params?: {
   search?: string
   status?: string
   upcoming?: boolean
+  scope?: 'all' | 'upcoming' | 'past'
 }) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
 
     const where: Record<string, unknown> = { tenantId: tenant.id }
 
     if (params?.status && params.status !== 'all') {
       where.status = params.status
     }
-    if (params?.upcoming) {
+    if (params?.scope === 'upcoming' || params?.upcoming) {
       where.startDate = { gte: new Date() }
+    }
+    if (params?.scope === 'past') {
+      where.startDate = { lt: new Date() }
     }
     if (params?.search) {
       where.OR = [
@@ -68,7 +72,7 @@ export async function getEvents(params?: {
 
 export async function getEvent(id: string) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
 
     const event = await prisma.event.findFirst({
       where: { id, tenantId: tenant.id },
@@ -91,7 +95,7 @@ export async function getEvent(id: string) {
 
 export async function createEvent(input: unknown) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
     const data = EventSchema.parse(input)
 
     const event = await prisma.event.create({
@@ -121,7 +125,7 @@ export async function createEvent(input: unknown) {
 
 export async function updateEvent(id: string, input: unknown) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
     const data = EventSchema.parse(input)
 
     const event = await prisma.event.update({
@@ -175,7 +179,7 @@ export async function uploadEventCoverImage(formData: FormData) {
 
 export async function deleteEvent(id: string) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
 
     await prisma.event.delete({ where: { id, tenantId: tenant.id } })
 
@@ -189,7 +193,7 @@ export async function deleteEvent(id: string) {
 
 export async function publishEvent(id: string) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
 
     const event = await prisma.event.update({
       where: { id, tenantId: tenant.id },
@@ -209,7 +213,7 @@ export async function publishEvent(id: string) {
 
 export async function registerMemberForEvent(eventId: string, memberId: string) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
 
     // Verify both belong to tenant
     const [event, member] = await Promise.all([
@@ -263,7 +267,7 @@ export async function updateRegistrationStatus(
   status: 'CONFIRMED' | 'CANCELED' | 'ATTENDED' | 'NO_SHOW'
 ) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
 
     const reg = await prisma.eventRegistration.findFirst({
       where: { id: registrationId },
@@ -295,7 +299,7 @@ export async function updateRegistrationStatus(
  */
 export async function sendEventSmsReminders(eventId: string) {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
     const event = await prisma.event.findFirst({
       where: { id: eventId, tenantId: tenant.id },
       select: { id: true, title: true, startDate: true, location: true },
@@ -332,20 +336,84 @@ export async function sendEventSmsReminders(eventId: string) {
 
 export async function getEventStats() {
   try {
-    const tenant = await requireTenant()
+    const tenant = await resolveEventsTenant()
     const now = new Date()
 
-    const [total, upcoming, published] = await Promise.all([
+    const [total, upcoming, past, published, draft, canceled, completed] = await Promise.all([
       prisma.event.count({ where: { tenantId: tenant.id } }),
       prisma.event.count({
         where: { tenantId: tenant.id, startDate: { gte: now }, status: 'PUBLISHED' },
       }),
+      prisma.event.count({ where: { tenantId: tenant.id, startDate: { lt: now } } }),
       prisma.event.count({ where: { tenantId: tenant.id, status: 'PUBLISHED' } }),
+      prisma.event.count({ where: { tenantId: tenant.id, status: 'DRAFT' } }),
+      prisma.event.count({ where: { tenantId: tenant.id, status: 'CANCELED' } }),
+      prisma.event.count({ where: { tenantId: tenant.id, status: 'COMPLETED' } }),
     ])
 
-    return { success: true, data: { total, upcoming, published } }
+    return {
+      success: true,
+      data: { total, upcoming, past, published, draft, canceled, completed },
+    }
   } catch (error) {
     console.error('[getEventStats]', error)
     return { success: false, error: 'Failed to load stats', data: null }
   }
+}
+
+async function resolveEventsTenant() {
+  const activeTenant = await requireTenant()
+
+  const aliasSlugs = new Set<string>([activeTenant.slug])
+  if (activeTenant.slug.startsWith('the-')) {
+    aliasSlugs.add(activeTenant.slug.replace(/^the-/, ''))
+  } else {
+    aliasSlugs.add(`the-${activeTenant.slug}`)
+  }
+
+  const candidates = await prisma.tenant.findMany({
+    where: {
+      OR: [
+        { id: activeTenant.id },
+        { name: activeTenant.name },
+        { slug: { in: Array.from(aliasSlugs) } },
+      ],
+    },
+    select: { id: true, slug: true, name: true },
+  })
+
+  if (candidates.length <= 1) return activeTenant
+
+  const counts = await prisma.event.groupBy({
+    by: ['tenantId'],
+    where: { tenantId: { in: candidates.map((c) => c.id) } },
+    _count: { _all: true },
+  })
+
+  const countMap = new Map<string, number>(counts.map((c) => [c.tenantId, c._count._all]))
+  const activeCount = countMap.get(activeTenant.id) ?? 0
+
+  let best = activeTenant
+  let bestCount = activeCount
+  for (const candidate of candidates) {
+    const candidateCount = countMap.get(candidate.id) ?? 0
+    if (candidateCount > bestCount) {
+      best = { ...activeTenant, id: candidate.id, slug: candidate.slug, name: candidate.name }
+      bestCount = candidateCount
+    }
+  }
+
+  if (best.id !== activeTenant.id && activeCount <= 1 && bestCount >= 3) {
+    console.warn('[events.resolveTenant] Switched to canonical events tenant', {
+      activeTenantId: activeTenant.id,
+      activeTenantSlug: activeTenant.slug,
+      activeCount,
+      selectedTenantId: best.id,
+      selectedTenantSlug: best.slug,
+      selectedCount: bestCount,
+    })
+    return best
+  }
+
+  return activeTenant
 }
