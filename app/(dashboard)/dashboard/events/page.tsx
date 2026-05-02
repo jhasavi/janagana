@@ -13,11 +13,11 @@ export const metadata: Metadata = { title: 'Events' }
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string }>
+  searchParams: Promise<{ search?: string; status?: string; scope?: 'all' | 'upcoming' | 'past' }>
 }) {
   const params = await searchParams
   const [eventsResult, statsResult] = await Promise.all([
-    getEvents({ search: params.search, status: params.status }),
+    getEvents({ search: params.search, status: params.status, scope: params.scope ?? 'all' }),
     getEventStats(),
   ])
 
@@ -50,7 +50,7 @@ export default async function EventsPage({
         </Button>
       </div>
 
-      <EventFilters />
+      <EventFilters stats={stats} />
 
       <EventGrid events={events} />
     </div>
