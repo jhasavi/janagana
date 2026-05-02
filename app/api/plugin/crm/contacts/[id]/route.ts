@@ -5,7 +5,7 @@ import { verifyPluginApiKey } from '@/lib/plugin-auth'
 // PATCH /api/plugin/crm/contacts/[id] - Update contact
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenant = await verifyPluginApiKey(request)
@@ -13,7 +13,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const contactId = params.id
+    const { id: contactId } = await params
     const body = await request.json()
     const {
       firstName,
@@ -76,7 +76,7 @@ export async function PATCH(
 // DELETE /api/plugin/crm/contacts/[id] - Delete contact
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const tenant = await verifyPluginApiKey(request)
@@ -84,7 +84,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const contactId = params.id
+    const { id: contactId } = await params
 
     // Verify contact belongs to tenant
     const existingContact = await prisma.contact.findFirst({

@@ -5,15 +5,27 @@ import { z } from 'zod'
 import Papa from 'papaparse'
 import { requireTenant } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
-import { requireTenantAdminAccess } from '@/lib/actions/permissions'
+import { requireTenantActionAccess } from '@/lib/actions/permissions'
 import { logAudit } from '@/lib/actions/audit'
-
-const Segments = ['all', 'members', 'donors', 'volunteers', 'attendees', 'leads', 'archived'] as const
-
-type Segment = (typeof Segments)[number]
+import {
+  segmentSchema,
+  importStrategySchema,
+  SYSTEM_ARCHIVE_TAG,
+  BULK_SCOPE_HARD_BLOCK_THRESHOLD,
+  buildContactWhere,
+  isHighRiskBulkAction,
+  requiresTypedConfirmationForBulk,
+  requiresTypedConfirmationForImport,
+  isLargeScopeOperation,
+  exceedsBulkHardBlock,
+  setArchivedTag,
+  parseImportRows,
+  renderImportErrorsCsv,
+  type BulkOperation,
+} from '@/lib/organization-console-helpers'
 
 const BulkPreviewSchema = z.object({
-  segment: z.enum(Segments).default('all'),
+  segment: segmentSchema.default('all'),
   search: z.string().optional(),
   operation: z.enum(['assign_tags', 'archive', 'restore']),
   tags: z.array(z.string().min(1)).max(20).default([]),
@@ -24,7 +36,7 @@ const BulkCommitSchema = BulkPreviewSchema.extend({
   expectedCount: z.number().int().min(0),
 })
 
-const ImportStrategySchema = z.enum(['skip_duplicates', 'update_existing', 'create_new_only', 'merge_by_email'])
+const ImportStrategySchema = importStrategySchema
 
 const ImportPreviewSchema = z.object({
   csvContent: z.string().min(1),
@@ -35,47 +47,10 @@ const ImportCommitSchema = ImportPreviewSchema.extend({
   confirmationText: z.string().optional(),
 })
 
-const CsvRowSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  email: z.string().email(),
-  phone: z.string().optional().default(''),
-  status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'BANNED']).default('ACTIVE'),
-  tierId: z.string().optional().nullable(),
-})
+const IMPORT_INVALID_HARD_BLOCK = 250
 
 function toLower(value?: string | null) {
   return (value ?? '').trim().toLowerCase()
-}
-
-export function buildContactWhere(tenantId: string, segment: Segment, search?: string) {
-  const where: Record<string, unknown> = { tenantId }
-
-  if (segment === 'members') where.memberId = { not: null }
-  if (segment === 'donors') where.donations = { some: {} }
-  if (segment === 'volunteers') where.volunteerSignups = { some: {} }
-  if (segment === 'attendees') where.eventRegistrations = { some: {} }
-  if (segment === 'leads') {
-    where.deals = { some: {} }
-    where.memberId = null
-  }
-  if (segment === 'archived') where.tags = { has: 'archived' }
-
-  if (search && search.trim() !== '') {
-    const q = search.trim()
-    where.OR = [
-      { firstName: { contains: q, mode: 'insensitive' } },
-      { lastName: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
-      { emails: { has: q.toLowerCase() } },
-    ]
-  }
-
-  return where
-}
-
-export function isHighRiskBulkAction(operation: 'assign_tags' | 'archive' | 'restore', affectedCount: number) {
-  return operation === 'archive' || operation === 'restore' || affectedCount > 250
 }
 
 export async function getOrganizationConsoleChecklist() {
@@ -129,7 +104,7 @@ export async function getOrganizationConsoleChecklist() {
 
 export async function previewContactBulkAction(input: unknown) {
   try {
-    const access = await requireTenantAdminAccess('previewContactBulkAction')
+    const access = await requireTenantActionAccess('previewContactBulkAction', 'bulk_preview')
     if (!access.success) return { success: false, error: access.error }
 
     const data = BulkPreviewSchema.parse(input)
@@ -153,6 +128,8 @@ export async function previewContactBulkAction(input: unknown) {
     ])
 
     const highRisk = isHighRiskBulkAction(data.operation, affectedCount)
+    const largeScopeWarning = isLargeScopeOperation(affectedCount)
+    const blockedByScope = exceedsBulkHardBlock(affectedCount)
 
     return {
       success: true,
@@ -160,9 +137,19 @@ export async function previewContactBulkAction(input: unknown) {
         operation: data.operation,
         affectedCount,
         highRisk,
+        largeScopeWarning,
+        blockedByScope,
         requiresTypedConfirmation: highRisk,
         sample,
         tagDelta: data.operation === 'assign_tags' ? data.tags : [],
+        warnings: [
+          ...(largeScopeWarning
+            ? [`Scope is large (${affectedCount} records). Re-check filters before commit.`]
+            : []),
+          ...(blockedByScope
+            ? [`Scope exceeds safety limit (${BULK_SCOPE_HARD_BLOCK_THRESHOLD}). Narrow your filter first.`]
+            : []),
+        ],
       },
     }
   } catch (error) {
@@ -176,10 +163,18 @@ export async function previewContactBulkAction(input: unknown) {
 
 export async function commitContactBulkAction(input: unknown) {
   try {
-    const access = await requireTenantAdminAccess('commitContactBulkAction')
+    const data = BulkCommitSchema.parse(input)
+
+    const actionForOperation =
+      data.operation === 'assign_tags'
+        ? 'bulk_assign_tags'
+        : data.operation === 'archive'
+        ? 'bulk_archive'
+        : 'bulk_restore'
+
+    const access = await requireTenantActionAccess('commitContactBulkAction', actionForOperation)
     if (!access.success) return { success: false, error: access.error }
 
-    const data = BulkCommitSchema.parse(input)
     const where = buildContactWhere(access.tenant.id, data.segment, data.search)
 
     const contacts = await prisma.contact.findMany({
@@ -197,7 +192,14 @@ export async function commitContactBulkAction(input: unknown) {
       return { success: false, error: 'Scope changed since preview. Run preview again before committing.' }
     }
 
-    const isHighRisk = isHighRiskBulkAction(data.operation, affectedCount)
+    if (exceedsBulkHardBlock(affectedCount)) {
+      return {
+        success: false,
+        error: `Operation blocked: ${affectedCount} records exceed safety threshold of ${BULK_SCOPE_HARD_BLOCK_THRESHOLD}.`,
+      }
+    }
+
+    const isHighRisk = requiresTypedConfirmationForBulk(data.operation, affectedCount)
     if (isHighRisk && data.confirmationText !== 'CONFIRM') {
       return { success: false, error: 'Typed confirmation required. Enter CONFIRM to continue.' }
     }
@@ -207,16 +209,21 @@ export async function commitContactBulkAction(input: unknown) {
     }
 
     const updates = contacts.map((contact) => {
-      const currentTags = new Set(contact.tags ?? [])
+      const currentTags = contact.tags ?? []
       if (data.operation === 'assign_tags') {
-        data.tags.forEach((tag) => currentTags.add(tag))
+        const merged = new Set(currentTags)
+        data.tags.forEach((tag) => merged.add(tag))
+        return prisma.contact.update({
+          where: { id: contact.id },
+          data: { tags: Array.from(merged) },
+        })
       }
-      if (data.operation === 'archive') currentTags.add('archived')
-      if (data.operation === 'restore') currentTags.delete('archived')
+
+      const nextTags = setArchivedTag(currentTags, data.operation === 'archive')
 
       return prisma.contact.update({
         where: { id: contact.id },
-        data: { tags: Array.from(currentTags) },
+        data: { tags: nextTags },
       })
     })
 
@@ -234,7 +241,8 @@ export async function commitContactBulkAction(input: unknown) {
         operation: data.operation,
         segment: data.segment,
         affectedCount,
-        sampleContactIds: contacts.slice(0, 100).map((contact) => contact.id),
+        affectedContactIds: contacts.map((contact) => contact.id),
+        sampleContactIds: contacts.slice(0, 50).map((contact) => contact.id),
         tags: data.tags,
         tenantId: access.tenant.id,
       },
@@ -263,7 +271,7 @@ export async function getDataCleanupSummary() {
       invalidEmailCandidates,
     ] = await Promise.all([
       prisma.duplicateSuggestion.count({ where: { tenantId: tenant.id, status: 'PENDING' } }),
-      prisma.contact.count({ where: { tenantId: tenant.id, tags: { has: 'archived' } } }),
+      prisma.contact.count({ where: { tenantId: tenant.id, tags: { has: SYSTEM_ARCHIVE_TAG } } }),
       prisma.contact.count({ where: { tenantId: tenant.id, OR: [{ email: null }, { email: '' }] } }),
       prisma.contact.count({
         where: {
@@ -311,25 +319,14 @@ export async function getDataCleanupSummary() {
 
 export async function previewMembersImportCsv(input: unknown) {
   try {
-    const access = await requireTenantAdminAccess('previewMembersImportCsv')
+    const access = await requireTenantActionAccess('previewMembersImportCsv', 'import_preview')
     if (!access.success) return { success: false, error: access.error }
 
     const data = ImportPreviewSchema.parse(input)
 
-    const parsed = Papa.parse(data.csvContent, {
-      header: true,
-      skipEmptyLines: true,
-    })
-
-    if (parsed.errors.length > 0) {
-      return { success: false, error: parsed.errors[0]?.message ?? 'CSV parse failed' }
-    }
-
-    const rows = parsed.data as Record<string, unknown>[]
-    const normalized = rows
-      .map((row) => CsvRowSchema.safeParse(row))
-      .filter((result) => result.success)
-      .map((result) => result.data)
+    const parsedRows = parseImportRows(data.csvContent)
+    const rows = Papa.parse(data.csvContent, { header: true, skipEmptyLines: true }).data as Record<string, unknown>[]
+    const normalized = parsedRows.validRows
 
     const emails = Array.from(new Set(normalized.map((row) => toLower(row.email)).filter(Boolean)))
 
@@ -347,7 +344,9 @@ export async function previewMembersImportCsv(input: unknown) {
 
     const duplicates = normalized.filter((row) => existingSet.has(toLower(row.email))).length
     const validRows = normalized.length
-    const invalidRows = rows.length - validRows
+    const invalidRows = parsedRows.rowErrors.length + parsedRows.parseErrors.length
+    const invalidErrorRows = [...parsedRows.parseErrors, ...parsedRows.rowErrors]
+    const errorCsv = invalidErrorRows.length > 0 ? renderImportErrorsCsv(invalidErrorRows) : ''
 
     return {
       success: true,
@@ -362,6 +361,10 @@ export async function previewMembersImportCsv(input: unknown) {
             ? validRows - duplicates
             : validRows,
         willUpdate: data.strategy === 'update_existing' ? duplicates : 0,
+        blockedByInvalidRows: invalidRows > IMPORT_INVALID_HARD_BLOCK,
+        invalidThreshold: IMPORT_INVALID_HARD_BLOCK,
+        errors: invalidErrorRows.slice(0, 200),
+        errorCsv,
         sample: normalized.slice(0, 8),
       },
     }
@@ -376,28 +379,36 @@ export async function previewMembersImportCsv(input: unknown) {
 
 export async function commitMembersImportCsv(input: unknown) {
   try {
-    const access = await requireTenantAdminAccess('commitMembersImportCsv')
+    const data = ImportCommitSchema.parse(input)
+
+    const actionForImport =
+      data.strategy === 'update_existing' || data.strategy === 'merge_by_email'
+        ? 'import_commit_overwrite'
+        : 'import_commit_safe'
+
+    const access = await requireTenantActionAccess('commitMembersImportCsv', actionForImport)
     if (!access.success) return { success: false, error: access.error }
 
-    const data = ImportCommitSchema.parse(input)
     const preview = await previewMembersImportCsv({ csvContent: data.csvContent, strategy: data.strategy })
 
     if (!preview.success) return preview
 
-    const shouldRequireTypedConfirmation = (preview.data?.duplicates ?? 0) > 0 && data.strategy === 'update_existing'
-    if (shouldRequireTypedConfirmation && data.confirmationText !== 'CONFIRM') {
+    const requiresTypedConfirmation = requiresTypedConfirmationForImport(
+      data.strategy,
+      preview.data?.duplicates ?? 0
+    )
+    if (requiresTypedConfirmation && data.confirmationText !== 'CONFIRM') {
       return { success: false, error: 'Typed confirmation required. Enter CONFIRM to update existing members.' }
     }
 
-    const parsed = Papa.parse(data.csvContent, {
-      header: true,
-      skipEmptyLines: true,
-    })
+    if (preview.data?.blockedByInvalidRows) {
+      return {
+        success: false,
+        error: `Import blocked: invalid rows exceed threshold (${preview.data.invalidThreshold}). Fix errors and retry.`,
+      }
+    }
 
-    const rows = (parsed.data as Record<string, unknown>[])
-      .map((row) => CsvRowSchema.safeParse(row))
-      .filter((result) => result.success)
-      .map((result) => result.data)
+    const { validRows: rows } = parseImportRows(data.csvContent)
 
     let created = 0
     let updated = 0
@@ -421,7 +432,17 @@ export async function commitMembersImportCsv(input: unknown) {
       }
 
       if (existing && data.strategy === 'merge_by_email') {
-        skipped++
+        await prisma.member.update({
+          where: { id: existing.id },
+          data: {
+            firstName: row.firstName || undefined,
+            lastName: row.lastName || undefined,
+            phone: row.phone || undefined,
+            status: row.status,
+            tierId: row.tierId || undefined,
+          },
+        })
+        updated++
         continue
       }
 
@@ -466,6 +487,8 @@ export async function commitMembersImportCsv(input: unknown) {
         created,
         updated,
         skipped,
+        invalidRows: preview.data?.invalidRows ?? 0,
+        duplicateRows: preview.data?.duplicates ?? 0,
         tenantId: access.tenant.id,
       },
     })
@@ -477,5 +500,112 @@ export async function commitMembersImportCsv(input: unknown) {
     }
     console.error('[commitMembersImportCsv]', error)
     return { success: false, error: 'Failed to commit CSV import' }
+  }
+}
+
+export async function getRecentBulkOperations(limit = 10) {
+  try {
+    const access = await requireTenantActionAccess('getRecentBulkOperations', 'bulk_preview')
+    if (!access.success) return { success: false, error: access.error, data: [] }
+
+    const logs = await prisma.auditLog.findMany({
+      where: {
+        tenantId: access.tenant.id,
+        resourceType: 'ContactBulkOperation',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Math.max(1, Math.min(limit, 30)),
+      select: {
+        id: true,
+        resourceId: true,
+        resourceName: true,
+        createdAt: true,
+        metadata: true,
+      },
+    })
+
+    return { success: true, data: logs }
+  } catch (error) {
+    console.error('[getRecentBulkOperations]', error)
+    return { success: false, error: 'Failed to load recent operations', data: [] }
+  }
+}
+
+export async function restoreRecentBulkOperation(input: { jobId: string; confirmationText?: string }) {
+  try {
+    const access = await requireTenantActionAccess('restoreRecentBulkOperation', 'bulk_restore_recent')
+    if (!access.success) return { success: false, error: access.error }
+
+    if (input.confirmationText !== 'RESTORE') {
+      return { success: false, error: 'Type RESTORE to confirm recovery.' }
+    }
+
+    const log = await prisma.auditLog.findFirst({
+      where: {
+        tenantId: access.tenant.id,
+        resourceType: 'ContactBulkOperation',
+        resourceId: input.jobId,
+      },
+      select: {
+        resourceId: true,
+        metadata: true,
+      },
+    })
+
+    if (!log || !log.metadata) {
+      return { success: false, error: 'Bulk operation not found' }
+    }
+
+    const metadata = log.metadata as {
+      operation?: BulkOperation
+      affectedContactIds?: string[]
+    }
+
+    const affectedContactIds = metadata.affectedContactIds ?? []
+    if (affectedContactIds.length === 0) {
+      return { success: false, error: 'No recoverable records in this operation.' }
+    }
+
+    const inverseOperation: BulkOperation | null =
+      metadata.operation === 'archive' ? 'restore' : metadata.operation === 'restore' ? 'archive' : null
+
+    if (!inverseOperation) {
+      return { success: false, error: 'Only archive/restore operations can be auto-recovered.' }
+    }
+
+    const contacts = await prisma.contact.findMany({
+      where: { tenantId: access.tenant.id, id: { in: affectedContactIds } },
+      select: { id: true, tags: true },
+    })
+
+    await prisma.$transaction(
+      contacts.map((contact) =>
+        prisma.contact.update({
+          where: { id: contact.id },
+          data: {
+            tags: setArchivedTag(contact.tags ?? [], inverseOperation === 'archive'),
+          },
+        })
+      )
+    )
+
+    const recoveryJobId = randomUUID()
+    await logAudit({
+      tenantId: access.tenant.id,
+      action: 'UPDATE',
+      resourceType: 'ContactBulkOperationRecovery',
+      resourceId: recoveryJobId,
+      resourceName: `restore ${input.jobId}`,
+      metadata: {
+        sourceJobId: input.jobId,
+        inverseOperation,
+        affectedCount: contacts.length,
+      },
+    })
+
+    return { success: true, data: { recoveryJobId, affectedCount: contacts.length } }
+  } catch (error) {
+    console.error('[restoreRecentBulkOperation]', error)
+    return { success: false, error: 'Failed to restore bulk operation' }
   }
 }

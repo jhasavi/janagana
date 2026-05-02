@@ -33,6 +33,8 @@ import {
 } from '@/components/ui/dialog'
 import type { Contact, Member, Company } from '@prisma/client'
 
+const SYSTEM_ARCHIVE_TAG = '__system_archived'
+
 type ContactWithRelations = Contact & {
   member: Member | null
   company: Company | null
@@ -67,7 +69,7 @@ export function ContactTable({ contacts }: ContactTableProps) {
       (contact.phone && contact.phone.includes(searchQuery)) ||
       (contact.jobTitle && contact.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    const isArchived = contact.tags.includes('archived')
+    const isArchived = contact.tags.includes(SYSTEM_ARCHIVE_TAG) || contact.tags.includes('archived')
     const statusMatches =
       statusFilter === 'all' ||
       (statusFilter === 'active' && !isArchived) ||

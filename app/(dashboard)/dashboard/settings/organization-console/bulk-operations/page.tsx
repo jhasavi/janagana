@@ -2,8 +2,13 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BulkOperationsPanel } from './_components/bulk-operations-panel'
+import { getRecentBulkOperations } from '@/lib/actions/organization-console'
+import { RecentBulkOperations } from './_components/recent-bulk-operations'
 
-export default function BulkOperationsPage() {
+export default async function BulkOperationsPage() {
+  const recentResult = await getRecentBulkOperations(8)
+  const operations = recentResult.success ? recentResult.data : []
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -20,6 +25,7 @@ export default function BulkOperationsPage() {
       </div>
 
       <BulkOperationsPanel />
+      <RecentBulkOperations operations={operations} />
     </div>
   )
 }

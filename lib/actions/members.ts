@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import { sendMembershipRenewalReminder } from '@/lib/sms'
 import { ensureContactForMember } from '@/lib/contact-linking'
+import { shouldBlockDuplicateActiveEnrollment } from '@/lib/members-guards'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -247,14 +248,14 @@ export async function createMember(input: unknown) {
       select: { id: true },
     })
 
-    if (existingContact && data.status === 'ACTIVE') {
+    if (existingContact) {
       const hasDuplicate = await hasDuplicateActiveEnrollment({
         tenantId: tenant.id,
         contactId: existingContact.id,
         tierId: data.tierId,
       })
 
-      if (hasDuplicate) {
+      if (shouldBlockDuplicateActiveEnrollment(data.status, hasDuplicate)) {
         return {
           success: false,
           error: 'This contact already has an active membership enrollment with the same tier.',
@@ -340,7 +341,7 @@ export async function updateMember(id: string, input: unknown) {
       country: member.country,
     })
 
-    if (member.status === 'ACTIVE') {
+    {
       const latest = await prisma.membershipEnrollment.findFirst({
         where: {
           tenantId: tenant.id,
@@ -357,7 +358,7 @@ export async function updateMember(id: string, input: unknown) {
         excludeEnrollmentId: latest?.id,
       })
 
-      if (hasDuplicate) {
+      if (shouldBlockDuplicateActiveEnrollment(member.status, hasDuplicate)) {
         return {
           success: false,
           error: 'This contact already has an active membership enrollment with the same tier.',

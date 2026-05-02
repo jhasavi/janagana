@@ -14,6 +14,9 @@ type PreviewData = {
   operation: 'assign_tags' | 'archive' | 'restore'
   affectedCount: number
   highRisk: boolean
+  largeScopeWarning: boolean
+  blockedByScope: boolean
+  warnings: string[]
   requiresTypedConfirmation: boolean
   sample: Array<{ id: string; firstName: string; lastName: string; email: string | null; tags: string[] }>
   tagDelta: string[]
@@ -131,7 +134,7 @@ export function BulkOperationsPanel() {
           <Button type="button" variant="outline" onClick={runPreview} disabled={isPending}>
             {isPending ? 'Working...' : 'Preview Impact'}
           </Button>
-          <Button type="button" onClick={runCommit} disabled={isPending || !preview}>
+          <Button type="button" onClick={runCommit} disabled={isPending || !preview || Boolean(preview?.blockedByScope)}>
             Commit Bulk Action
           </Button>
         </div>
@@ -146,6 +149,13 @@ export function BulkOperationsPanel() {
               <p>
                 <strong>High risk:</strong> {preview.highRisk ? 'Yes' : 'No'}
               </p>
+              {preview.warnings.length > 0 && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                  {preview.warnings.map((warning) => (
+                    <p key={warning}>{warning}</p>
+                  ))}
+                </div>
+              )}
               {preview.tagDelta.length > 0 && (
                 <p>
                   <strong>Tags being added:</strong> {preview.tagDelta.join(', ')}

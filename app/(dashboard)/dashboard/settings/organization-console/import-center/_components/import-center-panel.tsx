@@ -23,6 +23,10 @@ export function ImportCenterPanel() {
     duplicates: number
     willCreate: number
     willUpdate: number
+    blockedByInvalidRows?: boolean
+    invalidThreshold?: number
+    errors?: Array<{ rowNumber: number; message: string }>
+    errorCsv?: string
   } | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -72,6 +76,17 @@ export function ImportCenterPanel() {
       setPreview(null)
       setConfirmationText('')
     })
+  }
+
+  const downloadErrorCsv = () => {
+    if (!preview?.errorCsv) return
+    const blob = new Blob([preview.errorCsv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'import-errors.csv'
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -129,9 +144,33 @@ export function ImportCenterPanel() {
             <p>Duplicates detected: {preview.duplicates}</p>
             <p>Will create: {preview.willCreate}</p>
             <p>Will update: {preview.willUpdate}</p>
+            {preview.blockedByInvalidRows && (
+              <p className="text-amber-700 font-medium">
+                Import blocked if committed: invalid rows exceed threshold ({preview.invalidThreshold}).
+              </p>
+            )}
+            {(preview.errors?.length ?? 0) > 0 && (
+              <>
+                <p className="font-medium pt-2">Validation errors (sample):</p>
+                <div className="max-h-36 overflow-auto rounded border p-2 text-xs space-y-1">
+                  {preview.errors?.slice(0, 20).map((error) => (
+                    <p key={`${error.rowNumber}-${error.message}`}>Row {error.rowNumber}: {error.message}</p>
+                  ))}
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={downloadErrorCsv}>
+                  Download Error CSV
+                </Button>
+              </>
+            )}
             {strategy === 'update_existing' && preview.duplicates > 0 && (
               <div className="space-y-1.5 pt-2">
                 <Label>Type CONFIRM to update existing records</Label>
+                <Input value={confirmationText} onChange={(event) => setConfirmationText(event.target.value)} />
+              </div>
+            )}
+            {strategy === 'merge_by_email' && preview.duplicates > 0 && (
+              <div className="space-y-1.5 pt-2">
+                <Label>Type CONFIRM to merge by email into existing records</Label>
                 <Input value={confirmationText} onChange={(event) => setConfirmationText(event.target.value)} />
               </div>
             )}

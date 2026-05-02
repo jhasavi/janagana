@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/help(.*)', // Public help center
+  '/preview(.*)', // Local preview harness for QA screenshots
   '/api/webhooks(.*)',
   '/api/plugin(.*)', // Plugin API routes use API key authentication
   '/api/embed(.*)', // Public embed API for widgets
