@@ -44,7 +44,7 @@ export default async function DuplicatesPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <GitMerge className="h-8 w-8 text-indigo-600" />
-            Duplicate People
+            Duplicate Contacts
           </h1>
           <p className="text-muted-foreground mt-1">
             Soft-match suggestions for review. Only privileged admins can merge records.

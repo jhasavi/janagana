@@ -8,6 +8,7 @@ import { MemberTable } from './_components/member-table'
 import { MemberFilters } from './_components/member-filters'
 import { ExportCsvButton, ImportCsvDialog } from './_components/csv-import-dialog'
 import { HelpButton } from '@/components/dashboard/help-button'
+import { Card, CardContent } from '@/components/ui/card'
 
 export const metadata: Metadata = { title: 'Memberships' }
 
@@ -29,18 +30,15 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-6">
-      {/* Info Banner */}
-      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100">Understanding People vs Memberships</h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-              <strong>People</strong> are your master contact records - individuals who engage with your organization in any way (donors, volunteers, event attendees, etc.). 
-              <strong>Memberships</strong> are enrollment records that link people to membership tiers. A person can have multiple memberships over time, but only one active membership at a time.
-            </p>
-          </div>
-        </div>
-      </div>
+      <Card className="border-blue-200 bg-blue-50/80 dark:border-blue-900 dark:bg-blue-950/50">
+        <CardContent className="pt-5 text-sm text-blue-900 dark:text-blue-100">
+          Memberships are enrollment records linked to contacts. Add a contact first, or create one while adding a membership.{' '}
+          <Link href="/dashboard/help/crm/add-manage-contacts" className="underline underline-offset-4">
+            Learn how Contacts and Memberships work
+          </Link>
+          .
+        </CardContent>
+      </Card>
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -48,7 +46,7 @@ export default async function MembersPage({
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Memberships</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage membership enrollments and tiers. People can have multiple membership enrollments over time.
+              Manage enrollment records linked to contacts and membership tiers.
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary">{stats?.total ?? 0} total</Badge>
@@ -60,7 +58,7 @@ export default async function MembersPage({
           </div>
           <HelpButton
             title="Membership Management"
-            content="Manage membership enrollments, create membership tiers, and track membership activity. Memberships are enrollment records linked to people in the People section."
+            content="Manage membership enrollments, create membership tiers, and track membership activity. Memberships are linked to contacts and should not be the first place to create a person."
             link="/dashboard/help/members/membership-management"
           />
         </div>

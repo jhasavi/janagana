@@ -8,7 +8,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
+    await auth()
     const tenant = await getTenant()
 
     if (!tenant) {
@@ -50,7 +50,9 @@ export async function PUT(
         firstName,
         lastName,
         email,
+        emails: email ? [email] : [],
         phone,
+        phones: phone ? [phone] : [],
         jobTitle,
         linkedinUrl,
         companyName,
@@ -71,7 +73,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
+    await auth()
     const tenant = await getTenant()
 
     if (!tenant) {
@@ -89,14 +91,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
     }
 
-    // Delete contact (cascade will delete related activities, deals, tasks)
-    await prisma.contact.delete({
+    const archivedTags = Array.from(new Set([...(contact.tags ?? []), 'archived']))
+
+    await prisma.contact.update({
       where: { id },
+      data: {
+        tags: archivedTags,
+      },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting contact:', error)
-    return NextResponse.json({ error: 'Failed to delete contact' }, { status: 500 })
+    console.error('Error archiving contact:', error)
+    return NextResponse.json({ error: 'Failed to archive contact' }, { status: 500 })
   }
 }

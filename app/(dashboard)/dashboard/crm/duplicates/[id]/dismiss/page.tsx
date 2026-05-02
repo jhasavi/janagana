@@ -36,7 +36,7 @@ export default async function DismissPage({ params }: Props) {
         <div>
           <h1 className="text-2xl font-bold">Dismiss Suggestion</h1>
           <p className="text-muted-foreground text-sm">
-            Mark these two people as not duplicates.
+            Mark these two contacts as not duplicates.
           </p>
         </div>
       </div>

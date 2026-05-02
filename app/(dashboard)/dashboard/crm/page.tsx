@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { getTenant } from '@/lib/tenant'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { UserPlus, GitMerge } from 'lucide-react'
+import { UserPlus, GitMerge, Upload, Download, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContactTable } from './_components/contact-table'
 import { HelpButton } from '@/components/dashboard/help-button'
@@ -19,6 +19,16 @@ export default async function CRMPage() {
     include: {
       member: true,
       company: true,
+      _count: {
+        select: {
+          donations: true,
+          volunteerSignups: true,
+          eventRegistrations: true,
+          deals: true,
+          tasks: true,
+          enrollments: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -29,10 +39,11 @@ export default async function CRMPage() {
       <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
         <div className="flex items-start gap-3">
           <div className="flex-1">
-            <h3 className="font-semibold text-green-900 dark:text-green-100">People: Your Master Contact Records</h3>
+            <h3 className="font-semibold text-green-900 dark:text-green-100">Contacts: Your master CRM records</h3>
             <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-              <strong>People</strong> are the canonical master records for all individuals in your system. Every person who engages with your organization (as a member, donor, volunteer, event attendee, etc.) has a single People record. 
-              <strong>Memberships</strong>, <strong>Donations</strong>, <strong>Volunteering</strong>, and <strong>Event Registrations</strong> are all linked to People records.
+              Every person starts as a <strong>Contact</strong>. Memberships, donations, volunteering,
+              event registrations, deals, tasks, and communication history all attach to that same contact
+              record. Create contacts once, then reuse them across modules.
             </p>
           </div>
         </div>
@@ -41,28 +52,46 @@ export default async function CRMPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold">People</h1>
+            <h1 className="text-3xl font-bold">Contacts</h1>
             <p className="text-muted-foreground">
-              Track all people including members, donors, volunteers, and external contacts. People are the master record for all engagement.
+              Add and manage people as contacts first, then link memberships and engagement activity.
             </p>
           </div>
           <HelpButton
-            title="Add & Manage People"
-            content="People are the master record for all engagement. Each person can have multiple roles: member, donor, volunteer, applicant, etc. All data from events, donations, and volunteering is linked to people."
-            link="/dashboard/help/people/add-manage-people"
+            title="Add & Manage Contacts"
+            content="Contacts are the primary CRM records. Members, donors, volunteers, attendees, and leads all live here and connect to activities across the platform."
+            link="/dashboard/help/crm/add-manage-contacts"
           />
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline">
+            <Link href="/dashboard/settings/organization-console/import-center">
+              <Upload className="h-4 w-4 mr-2" />
+              Import Contacts
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/settings/organization-console/import-center">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/settings/organization-console/bulk-operations">
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Bulk Actions
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/dashboard/crm/duplicates">
               <GitMerge className="h-4 w-4 mr-2" />
-              Duplicates
+              Duplicate Review
             </Link>
           </Button>
           <Button asChild>
             <Link href="/dashboard/crm/contacts/new">
               <UserPlus className="h-4 w-4 mr-2" />
-              Add Person
+              Add Contact
             </Link>
           </Button>
         </div>

@@ -128,6 +128,32 @@ async function syncEnrollmentForMember(member: {
   })
 }
 
+async function hasDuplicateActiveEnrollment(params: {
+  tenantId: string
+  contactId: string
+  tierId: string | null | undefined
+  excludeEnrollmentId?: string
+}) {
+  const where: Record<string, unknown> = {
+    tenantId: params.tenantId,
+    contactId: params.contactId,
+    status: 'ACTIVE',
+    endDate: null,
+    tierId: params.tierId ?? null,
+  }
+
+  if (params.excludeEnrollmentId) {
+    where.NOT = { id: params.excludeEnrollmentId }
+  }
+
+  const existing = await prisma.membershipEnrollment.findFirst({
+    where,
+    select: { id: true },
+  })
+
+  return Boolean(existing)
+}
+
 // ─── MEMBER ACTIONS ──────────────────────────────────────────────────────────
 
 export async function getMembers(params?: {
@@ -210,6 +236,32 @@ export async function createMember(input: unknown) {
       return { success: false, error: 'A member with this email already exists' }
     }
 
+    const existingContact = await prisma.contact.findFirst({
+      where: {
+        tenantId: tenant.id,
+        OR: [
+          { email: data.email.toLowerCase() },
+          { emails: { has: data.email.toLowerCase() } },
+        ],
+      },
+      select: { id: true },
+    })
+
+    if (existingContact && data.status === 'ACTIVE') {
+      const hasDuplicate = await hasDuplicateActiveEnrollment({
+        tenantId: tenant.id,
+        contactId: existingContact.id,
+        tierId: data.tierId,
+      })
+
+      if (hasDuplicate) {
+        return {
+          success: false,
+          error: 'This contact already has an active membership enrollment with the same tier.',
+        }
+      }
+    }
+
     const member = await prisma.member.create({
       data: {
         ...data,
@@ -287,6 +339,31 @@ export async function updateMember(id: string, input: unknown) {
       postalCode: member.postalCode,
       country: member.country,
     })
+
+    if (member.status === 'ACTIVE') {
+      const latest = await prisma.membershipEnrollment.findFirst({
+        where: {
+          tenantId: tenant.id,
+          contactId: contact.id,
+        },
+        orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
+        select: { id: true },
+      })
+
+      const hasDuplicate = await hasDuplicateActiveEnrollment({
+        tenantId: tenant.id,
+        contactId: contact.id,
+        tierId: member.tierId,
+        excludeEnrollmentId: latest?.id,
+      })
+
+      if (hasDuplicate) {
+        return {
+          success: false,
+          error: 'This contact already has an active membership enrollment with the same tier.',
+        }
+      }
+    }
 
     await syncEnrollmentForMember(member, contact.id)
 

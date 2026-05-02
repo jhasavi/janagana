@@ -153,7 +153,7 @@ export function ApplicationActions({ applicationId, currentStatus, hasContact }:
         {!hasContact && (
           <div className="border-t pt-4">
             <p className="text-sm text-muted-foreground mb-2">
-              Create a People record from this applicant&apos;s contact info and link it to this application.
+              Create a Contact record from this applicant&apos;s info and link it to this application.
             </p>
             <Button
               variant="outline"

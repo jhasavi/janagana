@@ -137,7 +137,7 @@ export default async function ApplicationDetailPage({ params }: Props) {
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>No contact linked yet.</p>
                 <p className="text-xs">
-                  Convert to create a People record and link to this application.
+                  Convert to create a Contact record and link to this application.
                 </p>
               </div>
             )}
