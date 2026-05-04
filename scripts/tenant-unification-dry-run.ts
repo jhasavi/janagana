@@ -5,6 +5,8 @@ import { PrismaClient } from '@prisma/client'
 type Args = {
   sourceSlug: string
   targetSlug: string
+  allowSourceSlugs: string[]
+  allowTargetSlugs: string[]
   json: boolean
 }
 
@@ -27,16 +29,39 @@ type DerivedMetric = {
 const prisma = new PrismaClient()
 
 function parseArgs(argv: string[]): Args {
-  const out: Partial<Args> = { json: false }
+  const out: Partial<Args> = {
+    json: false,
+    allowSourceSlugs: [],
+    allowTargetSlugs: [],
+  }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--json') out.json = true
     if (a === '--source-slug') out.sourceSlug = argv[i + 1]
     if (a === '--target-slug') out.targetSlug = argv[i + 1]
+    if (a === '--allow-source-slugs') {
+      out.allowSourceSlugs = (argv[i + 1] ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+    }
+    if (a === '--allow-target-slugs') {
+      out.allowTargetSlugs = (argv[i + 1] ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+    }
   }
 
-  if (!out.sourceSlug || !out.targetSlug) {
-    console.error('Usage: npx tsx scripts/tenant-unification-dry-run.ts --source-slug <slug> --target-slug <slug> [--json]')
+  if (
+    !out.sourceSlug ||
+    !out.targetSlug ||
+    !out.allowSourceSlugs ||
+    out.allowSourceSlugs.length === 0 ||
+    !out.allowTargetSlugs ||
+    out.allowTargetSlugs.length === 0
+  ) {
+    console.error('Usage: npx tsx scripts/tenant-unification-dry-run.ts --source-slug <slug> --target-slug <slug> --allow-source-slugs slug-a,slug-b --allow-target-slugs slug-c,slug-d [--json]')
     process.exit(1)
   }
 
@@ -94,6 +119,16 @@ async function tryDerivedMetric(
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
+
+  if (!args.allowSourceSlugs.includes(args.sourceSlug)) {
+    console.error(`Source slug ${args.sourceSlug} is not in --allow-source-slugs`)
+    process.exit(1)
+  }
+
+  if (!args.allowTargetSlugs.includes(args.targetSlug)) {
+    console.error(`Target slug ${args.targetSlug} is not in --allow-target-slugs`)
+    process.exit(1)
+  }
 
   const [sourceTenant, targetTenant] = await Promise.all([
     prisma.tenant.findUnique({ where: { slug: args.sourceSlug } }),

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function PUT(
@@ -8,12 +7,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
     const body = await request.json()
@@ -21,7 +19,7 @@ export async function PUT(
 
     // Verify company belongs to tenant
     const company = await prisma.company.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!company) {
@@ -44,6 +42,10 @@ export async function PUT(
       },
     })
 
+    logTenantRequest('dashboard.crm.companies.update.success', context, {
+      companyId: id,
+    })
+
     return NextResponse.json({ success: true, company: updatedCompany })
   } catch (error) {
     console.error('Error updating company:', error)
@@ -56,18 +58,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
 
     // Verify company belongs to tenant
     const company = await prisma.company.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!company) {
@@ -77,6 +78,10 @@ export async function DELETE(
     // Delete company
     await prisma.company.delete({
       where: { id },
+    })
+
+    logTenantRequest('dashboard.crm.companies.delete.success', context, {
+      companyId: id,
     })
 
     return NextResponse.json({ success: true })

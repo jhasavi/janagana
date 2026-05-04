@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 import { syncMemberToContact } from '@/lib/crm-sync'
 
 export async function PUT(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
+    const authState = await auth()
+    if (!authState.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const tenant = await getTenant()
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const { firstName, lastName, phone, dateOfBirth, address, city, state, postalCode, country } = body
@@ -36,7 +37,7 @@ export async function PUT(request: NextRequest) {
     // Find member by email and tenant
     const member = await prisma.member.findFirst({
       where: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         email: { equals: primaryEmail, mode: 'insensitive' },
       },
     })
@@ -68,6 +69,11 @@ export async function PUT(request: NextRequest) {
       console.error('[member profile] Failed to sync to CRM:', error)
       // Don't fail the update if CRM sync fails
     }
+
+    logTenantRequest('portal.member.profile.update.success', context, {
+      memberId: member.id,
+      email: primaryEmail,
+    })
 
     return NextResponse.json({ success: true, member: updatedMember })
   } catch (error) {

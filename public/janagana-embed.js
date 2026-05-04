@@ -3,11 +3,11 @@
  * Add this script to any website to embed JanaGana features
  *
  * Usage:
- * <script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+ * <script src="https://your-janagana-host/janagana-embed.js"></script>
  * <script>
  *   Janagana.init({
  *     tenantSlug: 'your-org-slug',
- *     apiUrl: 'https://janagana.namasteneedham.com'
+ *     apiUrl: 'https://your-janagana-host'
  *   });
  * </script>
  */
@@ -15,10 +15,26 @@
 (function(window) {
   'use strict';
 
+  function deriveDefaultApiUrl() {
+    if (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) {
+      try {
+        return new URL(document.currentScript.src).origin;
+      } catch (error) {
+        // Fall through to location-based fallback.
+      }
+    }
+
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+      return window.location.origin;
+    }
+
+    return '';
+  }
+
   const Janagana = {
     config: {
       tenantSlug: null,
-      apiUrl: 'https://janagana.namasteneedham.com',
+      apiUrl: deriveDefaultApiUrl(),
       debug: false
     },
 

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getTenant } from '@/lib/tenant'
 import { slugify } from '@/lib/utils'
+import { extractApiKeyPrefix, generateApiKey, hashApiKey } from '@/lib/plugin-auth'
 
 const OnboardingSchema = z.object({
   orgName: z.string().min(2, 'Organization name must be at least 2 characters').max(100),
@@ -72,6 +73,7 @@ export async function completeOnboarding(input: unknown) {
     // a new tenant while ensuring slug uniqueness.
     const existing = await prisma.tenant.findUnique({ where: { clerkOrgId: org.id } })
     let tenant
+    let tenantCreated = false
     if (existing) {
       tenant = await prisma.tenant.update({
         where: { id: existing.id },
@@ -101,11 +103,59 @@ export async function completeOnboarding(input: unknown) {
           primaryColor: data.primaryColor,
         },
       })
+      tenantCreated = true
 
       console.log('[completeOnboarding] created org', org.id, 'tenant', tenant.id)
     }
+
+    // Idempotent default API key provisioning for plugin integrations.
+    const defaultApiKeyName = process.env.ONBOARDING_DEFAULT_API_KEY_NAME || 'Default Plugin Key'
+    const defaultApiKeyPermissions = (process.env.ONBOARDING_DEFAULT_API_KEY_PERMISSIONS || 'contacts:write,events:read')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+
+    const existingApiKey = await prisma.apiKey.findFirst({
+      where: { tenantId: tenant.id, name: defaultApiKeyName, isActive: true },
+      select: { id: true },
+    })
+
+    let onboardingApiKey: string | undefined
+    let apiKeyCreated = false
+
+    if (!existingApiKey) {
+      const rawKey = generateApiKey('jg_live_')
+      await prisma.apiKey.create({
+        data: {
+          tenantId: tenant.id,
+          name: defaultApiKeyName,
+          keyHash: hashApiKey(rawKey),
+          keyPrefix: extractApiKeyPrefix(rawKey),
+          permissions: defaultApiKeyPermissions,
+        },
+      })
+      onboardingApiKey = rawKey
+      apiKeyCreated = true
+      console.log('[completeOnboarding] created default api key', {
+        tenantId: tenant.id,
+        keyName: defaultApiKeyName,
+      })
+    }
+
     revalidatePath('/dashboard')
-    return { success: true, data: { tenant, orgId: org.id } }
+    return {
+      success: true,
+      data: {
+        tenant,
+        orgId: org.id,
+        provisioning: {
+          tenantCreated,
+          apiKeyCreated,
+          defaultApiKeyName,
+          apiKey: onboardingApiKey,
+        },
+      },
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }

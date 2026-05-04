@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPluginApiKey } from '@/lib/plugin-auth'
+import { resolvePluginTenantContext } from '@/lib/plugin-auth'
+import { logTenantRequest } from '@/lib/tenant'
 
 // GET /api/plugin/crm/contacts - List contacts
 export async function GET(request: NextRequest) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      console.warn('[plugin-crm-contacts-get] tenant resolution failed', {
+        route: tenantResolution.route,
+        authPrincipal: tenantResolution.authPrincipal,
+        status: tenantResolution.status,
+      })
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -16,7 +23,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const companyId = searchParams.get('companyId')
 
-    const where: any = { tenantId: tenant.id }
+    const where: any = { tenantId: context.tenantId }
     
     if (search) {
       where.OR = [
@@ -44,6 +51,13 @@ export async function GET(request: NextRequest) {
       prisma.contact.count({ where }),
     ])
 
+    logTenantRequest('plugin.crm.contacts.list.success', context, {
+      page,
+      limit,
+      count: contacts.length,
+      total,
+    })
+
     return NextResponse.json({
       contacts,
       pagination: {
@@ -65,10 +79,16 @@ export async function GET(request: NextRequest) {
 // POST /api/plugin/crm/contacts - Create contact
 export async function POST(request: NextRequest) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      console.warn('[plugin-crm-contacts-post] tenant resolution failed', {
+        route: tenantResolution.route,
+        authPrincipal: tenantResolution.authPrincipal,
+        status: tenantResolution.status,
+      })
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const {
@@ -88,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Check if contact already exists by primary email
     const existing = email
       ? await prisma.contact.findFirst({
-          where: { tenantId: tenant.id, email },
+          where: { tenantId: context.tenantId, email },
         })
       : null
 
@@ -99,9 +119,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (companyId) {
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!company) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      }
+    }
+
+    if (memberId) {
+      const member = await prisma.member.findFirst({
+        where: { id: memberId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!member) {
+        return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+      }
+    }
+
     const contact = await prisma.contact.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         firstName,
         lastName,
         email,
@@ -118,6 +158,12 @@ export async function POST(request: NextRequest) {
         company: true,
         member: true,
       },
+    })
+
+    logTenantRequest('plugin.crm.contacts.create.success', context, {
+      contactId: contact.id,
+      companyId: companyId ?? null,
+      memberId: memberId ?? null,
     })
 
     return NextResponse.json(contact, { status: 201 })

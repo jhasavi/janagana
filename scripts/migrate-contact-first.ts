@@ -10,7 +10,8 @@
  * - Run in maintenance window
  * 
  * Usage:
- *   npx tsx scripts/migrate-contact-first.ts
+ *   npx tsx scripts/migrate-contact-first.ts --allow-tenant-slugs=slug-a,slug-b
+ *   npx tsx scripts/migrate-contact-first.ts --allow-tenant-slugs=slug-a --commit
  * 
  * Rollback:
  *   npx tsx scripts/rollback-contact-first.ts
@@ -22,9 +23,19 @@ const prisma = new PrismaClient();
 
 // Configuration
 const BATCH_SIZE = 100;
-// Accept --dry-run CLI flag OR DRY_RUN=true env var
-const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === 'true';
+// Safe-by-default mode: commit only when explicitly requested.
+const COMMIT = process.argv.includes('--commit');
+const DRY_RUN = !COMMIT;
 const MIGRATION_SOURCE = 'backfill-v1';
+const ALLOW_TENANT_SLUGS = (() => {
+  const arg = process.argv.find((value) => value.startsWith('--allow-tenant-slugs='));
+  if (!arg) return [] as string[];
+  return arg
+    .split('=')[1]
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+})();
 
 interface MigrationStats {
   membersProcessed: number;
@@ -220,7 +231,13 @@ async function updateForeignKeys(memberId: string, contactId: string) {
 async function migrateCustomFields() {
   console.log('Migrating custom field values...');
   
-  const customFields = await prisma.memberCustomField.findMany();
+  const customFields = await prisma.memberCustomField.findMany({
+    where: {
+      tenant: {
+        slug: { in: ALLOW_TENANT_SLUGS },
+      },
+    },
+  });
   
   for (const field of customFields) {
     // Create corresponding ContactCustomField
@@ -242,7 +259,15 @@ async function migrateCustomFields() {
   }
 
   // Migrate values
-  const values = await prisma.memberCustomFieldValue.findMany();
+  const values = await prisma.memberCustomFieldValue.findMany({
+    where: {
+      field: {
+        tenant: {
+          slug: { in: ALLOW_TENANT_SLUGS },
+        },
+      },
+    },
+  });
   for (const value of values) {
     const member = await prisma.member.findUnique({
       where: { id: value.memberId },
@@ -271,7 +296,13 @@ async function migrateCustomFields() {
 async function migrateDocuments() {
   console.log('Migrating documents...');
   
-  const documents = await prisma.memberDocument.findMany();
+  const documents = await prisma.memberDocument.findMany({
+    where: {
+      tenant: {
+        slug: { in: ALLOW_TENANT_SLUGS },
+      },
+    },
+  });
   
   for (const doc of documents) {
     const member = await prisma.member.findUnique({
@@ -306,8 +337,15 @@ async function migrateDocuments() {
  * Main migration function
  */
 async function main() {
+  if (ALLOW_TENANT_SLUGS.length === 0) {
+    console.error('Missing required --allow-tenant-slugs=slug-a,slug-b guardrail.');
+    process.exit(1);
+  }
+
   console.log('Starting Contact-first migration...');
+  console.log(`MODE: ${DRY_RUN ? 'dry-run' : 'commit'}`);
   console.log(`DRY RUN: ${DRY_RUN}`);
+  console.log(`Allowed tenant slugs: ${ALLOW_TENANT_SLUGS.join(', ')}`);
   console.log('=====================================');
 
   try {
@@ -315,7 +353,12 @@ async function main() {
     console.log('Step 1: Migrating Members to Contacts...');
     // Idempotent: skip members that already have a Contact linked
     const members = await prisma.member.findMany({
-      where: { contact: null },
+      where: {
+        contact: null,
+        tenant: {
+          slug: { in: ALLOW_TENANT_SLUGS },
+        },
+      },
     });
 
     console.log(`Found ${members.length} members to migrate`);

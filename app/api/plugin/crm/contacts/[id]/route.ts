@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPluginApiKey } from '@/lib/plugin-auth'
+import { resolvePluginTenantContext } from '@/lib/plugin-auth'
+import { logTenantRequest } from '@/lib/tenant'
 
 // PATCH /api/plugin/crm/contacts/[id] - Update contact
 export async function PATCH(
@@ -8,10 +9,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id: contactId } = await params
     const body = await request.json()
@@ -33,11 +35,21 @@ export async function PATCH(
 
     // Verify contact belongs to tenant
     const existingContact = await prisma.contact.findFirst({
-      where: { id: contactId, tenantId: tenant.id },
+      where: { id: contactId, tenantId: context.tenantId },
     })
 
     if (!existingContact) {
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+    }
+
+    if (companyId) {
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!company) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      }
     }
 
     const contact = await prisma.contact.update({
@@ -63,6 +75,11 @@ export async function PATCH(
       },
     })
 
+    logTenantRequest('plugin.crm.contacts.update.success', context, {
+      contactId,
+      companyId: companyId ?? null,
+    })
+
     return NextResponse.json(contact)
   } catch (error) {
     console.error('CRM update contact error:', error)
@@ -79,16 +96,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id: contactId } = await params
 
     // Verify contact belongs to tenant
     const existingContact = await prisma.contact.findFirst({
-      where: { id: contactId, tenantId: tenant.id },
+      where: { id: contactId, tenantId: context.tenantId },
     })
 
     if (!existingContact) {
@@ -97,6 +115,10 @@ export async function DELETE(
 
     await prisma.contact.delete({
       where: { id: contactId },
+    })
+
+    logTenantRequest('plugin.crm.contacts.delete.success', context, {
+      contactId,
     })
 
     return NextResponse.json({ message: 'Contact deleted successfully' })

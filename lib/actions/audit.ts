@@ -50,6 +50,17 @@ interface LogAuditParams {
   metadata?: Record<string, unknown>
 }
 
+const PLATFORM_AUDIT_TENANT_ID = '__platform__'
+
+interface LogPlatformAuditParams {
+  action: AuditAction
+  resourceType: string
+  resourceId: string
+  resourceName?: string
+  actorClerkId?: string | null
+  metadata?: Record<string, unknown>
+}
+
 /**
  * Fire-and-forget audit logger. Never throws — errors are swallowed so they
  * don't break the calling server action. Tracks failures and alerts on repeated issues.
@@ -70,6 +81,26 @@ export async function logAudit(params: LogAuditParams): Promise<void> {
     })
   } catch (error) {
     console.error('[logAudit]', error)
+    trackAuditFailure()
+  }
+}
+
+export async function logPlatformAudit(params: LogPlatformAuditParams): Promise<void> {
+  try {
+    const { userId } = await auth()
+    await prisma.auditLog.create({
+      data: {
+        tenantId: PLATFORM_AUDIT_TENANT_ID,
+        action: params.action,
+        resourceType: params.resourceType,
+        resourceId: params.resourceId,
+        resourceName: params.resourceName,
+        actorClerkId: params.actorClerkId ?? userId ?? null,
+        metadata: params.metadata as Record<string, string | number | boolean | null> ?? undefined,
+      },
+    })
+  } catch (error) {
+    console.error('[logPlatformAudit]', error)
     trackAuditFailure()
   }
 }

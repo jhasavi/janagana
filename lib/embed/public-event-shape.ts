@@ -1,7 +1,10 @@
 import type { Event } from '@prisma/client'
 import { resolveEventDetailsUrl } from '@/lib/embed/events-utils'
 
-const PUBLIC_APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || 'https://janagana.namasteneedham.com'
+const PUBLIC_APP_ORIGIN =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.JANAGANA_BASE_URL ||
+  'http://localhost:3000'
 
 type PublicEventShape = {
   id: string

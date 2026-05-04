@@ -5,7 +5,7 @@ import { syncNewsletterSubscriptionToContact } from '@/lib/crm-sync'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, x-tenant-slug',
 }
 
 export async function OPTIONS() {
@@ -26,6 +26,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { tenantSlug, email, firstName, lastName } = body
+    const headerTenantSlug = request.headers.get('x-tenant-slug')
+
+    if (headerTenantSlug && tenantSlug && headerTenantSlug !== tenantSlug) {
+      return jsonWithCors({ error: 'Tenant slug mismatch' }, { status: 403 })
+    }
 
     if (!tenantSlug || !email) {
       return jsonWithCors({ error: 'Missing required fields' }, { status: 400 })
@@ -46,6 +51,13 @@ export async function POST(request: NextRequest) {
       email,
       firstName,
       lastName,
+    })
+
+    console.log('[embed.newsletter.subscribe.success]', {
+      route: '/api/embed/newsletter',
+      tenantId: tenant.id,
+      tenantSlug,
+      email,
     })
 
     return jsonWithCors({ success: true })

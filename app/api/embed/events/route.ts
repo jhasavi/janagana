@@ -5,7 +5,7 @@ import { toPublicEventShape } from '@/lib/embed/public-event-shape'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, x-tenant-slug',
 }
 
 export async function OPTIONS() {
@@ -26,6 +26,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const tenantSlug = searchParams.get('tenantSlug')
+    const headerTenantSlug = request.headers.get('x-tenant-slug')
+    if (headerTenantSlug && tenantSlug && headerTenantSlug !== tenantSlug) {
+      return jsonWithCors({ error: 'Tenant slug mismatch' }, { status: 403 })
+    }
     const requestedMaxItems = Number.parseInt(searchParams.get('maxItems') ?? '10', 10)
     const maxItems = Number.isFinite(requestedMaxItems)
       ? Math.min(Math.max(requestedMaxItems, 1), 50)
@@ -53,6 +57,13 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { startDate: 'asc' },
       take: maxItems,
+    })
+
+    console.log('[embed.events.list.success]', {
+      route: '/api/embed/events',
+      tenantId: tenant.id,
+      tenantSlug,
+      count: events.length,
     })
 
     return jsonWithCors({

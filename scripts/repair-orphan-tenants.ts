@@ -8,13 +8,24 @@
  * - Log any tenants that couldn't be matched for manual review.
  *
  * Usage:
- *   CLERK_SECRET_KEY=sk_... node ./scripts/repair-orphan-tenants.ts
+ *   CLERK_SECRET_KEY=sk_... npx tsx scripts/repair-orphan-tenants.ts --allow-tenant-slugs=slug-a,slug-b
+ *   CLERK_SECRET_KEY=sk_... npx tsx scripts/repair-orphan-tenants.ts --allow-tenant-slugs=slug-a --commit
  */
 
 import 'dotenv/config'
 import fs from 'fs'
 import { createClerkClient } from '@clerk/backend'
 import { prisma } from '@/lib/prisma'
+
+function parseTenantAllowlistArg() {
+  const allowArg = process.argv.find((a) => a.startsWith('--allow-tenant-slugs='))
+  if (!allowArg) return []
+  return allowArg
+    .split('=')[1]
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
 
 async function main() {
   const secretKey = process.env.CLERK_SECRET_KEY
@@ -26,12 +37,19 @@ async function main() {
   const commit = process.argv.includes('--commit')
   const outputArg = process.argv.find((a) => a.startsWith('--output='))
   const outputPath = outputArg ? outputArg.split('=')[1] : null
+  const allowTenantSlugs = parseTenantAllowlistArg()
+
+  if (allowTenantSlugs.length === 0) {
+    console.error('Missing required --allow-tenant-slugs=slug-a,slug-b guardrail')
+    process.exit(1)
+  }
 
   const clerk = createClerkClient({ secretKey })
 
   // Find tenants with placeholder/empty clerkOrgId (e.g. from simulate script or manual creation)
   const orphanTenants = await prisma.tenant.findMany({
     where: {
+      slug: { in: allowTenantSlugs },
       OR: [
         { clerkOrgId: '' },
         { clerkOrgId: { startsWith: 'demo_' } },
@@ -39,7 +57,9 @@ async function main() {
       ],
     },
   })
-  console.log(`Found ${orphanTenants.length} tenants with placeholder clerkOrgId`)
+  console.log(`Mode: ${commit ? 'commit' : 'dry-run'}`)
+  console.log(`Allowed tenant slugs: ${allowTenantSlugs.join(', ')}`)
+  console.log(`Found ${orphanTenants.length} tenants with placeholder clerkOrgId in allowlist`)
 
   const matches: Array<{ tenantId: string; tenantSlug: string; tenantName: string; orgId: string }> = []
 

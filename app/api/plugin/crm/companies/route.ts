@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPluginApiKey } from '@/lib/plugin-auth'
+import { resolvePluginTenantContext } from '@/lib/plugin-auth'
+import { logTenantRequest } from '@/lib/tenant'
 
 // GET /api/plugin/crm/companies - List companies
 export async function GET(request: NextRequest) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const search = searchParams.get('search') || ''
 
-    const where: any = { tenantId: tenant.id }
+    const where: any = { tenantId: context.tenantId }
     
     if (search) {
       where.OR = [
@@ -42,6 +44,13 @@ export async function GET(request: NextRequest) {
       prisma.company.count({ where }),
     ])
 
+    logTenantRequest('plugin.crm.companies.list.success', context, {
+      page,
+      limit,
+      count: companies.length,
+      total,
+    })
+
     return NextResponse.json({
       companies,
       pagination: {
@@ -63,10 +72,11 @@ export async function GET(request: NextRequest) {
 // POST /api/plugin/crm/companies - Create company
 export async function POST(request: NextRequest) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const {
@@ -86,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Check if company already exists
     const existing = await prisma.company.findUnique({
-      where: { tenantId_name: { tenantId: tenant.id, name } },
+      where: { tenantId_name: { tenantId: context.tenantId, name } },
     })
 
     if (existing) {
@@ -98,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     const company = await prisma.company.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         name,
         domain,
         industry,
@@ -112,6 +122,10 @@ export async function POST(request: NextRequest) {
         country: country || 'US',
         description,
       },
+    })
+
+    logTenantRequest('plugin.crm.companies.create.success', context, {
+      companyId: company.id,
     })
 
     return NextResponse.json(company, { status: 201 })

@@ -55,3 +55,13 @@ export function isAdminOrOwnerRole(role: string) {
 export function ownerOnlyAction(action: TenantActionPermission) {
   return OWNER_ONLY_ACTIONS.has(action)
 }
+
+export function adminEnvironmentAllowed() {
+  const currentEnv = (process.env.APP_ENV || process.env.NODE_ENV || 'development').toLowerCase()
+  const allowlist = (process.env.GLOBAL_ADMIN_ALLOWED_ENVS || currentEnv)
+    .split(',')
+    .map((env) => env.trim().toLowerCase())
+    .filter(Boolean)
+
+  return allowlist.includes(currentEnv)
+}
