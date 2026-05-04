@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function PUT(
@@ -8,12 +7,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
     const body = await request.json()
@@ -21,11 +19,31 @@ export async function PUT(
 
     // Verify task belongs to tenant
     const task = await prisma.task.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+    }
+
+    if (contactId) {
+      const contact = await prisma.contact.findFirst({
+        where: { id: contactId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!contact) {
+        return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+      }
+    }
+
+    if (dealId) {
+      const deal = await prisma.deal.findFirst({
+        where: { id: dealId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!deal) {
+        return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+      }
     }
 
     // Update task
@@ -44,6 +62,12 @@ export async function PUT(
       },
     })
 
+    logTenantRequest('dashboard.crm.tasks.update.success', context, {
+      taskId: id,
+      contactId: contactId ?? null,
+      dealId: dealId ?? null,
+    })
+
     return NextResponse.json({ success: true, task: updatedTask })
   } catch (error) {
     console.error('Error updating task:', error)
@@ -56,18 +80,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
 
     // Verify task belongs to tenant
     const task = await prisma.task.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!task) {
@@ -77,6 +100,10 @@ export async function DELETE(
     // Delete task
     await prisma.task.delete({
       where: { id },
+    })
+
+    logTenantRequest('dashboard.crm.tasks.delete.success', context, {
+      taskId: id,
     })
 
     return NextResponse.json({ success: true })

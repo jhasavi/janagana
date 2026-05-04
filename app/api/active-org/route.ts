@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json()
     const orgId = body?.orgId
     const tenantId = body?.tenantId
@@ -15,7 +21,8 @@ export async function POST(req: Request) {
       res.cookies.set('JG_ACTIVE_ORG', String(orgId), {
         path: '/',
         maxAge: 60,
-        httpOnly: false,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
       })
     }
@@ -23,11 +30,17 @@ export async function POST(req: Request) {
       res.cookies.set('JG_TENANT_ID', String(tenantId), {
         path: '/',
         maxAge: 60,
-        httpOnly: false,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
       })
     }
-    console.log('[api/active-org] set cookies', { orgId, tenantId })
+    console.log('[api/active-org] set cookies', {
+      route: '/api/active-org',
+      authPrincipal: `clerk:user:${userId}`,
+      orgId,
+      tenantId,
+    })
     return res
   } catch (err) {
     console.error('[api/active-org] error', err)

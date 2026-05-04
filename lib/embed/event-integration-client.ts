@@ -40,7 +40,11 @@ export class JanaGanaEventClient {
 
   constructor(config: EventDisplayConfig) {
     this.config = config
-    this.baseUrl = config.baseUrl || 'https://janagana.namasteneedham.com'
+    this.baseUrl =
+      config.baseUrl ||
+      process.env.JANAGANA_BASE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:3000'
   }
 
   /**

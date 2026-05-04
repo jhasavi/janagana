@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 const SYSTEM_ARCHIVE_TAG = '__system_archived'
@@ -10,12 +9,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      console.warn('[dashboard-crm-contact-put] tenant resolution failed', {
+        route: tenantResolution.route,
+        authPrincipal: tenantResolution.authPrincipal,
+        status: tenantResolution.status,
+      })
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
     const body = await request.json()
@@ -23,7 +26,7 @@ export async function PUT(
 
     // Verify contact belongs to tenant
     const contact = await prisma.contact.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!contact) {
@@ -34,7 +37,7 @@ export async function PUT(
     if (email !== contact.email) {
       const existingContact = await prisma.contact.findFirst({
         where: {
-          tenantId: tenant.id,
+          tenantId: context.tenantId,
           email,
           id: { not: id },
         },
@@ -63,6 +66,10 @@ export async function PUT(
       },
     })
 
+    logTenantRequest('dashboard.crm.contacts.update.success', context, {
+      contactId: id,
+    })
+
     return NextResponse.json({ success: true, contact: updatedContact })
   } catch (error) {
     console.error('Error updating contact:', error)
@@ -75,18 +82,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      console.warn('[dashboard-crm-contact-delete] tenant resolution failed', {
+        route: tenantResolution.route,
+        authPrincipal: tenantResolution.authPrincipal,
+        status: tenantResolution.status,
+      })
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
 
     // Verify contact belongs to tenant
     const contact = await prisma.contact.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!contact) {
@@ -100,6 +111,10 @@ export async function DELETE(
       data: {
         tags: archivedTags,
       },
+    })
+
+    logTenantRequest('dashboard.crm.contacts.archive.success', context, {
+      contactId: id,
     })
 
     return NextResponse.json({ success: true })

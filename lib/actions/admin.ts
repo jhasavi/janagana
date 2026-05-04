@@ -4,6 +4,8 @@ import { clerkClient, currentUser } from '@clerk/nextjs/server'
 import type { Tenant } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { adminEnvironmentAllowed } from '@/lib/permissions-policy'
+import { logPlatformAudit } from '@/lib/actions/audit'
 
 const GLOBAL_ADMIN_EMAILS = (process.env.GLOBAL_ADMIN_EMAILS ?? '')
   .split(',')
@@ -14,13 +16,67 @@ export async function requireGlobalAdmin() {
   const user = await currentUser()
   if (!user) redirect('/sign-in')
 
+  const currentEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development'
+  if (!adminEnvironmentAllowed()) {
+    console.warn('[admin] environment not allowed for global admin operations', {
+      authPrincipal: `clerk:user:${user.id}`,
+      appEnv: currentEnv,
+    })
+    await logPlatformAudit({
+      action: 'DELETE',
+      resourceType: 'PlatformAdminAccess',
+      resourceId: user.id,
+      resourceName: 'environment_blocked',
+      actorClerkId: user.id,
+      metadata: {
+        appEnv: currentEnv,
+        reason: 'environment_not_allowed',
+      },
+    })
+    return null
+  }
+
   const email = user.emailAddresses.find(
     (e) => e.id === user.primaryEmailAddressId
   )?.emailAddress?.toLowerCase()
 
   if (!email || !GLOBAL_ADMIN_EMAILS.includes(email)) {
+    console.warn('[admin] denied global admin access', {
+      authPrincipal: `clerk:user:${user.id}`,
+      email: email ?? null,
+      appEnv: currentEnv,
+    })
+    await logPlatformAudit({
+      action: 'DELETE',
+      resourceType: 'PlatformAdminAccess',
+      resourceId: user.id,
+      resourceName: 'allowlist_denied',
+      actorClerkId: user.id,
+      metadata: {
+        appEnv: currentEnv,
+        email: email ?? null,
+      },
+    })
     return null
   }
+
+  console.log('[admin] granted global admin access', {
+    authPrincipal: `clerk:user:${user.id}`,
+    email,
+    appEnv: currentEnv,
+  })
+  await logPlatformAudit({
+    action: 'CREATE',
+    resourceType: 'PlatformAdminAccess',
+    resourceId: user.id,
+    resourceName: 'granted',
+    actorClerkId: user.id,
+    metadata: {
+      appEnv: currentEnv,
+      email,
+    },
+  })
+
   return user
 }
 
@@ -81,6 +137,28 @@ function getMembershipFullName(membership: any): string | undefined {
 }
 
 export async function getAllTenants(): Promise<TenantWithOwners[]> {
+  const admin = await requireGlobalAdmin()
+  if (!admin) {
+    redirect('/dashboard')
+  }
+
+  console.log('[admin] list tenants', {
+    authPrincipal: `clerk:user:${admin.id}`,
+    route: '/admin',
+    appEnv: process.env.APP_ENV || process.env.NODE_ENV || 'development',
+  })
+
+  await logPlatformAudit({
+    action: 'UPDATE',
+    resourceType: 'PlatformTenants',
+    resourceId: 'all',
+    resourceName: 'list',
+    actorClerkId: admin.id,
+    metadata: {
+      appEnv: process.env.APP_ENV || process.env.NODE_ENV || 'development',
+    },
+  })
+
   const tenants = await prisma.tenant.findMany({
     include: {
       _count: {

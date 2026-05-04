@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPluginApiKey } from '@/lib/plugin-auth'
+import { resolvePluginTenantContext } from '@/lib/plugin-auth'
+import { logTenantRequest } from '@/lib/tenant'
 
 // GET /api/plugin/crm/deals - List deals
 export async function GET(request: NextRequest) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest) {
     const contactId = searchParams.get('contactId')
     const companyId = searchParams.get('companyId')
 
-    const where: any = { tenantId: tenant.id }
+    const where: any = { tenantId: context.tenantId }
     
     if (stage) {
       where.stage = stage
@@ -45,6 +47,13 @@ export async function GET(request: NextRequest) {
       prisma.deal.count({ where }),
     ])
 
+    logTenantRequest('plugin.crm.deals.list.success', context, {
+      page,
+      limit,
+      count: deals.length,
+      total,
+    })
+
     return NextResponse.json({
       deals,
       pagination: {
@@ -66,10 +75,11 @@ export async function GET(request: NextRequest) {
 // POST /api/plugin/crm/deals - Create deal
 export async function POST(request: NextRequest) {
   try {
-    const tenant = await verifyPluginApiKey(request)
-    if (!tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const {
@@ -86,9 +96,29 @@ export async function POST(request: NextRequest) {
       sourceId,
     } = body
 
+    if (contactId) {
+      const contact = await prisma.contact.findFirst({
+        where: { id: contactId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!contact) {
+        return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+      }
+    }
+
+    if (companyId) {
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!company) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      }
+    }
+
     const deal = await prisma.deal.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         contactId,
         companyId,
         title,
@@ -105,6 +135,12 @@ export async function POST(request: NextRequest) {
         contact: true,
         company: true,
       },
+    })
+
+    logTenantRequest('plugin.crm.deals.create.success', context, {
+      dealId: deal.id,
+      contactId: contactId ?? null,
+      companyId: companyId ?? null,
     })
 
     return NextResponse.json(deal, { status: 201 })

@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const query = request.nextUrl.searchParams.get('q')?.trim() ?? ''
     if (!query) {
@@ -19,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const contacts = await prisma.contact.findMany({
       where: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         OR: [
           { firstName: { contains: query, mode: 'insensitive' } },
           { lastName: { contains: query, mode: 'insensitive' } },
@@ -41,6 +39,11 @@ export async function GET(request: NextRequest) {
       },
       take: 10,
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    })
+
+    logTenantRequest('dashboard.crm.contacts.search.success', context, {
+      query,
+      count: contacts.length,
     })
 
     return NextResponse.json({ success: true, contacts })

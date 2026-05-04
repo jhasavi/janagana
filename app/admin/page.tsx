@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: 'Global Admin — Jana Gana' }
 
 export default async function AdminPage() {
   const tenants = await getAllTenants()
+  const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development'
 
   const totalMembers = tenants.reduce((s, t) => s + t._count.members, 0)
   const totalEvents = tenants.reduce((s, t) => s + t._count.events, 0)
@@ -21,6 +22,9 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-bold">Platform Overview</h1>
         <p className="text-muted-foreground text-sm mt-1">
           {tenants.length} organizations · {totalMembers} members · {totalEvents} events
+        </p>
+        <p className="text-muted-foreground text-xs mt-1 uppercase tracking-[0.2em]">
+          Environment: {appEnv}
         </p>
       </div>
 

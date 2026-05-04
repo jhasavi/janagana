@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const { name, industry, website, address, city, state, postalCode, country, description } = body
@@ -23,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Create company
     const company = await prisma.company.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         name,
         industry,
         website,
@@ -34,6 +32,10 @@ export async function POST(request: NextRequest) {
         country,
         description,
       },
+    })
+
+    logTenantRequest('dashboard.crm.companies.create.success', context, {
+      companyId: company.id,
     })
 
     return NextResponse.json({ success: true, company })

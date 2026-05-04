@@ -52,11 +52,32 @@ async function reportTenant(slug: string) {
 
 async function main() {
   const specificSlug = process.env.TENANT_SLUG
+  const allowArg = process.argv.find((value) => value.startsWith('--allow-tenant-slugs='))
+  const allowTenantSlugs = allowArg
+    ? allowArg
+        .split('=')[1]
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : []
+
+  console.log(`Mode: verify`)
+  if (allowTenantSlugs.length > 0) {
+    console.log(`Allowed tenant slugs: ${allowTenantSlugs.join(', ')}`)
+  }
 
   if (specificSlug) {
+    if (allowTenantSlugs.length > 0 && !allowTenantSlugs.includes(specificSlug)) {
+      console.error(`TENANT_SLUG ${specificSlug} is not in allowlist`)
+      process.exit(1)
+    }
     await reportTenant(specificSlug)
   } else {
-    const allTenants = await prisma.tenant.findMany({ select: { slug: true }, orderBy: { createdAt: 'asc' } })
+    const allTenants = await prisma.tenant.findMany({
+      where: allowTenantSlugs.length > 0 ? { slug: { in: allowTenantSlugs } } : undefined,
+      select: { slug: true },
+      orderBy: { createdAt: 'asc' },
+    })
     console.log(`\nVerifying all ${allTenants.length} tenants...\n`)
     for (const t of allTenants) {
       await reportTenant(t.slug)
@@ -66,6 +87,7 @@ async function main() {
   // Highlight orphan tenants
   const orphans = await prisma.tenant.findMany({
     where: {
+      ...(allowTenantSlugs.length > 0 ? { slug: { in: allowTenantSlugs } } : {}),
       OR: [
         { clerkOrgId: '' },
         { clerkOrgId: { startsWith: 'demo_' } },

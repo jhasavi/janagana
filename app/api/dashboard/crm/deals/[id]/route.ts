@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function PUT(
@@ -8,12 +7,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
     const body = await request.json()
@@ -21,11 +19,31 @@ export async function PUT(
 
     // Verify deal belongs to tenant
     const deal = await prisma.deal.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!deal) {
       return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+    }
+
+    if (contactId) {
+      const contact = await prisma.contact.findFirst({
+        where: { id: contactId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!contact) {
+        return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+      }
+    }
+
+    if (companyId) {
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!company) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      }
     }
 
     // Update deal
@@ -45,6 +63,12 @@ export async function PUT(
       },
     })
 
+    logTenantRequest('dashboard.crm.deals.update.success', context, {
+      dealId: id,
+      contactId: contactId ?? null,
+      companyId: companyId ?? null,
+    })
+
     return NextResponse.json({ success: true, deal: updatedDeal })
   } catch (error) {
     console.error('Error updating deal:', error)
@@ -57,18 +81,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const { id } = await params
 
     // Verify deal belongs to tenant
     const deal = await prisma.deal.findFirst({
-      where: { id, tenantId: tenant.id },
+      where: { id, tenantId: context.tenantId },
     })
 
     if (!deal) {
@@ -78,6 +101,10 @@ export async function DELETE(
     // Delete deal (cascade will delete related activities and tasks)
     await prisma.deal.delete({
       where: { id },
+    })
+
+    logTenantRequest('dashboard.crm.deals.delete.success', context, {
+      dealId: id,
     })
 
     return NextResponse.json({ success: true })

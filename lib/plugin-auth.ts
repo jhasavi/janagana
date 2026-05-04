@@ -1,18 +1,46 @@
 import { NextRequest } from 'next/server'
 import { prisma } from './prisma'
 import crypto from 'crypto'
+import { logTenantRequest, type TenantRequestContext } from '@/lib/tenant'
+
+type PluginTenantContextResult =
+  | {
+      ok: true
+      context: TenantRequestContext
+    }
+  | {
+      ok: false
+      status: number
+      error: string
+      route: string
+      authPrincipal: string
+    }
 
 /**
  * Verify plugin API key and return tenant
  * API keys are stored in ApiKey model with tenant isolation
  */
 export async function verifyPluginApiKey(request: NextRequest) {
+  const result = await resolvePluginTenantContext(request)
+  if (!result.ok) return null
+  return result.context.tenant
+}
+
+export async function resolvePluginTenantContext(
+  request: NextRequest
+): Promise<PluginTenantContextResult> {
+  const route = request.nextUrl.pathname
   const apiKey = request.headers.get('x-api-key') ||
                  request.headers.get('authorization')?.replace('Bearer ', '')
 
   if (!apiKey) {
-    console.warn('[plugin-auth] Missing API key in request headers')
-    return null
+    return {
+      ok: false,
+      status: 401,
+      error: 'Unauthorized',
+      route,
+      authPrincipal: 'api-key:missing',
+    }
   }
 
   // Hash the API key to compare with stored hash
@@ -25,19 +53,48 @@ export async function verifyPluginApiKey(request: NextRequest) {
   })
 
   if (!apiKeyRecord) {
-    console.warn(`[plugin-auth] Invalid API key: ${keyPrefix}`)
-    return null
+    return {
+      ok: false,
+      status: 401,
+      error: 'Unauthorized',
+      route,
+      authPrincipal: `api-key:${keyPrefix}`,
+    }
   }
 
   if (!apiKeyRecord.isActive) {
-    console.warn(`[plugin-auth] Inactive API key: ${keyPrefix} for tenant: ${apiKeyRecord.tenant.slug}`)
-    return null
+    return {
+      ok: false,
+      status: 401,
+      error: 'Unauthorized',
+      route,
+      authPrincipal: `api-key:${keyPrefix}`,
+    }
   }
 
   // Check if key is expired
   if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
-    console.warn(`[plugin-auth] Expired API key: ${keyPrefix} for tenant: ${apiKeyRecord.tenant.slug}`)
-    return null
+    return {
+      ok: false,
+      status: 401,
+      error: 'Unauthorized',
+      route,
+      authPrincipal: `api-key:${keyPrefix}`,
+    }
+  }
+
+  const requestedTenantSlug =
+    request.headers.get('x-tenant-slug') ??
+    request.nextUrl.searchParams.get('tenantSlug')
+
+  if (requestedTenantSlug && requestedTenantSlug !== apiKeyRecord.tenant.slug) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'Tenant slug mismatch',
+      route,
+      authPrincipal: `api-key:${keyPrefix}`,
+    }
   }
 
   // Update last used timestamp (non-blocking)
@@ -51,7 +108,22 @@ export async function verifyPluginApiKey(request: NextRequest) {
     // Don't fail authentication if timestamp update fails
   }
 
-  return apiKeyRecord.tenant
+  const context: TenantRequestContext = {
+    tenant: apiKeyRecord.tenant,
+    tenantId: apiKeyRecord.tenantId,
+    route,
+    authPrincipal: `api-key:${keyPrefix}`,
+    principalType: 'api-key',
+    apiKeyId: apiKeyRecord.id,
+    apiKeyPrefix: apiKeyRecord.keyPrefix,
+  }
+
+  logTenantRequest('plugin_tenant_context_resolved', context)
+
+  return {
+    ok: true,
+    context,
+  }
 }
 
 /**

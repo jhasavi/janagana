@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
-    const { orgId } = await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const { contactId, companyId, title, description, valueCents, currency, stage, probability, expectedCloseDate, source } = body
@@ -22,17 +20,27 @@ export async function POST(request: NextRequest) {
 
     // Verify contact belongs to tenant
     const contact = await prisma.contact.findFirst({
-      where: { id: contactId, tenantId: tenant.id },
+      where: { id: contactId, tenantId: context.tenantId },
     })
 
     if (!contact) {
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
     }
 
+    if (companyId) {
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, tenantId: context.tenantId },
+        select: { id: true },
+      })
+      if (!company) {
+        return NextResponse.json({ error: 'Company not found' }, { status: 404 })
+      }
+    }
+
     // Create deal
     const deal = await prisma.deal.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         contactId,
         companyId,
         title,
@@ -44,6 +52,12 @@ export async function POST(request: NextRequest) {
         expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
         source,
       },
+    })
+
+    logTenantRequest('dashboard.crm.deals.create.success', context, {
+      dealId: deal.id,
+      contactId,
+      companyId: companyId ?? null,
     })
 
     return NextResponse.json({ success: true, deal })

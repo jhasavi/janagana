@@ -27,6 +27,7 @@ export default function OnboardingClient() {
         toast.success('Organization created! Welcome to Jana Gana.')
         const orgId = result.data?.orgId
         const tenantId = result.data?.tenant?.id
+        const apiKeyCreated = Boolean(result.data?.provisioning?.apiKeyCreated)
 
         // Set the Clerk active org in the client session so auth().orgId
         // is immediately available on the next server render.
@@ -35,17 +36,23 @@ export default function OnboardingClient() {
             await setActive({ organization: orgId })
           } catch (e) {
             console.error('[onboarding] setActive failed', e)
-            // Fallback: set short-lived cookies so getTenant() can resolve
-            try {
-              await fetch('/api/active-org', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orgId, tenantId }),
-              })
-            } catch (fetchErr) {
-              console.error('[onboarding] active-org cookie set failed', fetchErr)
-            }
           }
+        }
+
+        // Always set short-lived server cookies as a reliability fallback while
+        // Clerk org context propagates.
+        try {
+          await fetch('/api/active-org', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orgId, tenantId }),
+          })
+        } catch (fetchErr) {
+          console.error('[onboarding] active-org cookie set failed', fetchErr)
+        }
+
+        if (apiKeyCreated) {
+          toast.message('Default integration API key provisioned for this workspace.')
         }
 
         router.push('/dashboard')

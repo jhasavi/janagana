@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
-import { getTenant } from '@/lib/tenant'
+import { logTenantRequest, resolveDashboardTenantContext } from '@/lib/tenant'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
-    await auth()
-    const tenant = await getTenant()
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+    const tenantResolution = await resolveDashboardTenantContext(request)
+    if (!tenantResolution.ok) {
+      console.warn('[dashboard-crm-contacts] tenant resolution failed', {
+        route: tenantResolution.route,
+        authPrincipal: tenantResolution.authPrincipal,
+        status: tenantResolution.status,
+      })
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
     }
+    const context = tenantResolution.context
 
     const body = await request.json()
     const { firstName, lastName, email, phone, jobTitle, linkedinUrl, companyName, source, notes } = body
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Create contact
     const contact = await prisma.contact.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: context.tenantId,
         firstName,
         lastName,
         email,
@@ -36,6 +39,10 @@ export async function POST(request: NextRequest) {
         source,
         notes,
       },
+    })
+
+    logTenantRequest('dashboard.crm.contacts.create.success', context, {
+      contactId: contact.id,
     })
 
     return NextResponse.json({ success: true, contact })
