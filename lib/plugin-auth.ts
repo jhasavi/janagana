@@ -30,8 +30,11 @@ export async function resolvePluginTenantContext(
   request: NextRequest
 ): Promise<PluginTenantContextResult> {
   const route = request.nextUrl.pathname
-  const apiKey = request.headers.get('x-api-key') ||
-                 request.headers.get('authorization')?.replace('Bearer ', '')
+  const xApiKey = request.headers.get('x-api-key')?.trim()
+  const authorization = request.headers.get('authorization')
+  const bearerMatch = authorization?.match(/^Bearer\s+(.+)$/i)
+  const bearerApiKey = bearerMatch?.[1]?.trim()
+  const apiKey = xApiKey || bearerApiKey
 
   if (!apiKey) {
     return {

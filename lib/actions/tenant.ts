@@ -5,14 +5,18 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getTenant } from '@/lib/tenant'
+import { getTenantProfile } from '@/lib/tenant-profile'
 import { slugify } from '@/lib/utils'
 import { extractApiKeyPrefix, generateApiKey, hashApiKey } from '@/lib/plugin-auth'
 
-const OnboardingSchema = z.object({
-  orgName: z.string().min(2, 'Organization name must be at least 2 characters').max(100),
-  timezone: z.string().default('America/New_York'),
-  primaryColor: z.string().default('#4F46E5'),
-})
+function getOnboardingSchema() {
+  const profile = getTenantProfile()
+  return z.object({
+    orgName: z.string().min(2, 'Organization name must be at least 2 characters').max(100),
+    timezone: z.string().default(profile.onboardingDefaults.timezone),
+    primaryColor: z.string().default(profile.onboardingDefaults.primaryColor),
+  })
+}
 
 export async function completeOnboarding(input: unknown) {
   try {
@@ -21,7 +25,7 @@ export async function completeOnboarding(input: unknown) {
 
     // Accept either a plain string (org name) or a full object
     const normalized = typeof input === 'string' ? { orgName: input } : input
-    const data = OnboardingSchema.parse(normalized)
+    const data = getOnboardingSchema().parse(normalized)
 
     // If the user already has exactly one Clerk org membership, reuse that
     // organization rather than creating a duplicate org with the same name.
@@ -109,11 +113,9 @@ export async function completeOnboarding(input: unknown) {
     }
 
     // Idempotent default API key provisioning for plugin integrations.
-    const defaultApiKeyName = process.env.ONBOARDING_DEFAULT_API_KEY_NAME || 'Default Plugin Key'
-    const defaultApiKeyPermissions = (process.env.ONBOARDING_DEFAULT_API_KEY_PERMISSIONS || 'contacts:write,events:read')
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean)
+    const profile = getTenantProfile()
+    const defaultApiKeyName = profile.integrations.defaultApiKeyName
+    const defaultApiKeyPermissions = profile.integrations.defaultApiKeyPermissions
 
     const existingApiKey = await prisma.apiKey.findFirst({
       where: { tenantId: tenant.id, name: defaultApiKeyName, isActive: true },

@@ -9,6 +9,8 @@
  *   E2E_CLERK_EMAIL    — email of a Clerk user in your project
  *   E2E_CLERK_PASSWORD — password for the test user
  *   CLERK_SECRET_KEY   — already required for the app itself
+ * Optional env vars (.env):
+ *   E2E_SIGN_IN_PATH    — explicit app sign-in route (defaults to /auth/login)
  */
 
 import { test as setup, expect } from '@playwright/test'
@@ -18,11 +20,14 @@ import fs from 'fs'
 import { prisma } from '@/lib/prisma'
 
 const STORAGE_STATE = path.join(__dirname, '..', '.auth', 'user.json')
+const GOOGLE_OAUTH_URL = /accounts\.google\.com/
 
 setup('authenticate via email/password form fill', async ({ page }) => {
   const email = process.env.E2E_CLERK_EMAIL
   const password = process.env.E2E_CLERK_PASSWORD
   const secretKey = process.env.CLERK_SECRET_KEY
+  const baseUrl = process.env.PLAYWRIGHT_BASE_URL || process.env.TENANT_APP_BASE_URL || 'http://localhost:3000'
+  const signInPath = process.env.E2E_SIGN_IN_PATH || process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/auth/login'
 
   if (!email) throw new Error('Missing E2E_CLERK_EMAIL in .env')
   if (!password) throw new Error('Missing E2E_CLERK_PASSWORD in .env')
@@ -41,31 +46,56 @@ setup('authenticate via email/password form fill', async ({ page }) => {
   const clerk = createClerkClient({ secretKey })
   const { data: users } = await clerk.users.getUserList({ emailAddress: [email] })
   if (!users.length) throw new Error(`Test user "${email}" not found in Clerk Dashboard.`)
-  const userId = users[0].id
+  const user = await clerk.users.getUser(users[0].id)
+  logE2EUserAuthCapabilities(user)
+  assertPasswordCapableE2EUser(user, email)
+  const userId = user.id
   console.log(`[setup] Found Clerk user: ${userId}`)
   await ensureE2ETenant(clerk, userId)
 
   // ── Sign in via form fill ──────────────────────────────────────────────────
-  console.log('[setup] Navigating to /sign-in...')
-  await page.goto('http://localhost:3000/sign-in', { waitUntil: 'domcontentloaded', timeout: 30_000 })
+  const signInUrl = new URL(signInPath, baseUrl).toString()
+  console.log(`[setup] Navigating to ${signInUrl}...`)
+  await page.goto(signInUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-  // Clerk renders an <input> with identifier (email) as the first step
-  await page.waitForSelector('input[name="identifier"], input[type="email"]', { timeout: 20_000 })
-  await page.locator('input[name="identifier"], input[type="email"]').first().fill(email)
+  // Fail fast when route drift lands on a 404 page instead of the auth form.
+  await expect(page.getByRole('heading', { name: /404|page not found/i })).toHaveCount(0)
+
+  // Prefer accessible locators first, then fall back to robust structural selectors.
+  const semanticEmailInput = page
+    .getByLabel(/email|email address/i)
+    .or(page.getByRole('textbox', { name: /email|email address/i }))
+    .first()
+  const fallbackEmailInput = page.locator('input[name="identifier"], input[type="email"]').first()
+  const semanticReady = await semanticEmailInput.isVisible({ timeout: 20_000 }).catch(() => false)
+  const emailInput = semanticReady ? semanticEmailInput : fallbackEmailInput
+
+  await emailInput.waitFor({ state: 'visible', timeout: 20_000 })
+  await emailInput.fill(email)
 
   // Click "Continue" or press Enter to proceed to password step
   const continueBtn = page.locator('button[type="submit"]:visible, button:has-text("Continue"):visible').first()
   await continueBtn.click()
 
-  // Wait for password field
-  await page.waitForSelector('input[type="password"]', { timeout: 20_000 })
-  await page.locator('input[type="password"]').first().fill(password)
+  const passwordField = page.locator('input[type="password"]:not([disabled]):not([aria-disabled="true"])').first()
+
+  await Promise.race([
+    passwordField.waitFor({ state: 'visible', timeout: 10_000 }),
+    page.waitForURL(GOOGLE_OAUTH_URL, { timeout: 10_000 }).then(() => {
+      throw new Error(
+        'E2E auth was diverted to Google OAuth instead of staying on the local Clerk password flow. This Clerk environment is preferring federated sign-in after identifier entry, so it is not yielding a stable same-origin password login for E2E automation.'
+      )
+    }),
+  ])
+
+  await expect(passwordField).toBeEnabled()
+  await passwordField.fill(password)
 
   // Submit sign-in
   await page.locator('button[type="submit"]:visible').first().click()
 
   // Wait for redirect away from sign-in
-  await page.waitForURL(/localhost:3000\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })
+  await page.waitForURL(/\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })
   console.log(`[setup] Sign-in completed. URL: ${page.url()}`)
 
   // Handle choose-organization task if Clerk presents it
@@ -93,6 +123,35 @@ setup('authenticate via email/password form fill', async ({ page }) => {
   await page.context().storageState({ path: STORAGE_STATE })
   console.log('[setup] Auth state saved to', STORAGE_STATE)
 })
+
+function assertPasswordCapableE2EUser(user: any, email: string) {
+  const externalStrategies = Array.isArray(user.externalAccounts)
+    ? user.externalAccounts
+        .map((account: any) => account.provider || account.strategy || account.verification?.strategy)
+        .filter(Boolean)
+    : []
+
+  if (user.passwordEnabled) return
+
+  const externalSummary = externalStrategies.length > 0
+    ? ` Connected external providers: ${externalStrategies.join(', ')}.`
+    : ''
+
+  throw new Error(
+    `E2E user ${email} does not have password auth enabled in Clerk. Use a dedicated password-enabled Clerk test user for this environment.${externalSummary}`
+  )
+}
+
+function logE2EUserAuthCapabilities(user: any) {
+  const externalProviders = Array.isArray(user.externalAccounts)
+    ? user.externalAccounts.map((account: any) => account.provider).filter(Boolean)
+    : []
+
+  console.log('[setup] Clerk user auth capabilities', {
+    passwordEnabled: Boolean(user.passwordEnabled),
+    externalProviders,
+  })
+}
 
 async function ensureE2ETenant(clerk: ReturnType<typeof createClerkClient>, userId: string) {
   const memberships = await clerk.users.getOrganizationMembershipList({

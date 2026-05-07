@@ -10,6 +10,18 @@ dotenvExpand(
 
 // Auth state file reused across all tests
 export const STORAGE_STATE = path.join(__dirname, '.auth', 'user.json')
+const resolvedBaseURL = process.env.PLAYWRIGHT_BASE_URL || process.env.TENANT_APP_BASE_URL || 'http://localhost:3000'
+const resolvedWebServerReadyURL = `${resolvedBaseURL.replace(/\/$/, '')}/api/health/onboarding`
+const resolvedDevPort = (() => {
+  try {
+    const parsed = new URL(resolvedBaseURL)
+    if (parsed.port) return parsed.port
+    return parsed.protocol === 'https:' ? '443' : '80'
+  } catch {
+    return '3000'
+  }
+})()
+const resolvedDevCommand = `PORT=${resolvedDevPort} npm run dev`
 
 export default defineConfig({
   testDir: './tests',
@@ -23,7 +35,7 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    baseURL: resolvedBaseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -53,8 +65,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: resolvedDevCommand,
+    url: resolvedWebServerReadyURL,
     reuseExistingServer: true,
     timeout: 120_000,
   },

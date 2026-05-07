@@ -103,6 +103,9 @@ else
     warn "Copied .env.example → .env.local. Fill in your secrets before continuing."
     echo ""
     echo "  Required vars to set in .env.local:"
+    echo "    TENANT_SLUG"
+    echo "    TENANT_BRAND_NAME"
+    echo "    TENANT_APP_BASE_URL (or NEXT_PUBLIC_APP_URL)"
     echo "    DATABASE_URL"
     echo "    CLERK_SECRET_KEY"
     echo "    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
@@ -123,6 +126,11 @@ if [[ -f ".env.local" && -f ".env" && ("${DATABASE_URL:-}" == *localhost* || "${
 fi
 
 MISSING=()
+[[ -z "${TENANT_SLUG:-}" ]]                         && MISSING+=("TENANT_SLUG")
+[[ -z "${TENANT_BRAND_NAME:-}" ]]                   && MISSING+=("TENANT_BRAND_NAME")
+if [[ -z "${TENANT_APP_BASE_URL:-}" && -z "${NEXT_PUBLIC_APP_URL:-}" ]]; then
+  MISSING+=("TENANT_APP_BASE_URL_OR_NEXT_PUBLIC_APP_URL")
+fi
 [[ -z "${DATABASE_URL:-}" ]]                        && MISSING+=("DATABASE_URL")
 [[ -z "${CLERK_SECRET_KEY:-}" ]]                    && MISSING+=("CLERK_SECRET_KEY")
 [[ -z "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}" ]]   && MISSING+=("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")
