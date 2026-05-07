@@ -11,20 +11,36 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
-export default function OnboardingClient() {
+type OnboardingClientProps = {
+  appName: string
+  defaultOrganizationName: string
+  defaultTimezone: string
+  defaultPrimaryColor: string
+}
+
+export default function OnboardingClient({
+  appName,
+  defaultOrganizationName,
+  defaultTimezone,
+  defaultPrimaryColor,
+}: OnboardingClientProps) {
   const router = useRouter()
   const { setActive, isLoaded } = useOrganizationList()
   const [isPending, startTransition] = useTransition()
-  const [orgName, setOrgName] = useState('')
+  const [orgName, setOrgName] = useState(defaultOrganizationName)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!orgName.trim() || !isLoaded) return
 
     startTransition(async () => {
-      const result = await completeOnboarding(orgName.trim())
+      const result = await completeOnboarding({
+        orgName: orgName.trim(),
+        timezone: defaultTimezone,
+        primaryColor: defaultPrimaryColor,
+      })
       if (result.success) {
-        toast.success('Organization created! Welcome to Jana Gana.')
+        toast.success(`Organization created! Welcome to ${appName}.`)
         const orgId = result.data?.orgId
         const tenantId = result.data?.tenant?.id
         const apiKeyCreated = Boolean(result.data?.provisioning?.apiKeyCreated)
@@ -73,7 +89,7 @@ export default function OnboardingClient() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Set up your organization</h1>
           <p className="text-muted-foreground text-sm">
-            Create your Jana Gana workspace to manage members, events, and volunteers.
+            Create your {appName} workspace to manage members, events, and volunteers.
           </p>
         </div>
 
@@ -90,7 +106,7 @@ export default function OnboardingClient() {
                 <Label htmlFor="org-name">Organization name</Label>
                 <Input
                   id="org-name"
-                  placeholder="e.g. Riverside Community Association"
+                  placeholder={defaultOrganizationName || 'e.g. Riverside Community Association'}
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   required

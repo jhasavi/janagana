@@ -30,7 +30,12 @@
     "scripts:simulate-real-world-details": "tsx scripts/simulate-real-world-details.ts",
     "scripts:verify-seeded-tenants": "tsx scripts/verify-seeded-tenants.ts",
     "scripts:import-tpw-events": "tsx scripts/import-tpw-past-events.ts",
-    "scripts:rollback-tpw-events": "tsx scripts/rollback-tpw-past-events.ts"
+    "scripts:rollback-tpw-events": "tsx scripts/rollback-tpw-past-events.ts",
+    "bootstrap:validate-env": "tsx scripts/bootstrap-validate-env.ts",
+    "bootstrap:preflight": "tsx scripts/bootstrap-preflight.ts",
+    "bootstrap:preflight:pre-onboarding": "tsx scripts/bootstrap-preflight.ts --phase=pre-onboarding",
+    "bootstrap:preflight:post-onboarding": "tsx scripts/bootstrap-preflight.ts --phase=post-onboarding",
+    "bootstrap:provision-tenant": "tsx scripts/bootstrap-provision-tenant.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.2",
@@ -61,6 +66,8 @@
     "@tiptap/starter-kit": "^3.22.3",
     "@types/papaparse": "^5.5.2",
     "@types/qrcode": "^1.5.6",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
@@ -85,7 +92,6 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "critters": "^0.0.25",
     "@playwright/test": "^1.59.1",
     "@types/node": "^22.14.1",
     "@types/react": "^19.1.2",
@@ -93,6 +99,7 @@
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
     "autoprefixer": "^10.4.21",
+    "critters": "^0.0.25",
     "dotenv": "^17.4.2",
     "dotenv-expand": "^12.0.3",
     "eslint": "^9.25.1",

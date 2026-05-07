@@ -1,10 +1,10 @@
 import type { Event } from '@prisma/client'
 import { resolveEventDetailsUrl } from '@/lib/embed/events-utils'
+import { getTenantProfile } from '@/lib/tenant-profile'
 
-const PUBLIC_APP_ORIGIN =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.JANAGANA_BASE_URL ||
-  'http://localhost:3000'
+function getPublicAppOrigin(): string {
+  return process.env.JANAGANA_BASE_URL || getTenantProfile().baseUrls.app
+}
 
 type PublicEventShape = {
   id: string
@@ -34,6 +34,7 @@ function shouldExposeRegistration(event: Event): boolean {
 }
 
 export function toPublicEventShape(event: Event, tenantSlug: string): PublicEventShape {
+  const PUBLIC_APP_ORIGIN = getPublicAppOrigin()
   const fallbackPortalPath = `/portal/${tenantSlug}/events`
   const fallbackPortalUrl = `${PUBLIC_APP_ORIGIN}${fallbackPortalPath}`
   const detailsUrl = resolveEventDetailsUrl(

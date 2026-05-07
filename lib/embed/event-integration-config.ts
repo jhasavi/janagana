@@ -95,7 +95,7 @@ export interface EventTypography {
 // Predefined Themes
 export const DEFAULT_THEMES: Record<string, EventTheme> = {
   purple: {
-    name: 'Purple Wings',
+    name: 'Violet',
     primaryColor: '#7c3aed',
     secondaryColor: '#6d28d9',
     accentColor: '#10b981',
@@ -151,7 +151,7 @@ export const DEFAULT_CONFIG: Partial<EventDisplayConfig> = {
   cardVariant: 'detailed',
   cardSize: 'medium',
   imageAspectRatio: 'landscape',
-  theme: DEFAULT_THEMES.purple,
+  theme: DEFAULT_THEMES.blue,
   gridColumns: {
     mobile: 1,
     tablet: 2,

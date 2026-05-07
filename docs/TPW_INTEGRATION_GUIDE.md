@@ -27,7 +27,7 @@
 
 You already have:
 - ✅ JanaGana organization created: "The Purple Wings"
-- ✅ API key generated: `jg_live_4f62e0e1eac249c4c0446c988b84ac65e1b11794a65fdb425dacf0e962f77d25`
+- ✅ API key generated for TPW tenant (from dashboard or secure key rotation process)
 - ✅ Database migrated with CRM models
 - ✅ Dev server running: `http://localhost:3000`
 
@@ -93,7 +93,7 @@ Create `/Users/Sanjeev/tpw/.env.local` (if not exists):
 
 ```env
 JANAGANA_API_URL=http://localhost:3000/api/plugin
-JANAGANA_API_KEY=jg_live_4f62e0e1eac249c4c0446c988b84ac65e1b11794a65fdb425dacf0e962f77d25
+JANAGANA_API_KEY=jg_live_your_current_tpw_server_key
 ```
 
 ### Step 2: Create JanaGana API Client in TPW

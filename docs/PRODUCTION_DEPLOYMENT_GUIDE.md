@@ -32,11 +32,11 @@ cd /Users/Sanjeev/JanaGana
 pnpm dev
 
 # Test CRM API with your API key
-curl -H "x-api-key: jg_live_4f62e0e1eac249c4c0446c988b84ac65e1b11794a65fdb425dacf0e962f77d25" \
+curl -H "x-api-key: jg_live_your_current_key" \
   http://localhost:3000/api/plugin/crm/contacts
 
 # Test events API
-curl -H "x-api-key: jg_live_4f62e0e1eac249c4c0446c988b84ac65e1b11794a65fdb425dacf0e962f77d25" \
+curl -H "x-api-key: jg_live_your_current_key" \
   http://localhost:3000/api/plugin/events
 ```
 

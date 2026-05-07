@@ -102,7 +102,7 @@ export function SettingsForm({ initialData }: Props) {
               <p className="text-xs text-destructive">{errors.slug.message}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              The portal path for your organization. Example: <span className="font-mono">/portal/the-purple-wings</span>
+              The portal path for your organization. Example: <span className="font-mono">/portal/your-organization-slug</span>
             </p>
           </div>
 

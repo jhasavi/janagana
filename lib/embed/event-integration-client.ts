@@ -6,6 +6,7 @@
  */
 
 import type { EventDisplayConfig, EventTheme } from './event-integration-config'
+import { getTenantProfile } from '@/lib/tenant-profile'
 
 export interface JanaGanaEvent {
   id: string
@@ -43,8 +44,7 @@ export class JanaGanaEventClient {
     this.baseUrl =
       config.baseUrl ||
       process.env.JANAGANA_BASE_URL ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      'http://localhost:3000'
+      getTenantProfile().baseUrls.app
   }
 
   /**

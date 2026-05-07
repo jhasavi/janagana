@@ -1,6 +1,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { logDbError, prisma, withDbRetry } from '@/lib/prisma'
+import { getTenantProfile } from '@/lib/tenant-profile'
 import { slugify } from '@/lib/utils'
 import type { Tenant } from '@prisma/client'
 import type { NextRequest } from 'next/server'
@@ -125,8 +126,8 @@ async function resolveTenantForAuthState(
                 clerkOrgId: activeOrgId,
                 name: org.name || org.slug || `Organization ${activeOrgId.slice(0, 8)}`,
                 slug,
-                timezone: 'America/New_York',
-                primaryColor: '#4F46E5',
+                timezone: getTenantProfile().onboardingDefaults.timezone,
+                primaryColor: getTenantProfile().onboardingDefaults.primaryColor,
               },
             })
           )

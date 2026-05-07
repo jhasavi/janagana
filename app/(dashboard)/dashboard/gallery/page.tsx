@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Plus, Image, Lock, Globe } from 'lucide-react'
+import { Plus, Image as ImageIcon, Lock, Globe } from 'lucide-react'
 import { getPhotoAlbums } from '@/lib/actions/gallery'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -61,7 +61,7 @@ export default async function GalleryPage() {
       {albums.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
-            <Image className="h-12 w-12 text-muted-foreground/30" />
+            <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
             <p className="text-muted-foreground">No albums yet</p>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
               Create an album and upload photos to share with your members.
@@ -83,7 +83,7 @@ export default async function GalleryPage() {
                 </div>
               ) : (
                 <div className="h-40 bg-muted flex items-center justify-center">
-                  <Image className="h-12 w-12 text-muted-foreground/30" />
+                  <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
                 </div>
               )}
               <CardHeader className="flex flex-row items-start justify-between pb-2">

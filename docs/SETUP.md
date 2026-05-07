@@ -49,9 +49,14 @@ Open `.env.local` and set:
 
 | Variable | Where to get it |
 |----------|----------------|
+| `TENANT_SLUG` | Short slug for this isolated customer deployment (example: `purple-wings`) |
+| `TENANT_BRAND_NAME` | Customer-facing brand/app name for this deployment |
+| `TENANT_APP_BASE_URL` | Public base URL for this deployment |
 | `DATABASE_URL` | [neon.tech](https://neon.tech) → your project → Connection string |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | [dashboard.clerk.com](https://dashboard.clerk.com) → API Keys |
 | `CLERK_SECRET_KEY` | [dashboard.clerk.com](https://dashboard.clerk.com) → API Keys |
+
+Tenant profile validation runs during startup. If these fields are missing or malformed, the app fails early with a clear configuration error.
 
 ### 3. Set Up the Database
 
@@ -106,6 +111,12 @@ npm run db:migrate   # Create and apply migration (use in dev)
 npm run db:studio    # Open Prisma Studio GUI
 npm run db:seed      # Load demo data
 
+# Isolated-client bootstrap automation
+npm run bootstrap:validate-env   # Validate required runtime env + tenant profile schema
+npm run bootstrap:preflight:pre-onboarding   # Pre-onboarding checks (no tenant required yet)
+npm run bootstrap:preflight:post-onboarding  # Post-onboarding checks (tenant + isolation)
+npm run bootstrap:provision-tenant           # Engineer-assisted break-glass provision helper
+
 # E2E Tests (after configuring E2E_CLERK_EMAIL + E2E_CLERK_PASSWORD in .env)
 npm run test:e2e           # Run all E2E tests (headless)
 npm run test:e2e:headed    # Run with browser visible
@@ -116,6 +127,56 @@ npm run test:e2e:debug     # Debug mode
 npx playwright test --config=e2e/playwright.config.ts --project=no-auth
 ```
 
+## Isolated-Client Bootstrap Flow (Operator)
+
+After filling `.env.local` for a new isolated client environment:
+
+```bash
+npm run bootstrap:validate-env
+npm run bootstrap:preflight:pre-onboarding
+npm run db:migrate:deploy
+npm run build
+npm run dev
+npm run bootstrap:preflight:post-onboarding
+```
+
+If plugin key is not available yet during early onboarding, run soft preflight:
+
+```bash
+npm run bootstrap:preflight:post-onboarding -- --no-strict
+```
+
+Run any bootstrap script with explicit env file:
+
+```bash
+npm run bootstrap:validate-env -- --env-file=.env.client
+npm run bootstrap:preflight:pre-onboarding -- --env-file=.env.client
+npm run bootstrap:preflight:post-onboarding -- --env-file=.env.client
+```
+
+### Migration Readiness Policy
+
+- If migration readiness fails, do not proceed with `db:migrate:deploy`.
+- Non-empty DB + missing migration history requires engineer baseline/manual migration policy decision.
+- `db:push` is only an engineer-approved fallback for isolated environments when baseline migrations are intentionally deferred.
+
+### Manual Onboarding Fallback (When UI Automation Is Flaky)
+
+1. Open `/sign-in` and authenticate as designated client admin.
+2. If redirected to `/onboarding`, submit org name.
+3. Confirm redirect to `/dashboard`.
+4. Run post-onboarding checks:
+
+```bash
+npm run bootstrap:preflight:post-onboarding -- --no-strict
+```
+
+5. With a real plugin key, run strict check:
+
+```bash
+BOOTSTRAP_PLUGIN_API_KEY=<real_key> npm run bootstrap:preflight:post-onboarding
+```
+
 ### E2E Test Credentials Setup
 
 To run the full authenticated E2E test suite, add these to `.env`:
@@ -124,12 +185,16 @@ To run the full authenticated E2E test suite, add these to `.env`:
 # Create a dedicated test user in Clerk Dashboard first
 E2E_CLERK_EMAIL="e2e-test@yourdomain.com"
 E2E_CLERK_PASSWORD="your-test-password"
+# Match your real app auth route (example for this project)
+E2E_SIGN_IN_PATH="/auth/login"
 ```
 
 The test user must:
 1. Exist in your Clerk project
 2. Have password auth enabled (not social login only)
 3. Have already completed onboarding (or the global-setup will do it)
+
+If setup redirects to Google OAuth or another external provider, the run now fails fast with an actionable error instead of timing out. That means this Clerk environment is preferring federated sign-in instead of keeping the login on the local password form, so it is not suitable for stable same-origin E2E auth until the sign-in configuration is changed.
 
 Public/no-auth tests always work without credentials:
 ```bash

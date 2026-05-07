@@ -1,39 +1,47 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
+import { getTenantProfile } from '@/lib/tenant-profile'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: {
-    template: '%s | Jana Gana',
-    default: 'Jana Gana — Membership & Event Management',
-  },
-  description:
-    'Membership, Event, and Volunteer management for non-profit and for-profit organizations.',
-  icons: {
-    icon: '/images/icon.png',
-    shortcut: '/images/icon.png',
-    apple: '/images/icon.png',
-  },
-  metadataBase: new URL('https://janagana.org'),
-  alternates: {
-    canonical: '/',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  openGraph: {
-    title: 'Jana Gana — Membership & Event Management',
-    description: 'Membership, Event, and Volunteer management for non-profit and for-profit organizations.',
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://janagana.org',
-  },
+export function generateMetadata(): Metadata {
+  try {
+    const profile = getTenantProfile()
+    const appName = profile.branding.appName
+    return {
+      title: {
+        template: `%s | ${appName}`,
+        default: `${appName} — Membership & Event Management`,
+      },
+      description: `${appName} for membership, event, and volunteer management.`,
+      icons: {
+        icon: '/images/icon.png',
+        shortcut: '/images/icon.png',
+        apple: '/images/icon.png',
+      },
+      metadataBase: new URL(profile.baseUrls.app),
+      alternates: { canonical: '/' },
+      robots: { index: true, follow: true },
+      openGraph: {
+        title: `${appName} — Membership & Event Management`,
+        description: `${appName} for membership, event, and volunteer management.`,
+        type: 'website',
+        locale: profile.locale.defaultLocale.replace('-', '_'),
+        url: profile.baseUrls.app,
+      },
+    }
+  } catch {
+    return {
+      title: 'JanaGana — Membership & Event Management',
+      description: 'Membership, event, and volunteer management platform.',
+    }
+  }
 }
 
 export default function RootLayout({
@@ -59,6 +67,8 @@ export default function RootLayout({
           <ThemeProvider>
             {children}
             <Toaster richColors closeButton />
+            <Analytics />
+            <SpeedInsights />
           </ThemeProvider>
         </body>
       </html>

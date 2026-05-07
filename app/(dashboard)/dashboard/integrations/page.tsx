@@ -1,14 +1,16 @@
 import type { Metadata } from 'next'
 import { PlugZap } from 'lucide-react'
 import { getTenant } from '@/lib/tenant'
+import { getTenantProfile } from '@/lib/tenant-profile'
 import { IntegrationsClient } from './_components/integrations-client'
 
 export const metadata: Metadata = { title: 'Integrations' }
 
 export default async function IntegrationsPage() {
   const tenant = await getTenant()
+  const tenantProfile = getTenantProfile()
   const tenantSlug = tenant?.slug ?? ''
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://janagana.namasteneedham.com'
+  const appBaseUrl = tenantProfile.baseUrls.app
 
   return (
     <div className="max-w-5xl space-y-6">
