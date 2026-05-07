@@ -1,27 +1,16 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/help(.*)', // Public help center
-  '/preview(.*)', // Local preview harness for QA screenshots
-  '/api/webhooks(.*)',
-  '/api/plugin(.*)', // Plugin API routes use API key authentication
-  '/api/embed(.*)', // Public embed API for widgets
-])
+import { assertTenantProfileConfigured } from '@/lib/tenant-profile'
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
-const isDashboardRoute = createRouteMatcher(['/dashboard(.*)'])
 const isPortalRoute = createRouteMatcher(['/portal(.*)'])
 const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
-  const { userId, orgId } = await auth()
+  // Fail fast on startup if tenant-specific profile config is incomplete.
+  assertTenantProfileConfigured()
 
-  // Allow public routes through
-  if (isPublicRoute(request)) return NextResponse.next()
+  const { userId } = await auth()
 
   // Redirect unauthenticated users to sign-in
   if (!userId) {
@@ -47,10 +36,11 @@ export default clerkMiddleware(async (auth, request) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    // Only run middleware for protected application surfaces.
+    '/dashboard/:path*',
+    '/onboarding/:path*',
+    '/portal/:path*',
+    '/admin/:path*',
   ],
 }
 
