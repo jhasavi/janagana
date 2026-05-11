@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { PrismaClient } from '@prisma/client'
-import { getTenantProfileValidationErrors } from '../lib/tenant-profile'
+import { getSimplifiedTenantProfileValidationErrors } from '../lib/tenant-profile-simplified'
 import { getMigrationReadiness, loadBootstrapEnv } from './bootstrap-common'
 
 type CheckResult = {
@@ -50,7 +50,7 @@ async function main() {
       : 'missing TENANT_APP_BASE_URL and NEXT_PUBLIC_APP_URL',
   })
 
-  const tenantProfileErrors = getTenantProfileValidationErrors()
+  const tenantProfileErrors = getSimplifiedTenantProfileValidationErrors()
   const tenantProfileOk = tenantProfileErrors.length === 0
 
   checks.push({

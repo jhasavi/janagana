@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/actions/audit'
+import { getSimplifiedTenantProfile } from '@/lib/tenant-profile-simplified'
 
 // Newsletter subscription schema
 const NewsletterSubscribeSchema = z.object({
@@ -19,10 +20,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = NewsletterSubscribeSchema.parse(body)
 
-    // Get tenant - for public newsletter API, use the default tenant
-    // In production, this should be determined by domain or subdomain
+    // Get tenant from simplified profile
+    const profile = getSimplifiedTenantProfile()
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: profile.slug }
     })
 
     if (!tenant) {
@@ -59,10 +60,11 @@ export async function POST(request: NextRequest) {
 
       // Log audit
       await logAudit({
-        action: 'CONTACT_UPDATED',
+        action: 'UPDATE',
         resourceId: contact.id,
         resourceType: 'CONTACT',
-        details: {
+        tenantId: tenant.id,
+        metadata: {
           reason: 'Newsletter subscription - existing contact updated',
           email: data.email,
           source: data.source,
@@ -101,10 +103,11 @@ export async function POST(request: NextRequest) {
 
     // Log audit
     await logAudit({
-      action: 'CONTACT_CREATED',
+      action: 'CREATE',
       resourceId: contact.id,
       resourceType: 'CONTACT',
-      details: {
+      tenantId: tenant.id,
+      metadata: {
         reason: 'Newsletter subscription - new contact created',
         email: data.email,
         source: data.source,
