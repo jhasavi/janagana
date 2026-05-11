@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { getSimplifiedTenantProfile } from '@/lib/tenant-profile-simplified'
 
 // Newsletter status check schema
 const NewsletterStatusSchema = z.object({
@@ -12,9 +13,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = NewsletterStatusSchema.parse(body)
 
-    // Get tenant - for public newsletter API, use the-purple-wings tenant
+    // Get tenant from simplified profile
+    const profile = getSimplifiedTenantProfile()
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: profile.slug }
     })
 
     if (!tenant) {
@@ -64,7 +66,6 @@ export async function POST(request: NextRequest) {
       } : null,
       subscribedAt: contact.createdAt,
       source: contact.source,
-      marketingConsent: contact.marketingConsent,
     })
 
   } catch (error) {
