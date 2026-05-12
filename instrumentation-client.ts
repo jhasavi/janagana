@@ -9,10 +9,10 @@ Sentry.init({
 
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  replaysSessionSampleRate: 0.05,
-  replaysOnErrorSampleRate: 1.0,
-
-  integrations: [Sentry.replayIntegration()],
+  // Disable Replay integration to prevent conflicts
+  // replaysSessionSampleRate: 0.05,
+  // replaysOnErrorSampleRate: 1.0,
+  // integrations: [Sentry.replayIntegration()],
 
   ignoreErrors: [
     'ResizeObserver loop limit exceeded',

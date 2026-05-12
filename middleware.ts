@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { assertTenantProfileConfigured } from '@/lib/tenant-profile'
+import { assertSimplifiedTenantProfileConfigured } from '@/lib/tenant-profile-simplified'
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
 const isPortalRoute = createRouteMatcher(['/portal(.*)'])
@@ -8,7 +8,7 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   // Fail fast on startup if tenant-specific profile config is incomplete.
-  assertTenantProfileConfigured()
+  assertSimplifiedTenantProfileConfigured()
 
   const { userId } = await auth()
 
@@ -25,7 +25,7 @@ export default clerkMiddleware(async (auth, request) => {
   // Portal routes: require Clerk auth (personal, no org needed)
   if (isPortalRoute(request)) return NextResponse.next()
 
-  // Admin routes: require Clerk auth (email check happens in the page/action)
+  // Admin routes: require Clerk auth (email check happens in page/action)
   if (isAdminRoute(request)) return NextResponse.next()
 
   // Dashboard routes should be handled by app route logic rather than
@@ -37,6 +37,7 @@ export default clerkMiddleware(async (auth, request) => {
 export const config = {
   matcher: [
     // Only run middleware for protected application surfaces.
+    '/',
     '/dashboard/:path*',
     '/onboarding/:path*',
     '/portal/:path*',
