@@ -5,14 +5,14 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
-import { getTenantProfile } from '@/lib/tenant-profile'
+import { getSimplifiedTenantProfile } from '@/lib/tenant-profile-simplified'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export function generateMetadata(): Metadata {
   try {
-    const profile = getTenantProfile()
+    const profile = getSimplifiedTenantProfile()
     const appName = profile.branding.appName
     return {
       title: {

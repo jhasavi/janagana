@@ -242,10 +242,39 @@ export type ValidationError = {
 export function getSimplifiedTenantProfileValidationErrors(): ValidationError[] {
   if (cachedValidationErrors) return cachedValidationErrors
 
+  const slugResult = SimplifiedTenantProfileSchema.safeParse({
+    slug: process.env.TENANT_SLUG,
+    appName: process.env.TENANT_BRAND_NAME,
+  })
+
+  const requiredErrors: ValidationError[] = []
+  if (!slugResult.success) {
+    requiredErrors.push({
+      key: 'slug',
+      message: 'Slug is required',
+    })
+  }
+
+  if (!slugResult.data?.appName) {
+    requiredErrors.push({
+      key: 'branding.appName',
+      message: 'App name is required',
+    })
+  }
+
+  if (requiredErrors.length > 0) {
+    cachedValidationErrors = requiredErrors
+    return requiredErrors
+  }
+
   const { profile, errors } = buildSimplifiedProfile()
   cachedProfile = profile
   cachedValidationErrors = errors
   return errors
+}
+
+export function assertSimplifiedTenantProfileConfigured(): void {
+  getSimplifiedTenantProfile()
 }
 
 export function getSimplifiedTenantProfile(): TenantProfile {
