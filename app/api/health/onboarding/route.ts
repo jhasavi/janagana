@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getTenantProfile, getTenantProfileValidationErrors } from '@/lib/tenant-profile'
+import { getSimplifiedTenantProfile, getSimplifiedTenantProfileValidationErrors, ValidationError } from '@/lib/tenant-profile-simplified'
 
 const HEALTH_CACHE_CONTROL = 'public, max-age=5, s-maxage=15, stale-while-revalidate=30'
 const HEALTH_CACHE_TTL_MS = 30_000
@@ -79,8 +79,8 @@ export async function GET() {
     }
 
     const clerkConfigured = !!process.env.CLERK_SECRET_KEY
-    const tenantProfileErrors = getTenantProfileValidationErrors()
-    const tenantProfile = tenantProfileErrors.length === 0 ? getTenantProfile() : null
+    const tenantProfileErrors = getSimplifiedTenantProfileValidationErrors()
+    const tenantProfile = tenantProfileErrors.length === 0 ? getSimplifiedTenantProfile() : null
 
     const isHealthy = dbConnected && tenantProfileErrors.length === 0 && clerkConfigured
 
@@ -101,7 +101,7 @@ export async function GET() {
         },
         tenantProfile: {
           ok: tenantProfileErrors.length === 0,
-          errors: tenantProfileErrors,
+          errors: tenantProfileErrors.map(error => `${error.key}: ${error.message}`),
         },
       },
       app: {
