@@ -148,13 +148,24 @@ function buildSimplifiedProfile() {
     .filter((result): result is { ok: false; error: string } => !result.ok)
     .map((result) => ({ key: 'JSON', message: result.error }))
 
+  // Helper function to validate hex color
+  function isValidHexColor(color: string): boolean {
+    return /^#[0-9A-Fa-f]{6}$/.test(color)
+  }
+
+  // Helper function to get valid color or undefined
+  function getValidColor(envColor: string | undefined): string | undefined {
+    if (!envColor) return undefined
+    return isValidHexColor(envColor) ? envColor : undefined
+  }
+
   // Build complete profile with defaults
   const base = {
     slug: slug!,
     branding: {
       appName: appName!,
       legalName: process.env.TENANT_BRAND_LEGAL_NAME || appName!,
-      primaryColor: process.env.TENANT_BRAND_PRIMARY_COLOR || '#4F46E5',
+      primaryColor: getValidColor(process.env.TENANT_BRAND_PRIMARY_COLOR),
     },
     baseUrls: {
       app: appBaseUrl,
@@ -181,7 +192,7 @@ function buildSimplifiedProfile() {
     onboardingDefaults: {
       defaultOrganizationName: process.env.TENANT_ONBOARDING_DEFAULT_ORG_NAME || appName!,
       timezone: process.env.TENANT_ONBOARDING_DEFAULT_TIMEZONE || process.env.TENANT_DEFAULT_TIMEZONE || 'America/New_York',
-      primaryColor: process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR || process.env.TENANT_BRAND_PRIMARY_COLOR || '#4F46E5',
+      primaryColor: getValidColor(process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR) || getValidColor(process.env.TENANT_BRAND_PRIMARY_COLOR),
       ...(onboardingJson.ok ? onboardingJson.data : {}),
     },
   }
@@ -200,8 +211,21 @@ function buildSimplifiedProfile() {
     }
   }
 
+  // Apply defaults for optional fields after validation
+  const profile = {
+    ...validation.data,
+    branding: {
+      ...validation.data.branding,
+      primaryColor: validation.data.branding.primaryColor || '#4F46E5',
+    },
+    onboardingDefaults: {
+      ...validation.data.onboardingDefaults,
+      primaryColor: validation.data.onboardingDefaults.primaryColor || '#4F46E5',
+    },
+  }
+
   return {
-    profile: validation.data,
+    profile,
     errors: jsonErrors,
   }
 }
