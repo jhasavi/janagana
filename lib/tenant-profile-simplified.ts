@@ -38,24 +38,31 @@ const TenantProfileSchema = z.object({
   branding: z.object({
     appName: z.string().min(2),
     legalName: z.string().min(2).optional(),
-    primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#4F46E5'),
   }),
   baseUrls: z.object({
     app: z.string().url(),
     api: z.string().url(),
   }),
   locale: z.object({
-    defaultLocale: z.string().min(2),
-    timezone: z.string().min(1),
+    defaultLocale: z.string().min(2).default('en-US'),
+    timezone: z.string().min(1).default('America/New_York'),
   }),
-  featureFlags: FeatureFlagsSchema,
+  featureFlags: FeatureFlagsSchema.default({}),
   tagNamespaces: z.object({
     defaultNamespace: z.string().min(2).regex(/^[a-z0-9-]+$/),
-    eventDefaultTagPrefix: z.string().min(1),
-    contactDefaultTagPrefix: z.string().min(1),
+    eventDefaultTagPrefix: z.string().min(1).default('event'),
+    contactDefaultTagPrefix: z.string().min(1).default('contact'),
   }),
   integrations: IntegrationsSchema,
-  onboardingDefaults: OnboardingDefaultsSchema,
+  onboardingDefaults: z.object({
+    defaultOrganizationName: z.string().min(2).max(100).optional(),
+    timezone: z.string().min(1).default('America/New_York'),
+    primaryColor: z
+      .string()
+      .regex(/^#[0-9A-Fa-f]{6}$/, 'Onboarding primaryColor must be a valid hex color')
+      .default('#4F46E5'),
+  }),
 })
 
 export type TenantProfile = z.infer<typeof TenantProfileSchema>
