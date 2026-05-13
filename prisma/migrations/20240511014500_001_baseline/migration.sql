@@ -343,9 +343,6 @@ CREATE INDEX "Member_clerkUserId_key" ON "Member"("clerkUserId");
 CREATE INDEX "Contact_tenantId_idx" ON "Contact"("tenantId");
 
 -- CreateIndex
-CREATE INDEX "Contact_clerkUserId_key" ON "Contact"("clerkUserId");
-
--- CreateIndex
 CREATE INDEX "Contact_emails_idx" ON "Contact"("emails");
 
 -- CreateIndex
