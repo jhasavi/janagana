@@ -8,6 +8,8 @@ import type { Member, MembershipTier, Tenant, EventRegistration, Event, Voluntee
 import { sendMemberJoinConfirmationEmail } from '@/lib/email'
 import { getTenantProfile } from '@/lib/tenant-profile'
 
+const CAPACITY_REGISTRATION_STATUSES: Array<'CONFIRMED' | 'ATTENDED'> = ['CONFIRMED', 'ATTENDED']
+
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
 export type PortalContext = {
@@ -84,7 +86,15 @@ export async function getPortalEvents(slug: string) {
       status: 'PUBLISHED',
       startDate: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     },
-    include: { _count: { select: { registrations: true } } },
+    include: {
+      _count: {
+        select: {
+          registrations: {
+            where: { status: { in: CAPACITY_REGISTRATION_STATUSES } },
+          },
+        },
+      },
+    },
     orderBy: { startDate: 'asc' },
   })
   return { success: true, data: events }
@@ -118,11 +128,14 @@ export async function portalRegisterForEvent(slug: string, eventId: string, join
 
     const event = await prisma.event.findFirst({
       where: { id: eventId, tenantId: ctx.tenant.id },
-      include: { _count: { select: { registrations: true } } },
+      select: { id: true, capacity: true },
     })
     if (!event) return { success: false, error: 'Event not found' }
 
-    const isFull = !!event.capacity && event._count.registrations >= event.capacity
+    const confirmedCount = await prisma.eventRegistration.count({
+      where: { eventId, status: { in: CAPACITY_REGISTRATION_STATUSES } },
+    })
+    const isFull = !!event.capacity && confirmedCount >= event.capacity
     if (isFull && !joinWaitlist) {
       return { success: false, error: 'Event is at capacity', waitlistAvailable: true }
     }
@@ -221,11 +234,12 @@ export async function portalSignupForVolunteer(slug: string, opportunityId: stri
 // ─── PUBLIC JOIN REQUEST ──────────────────────────────────────────────────────
 
 const JoinSchema = z.object({
-  firstName: z.string().min(1, 'First name required').max(100),
-  lastName:  z.string().min(1, 'Last name required').max(100),
-  email:     z.string().email('Valid email required'),
+  firstName: z.string().trim().min(1, 'First name required').max(100),
+  lastName:  z.string().trim().min(1, 'Last name required').max(100),
+  email:     z.string().trim().email('Valid email required'),
   phone:     z.string().max(30).optional(),
   tierId:    z.string().optional(),
+  smsOptIn:  z.boolean().optional().default(false),
 })
 
 export async function getPublicTenantForJoin(slug: string) {
@@ -245,8 +259,9 @@ export async function portalJoinRequest(slug: string, input: unknown) {
   try {
     const data = JoinSchema.parse(input)
     const normalizedEmail = data.email.trim().toLowerCase()
+    const normalizedSlug = slug.trim().toLowerCase()
 
-    const tenant = await prisma.tenant.findUnique({ where: { slug } })
+    const tenant = await prisma.tenant.findUnique({ where: { slug: normalizedSlug } })
     if (!tenant) return { success: false, error: 'Organization not found' }
 
     // Prevent duplicate
@@ -275,12 +290,13 @@ export async function portalJoinRequest(slug: string, input: unknown) {
         phone: data.phone?.trim() || null,
         tierId: tierId ?? null,
         status: 'PENDING',
+        smsOptIn: Boolean(data.smsOptIn),
       },
     })
 
     // Send confirmation email (non-blocking)
     const profile = getTenantProfile()
-    const portalUrl = `${profile.baseUrls.app}/portal/${slug}`
+    const portalUrl = `${profile.baseUrls.app}/portal/${normalizedSlug}`
     sendMemberJoinConfirmationEmail({
       to: normalizedEmail,
       firstName: data.firstName.trim(),

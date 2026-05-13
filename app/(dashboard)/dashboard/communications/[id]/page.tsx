@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
 import { SendCampaignButton } from './_components/send-campaign-button'
+import { prisma } from '@/lib/prisma'
+import { requireTenant } from '@/lib/tenant'
 
 const statusConfig = {
   DRAFT:     { label: 'Draft',     variant: 'secondary' as const },
@@ -24,6 +26,13 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
   const result = await getEmailCampaign(id)
   if (!result.success || !result.data) notFound()
   const campaign = result.data
+  const tenant = await requireTenant()
+  const targetTierNames = campaign.targetTierIds.length > 0
+    ? await prisma.membershipTier.findMany({
+        where: { tenantId: tenant.id, id: { in: campaign.targetTierIds } },
+        select: { id: true, name: true },
+      })
+    : []
   const status = statusConfig[campaign.status]
   const canSend = campaign.status === 'DRAFT' || campaign.status === 'SCHEDULED'
 
@@ -84,9 +93,9 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
               <div className="text-sm">
                 <p className="text-muted-foreground mb-1">Filters</p>
                 <div className="flex flex-wrap gap-1">
-                  {campaign.targetTierIds.length > 0 && (
-                    <Badge variant="secondary" className="text-xs">{campaign.targetTierIds.length} tier(s)</Badge>
-                  )}
+                  {targetTierNames.map((tier) => (
+                    <Badge key={tier.id} variant="secondary" className="text-xs">Tier: {tier.name}</Badge>
+                  ))}
                   {campaign.targetStatuses.map((s) => (
                     <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
                   ))}

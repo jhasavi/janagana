@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -21,11 +21,11 @@ const Schema = z.object({
   htmlBody:       z.string().min(1, 'Body required'),
   status:         z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'SENT', 'FAILED']).default('DRAFT'),
   targetTierIds:  z.array(z.string()).default([]),
-  targetStatuses: z.array(z.string()).default([]),
+  targetStatuses: z.array(z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'BANNED'])).default([]),
 })
 type FormData = z.infer<typeof Schema>
 
-const MEMBER_STATUSES = ['ACTIVE', 'PENDING', 'INACTIVE'] as const
+const MEMBER_STATUSES = ['ACTIVE', 'PENDING', 'INACTIVE', 'BANNED'] as const
 
 interface Tier { id: string; name: string }
 
@@ -41,7 +41,6 @@ export function EmailCampaignForm({ initialData, tiers = [] }: EmailCampaignForm
   const {
     register,
     handleSubmit,
-    control,
     setValue,
     watch,
     formState: { errors, isSubmitting },
@@ -53,7 +52,7 @@ export function EmailCampaignForm({ initialData, tiers = [] }: EmailCampaignForm
       htmlBody:       initialData?.htmlBody ?? '',
       status:         initialData?.status ?? 'DRAFT',
       targetTierIds:  (initialData?.targetTierIds as string[]) ?? [],
-      targetStatuses: (initialData?.targetStatuses as string[]) ?? [],
+      targetStatuses: (initialData?.targetStatuses as Array<(typeof MEMBER_STATUSES)[number]>) ?? [],
     },
   })
   const status = watch('status')
@@ -65,12 +64,12 @@ export function EmailCampaignForm({ initialData, tiers = [] }: EmailCampaignForm
     setValue('targetTierIds', current.includes(tierId) ? current.filter((t) => t !== tierId) : [...current, tierId])
   }
 
-  function toggleStatus(s: string) {
+  function toggleStatus(s: (typeof MEMBER_STATUSES)[number]) {
     const current = targetStatuses ?? []
     setValue('targetStatuses', current.includes(s) ? current.filter((x) => x !== s) : [...current, s])
   }
 
-  async function onSubmit(data: FormData) {
+  const onSubmit: SubmitHandler<FormData> = async (data) => {
     const result = isEdit
       ? await updateEmailCampaign(initialData!.id!, data)
       : await createEmailCampaign(data)

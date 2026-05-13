@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolvePluginTenantContext } from '@/lib/plugin-auth'
+import { getTenantProfile } from '@/lib/tenant-profile'
 
 /**
  * GET /api/plugin/health
@@ -20,13 +21,17 @@ export async function GET(request: NextRequest) {
   }
 
   const { tenant } = result.context
+  const appBase = getTenantProfile().baseUrls.app
   return NextResponse.json({
     ok: true,
     tenant: {
+      id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
     },
-    apiBase: `/api/plugin`,
+    apiBase: `${appBase}/api/plugin`,
     timestamp: new Date().toISOString(),
+  }, {
+    headers: { 'Cache-Control': 'no-store' },
   })
 }

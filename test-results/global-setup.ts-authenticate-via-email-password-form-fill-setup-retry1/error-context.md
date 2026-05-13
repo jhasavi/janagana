@@ -12,7 +12,11 @@
 # Error details
 
 ```
-Error: E2E auth was diverted to Google OAuth instead of staying on the local Clerk password flow. The configured E2E user/environment is not yielding a stable same-origin password login. Use a dedicated password-only Clerk test user for this environment.
+TimeoutError: page.waitForURL: Timeout 45000ms exceeded.
+=========================== logs ===========================
+waiting for navigation until "load"
+  navigated to "https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1342714827%3A1778691150174456&access_type=offline&client_id=787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com&o2v=1&redirect_uri=https%3A%2F%2Fclerk.shared.lcl.dev%2Fv1%2Foauth_callback&response_type=code&scope=openid+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile&service=lso&state=570m1yko4xf7lonn9msvnflo1mr6clzw1aeyx4sz&flowName=GeneralOAuthLite&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Flegacy%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAMy531eO4GKSNNx-lUiPyDJ5ZXd1OfjpejSSY2V8JbISKclTUYn8g2GtoPhltV-ESkl5yqTuqKXYkALjpUwaTMS3tQbMdXa8maZ-YPD-_D7i2vq-LPt_8kbrn-YLr79r6pWOLaJv5sm6MVAGdl-GJUxXY2kgvjbCtexVj26i61--gte5ueQc7_Xzlyaa-gxvENnp5Cs4A50pXfZmsGhlkU_VQA7OmaR-wi-5Uxk_fCyIkntsgTJDrD_AcXPxmDGPfqLlKJLpiHYL1Ug-B_HBoIPRivqjEQkrTx0Tlgx5st-Qy3iS2LEmkYMKafpEkb-Ch0o2xcsWr6x7fF2Rd6ZurndZ7OJttznmwpo1_u4cfLpi19ddDvCsV_k4_Iq8TMcjHL9d6alfSaXjtoHEMN9NXOfj0kxBNYh-VbPOETigud_kpY19WTTXnkt0qyRZCuT53Ue9_95plabG3BgO773L2Kkd9F4wRbjTd--op2M8X_AeoaoqWU%26flowName%3DGeneralOAuthFlow%26as%3DS1342714827%253A1778691150174456%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%23&app_domain=https%3A%2F%2Fclerk.shared.lcl.dev&rart=ANgoxceV-XMRbiC7qy7CmusQbSepi_y9sjxNdf3LcC5qTrM1xOfHqEpcApVkztJKKZv1UwePXeLL4dpeKh-6ouBGYp6eyOt0qaSD-XLMdGLUaWSe1R7UgH8"
+============================================================
 ```
 
 # Page snapshot
@@ -39,7 +43,7 @@ Error: E2E auth was diverted to Google OAuth instead of staying on the local Cle
               - generic: Email or phone
           - paragraph [ref=e29]:
             - link "Forgot email?" [ref=e30] [cursor=pointer]:
-              - /url: /signin/v2/usernamerecovery?access_type=offline&app_domain=https://clerk.shared.lcl.dev&client_id=787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com&continue=https://accounts.google.com/signin/oauth/legacy/consent?authuser%3Dunknown%26part%3DAJi8hAOOVC8uOJlc11Sfd4tn_N56tYM-Axl4m-AUYwNlAK-aCFnEe-OBOeyByYgC1R2NFlpx3hmU1l3CUfXA07iCkWxgrqNKWmUrcF1xLTF5wyXOA7LHvd6m0BXw0XtTGMrior8J2eJqXhn0QvBI8sc5sApXRV3avsN7pkWFf5euJD-V9b6likfg-JPe2wuGQ5v4LbIiibgHIl8ZVHvBqGqGsCSoc7X-U4xfT5zqGVa1QnieQ4PFjK2qunNviWFfa19OOwDbg62cK6686UrAErrGIiTSn8O_7ocOs-UeIcUwBu1FDLyDTg0AEX9_uGzWmTY6-N06ULbWHNPZcaM5TCq4quPAjJwb6gncof1ZEqn0OEtTlw9MhAi3w5gpkyX2PBFnxaBVneK4Mh-_Sg_jNoKn6zVylb-0HXOCIWLj54dPrvwiAuDkO_woV-RPLSYRohviOe-ulJD75bam2R53k00GQdh3IeHBAw%26flowName%3DGeneralOAuthFlow%26as%3DS370102003%253A1777924263366274%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%23&dsh=S370102003:1777924263366274&flowName=GeneralOAuthLite&o2v=1&opparams=%253F&rart=ANgoxcdm5h-rRbvGthNnEOkOblpB4RRXw-yDLaJJuuBkXcWrrrYnMrNIXCcyKpjjc9Z9yFjHJw5Wv700MRxlD7JFoGBsPbU1lItDpCaF0_PONgjQcjdStQQ&redirect_uri=https://clerk.shared.lcl.dev/v1/oauth_callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&service=lso&state=v2ibnodqalf08pxm806353t5783avt79omqm2309
+              - /url: /signin/v2/usernamerecovery?access_type=offline&app_domain=https://clerk.shared.lcl.dev&client_id=787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com&continue=https://accounts.google.com/signin/oauth/legacy/consent?authuser%3Dunknown%26part%3DAJi8hAMy531eO4GKSNNx-lUiPyDJ5ZXd1OfjpejSSY2V8JbISKclTUYn8g2GtoPhltV-ESkl5yqTuqKXYkALjpUwaTMS3tQbMdXa8maZ-YPD-_D7i2vq-LPt_8kbrn-YLr79r6pWOLaJv5sm6MVAGdl-GJUxXY2kgvjbCtexVj26i61--gte5ueQc7_Xzlyaa-gxvENnp5Cs4A50pXfZmsGhlkU_VQA7OmaR-wi-5Uxk_fCyIkntsgTJDrD_AcXPxmDGPfqLlKJLpiHYL1Ug-B_HBoIPRivqjEQkrTx0Tlgx5st-Qy3iS2LEmkYMKafpEkb-Ch0o2xcsWr6x7fF2Rd6ZurndZ7OJttznmwpo1_u4cfLpi19ddDvCsV_k4_Iq8TMcjHL9d6alfSaXjtoHEMN9NXOfj0kxBNYh-VbPOETigud_kpY19WTTXnkt0qyRZCuT53Ue9_95plabG3BgO773L2Kkd9F4wRbjTd--op2M8X_AeoaoqWU%26flowName%3DGeneralOAuthFlow%26as%3DS1342714827%253A1778691150174456%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%23&dsh=S1342714827:1778691150174456&flowName=GeneralOAuthLite&o2v=1&opparams=%253F&rart=ANgoxceV-XMRbiC7qy7CmusQbSepi_y9sjxNdf3LcC5qTrM1xOfHqEpcApVkztJKKZv1UwePXeLL4dpeKh-6ouBGYp6eyOt0qaSD-XLMdGLUaWSe1R7UgH8&redirect_uri=https://clerk.shared.lcl.dev/v1/oauth_callback&response_type=code&scope=openid+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile&service=lso&state=570m1yko4xf7lonn9msvnflo1mr6clzw1aeyx4sz
         - paragraph [ref=e33]:
           - text: Before using this app, you can review Clerk’s
           - link "Privacy Policy" [ref=e34] [cursor=pointer]:
@@ -51,7 +55,7 @@ Error: E2E auth was diverted to Google OAuth instead of staying on the local Cle
         - generic [ref=e37]:
           - button "Next" [ref=e39]
           - link "Create account" [ref=e41] [cursor=pointer]:
-            - /url: /lifecycle/flows/signup?access_type=offline&app_domain=https://clerk.shared.lcl.dev&client_id=787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com&continue=https://accounts.google.com/signin/oauth/legacy/consent?authuser%3Dunknown%26part%3DAJi8hAOOVC8uOJlc11Sfd4tn_N56tYM-Axl4m-AUYwNlAK-aCFnEe-OBOeyByYgC1R2NFlpx3hmU1l3CUfXA07iCkWxgrqNKWmUrcF1xLTF5wyXOA7LHvd6m0BXw0XtTGMrior8J2eJqXhn0QvBI8sc5sApXRV3avsN7pkWFf5euJD-V9b6likfg-JPe2wuGQ5v4LbIiibgHIl8ZVHvBqGqGsCSoc7X-U4xfT5zqGVa1QnieQ4PFjK2qunNviWFfa19OOwDbg62cK6686UrAErrGIiTSn8O_7ocOs-UeIcUwBu1FDLyDTg0AEX9_uGzWmTY6-N06ULbWHNPZcaM5TCq4quPAjJwb6gncof1ZEqn0OEtTlw9MhAi3w5gpkyX2PBFnxaBVneK4Mh-_Sg_jNoKn6zVylb-0HXOCIWLj54dPrvwiAuDkO_woV-RPLSYRohviOe-ulJD75bam2R53k00GQdh3IeHBAw%26flowName%3DGeneralOAuthFlow%26as%3DS370102003%253A1777924263366274%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%23&dsh=S370102003:1777924263366274&flowEntry=SignUp&flowName=GlifWebSignIn&o2v=1&opparams=%253F&rart=ANgoxcdm5h-rRbvGthNnEOkOblpB4RRXw-yDLaJJuuBkXcWrrrYnMrNIXCcyKpjjc9Z9yFjHJw5Wv700MRxlD7JFoGBsPbU1lItDpCaF0_PONgjQcjdStQQ&redirect_uri=https://clerk.shared.lcl.dev/v1/oauth_callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid&service=lso&signInUrl=https://accounts.google.com/signin/oauth?access_type%3Doffline%26app_domain%3Dhttps://clerk.shared.lcl.dev%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%26continue%3Dhttps://accounts.google.com/signin/oauth/legacy/consent?authuser%253Dunknown%2526part%253DAJi8hAOOVC8uOJlc11Sfd4tn_N56tYM-Axl4m-AUYwNlAK-aCFnEe-OBOeyByYgC1R2NFlpx3hmU1l3CUfXA07iCkWxgrqNKWmUrcF1xLTF5wyXOA7LHvd6m0BXw0XtTGMrior8J2eJqXhn0QvBI8sc5sApXRV3avsN7pkWFf5euJD-V9b6likfg-JPe2wuGQ5v4LbIiibgHIl8ZVHvBqGqGsCSoc7X-U4xfT5zqGVa1QnieQ4PFjK2qunNviWFfa19OOwDbg62cK6686UrAErrGIiTSn8O_7ocOs-UeIcUwBu1FDLyDTg0AEX9_uGzWmTY6-N06ULbWHNPZcaM5TCq4quPAjJwb6gncof1ZEqn0OEtTlw9MhAi3w5gpkyX2PBFnxaBVneK4Mh-_Sg_jNoKn6zVylb-0HXOCIWLj54dPrvwiAuDkO_woV-RPLSYRohviOe-ulJD75bam2R53k00GQdh3IeHBAw%2526flowName%253DGeneralOAuthFlow%2526as%253DS370102003%25253A1777924263366274%2526client_id%253D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%2523%26dsh%3DS370102003:1777924263366274%26flowName%3DGeneralOAuthLite%26o2v%3D1%26opparams%3D%25253F%26rart%3DANgoxcdm5h-rRbvGthNnEOkOblpB4RRXw-yDLaJJuuBkXcWrrrYnMrNIXCcyKpjjc9Z9yFjHJw5Wv700MRxlD7JFoGBsPbU1lItDpCaF0_PONgjQcjdStQQ%26redirect_uri%3Dhttps://clerk.shared.lcl.dev/v1/oauth_callback%26response_type%3Dcode%26scope%3Dhttps://www.googleapis.com/auth/userinfo.email%2Bhttps://www.googleapis.com/auth/userinfo.profile%2Bopenid%26service%3Dlso%26state%3Dv2ibnodqalf08pxm806353t5783avt79omqm2309&state=v2ibnodqalf08pxm806353t5783avt79omqm2309
+            - /url: /lifecycle/flows/signup?access_type=offline&app_domain=https://clerk.shared.lcl.dev&client_id=787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com&continue=https://accounts.google.com/signin/oauth/legacy/consent?authuser%3Dunknown%26part%3DAJi8hAMy531eO4GKSNNx-lUiPyDJ5ZXd1OfjpejSSY2V8JbISKclTUYn8g2GtoPhltV-ESkl5yqTuqKXYkALjpUwaTMS3tQbMdXa8maZ-YPD-_D7i2vq-LPt_8kbrn-YLr79r6pWOLaJv5sm6MVAGdl-GJUxXY2kgvjbCtexVj26i61--gte5ueQc7_Xzlyaa-gxvENnp5Cs4A50pXfZmsGhlkU_VQA7OmaR-wi-5Uxk_fCyIkntsgTJDrD_AcXPxmDGPfqLlKJLpiHYL1Ug-B_HBoIPRivqjEQkrTx0Tlgx5st-Qy3iS2LEmkYMKafpEkb-Ch0o2xcsWr6x7fF2Rd6ZurndZ7OJttznmwpo1_u4cfLpi19ddDvCsV_k4_Iq8TMcjHL9d6alfSaXjtoHEMN9NXOfj0kxBNYh-VbPOETigud_kpY19WTTXnkt0qyRZCuT53Ue9_95plabG3BgO773L2Kkd9F4wRbjTd--op2M8X_AeoaoqWU%26flowName%3DGeneralOAuthFlow%26as%3DS1342714827%253A1778691150174456%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%23&dsh=S1342714827:1778691150174456&flowEntry=SignUp&flowName=GlifWebSignIn&o2v=1&opparams=%253F&rart=ANgoxceV-XMRbiC7qy7CmusQbSepi_y9sjxNdf3LcC5qTrM1xOfHqEpcApVkztJKKZv1UwePXeLL4dpeKh-6ouBGYp6eyOt0qaSD-XLMdGLUaWSe1R7UgH8&redirect_uri=https://clerk.shared.lcl.dev/v1/oauth_callback&response_type=code&scope=openid+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile&service=lso&signInUrl=https://accounts.google.com/signin/oauth?access_type%3Doffline%26app_domain%3Dhttps://clerk.shared.lcl.dev%26client_id%3D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%26continue%3Dhttps://accounts.google.com/signin/oauth/legacy/consent?authuser%253Dunknown%2526part%253DAJi8hAMy531eO4GKSNNx-lUiPyDJ5ZXd1OfjpejSSY2V8JbISKclTUYn8g2GtoPhltV-ESkl5yqTuqKXYkALjpUwaTMS3tQbMdXa8maZ-YPD-_D7i2vq-LPt_8kbrn-YLr79r6pWOLaJv5sm6MVAGdl-GJUxXY2kgvjbCtexVj26i61--gte5ueQc7_Xzlyaa-gxvENnp5Cs4A50pXfZmsGhlkU_VQA7OmaR-wi-5Uxk_fCyIkntsgTJDrD_AcXPxmDGPfqLlKJLpiHYL1Ug-B_HBoIPRivqjEQkrTx0Tlgx5st-Qy3iS2LEmkYMKafpEkb-Ch0o2xcsWr6x7fF2Rd6ZurndZ7OJttznmwpo1_u4cfLpi19ddDvCsV_k4_Iq8TMcjHL9d6alfSaXjtoHEMN9NXOfj0kxBNYh-VbPOETigud_kpY19WTTXnkt0qyRZCuT53Ue9_95plabG3BgO773L2Kkd9F4wRbjTd--op2M8X_AeoaoqWU%2526flowName%253DGeneralOAuthFlow%2526as%253DS1342714827%25253A1778691150174456%2526client_id%253D787459168867-0v2orf3qo56uocsi84iroseoahhuovdm.apps.googleusercontent.com%2523%26dsh%3DS1342714827:1778691150174456%26flowName%3DGeneralOAuthLite%26o2v%3D1%26opparams%3D%25253F%26rart%3DANgoxceV-XMRbiC7qy7CmusQbSepi_y9sjxNdf3LcC5qTrM1xOfHqEpcApVkztJKKZv1UwePXeLL4dpeKh-6ouBGYp6eyOt0qaSD-XLMdGLUaWSe1R7UgH8%26redirect_uri%3Dhttps://clerk.shared.lcl.dev/v1/oauth_callback%26response_type%3Dcode%26scope%3Dopenid%2Bhttps://www.googleapis.com/auth/userinfo.email%2Bhttps://www.googleapis.com/auth/userinfo.profile%26service%3Dlso%26state%3D570m1yko4xf7lonn9msvnflo1mr6clzw1aeyx4sz&state=570m1yko4xf7lonn9msvnflo1mr6clzw1aeyx4sz
   - contentinfo [ref=e42]:
     - combobox [ref=e45] [cursor=pointer]:
       - option "Afrikaans"
@@ -152,190 +156,206 @@ Error: E2E auth was diverted to Google OAuth instead of staying on the local Cle
 # Test source
 
 ```ts
-  1   | /**
-  2   |  * Global E2E Setup — Email/Password Form-Fill Auth
-  3   |  *
-  4   |  * Signs in via the Clerk sign-in form using email + password (form-fill).
-  5   |  * This approach is more reliable than sign-in tokens which can fail to
-  6   |  * establish a persistent session in some Clerk configurations.
-  7   |  *
-  8   |  * Required env vars (.env):
-  9   |  *   E2E_CLERK_EMAIL    — email of a Clerk user in your project
-  10  |  *   E2E_CLERK_PASSWORD — password for the test user
-  11  |  *   CLERK_SECRET_KEY   — already required for the app itself
-  12  |  * Optional env vars (.env):
-  13  |  *   E2E_SIGN_IN_PATH    — explicit app sign-in route (defaults to /auth/login)
-  14  |  */
-  15  | 
-  16  | import { test as setup, expect } from '@playwright/test'
-  17  | import { createClerkClient } from '@clerk/backend'
-  18  | import path from 'path'
-  19  | import fs from 'fs'
-  20  | import { prisma } from '@/lib/prisma'
-  21  | 
-  22  | const STORAGE_STATE = path.join(__dirname, '..', '.auth', 'user.json')
-  23  | const GOOGLE_OAUTH_URL = /accounts\.google\.com/
-  24  | 
-  25  | setup('authenticate via email/password form fill', async ({ page }) => {
   26  |   const email = process.env.E2E_CLERK_EMAIL
   27  |   const password = process.env.E2E_CLERK_PASSWORD
   28  |   const secretKey = process.env.CLERK_SECRET_KEY
   29  |   const baseUrl = process.env.PLAYWRIGHT_BASE_URL || process.env.TENANT_APP_BASE_URL || 'http://localhost:3000'
-  30  |   const signInPath = process.env.E2E_SIGN_IN_PATH || process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/auth/login'
-  31  | 
-  32  |   if (!email) throw new Error('Missing E2E_CLERK_EMAIL in .env')
-  33  |   if (!password) throw new Error('Missing E2E_CLERK_PASSWORD in .env')
-  34  |   if (!secretKey) throw new Error('Missing CLERK_SECRET_KEY in .env')
-  35  | 
-  36  |   const authDir = path.dirname(STORAGE_STATE)
-  37  |   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })
-  38  | 
-  39  |   // If a saved auth state already exists, skip re-running the setup
-  40  |   if (fs.existsSync(STORAGE_STATE)) {
-  41  |     console.log('[setup] Existing auth state found, skipping global setup.')
-  42  |     return
-  43  |   }
-  44  | 
-  45  |   // Ensure E2E tenant exists in Clerk + DB before sign-in
-  46  |   const clerk = createClerkClient({ secretKey })
-  47  |   const { data: users } = await clerk.users.getUserList({ emailAddress: [email] })
-  48  |   if (!users.length) throw new Error(`Test user "${email}" not found in Clerk Dashboard.`)
-  49  |   const user = await clerk.users.getUser(users[0].id)
-  50  |   logE2EUserAuthCapabilities(user)
-  51  |   assertPasswordCapableE2EUser(user, email)
-  52  |   const userId = user.id
-  53  |   console.log(`[setup] Found Clerk user: ${userId}`)
-  54  |   await ensureE2ETenant(clerk, userId)
-  55  | 
-  56  |   // ── Sign in via form fill ──────────────────────────────────────────────────
-  57  |   const signInUrl = new URL(signInPath, baseUrl).toString()
-  58  |   console.log(`[setup] Navigating to ${signInUrl}...`)
-  59  |   await page.goto(signInUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-  60  | 
-  61  |   // Fail fast when route drift lands on a 404 page instead of the auth form.
-  62  |   await expect(page.getByRole('heading', { name: /404|page not found/i })).toHaveCount(0)
-  63  | 
-  64  |   // Prefer accessible locators first, then fall back to robust structural selectors.
-  65  |   const semanticEmailInput = page
-  66  |     .getByLabel(/email|email address/i)
-  67  |     .or(page.getByRole('textbox', { name: /email|email address/i }))
-  68  |     .first()
-  69  |   const fallbackEmailInput = page.locator('input[name="identifier"], input[type="email"]').first()
-  70  |   const semanticReady = await semanticEmailInput.isVisible({ timeout: 20_000 }).catch(() => false)
-  71  |   const emailInput = semanticReady ? semanticEmailInput : fallbackEmailInput
-  72  | 
-  73  |   await emailInput.waitFor({ state: 'visible', timeout: 20_000 })
-  74  |   await emailInput.fill(email)
-  75  | 
-  76  |   // Click "Continue" or press Enter to proceed to password step
-  77  |   const continueBtn = page.locator('button[type="submit"]:visible, button:has-text("Continue"):visible').first()
-  78  |   await continueBtn.click()
-  79  | 
-  80  |   const passwordField = page.locator('input[type="password"]:not([disabled]):not([aria-disabled="true"])').first()
+  30  |   const signInPath = process.env.E2E_SIGN_IN_PATH || process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/sign-in'
+  31  |   const forceSetup = process.env.E2E_FORCE_AUTH_SETUP === 'true'
+  32  | 
+  33  |   if (!email) throw new Error('Missing E2E_CLERK_EMAIL in .env')
+  34  |   if (!password) throw new Error('Missing E2E_CLERK_PASSWORD in .env')
+  35  |   if (!secretKey) throw new Error('Missing CLERK_SECRET_KEY in .env')
+  36  | 
+  37  |   const authDir = path.dirname(STORAGE_STATE)
+  38  |   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })
+  39  | 
+  40  |   // If a saved auth state already exists, skip re-running the setup
+  41  |   if (fs.existsSync(STORAGE_STATE) && !forceSetup) {
+  42  |     console.log('[setup] Existing auth state found, skipping global setup.')
+  43  |     return
+  44  |   }
+  45  | 
+  46  |   if (fs.existsSync(STORAGE_STATE) && forceSetup) {
+  47  |     fs.rmSync(STORAGE_STATE, { force: true })
+  48  |     console.log('[setup] Removed stale auth state due to E2E_FORCE_AUTH_SETUP=true')
+  49  |   }
+  50  | 
+  51  |   // Ensure E2E tenant exists in Clerk + DB before sign-in
+  52  |   const clerk = createClerkClient({ secretKey })
+  53  |   const { data: users } = await clerk.users.getUserList({ emailAddress: [email] })
+  54  |   if (!users.length) throw new Error(`Test user "${email}" not found in Clerk Dashboard.`)
+  55  |   const user = await clerk.users.getUser(users[0].id)
+  56  |   logE2EUserAuthCapabilities(user)
+  57  |   assertPasswordCapableE2EUser(user, email)
+  58  |   const userId = user.id
+  59  |   console.log(`[setup] Found Clerk user: ${userId}`)
+  60  |   await ensureE2ETenant(clerk, userId)
+  61  | 
+  62  |   // ── Sign in via form fill ──────────────────────────────────────────────────
+  63  |   const signInUrl = new URL(signInPath, baseUrl).toString()
+  64  |   console.log(`[setup] Navigating to ${signInUrl}...`)
+  65  |   await page.goto(signInUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+  66  | 
+  67  |   // Fail fast when route drift lands on a 404 page instead of the auth form.
+  68  |   await expect(page.getByRole('heading', { name: /404|page not found/i })).toHaveCount(0)
+  69  | 
+  70  |   // Prefer accessible locators first, then fall back to robust structural selectors.
+  71  |   const semanticEmailInput = page
+  72  |     .getByLabel(/email|email address/i)
+  73  |     .or(page.getByRole('textbox', { name: /email|email address/i }))
+  74  |     .first()
+  75  |   const fallbackEmailInput = page.locator('input[name="identifier"], input[type="email"]').first()
+  76  |   const semanticReady = await semanticEmailInput.isVisible({ timeout: 20_000 }).catch(() => false)
+  77  |   const emailInput = semanticReady ? semanticEmailInput : fallbackEmailInput
+  78  | 
+  79  |   await emailInput.waitFor({ state: 'visible', timeout: 20_000 })
+  80  |   await emailInput.fill(email)
   81  | 
-  82  |   await Promise.race([
-  83  |     passwordField.waitFor({ state: 'visible', timeout: 10_000 }),
-  84  |     page.waitForURL(GOOGLE_OAUTH_URL, { timeout: 10_000 }).then(() => {
-> 85  |       throw new Error(
-      |             ^ Error: E2E auth was diverted to Google OAuth instead of staying on the local Clerk password flow. The configured E2E user/environment is not yielding a stable same-origin password login. Use a dedicated password-only Clerk test user for this environment.
-  86  |         'E2E auth was diverted to Google OAuth instead of staying on the local Clerk password flow. The configured E2E user/environment is not yielding a stable same-origin password login. Use a dedicated password-only Clerk test user for this environment.'
-  87  |       )
-  88  |     }),
-  89  |   ])
-  90  | 
-  91  |   await expect(passwordField).toBeEnabled()
-  92  |   await passwordField.fill(password)
+  82  |   const passwordField = page.locator('input[type="password"]:not([disabled]):not([aria-disabled="true"])').first()
+  83  |   let passwordVisible = await passwordField.isVisible().catch(() => false)
+  84  | 
+  85  |   // Some Clerk screens are two-step (email -> password), others show both fields at once.
+  86  |   if (!passwordVisible) {
+  87  |     const continueBtn = page.locator('button[type="submit"]:visible, button:has-text("Continue"):visible').first()
+  88  |     await continueBtn.click()
+  89  |     passwordVisible = await passwordField.waitFor({ state: 'visible', timeout: 10_000 })
+  90  |       .then(() => true)
+  91  |       .catch(() => false)
+  92  |   }
   93  | 
-  94  |   // Submit sign-in
-  95  |   await page.locator('button[type="submit"]:visible').first().click()
-  96  | 
-  97  |   // Wait for redirect away from sign-in
-  98  |   await page.waitForURL(/\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })
-  99  |   console.log(`[setup] Sign-in completed. URL: ${page.url()}`)
-  100 | 
-  101 |   // Handle choose-organization task if Clerk presents it
-  102 |   if (page.url().includes('/sign-in/tasks/choose-organization')) {
-  103 |     console.log('[setup] Handling choose-organization task...')
-  104 |     await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
-  105 |     await page.waitForURL(/(\/dashboard|\/onboarding)/, { timeout: 30_000 })
-  106 |   }
-  107 | 
-  108 |   // Handle onboarding flow if no org exists yet
-  109 |   if (page.url().includes('/onboarding')) {
-  110 |     console.log('[setup] Completing onboarding...')
-  111 |     await page.waitForSelector('#org-name', { timeout: 10_000 })
-  112 |     await page.locator('#org-name').clear()
-  113 |     await page.locator('#org-name').type('E2E Test Organization')
-  114 |     await page.locator('button[type="submit"]:not([disabled])').first().waitFor({ timeout: 5_000 })
-  115 |     await page.locator('button[type="submit"]:not([disabled])').first().click()
-  116 |     await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
-  117 |     console.log('[setup] Onboarding complete.')
-  118 |   }
-  119 | 
-  120 |   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-  121 |   console.log('[setup] Dashboard confirmed. Saving auth state...')
-  122 | 
-  123 |   await page.context().storageState({ path: STORAGE_STATE })
-  124 |   console.log('[setup] Auth state saved to', STORAGE_STATE)
-  125 | })
-  126 | 
-  127 | function assertPasswordCapableE2EUser(user: any, email: string) {
-  128 |   const externalStrategies = Array.isArray(user.externalAccounts)
-  129 |     ? user.externalAccounts
-  130 |         .map((account: any) => account.provider || account.strategy || account.verification?.strategy)
-  131 |         .filter(Boolean)
-  132 |     : []
-  133 | 
-  134 |   if (user.passwordEnabled) return
+  94  |   if (!passwordVisible) {
+  95  |     if (GOOGLE_OAUTH_URL.test(page.url())) {
+  96  |       console.log('[setup] OAuth diversion detected, attempting fallback to password flow...')
+  97  |       await page.goto(signInUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+  98  | 
+  99  |       const usePasswordBtn = page.locator(
+  100 |         'button:has-text("Use password"), button:has-text("Continue with password"), button:has-text("Use another method")'
+  101 |       ).first()
+  102 | 
+  103 |       if (await usePasswordBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+  104 |         await usePasswordBtn.click()
+  105 |       }
+  106 | 
+  107 |       const fallbackEmailInput = page.locator('input[name="identifier"], input[type="email"]').first()
+  108 |       await fallbackEmailInput.waitFor({ state: 'visible', timeout: 15_000 })
+  109 |       await fallbackEmailInput.fill(email)
+  110 |       await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
+  111 |       await passwordField.waitFor({ state: 'visible', timeout: 12_000 })
+  112 |     } else {
+  113 |       throw new Error(
+  114 |         'E2E auth could not reach a password prompt after identifier submission. Check Clerk sign-in settings for this environment.'
+  115 |       )
+  116 |     }
+  117 |   }
+  118 | 
+  119 |   await expect(passwordField).toBeEnabled()
+  120 |   await passwordField.fill(password)
+  121 | 
+  122 |   // Submit sign-in
+  123 |   await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
+  124 | 
+  125 |   // Wait for redirect away from sign-in
+> 126 |   await page.waitForURL(/\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })
+      |              ^ TimeoutError: page.waitForURL: Timeout 45000ms exceeded.
+  127 |   console.log(`[setup] Sign-in completed. URL: ${page.url()}`)
+  128 | 
+  129 |   // Handle choose-organization task if Clerk presents it
+  130 |   if (page.url().includes('/sign-in/tasks/choose-organization')) {
+  131 |     console.log('[setup] Handling choose-organization task...')
+  132 |     await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
+  133 |     await page.waitForURL(/(\/dashboard|\/onboarding)/, { timeout: 30_000 })
+  134 |   }
   135 | 
-  136 |   const externalSummary = externalStrategies.length > 0
-  137 |     ? ` Connected external providers: ${externalStrategies.join(', ')}.`
-  138 |     : ''
-  139 | 
-  140 |   throw new Error(
-  141 |     `E2E user ${email} does not have password auth enabled in Clerk. Use a dedicated password-enabled Clerk test user for this environment.${externalSummary}`
-  142 |   )
-  143 | }
-  144 | 
-  145 | function logE2EUserAuthCapabilities(user: any) {
-  146 |   const externalProviders = Array.isArray(user.externalAccounts)
-  147 |     ? user.externalAccounts.map((account: any) => account.provider).filter(Boolean)
-  148 |     : []
-  149 | 
-  150 |   console.log('[setup] Clerk user auth capabilities', {
-  151 |     passwordEnabled: Boolean(user.passwordEnabled),
-  152 |     externalProviders,
-  153 |   })
-  154 | }
-  155 | 
-  156 | async function ensureE2ETenant(clerk: ReturnType<typeof createClerkClient>, userId: string) {
-  157 |   const memberships = await clerk.users.getOrganizationMembershipList({
-  158 |     userId,
-  159 |     limit: 10,
-  160 |   })
-  161 |   const membership = memberships.data.find((m) => {
-  162 |     // Handle varying shapes returned by Clerk SDK across versions
-  163 |     // Try multiple possible property names safely.
-  164 |     try {
-  165 |       const mi: any = m
-  166 |       if (mi.public_user_data && mi.public_user_data.user_id === userId) return true
-  167 |     } catch (e) {}
-  168 |     try {
-  169 |       const mi: any = m
-  170 |       if (mi.publicUserData && (mi.publicUserData.user_id === userId || mi.publicUserData.userId === userId)) return true
-  171 |     } catch (e) {}
-  172 |     try {
-  173 |       const mi: any = m
-  174 |       if ((mi.user_id === userId) || (mi.userId === userId)) return true
-  175 |     } catch (e) {}
-  176 |     return false
-  177 |   })
-  178 | 
-  179 |   if (membership) {
-  180 |     const org = await clerk.organizations.getOrganization({ organizationId: membership.organization.id })
-  181 |     await prisma.tenant.upsert({
-  182 |       where: { clerkOrgId: org.id },
-  183 |       create: {
-  184 |         clerkOrgId: org.id,
-  185 |         name: org.name,
+  136 |   // Handle onboarding flow if no org exists yet
+  137 |   if (page.url().includes('/onboarding')) {
+  138 |     console.log('[setup] Completing onboarding...')
+  139 |     await page.waitForSelector('#org-name', { timeout: 10_000 })
+  140 |     await page.locator('#org-name').clear()
+  141 |     await page.locator('#org-name').type('E2E Test Organization')
+  142 |     await page.locator('button[type="submit"]:not([disabled])').first().waitFor({ timeout: 5_000 })
+  143 |     await page.locator('button[type="submit"]:not([disabled])').first().click()
+  144 |     await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
+  145 |     console.log('[setup] Onboarding complete.')
+  146 |   }
+  147 | 
+  148 |   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+  149 |   console.log('[setup] Dashboard confirmed. Saving auth state...')
+  150 | 
+  151 |   await page.context().storageState({ path: STORAGE_STATE })
+  152 |   console.log('[setup] Auth state saved to', STORAGE_STATE)
+  153 | })
+  154 | 
+  155 | function assertPasswordCapableE2EUser(user: any, email: string) {
+  156 |   const externalStrategies = Array.isArray(user.externalAccounts)
+  157 |     ? user.externalAccounts
+  158 |         .map((account: any) => account.provider || account.strategy || account.verification?.strategy)
+  159 |         .filter(Boolean)
+  160 |     : []
+  161 | 
+  162 |   if (user.passwordEnabled) return
+  163 | 
+  164 |   const externalSummary = externalStrategies.length > 0
+  165 |     ? ` Connected external providers: ${externalStrategies.join(', ')}.`
+  166 |     : ''
+  167 | 
+  168 |   throw new Error(
+  169 |     `E2E user ${email} does not have password auth enabled in Clerk. Use a dedicated password-enabled Clerk test user for this environment.${externalSummary}`
+  170 |   )
+  171 | }
+  172 | 
+  173 | function logE2EUserAuthCapabilities(user: any) {
+  174 |   const externalProviders = Array.isArray(user.externalAccounts)
+  175 |     ? user.externalAccounts.map((account: any) => account.provider).filter(Boolean)
+  176 |     : []
+  177 | 
+  178 |   console.log('[setup] Clerk user auth capabilities', {
+  179 |     passwordEnabled: Boolean(user.passwordEnabled),
+  180 |     externalProviders,
+  181 |   })
+  182 | }
+  183 | 
+  184 | async function ensureE2ETenant(clerk: ReturnType<typeof createClerkClient>, userId: string) {
+  185 |   const memberships = await clerk.users.getOrganizationMembershipList({
+  186 |     userId,
+  187 |     limit: 10,
+  188 |   })
+  189 |   const membership = memberships.data.find((m) => {
+  190 |     // Handle varying shapes returned by Clerk SDK across versions
+  191 |     // Try multiple possible property names safely.
+  192 |     try {
+  193 |       const mi: any = m
+  194 |       if (mi.public_user_data && mi.public_user_data.user_id === userId) return true
+  195 |     } catch (e) {}
+  196 |     try {
+  197 |       const mi: any = m
+  198 |       if (mi.publicUserData && (mi.publicUserData.user_id === userId || mi.publicUserData.userId === userId)) return true
+  199 |     } catch (e) {}
+  200 |     try {
+  201 |       const mi: any = m
+  202 |       if ((mi.user_id === userId) || (mi.userId === userId)) return true
+  203 |     } catch (e) {}
+  204 |     return false
+  205 |   })
+  206 | 
+  207 |   if (membership) {
+  208 |     const org = await clerk.organizations.getOrganization({ organizationId: membership.organization.id })
+  209 |     await prisma.tenant.upsert({
+  210 |       where: { clerkOrgId: org.id },
+  211 |       create: {
+  212 |         clerkOrgId: org.id,
+  213 |         name: org.name,
+  214 |         slug: org.slug,
+  215 |       },
+  216 |       update: {
+  217 |         name: org.name,
+  218 |       },
+  219 |     })
+  220 |     return org.id
+  221 |   }
+  222 | 
+  223 |   const orgName = 'E2E Test Organization'
+  224 |   const org = await clerk.organizations.createOrganization({
+  225 |     name: orgName,
+  226 |     createdBy: userId,
 ```

@@ -10,7 +10,6 @@ import {
   DollarSign,
   Pencil,
   QrCode,
-  User,
   Download,
 } from 'lucide-react'
 import { getEvent } from '@/lib/actions/events'
@@ -55,7 +54,11 @@ export default async function EventDetailPage({
   const allMembers = membersResult.data ?? []
 
   const status = statusConfig[event.status]
-  const registeredIds = new Set(event.registrations.map((r) => r.memberId))
+  const registeredIds = new Set(
+    event.registrations
+      .filter((r) => r.status !== 'CANCELED')
+      .map((r) => r.memberId)
+  )
   const unregisteredMembers = allMembers.filter((m) => !registeredIds.has(m.id))
 
   return (

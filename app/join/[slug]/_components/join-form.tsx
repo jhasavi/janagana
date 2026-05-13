@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { portalJoinRequest } from '@/lib/actions/portal'
@@ -31,6 +30,7 @@ export function JoinForm({ slug, orgName, primaryColor, tiers }: JoinFormProps) 
   const [done, setDone] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [tierId, setTierId] = useState<string>(tiers[0]?.id ?? '')
+  const [smsOptIn, setSmsOptIn] = useState(false)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' })
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -40,7 +40,11 @@ export function JoinForm({ slug, orgName, primaryColor, tiers }: JoinFormProps) 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
-      const result = await portalJoinRequest(slug, { ...form, tierId: tierId || undefined })
+      const result = await portalJoinRequest(slug, {
+        ...form,
+        tierId: tierId || undefined,
+        smsOptIn,
+      })
       if (result.success) {
         setDone(true)
       } else {
@@ -70,7 +74,7 @@ export function JoinForm({ slug, orgName, primaryColor, tiers }: JoinFormProps) 
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <div className="flex items-center gap-3 mb-1">
-          <div className="h-8 w-8 rounded-full" style={{ backgroundColor: primaryColor }} />
+          <div className="h-8 w-8 rounded-full" style={{ backgroundColor: primaryColor || '#4f46e5' }} />
           <span className="font-semibold">{orgName}</span>
         </div>
         <CardTitle className="text-xl">Become a Member</CardTitle>
@@ -116,6 +120,18 @@ export function JoinForm({ slug, orgName, primaryColor, tiers }: JoinFormProps) 
               </Select>
             </div>
           )}
+          <label className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm">
+            <input
+              type="checkbox"
+              checked={smsOptIn}
+              onChange={(e) => setSmsOptIn(e.target.checked)}
+              disabled={isPending}
+              className="mt-0.5"
+            />
+            <span className="text-muted-foreground">
+              I agree to receive occasional SMS updates from {orgName}. You can opt out anytime.
+            </span>
+          </label>
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : 'Request Membership'}
           </Button>

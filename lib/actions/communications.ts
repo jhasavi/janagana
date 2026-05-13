@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import { MemberStatus } from '@prisma/client'
 
+const MemberStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'BANNED'])
+
 // ─── LIST ─────────────────────────────────────────────────────────────────────
 
 export async function getEmailCampaigns() {
@@ -48,15 +50,25 @@ const CampaignSchema = z.object({
   htmlBody:       z.string().min(1, 'Body required'),
   status:         z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'SENT', 'FAILED']).default('DRAFT'),
   targetTierIds:  z.array(z.string()).default([]),
-  targetStatuses: z.array(z.string()).default([]),
+  targetStatuses: z.array(MemberStatusSchema).default([]),
+})
+
+const CampaignAudienceSchema = z.object({
+  targetTierIds: z.array(z.string()).default([]),
+  targetStatuses: z.array(MemberStatusSchema).default([]),
 })
 
 export async function createEmailCampaign(input: z.infer<typeof CampaignSchema>) {
   try {
     const tenant = await requireTenant()
     const data = CampaignSchema.parse(input)
+    const normalized = {
+      ...data,
+      targetTierIds: [...new Set(data.targetTierIds)],
+      targetStatuses: [...new Set(data.targetStatuses)],
+    }
     const campaign = await prisma.emailCampaign.create({
-      data: { tenantId: tenant.id, ...data },
+      data: { tenantId: tenant.id, ...normalized },
     })
     revalidatePath('/dashboard/communications')
     return { success: true, data: campaign }
@@ -76,9 +88,17 @@ export async function updateEmailCampaign(
     const tenant = await requireTenant()
     const existing = await prisma.emailCampaign.findFirst({ where: { id, tenantId: tenant.id } })
     if (!existing) return { success: false, error: 'Not found' }
+
+    const parsed = CampaignSchema.partial().parse(input)
+    const normalized = {
+      ...parsed,
+      ...(parsed.targetTierIds ? { targetTierIds: [...new Set(parsed.targetTierIds)] } : {}),
+      ...(parsed.targetStatuses ? { targetStatuses: [...new Set(parsed.targetStatuses)] } : {}),
+    }
+
     const updated = await prisma.emailCampaign.update({
       where: { id, tenantId: tenant.id },
-      data: { ...input },
+      data: normalized,
     })
     revalidatePath('/dashboard/communications')
     revalidatePath(`/dashboard/communications/${id}`)
@@ -155,7 +175,11 @@ export async function sendEmailCampaign(campaignId: string) {
 
     await prisma.emailCampaign.update({
       where: { id: campaignId },
-      data: { status: 'SENT', sentAt: new Date(), recipientCount: sent },
+      data: {
+        status: sent > 0 ? 'SENT' : 'FAILED',
+        sentAt: sent > 0 ? new Date() : null,
+        recipientCount: sent,
+      },
     })
 
     revalidatePath('/dashboard/communications')
@@ -181,11 +205,12 @@ export async function previewCampaignAudience(opts: {
 }) {
   try {
     const tenant = await requireTenant()
+    const parsed = CampaignAudienceSchema.parse(opts)
     const count = await prisma.member.count({
       where: {
         tenantId: tenant.id,
-        status: { in: (opts.targetStatuses.length > 0 ? opts.targetStatuses : ['ACTIVE']) as MemberStatus[] },
-        ...(opts.targetTierIds.length > 0 ? { tierId: { in: opts.targetTierIds } } : {}),
+        status: { in: (parsed.targetStatuses.length > 0 ? parsed.targetStatuses : ['ACTIVE']) as MemberStatus[] },
+        ...(parsed.targetTierIds.length > 0 ? { tierId: { in: parsed.targetTierIds } } : {}),
       },
     })
     return { success: true, data: count }
