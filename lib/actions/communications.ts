@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
+import { MemberStatus } from '@prisma/client'
 
 // ─── LIST ─────────────────────────────────────────────────────────────────────
 
@@ -42,10 +43,12 @@ export async function getEmailCampaign(id: string) {
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 
 const CampaignSchema = z.object({
-  name:     z.string().min(1, 'Name required').max(200),
-  subject:  z.string().min(1, 'Subject required').max(500),
-  htmlBody: z.string().min(1, 'Body required'),
-  status:   z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'SENT', 'FAILED']).default('DRAFT'),
+  name:           z.string().min(1, 'Name required').max(200),
+  subject:        z.string().min(1, 'Subject required').max(500),
+  htmlBody:       z.string().min(1, 'Body required'),
+  status:         z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'SENT', 'FAILED']).default('DRAFT'),
+  targetTierIds:  z.array(z.string()).default([]),
+  targetStatuses: z.array(z.string()).default([]),
 })
 
 export async function createEmailCampaign(input: z.infer<typeof CampaignSchema>) {
@@ -83,6 +86,111 @@ export async function updateEmailCampaign(
   } catch (e) {
     console.error('[updateEmailCampaign]', e)
     return { success: false, error: 'Failed to update campaign' }
+  }
+}
+
+// ─── SEND CAMPAIGN ────────────────────────────────────────────────────────────
+
+export async function sendEmailCampaign(campaignId: string) {
+  try {
+    const tenant = await requireTenant()
+
+    const campaign = await prisma.emailCampaign.findFirst({
+      where: { id: campaignId, tenantId: tenant.id },
+    })
+    if (!campaign) return { success: false, error: 'Campaign not found' }
+    if (campaign.status === 'SENT') return { success: false, error: 'Campaign already sent' }
+
+    // Build member audience
+    const resolvedStatuses = (campaign.targetStatuses.length > 0 ? campaign.targetStatuses : ['ACTIVE']) as MemberStatus[]
+    const memberWhere: Record<string, unknown> = {
+      tenantId: tenant.id,
+      status: { in: resolvedStatuses },
+    }
+    if (campaign.targetTierIds.length > 0) {
+      memberWhere.tierId = { in: campaign.targetTierIds }
+    }
+
+    const members = await prisma.member.findMany({
+      where: memberWhere,
+      select: { id: true, email: true, firstName: true, lastName: true },
+    })
+
+    if (members.length === 0) {
+      return { success: false, error: 'No recipients match the audience criteria' }
+    }
+
+    // Mark as sending
+    await prisma.emailCampaign.update({
+      where: { id: campaignId },
+      data: { status: 'SENDING' },
+    })
+
+    const { sendEmail } = await import('@/lib/email')
+    let sent = 0
+    let failed = 0
+
+    for (const member of members) {
+      const personalizedHtml = campaign.htmlBody
+        .replace(/\{\{firstName\}\}/g, member.firstName)
+        .replace(/\{\{lastName\}\}/g, member.lastName)
+        .replace(/\{\{email\}\}/g, member.email)
+
+      const ok = await sendEmail({
+        to: member.email,
+        subject: campaign.subject,
+        html: personalizedHtml,
+      })
+
+      await prisma.emailLog.create({
+        data: {
+          campaignId,
+          email: member.email,
+          status: ok ? 'sent' : 'failed',
+        },
+      })
+
+      if (ok) sent++ ; else failed++
+    }
+
+    await prisma.emailCampaign.update({
+      where: { id: campaignId },
+      data: { status: 'SENT', sentAt: new Date(), recipientCount: sent },
+    })
+
+    revalidatePath('/dashboard/communications')
+    revalidatePath(`/dashboard/communications/${campaignId}`)
+
+    return { success: true, data: { sent, failed, total: members.length } }
+  } catch (e) {
+    console.error('[sendEmailCampaign]', e)
+    // Roll back status to DRAFT on error
+    await prisma.emailCampaign.update({
+      where: { id: campaignId },
+      data: { status: 'FAILED' },
+    }).catch(() => {})
+    return { success: false, error: 'Failed to send campaign' }
+  }
+}
+
+// ─── PREVIEW AUDIENCE ─────────────────────────────────────────────────────────
+
+export async function previewCampaignAudience(opts: {
+  targetTierIds: string[]
+  targetStatuses: string[]
+}) {
+  try {
+    const tenant = await requireTenant()
+    const count = await prisma.member.count({
+      where: {
+        tenantId: tenant.id,
+        status: { in: (opts.targetStatuses.length > 0 ? opts.targetStatuses : ['ACTIVE']) as MemberStatus[] },
+        ...(opts.targetTierIds.length > 0 ? { tierId: { in: opts.targetTierIds } } : {}),
+      },
+    })
+    return { success: true, data: count }
+  } catch (e) {
+    return { success: false, data: 0 }
   }
 }
 

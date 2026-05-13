@@ -20,9 +20,10 @@ export default async function PortalEventsPage({
   // Find which events this member already registered for
   const registrations = await prisma.eventRegistration.findMany({
     where: { memberId: ctx.member.id },
-    select: { eventId: true },
+    select: { eventId: true, status: true },
   })
-  const registeredEventIds = registrations.map((r) => r.eventId)
+  const registeredEventIds = registrations.filter((r) => r.status === 'CONFIRMED').map((r) => r.eventId)
+  const waitlistedEventIds = registrations.filter((r) => r.status === 'WAITLISTED').map((r) => r.eventId)
 
   return (
     <div className="space-y-6">
@@ -35,6 +36,7 @@ export default async function PortalEventsPage({
       <PortalEventsClient
         events={events}
         registeredEventIds={registeredEventIds}
+        waitlistedEventIds={waitlistedEventIds}
         slug={slug}
       />
     </div>

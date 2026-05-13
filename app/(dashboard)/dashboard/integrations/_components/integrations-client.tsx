@@ -1,12 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Copy, CheckCircle2 } from 'lucide-react'
+import { Copy, CheckCircle2, Loader2, ShieldCheck, Key } from 'lucide-react'
 import { toast } from 'sonner'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 type Platform = 'html' | 'wordpress' | 'nextjs' | 'wix' | 'squarespace' | 'shopify' | 'api'
 type Widget = 'newsletter' | 'events' | 'login' | 'course' | 'portal-link'
@@ -93,8 +96,8 @@ function copyText(text: string) {
   toast.success('Copied')
 }
 
-function getInitSnippet(baseUrl: string, tenantSlug: string) {
-  return `<script src="${baseUrl}/janagana-embed.js"></script>\n<script>\n  Janagana.init({\n    tenantSlug: '${tenantSlug || 'your-tenant-slug'}',\n    apiUrl: '${baseUrl}'\n  });\n</script>`
+function getInitSnippet(baseUrl: string, tenantSlug: string, apiKey?: string) {
+  return `<script src="${baseUrl}/janagana-embed.js"></script>\n<script>\n  Janagana.init({\n    tenantSlug: '${tenantSlug || 'your-tenant-slug'}',\n    apiUrl: '${baseUrl}',\n    apiKey: '${apiKey || 'YOUR_API_KEY'}'\n  });\n</script>`
 }
 
 function getWidgetSnippet(baseUrl: string, tenantSlug: string, widget: Widget) {
@@ -117,14 +120,17 @@ function getWidgetSnippet(baseUrl: string, tenantSlug: string, widget: Widget) {
   return `${baseUrl}/portal/${tenantSlug || 'your-tenant-slug'}`
 }
 
-function getApiSnippet(baseUrl: string) {
-  return `curl -H "X-API-Key: your-api-key" \\\n  ${baseUrl}/api/plugin/events\n\n` +
-    `curl -X POST ${baseUrl}/api/plugin/crm/contacts \\\n  -H "X-API-Key: your-api-key" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "firstName": "Priya",\n    "lastName": "Shah",\n    "email": "priya@example.com",\n    "source": "website"\n  }'`
+function getApiSnippet(baseUrl: string, apiKey?: string) {
+  const key = apiKey || 'YOUR_API_KEY'
+  return `# Test connection\ncurl -H "X-API-Key: ${key}" \\\n  ${baseUrl}/api/plugin/health\n\n# Fetch events\ncurl -H "X-API-Key: ${key}" \\\n  ${baseUrl}/api/plugin/events\n\n# Create contact\ncurl -X POST ${baseUrl}/api/plugin/crm/contacts \\\n  -H "X-API-Key: ${key}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "firstName": "Priya",\n    "lastName": "Shah",\n    "email": "priya@example.com",\n    "source": "website"\n  }'`
 }
 
 export function IntegrationsClient({ tenantSlug, appBaseUrl }: IntegrationsClientProps) {
   const [platform, setPlatform] = useState<Platform>('html')
   const [widget, setWidget] = useState<Widget>('newsletter')
+  const [apiKey, setApiKey] = useState('')
+  const [keyVerified, setKeyVerified] = useState(false)
+  const [keyTesting, setKeyTesting] = useState(false)
   const [checks, setChecks] = useState({
     scriptInstalled: false,
     widgetVisible: false,
@@ -132,13 +138,78 @@ export function IntegrationsClient({ tenantSlug, appBaseUrl }: IntegrationsClien
     crmVerified: false,
   })
 
+  const activeKey = keyVerified ? apiKey.trim() : undefined
   const config = platformConfigs[platform]
-  const initSnippet = useMemo(() => getInitSnippet(appBaseUrl, tenantSlug), [appBaseUrl, tenantSlug])
+  const initSnippet = useMemo(() => getInitSnippet(appBaseUrl, tenantSlug, activeKey), [appBaseUrl, tenantSlug, activeKey])
   const widgetSnippet = useMemo(() => getWidgetSnippet(appBaseUrl, tenantSlug, widget), [appBaseUrl, tenantSlug, widget])
-  const apiSnippet = useMemo(() => getApiSnippet(appBaseUrl), [appBaseUrl])
+  const apiSnippet = useMemo(() => getApiSnippet(appBaseUrl, activeKey), [appBaseUrl, activeKey])
+
+  async function testApiKey() {
+    const key = apiKey.trim()
+    if (!key) return
+    setKeyTesting(true)
+    try {
+      const res = await fetch(`${appBaseUrl}/api/plugin/health`, {
+        headers: { 'X-API-Key': key },
+      })
+      const json = await res.json()
+      if (json.ok) {
+        setKeyVerified(true)
+        toast.success(`API key verified for tenant: ${json.tenant?.name ?? tenantSlug}`)
+      } else {
+        setKeyVerified(false)
+        toast.error(`Key rejected: ${json.error ?? 'Invalid key'}`)
+      }
+    } catch {
+      toast.error('Could not reach the API. Check your network.')
+    } finally {
+      setKeyTesting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
+      {/* API Key Setup Panel */}
+      <Card className="border-indigo-200 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/40">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Key className="h-4 w-4" /> Step 0: Connect Your API Key
+          </CardTitle>
+          <CardDescription>
+            Paste your API key here to auto-populate all snippets below.{' '}
+            <Link href="/dashboard/settings/api-keys" className="underline underline-offset-2 text-indigo-700 dark:text-indigo-300">
+              Get or create a key →
+            </Link>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Label htmlFor="api-key-input" className="sr-only">API Key</Label>
+              <Input
+                id="api-key-input"
+                type="password"
+                placeholder="jg_live_..."
+                value={apiKey}
+                onChange={(e) => { setApiKey(e.target.value); setKeyVerified(false) }}
+                className="font-mono text-sm"
+              />
+            </div>
+            <Button onClick={testApiKey} disabled={!apiKey.trim() || keyTesting} variant="outline">
+              {keyTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+              {keyTesting ? 'Testing…' : 'Test Key'}
+            </Button>
+          </div>
+          {keyVerified && (
+            <p className="flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" /> Key verified — snippets below are populated with your key.
+            </p>
+          )}
+          {!keyVerified && apiKey.trim() === '' && (
+            <p className="text-xs text-muted-foreground">Snippets will show <code className="bg-muted px-1 rounded">YOUR_API_KEY</code> until you paste and verify your key.</p>
+          )}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Canonical Integration Values</CardTitle>
