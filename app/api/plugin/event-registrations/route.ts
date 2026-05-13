@@ -30,24 +30,33 @@ export async function POST(request: NextRequest) {
 
     // Verify event exists and belongs to tenant
     const event = await prisma.event.findFirst({
-      where: { 
+      where: {
         id: eventId,
         tenantId: context.tenantId,
       },
+      include: { _count: { select: { registrations: true } } },
     })
 
-    if (!event) {
+    if (!event || event.status !== 'PUBLISHED') {
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
       )
     }
 
+    if (event.capacity && event._count.registrations >= event.capacity) {
+      return NextResponse.json(
+        { error: 'Event is at capacity' },
+        { status: 409 }
+      )
+    }
+
     // Find or create member
+    const normalizedEmail = email.trim().toLowerCase()
     let member = await prisma.member.findFirst({
-      where: { 
+      where: {
         tenantId: context.tenantId,
-        email 
+        email: { equals: normalizedEmail, mode: 'insensitive' },
       },
     })
 
@@ -55,11 +64,21 @@ export async function POST(request: NextRequest) {
       member = await prisma.member.create({
         data: {
           tenantId: context.tenantId,
-          email,
-          firstName: firstName || '',
-          lastName: lastName || '',
-          phone,
+          email: normalizedEmail,
+          firstName: firstName?.trim() || '',
+          lastName: lastName?.trim() || '',
+          phone: phone?.trim() || null,
           status: 'ACTIVE',
+        },
+      })
+    } else {
+      // Keep member contact details up to date for plugin registration sources.
+      await prisma.member.update({
+        where: { id: member.id },
+        data: {
+          firstName: firstName?.trim() || member.firstName,
+          lastName: lastName?.trim() || member.lastName,
+          phone: phone?.trim() || member.phone,
         },
       })
     }

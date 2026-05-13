@@ -151,12 +151,22 @@ This checks that:
    STRIPE_SECRET_KEY=sk_test_...
    ```
 
-3. **Run validation:**
+3. **Copy the example env:**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. **Run validation:**
    ```bash
    npm run bootstrap:validate-env
    ```
 
-4. **Start dev server:**
+5. **Run the CI-equivalent check locally:**
+   ```bash
+   npm run ci
+   ```
+
+6. **Start dev server:**
    ```bash
    npm run dev
    ```
