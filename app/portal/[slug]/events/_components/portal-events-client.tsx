@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { CalendarDays, MapPin, Users, DollarSign, CheckCircle2 } from 'lucide-react'
+import { CalendarDays, MapPin, Users, DollarSign, CheckCircle2, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { portalRegisterForEvent } from '@/lib/actions/portal'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
@@ -24,19 +24,34 @@ type Event = {
 interface PortalEventsClientProps {
   events: Event[]
   registeredEventIds: string[]
+  waitlistedEventIds?: string[]
   slug: string
 }
 
-export function PortalEventsClient({ events, registeredEventIds: initial, slug }: PortalEventsClientProps) {
+export function PortalEventsClient({ events, registeredEventIds: initial, waitlistedEventIds: initialWl = [], slug }: PortalEventsClientProps) {
   const [registered, setRegistered] = useState(new Set(initial))
+  const [waitlisted, setWaitlisted] = useState(new Set(initialWl))
   const [isPending, startTransition] = useTransition()
 
-  function handleRegister(eventId: string) {
+  function handleRegister(eventId: string, joinWaitlist = false) {
     startTransition(async () => {
-      const res = await portalRegisterForEvent(slug, eventId)
+      const res = await portalRegisterForEvent(slug, eventId, joinWaitlist)
       if (res.success) {
-        setRegistered((prev) => new Set([...prev, eventId]))
-        toast.success('Registered successfully!')
+        if ('waitlisted' in res && res.waitlisted) {
+          setWaitlisted((prev) => new Set([...prev, eventId]))
+          toast.success('Added to waitlist! You\'ll be notified if a spot opens up.')
+        } else {
+          setRegistered((prev) => new Set([...prev, eventId]))
+          toast.success('Registered successfully!')
+        }
+      } else if ('waitlistAvailable' in res && res.waitlistAvailable) {
+        toast('This event is full.', {
+          description: 'Would you like to join the waitlist?',
+          action: {
+            label: 'Join Waitlist',
+            onClick: () => handleRegister(eventId, true),
+          },
+        })
       } else {
         toast.error(res.error ?? 'Registration failed')
       }
@@ -55,6 +70,7 @@ export function PortalEventsClient({ events, registeredEventIds: initial, slug }
     <div className="space-y-4">
       {events.map((event) => {
         const isRegistered = registered.has(event.id)
+        const isWaitlisted = waitlisted.has(event.id)
         const isFull = event.capacity != null && event._count.registrations >= event.capacity
 
         return (
@@ -98,8 +114,19 @@ export function PortalEventsClient({ events, registeredEventIds: initial, slug }
                     <Badge variant="success" className="gap-1">
                       <CheckCircle2 className="h-3 w-3" /> Registered
                     </Badge>
+                  ) : isWaitlisted ? (
+                    <Badge variant="secondary" className="gap-1">
+                      <Clock className="h-3 w-3" /> Waitlisted
+                    </Badge>
                   ) : isFull ? (
-                    <Badge variant="secondary">Full</Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRegister(event.id, true)}
+                      disabled={isPending}
+                    >
+                      Join Waitlist
+                    </Button>
                   ) : (
                     <Button
                       size="sm"

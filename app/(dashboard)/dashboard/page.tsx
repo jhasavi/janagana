@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import {
   Users,
   CalendarDays,
@@ -14,6 +15,7 @@ import { getDashboardStats } from '@/lib/actions/tenant'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { GettingStartedChecklist } from '@/components/dashboard/getting-started-checklist'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -79,6 +81,11 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* Getting Started Checklist (disappears once fully complete) */}
+      <Suspense fallback={null}>
+        <GettingStartedChecklist />
+      </Suspense>
 
       {/* Stats grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { CreditCard, CheckCircle2, Star, CalendarDays } from 'lucide-react'
+import { CreditCard, CheckCircle2, Star, CalendarDays, ArrowUpCircle } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
+import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { BillingPortalCard } from './_components/billing-portal-card'
@@ -17,7 +19,15 @@ export default async function PortalMembershipPage({
   const ctx = await getPortalContext(slug)
   if (!ctx) notFound()
 
-  const { member } = ctx
+  const { member, tenant } = ctx
+
+  // Fetch all active tiers for this tenant (for upgrade CTA)
+  const allTiers = await prisma.membershipTier.findMany({
+    where: { tenantId: tenant.id, isActive: true },
+    orderBy: { priceCents: 'asc' },
+    select: { id: true, name: true, priceCents: true, interval: true, description: true, benefits: true },
+  })
+  const otherTiers = allTiers.filter((t) => t.id !== member.tierId)
 
   return (
     <div className="space-y-6">
@@ -140,6 +150,55 @@ export default async function PortalMembershipPage({
       )}
       {/* Billing Portal */}
       <BillingPortalCard slug={slug} hasSubscription={!!member.stripeCustomerId} />
+
+      {/* Available Plans (Upgrade CTA) */}
+      {otherTiers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowUpCircle className="h-4 w-4 text-indigo-500" />
+              Available Plans
+            </CardTitle>
+            <CardDescription>Explore other membership options.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {otherTiers.map((tier) => (
+              <div
+                key={tier.id}
+                className="flex items-center justify-between p-4 rounded-lg border bg-muted/30"
+              >
+                <div className="space-y-0.5">
+                  <p className="font-semibold">{tier.name}</p>
+                  {tier.description && (
+                    <p className="text-xs text-muted-foreground">{tier.description}</p>
+                  )}
+                  {tier.benefits.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {tier.benefits.slice(0, 3).map((b, i) => (
+                        <span key={i} className="text-xs flex items-center gap-1 text-emerald-600">
+                          <CheckCircle2 className="h-3 w-3" />{b}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="text-right shrink-0 ml-4 space-y-1.5">
+                  <p className="font-bold text-sm">
+                    {tier.priceCents === 0
+                      ? 'Free'
+                      : `${formatCurrency(tier.priceCents)}/${tier.interval === 'MONTHLY' ? 'mo' : 'yr'}`}
+                  </p>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/portal/${slug}/membership/subscribe?tier=${tier.id}`}>
+                      Switch Plan
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

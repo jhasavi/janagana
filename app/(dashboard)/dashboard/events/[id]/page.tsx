@@ -11,6 +11,7 @@ import {
   Pencil,
   QrCode,
   User,
+  Download,
 } from 'lucide-react'
 import { getEvent } from '@/lib/actions/events'
 import { getMembers } from '@/lib/actions/members'
@@ -147,6 +148,14 @@ export default async function EventDetailPage({
                 <CardTitle className="text-base">
                   Registrations ({event._count.registrations})
                 </CardTitle>
+                {event.registrations.length > 0 && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={`/api/events/${event.id}/export-csv`} download>
+                      <Download className="h-3.5 w-3.5" />
+                      Export CSV
+                    </a>
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>

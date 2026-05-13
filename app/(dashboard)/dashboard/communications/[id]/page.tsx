@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Clock } from 'lucide-react'
-import { getEmailCampaign } from '@/lib/actions/communications'
+import { ArrowLeft, Mail, Clock, FileEdit } from 'lucide-react'
+import { getEmailCampaign, previewCampaignAudience } from '@/lib/actions/communications'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
+import { SendCampaignButton } from './_components/send-campaign-button'
 
 const statusConfig = {
   DRAFT:     { label: 'Draft',     variant: 'secondary' as const },
@@ -24,6 +25,15 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
   if (!result.success || !result.data) notFound()
   const campaign = result.data
   const status = statusConfig[campaign.status]
+  const canSend = campaign.status === 'DRAFT' || campaign.status === 'SCHEDULED'
+
+  const audienceResult = canSend
+    ? await previewCampaignAudience({
+        targetTierIds: campaign.targetTierIds,
+        targetStatuses: campaign.targetStatuses,
+      })
+    : { data: campaign.recipientCount }
+  const audienceCount = audienceResult.data ?? 0
 
   return (
     <div className="space-y-6">
@@ -32,13 +42,22 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
           <Link href="/dashboard/communications"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{campaign.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{campaign.name}</h1>
+            <Badge variant={status.variant}>{status.label}</Badge>
+          </div>
           <p className="text-sm text-muted-foreground">{campaign.subject}</p>
         </div>
-        <Badge variant={status.variant}>{status.label}</Badge>
-        <Button asChild variant="outline">
-          <Link href={`/dashboard/communications/${campaign.id}/edit`}>Edit</Link>
-        </Button>
+        {canSend && (
+          <>
+            <Button asChild variant="outline">
+              <Link href={`/dashboard/communications/${campaign.id}/edit`}>
+                <FileEdit className="h-4 w-4" /> Edit
+              </Link>
+            </Button>
+            <SendCampaignButton campaignId={campaign.id} recipientPreview={audienceCount} />
+          </>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -48,8 +67,8 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm">
-              <p className="text-muted-foreground">Recipients</p>
-              <p className="font-semibold">{campaign.recipientCount}</p>
+              <p className="text-muted-foreground">Audience</p>
+              <p className="font-semibold">{audienceCount} members</p>
             </div>
             {campaign.sentAt && (
               <div className="text-sm">
@@ -61,6 +80,19 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
               <p className="text-muted-foreground">Created</p>
               <p className="font-semibold">{formatDate(campaign.createdAt)}</p>
             </div>
+            {(campaign.targetTierIds.length > 0 || campaign.targetStatuses.length > 0) && (
+              <div className="text-sm">
+                <p className="text-muted-foreground mb-1">Filters</p>
+                <div className="flex flex-wrap gap-1">
+                  {campaign.targetTierIds.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">{campaign.targetTierIds.length} tier(s)</Badge>
+                  )}
+                  {campaign.targetStatuses.map((s) => (
+                    <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -69,7 +101,14 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
             <CardTitle className="text-base">Email Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose max-w-none break-words" dangerouslySetInnerHTML={{ __html: campaign.htmlBody }} />
+            <div className="border rounded-lg overflow-hidden">
+              <iframe
+                srcDoc={campaign.htmlBody}
+                className="w-full h-96"
+                sandbox="allow-same-origin"
+                title="Email preview"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -102,3 +141,6 @@ export default async function EmailCampaignDetailPage({ params }: { params: Prom
     </div>
   )
 }
+
+
+
