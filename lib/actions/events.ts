@@ -8,6 +8,8 @@ import { sendEventReminder } from '@/lib/sms'
 import { ensureContactForMember } from '@/lib/contact-linking'
 import { uploadFile } from '@/lib/upload'
 
+const CAPACITY_REGISTRATION_STATUSES: Array<'CONFIRMED' | 'ATTENDED'> = ['CONFIRMED', 'ATTENDED']
+
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
 const EventSchema = z.object({
@@ -58,7 +60,13 @@ export async function getEvents(params?: {
     const events = await prisma.event.findMany({
       where,
       include: {
-        _count: { select: { registrations: true } },
+        _count: {
+          select: {
+            registrations: {
+              where: { status: { in: CAPACITY_REGISTRATION_STATUSES } },
+            },
+          },
+        },
       },
       orderBy: { startDate: 'asc' },
     })
@@ -81,7 +89,13 @@ export async function getEvent(id: string) {
           include: { member: true },
           orderBy: { createdAt: 'desc' },
         },
-        _count: { select: { registrations: true } },
+        _count: {
+          select: {
+            registrations: {
+              where: { status: { in: CAPACITY_REGISTRATION_STATUSES } },
+            },
+          },
+        },
       },
     })
 

@@ -27,7 +27,8 @@ setup('authenticate via email/password form fill', async ({ page }) => {
   const password = process.env.E2E_CLERK_PASSWORD
   const secretKey = process.env.CLERK_SECRET_KEY
   const baseUrl = process.env.PLAYWRIGHT_BASE_URL || process.env.TENANT_APP_BASE_URL || 'http://localhost:3000'
-  const signInPath = process.env.E2E_SIGN_IN_PATH || process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/auth/login'
+  const signInPath = process.env.E2E_SIGN_IN_PATH || process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/sign-in'
+  const forceSetup = process.env.E2E_FORCE_AUTH_SETUP === 'true'
 
   if (!email) throw new Error('Missing E2E_CLERK_EMAIL in .env')
   if (!password) throw new Error('Missing E2E_CLERK_PASSWORD in .env')
@@ -37,9 +38,14 @@ setup('authenticate via email/password form fill', async ({ page }) => {
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true })
 
   // If a saved auth state already exists, skip re-running the setup
-  if (fs.existsSync(STORAGE_STATE)) {
+  if (fs.existsSync(STORAGE_STATE) && !forceSetup) {
     console.log('[setup] Existing auth state found, skipping global setup.')
     return
+  }
+
+  if (fs.existsSync(STORAGE_STATE) && forceSetup) {
+    fs.rmSync(STORAGE_STATE, { force: true })
+    console.log('[setup] Removed stale auth state due to E2E_FORCE_AUTH_SETUP=true')
   }
 
   // Ensure E2E tenant exists in Clerk + DB before sign-in
@@ -73,26 +79,48 @@ setup('authenticate via email/password form fill', async ({ page }) => {
   await emailInput.waitFor({ state: 'visible', timeout: 20_000 })
   await emailInput.fill(email)
 
-  // Click "Continue" or press Enter to proceed to password step
-  const continueBtn = page.locator('button[type="submit"]:visible, button:has-text("Continue"):visible').first()
-  await continueBtn.click()
-
   const passwordField = page.locator('input[type="password"]:not([disabled]):not([aria-disabled="true"])').first()
+  let passwordVisible = await passwordField.isVisible().catch(() => false)
 
-  await Promise.race([
-    passwordField.waitFor({ state: 'visible', timeout: 10_000 }),
-    page.waitForURL(GOOGLE_OAUTH_URL, { timeout: 10_000 }).then(() => {
+  // Some Clerk screens are two-step (email -> password), others show both fields at once.
+  if (!passwordVisible) {
+    const continueBtn = page.locator('button[type="submit"]:visible, button:has-text("Continue"):visible').first()
+    await continueBtn.click()
+    passwordVisible = await passwordField.waitFor({ state: 'visible', timeout: 10_000 })
+      .then(() => true)
+      .catch(() => false)
+  }
+
+  if (!passwordVisible) {
+    if (GOOGLE_OAUTH_URL.test(page.url())) {
+      console.log('[setup] OAuth diversion detected, attempting fallback to password flow...')
+      await page.goto(signInUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+
+      const usePasswordBtn = page.locator(
+        'button:has-text("Use password"), button:has-text("Continue with password"), button:has-text("Use another method")'
+      ).first()
+
+      if (await usePasswordBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await usePasswordBtn.click()
+      }
+
+      const fallbackEmailInput = page.locator('input[name="identifier"], input[type="email"]').first()
+      await fallbackEmailInput.waitFor({ state: 'visible', timeout: 15_000 })
+      await fallbackEmailInput.fill(email)
+      await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
+      await passwordField.waitFor({ state: 'visible', timeout: 12_000 })
+    } else {
       throw new Error(
-        'E2E auth was diverted to Google OAuth instead of staying on the local Clerk password flow. This Clerk environment is preferring federated sign-in after identifier entry, so it is not yielding a stable same-origin password login for E2E automation.'
+        'E2E auth could not reach a password prompt after identifier submission. Check Clerk sign-in settings for this environment.'
       )
-    }),
-  ])
+    }
+  }
 
   await expect(passwordField).toBeEnabled()
   await passwordField.fill(password)
 
   // Submit sign-in
-  await page.locator('button[type="submit"]:visible').first().click()
+  await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
 
   // Wait for redirect away from sign-in
   await page.waitForURL(/\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })

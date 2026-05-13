@@ -31,15 +31,23 @@ export default async function JoinPage({
         <JoinForm
           slug={slug}
           orgName={tenant.name}
-          primaryColor={tenant.primaryColor}
+          primaryColor={tenant.primaryColor || '#4f46e5'}
           tiers={tiers}
         />
-        <p className="text-center text-xs text-muted-foreground">
-          Already a member?{' '}
-          <a href={`/portal/${slug}`} className="underline underline-offset-2">
-            Sign in to your portal
-          </a>
-        </p>
+        <div className="text-center text-xs text-muted-foreground space-y-1">
+          <p>
+            Already a member?{' '}
+            <a href={`/portal/${slug}`} className="underline underline-offset-2">
+              Sign in to your portal
+            </a>
+          </p>
+          <p>
+            Looking for events first?{' '}
+            <a href={`/events/${slug}`} className="underline underline-offset-2">
+              View public events
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

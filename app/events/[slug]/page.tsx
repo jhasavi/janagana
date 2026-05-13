@@ -9,6 +9,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatDateTime, formatCurrency } from '@/lib/utils'
 
+const CAPACITY_REGISTRATION_STATUSES: Array<'CONFIRMED' | 'ATTENDED'> = ['CONFIRMED', 'ATTENDED']
+
 export async function generateMetadata({
   params,
 }: {
@@ -49,7 +51,13 @@ export default async function PublicEventsPage({
       virtualLink: true,
       priceCents: true,
       capacity: true,
-      _count: { select: { registrations: true } },
+      _count: {
+        select: {
+          registrations: {
+            where: { status: { in: CAPACITY_REGISTRATION_STATUSES } },
+          },
+        },
+      },
     },
   })
 
@@ -133,11 +141,16 @@ export default async function PublicEventsPage({
                     )}
                   </div>
                   <div className="pt-1">
-                    <Button asChild size="sm" variant={isFull ? 'secondary' : 'default'}>
-                      <Link href={`/portal/${slug}/events`}>
-                        {isFull ? 'Join Waitlist' : 'Register →'}
-                      </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button asChild size="sm" variant={isFull ? 'secondary' : 'default'}>
+                        <Link href={`/portal/${slug}/events`}>
+                          {isFull ? 'Join Waitlist' : 'Register'}
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/join/${slug}`}>Request Membership</Link>
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

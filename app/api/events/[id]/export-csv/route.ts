@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { orgId } = await auth()
@@ -20,8 +20,13 @@ export async function GET(
   })
   if (!event) return new NextResponse('Not found', { status: 404 })
 
+  const includeWaitlist = req.nextUrl.searchParams.get('includeWaitlist') === 'true'
+
   const registrations = await prisma.eventRegistration.findMany({
-    where: { eventId },
+    where: {
+      eventId,
+      ...(includeWaitlist ? {} : { status: { not: 'WAITLISTED' } }),
+    },
     include: {
       member: {
         select: {
@@ -51,13 +56,15 @@ export async function GET(
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     .join('\r\n')
 
-  const filename = `${event.title.replace(/[^a-z0-9]/gi, '_')}_attendees.csv`
+  const normalizedTitle = event.title.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')
+  const filename = `${normalizedTitle || 'event'}_${includeWaitlist ? 'all_registrants' : 'attendees'}.csv`
 
-  return new NextResponse(csvContent, {
+  return new NextResponse(`\uFEFF${csvContent}`, {
     status: 200,
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
     },
   })
 }
