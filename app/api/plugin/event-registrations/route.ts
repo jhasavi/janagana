@@ -4,6 +4,36 @@ import { resolvePluginTenantContext } from '@/lib/plugin-auth'
 import { syncEventRegistrationToActivity } from '@/lib/crm-sync'
 import { logTenantRequest } from '@/lib/tenant'
 
+// GET /api/plugin/event-registrations?eventId=xxx - List registrations for an event
+export async function GET(request: NextRequest) {
+  try {
+    const tenantResolution = await resolvePluginTenantContext(request)
+    if (!tenantResolution.ok) {
+      return NextResponse.json({ error: tenantResolution.error }, { status: tenantResolution.status })
+    }
+    const context = tenantResolution.context
+
+    const { searchParams } = new URL(request.url)
+    const eventId = searchParams.get('eventId')
+
+    const where: Record<string, unknown> = { event: { tenantId: context.tenantId } }
+    if (eventId) where.eventId = eventId
+
+    const registrations = await prisma.eventRegistration.findMany({
+      where,
+      include: { member: { select: { id: true, firstName: true, lastName: true, email: true } }, event: { select: { id: true, title: true, startDate: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    })
+
+    logTenantRequest('plugin.event_registrations.list.success', context, { eventId: eventId ?? 'all', count: registrations.length })
+    return NextResponse.json({ registrations })
+  } catch (error) {
+    console.error('Plugin event-registrations GET error:', error)
+    return NextResponse.json({ error: 'Failed to fetch registrations' }, { status: 500 })
+  }
+}
+
 // POST /api/plugin/event-registrations - Register for event
 export async function POST(request: NextRequest) {
   try {

@@ -122,8 +122,24 @@ setup('authenticate via email/password form fill', async ({ page }) => {
   // Submit sign-in
   await page.locator('button:has-text("Continue"):visible, button[type="submit"]:visible').first().click()
 
-  // Wait for redirect away from sign-in
-  await page.waitForURL(/\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 })
+  // Wait for redirect away from sign-in and fail fast on forced OAuth diversion.
+  const authOutcome = await Promise.race([
+    page.waitForURL(/\/(dashboard|onboarding|sign-in\/tasks)/, { timeout: 45_000 }).then(() => 'app'),
+    page.waitForURL(GOOGLE_OAUTH_URL, { timeout: 45_000 }).then(() => 'oauth'),
+  ]).catch(() => 'timeout')
+
+  if (authOutcome === 'oauth') {
+    throw new Error(
+      'E2E auth redirected to Google OAuth after password submit. Configure this Clerk environment for password-first test login or use session-based bootstrap for automated tests.'
+    )
+  }
+
+  if (authOutcome !== 'app') {
+    throw new Error(
+      `E2E auth did not reach dashboard/onboarding/task routes after submit. Current URL: ${page.url()}`
+    )
+  }
+
   console.log(`[setup] Sign-in completed. URL: ${page.url()}`)
 
   // Handle choose-organization task if Clerk presents it

@@ -12,14 +12,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 type OnboardingClientProps = {
-  appName: string
+  platformName: string
   defaultOrganizationName: string
   defaultTimezone: string
   defaultPrimaryColor: string
 }
 
 export default function OnboardingClient({
-  appName,
+  platformName,
   defaultOrganizationName,
   defaultTimezone,
   defaultPrimaryColor,
@@ -40,7 +40,7 @@ export default function OnboardingClient({
         primaryColor: defaultPrimaryColor,
       })
       if (result.success) {
-        toast.success(`Organization created! Welcome to ${appName}.`)
+        toast.success(`Organization created! Welcome to ${platformName}.`)
         const orgId = result.data?.orgId
         const tenantId = result.data?.tenant?.id
         const apiKeyCreated = Boolean(result.data?.provisioning?.apiKeyCreated)
@@ -89,7 +89,7 @@ export default function OnboardingClient({
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Set up your organization</h1>
           <p className="text-muted-foreground text-sm">
-            Create your {appName} workspace to manage members, events, and volunteers.
+            Create your {platformName} workspace to manage members, events, and volunteers.
           </p>
         </div>
 
