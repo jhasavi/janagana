@@ -6,20 +6,22 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { getSimplifiedTenantProfile } from '@/lib/tenant-profile-simplified'
+import { getPlatformBrandName } from '@/lib/platform-brand'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export function generateMetadata(): Metadata {
+  const platformName = getPlatformBrandName()
+
   try {
     const profile = getSimplifiedTenantProfile()
-    const appName = profile.branding.appName
     return {
       title: {
-        template: `%s | ${appName}`,
-        default: `${appName} — Membership & Event Management`,
+        template: `%s | ${platformName}`,
+        default: `${platformName} — Membership & Event Management`,
       },
-      description: `${appName} for membership, event, and volunteer management.`,
+      description: `${platformName} for membership, event, volunteer, and CRM management.`,
       icons: {
         icon: '/images/icon.png',
         shortcut: '/images/icon.png',
@@ -29,8 +31,8 @@ export function generateMetadata(): Metadata {
       alternates: { canonical: '/' },
       robots: { index: true, follow: true },
       openGraph: {
-        title: `${appName} — Membership & Event Management`,
-        description: `${appName} for membership, event, and volunteer management.`,
+        title: `${platformName} — Membership & Event Management`,
+        description: `${platformName} for membership, event, volunteer, and CRM management.`,
         type: 'website',
         locale: profile.locale.defaultLocale.replace('-', '_'),
         url: profile.baseUrls.app,
@@ -38,8 +40,8 @@ export function generateMetadata(): Metadata {
     }
   } catch {
     return {
-      title: 'JanaGana — Membership & Event Management',
-      description: 'Membership, event, and volunteer management platform.',
+      title: `${platformName} — Membership & Event Management`,
+      description: `${platformName} for membership, event, volunteer, and CRM management.`,
     }
   }
 }

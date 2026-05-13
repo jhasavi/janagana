@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolvePluginTenantContext } from '@/lib/plugin-auth'
-import { getTenantProfile } from '@/lib/tenant-profile'
 
 /**
  * GET /api/plugin/health
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { tenant } = result.context
-  const appBase = getTenantProfile().baseUrls.app
+  const appBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://janagana.namasteneedham.com'
   return NextResponse.json({
     ok: true,
     tenant: {

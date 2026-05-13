@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getTenant } from '@/lib/tenant'
 import { getTenantProfile } from '@/lib/tenant-profile'
+import { getPlatformBrandName } from '@/lib/platform-brand'
 import OnboardingClient from './OnboardingClient'
 
 export default async function OnboardingPage() {
@@ -9,13 +10,12 @@ export default async function OnboardingPage() {
     redirect('/dashboard')
   }
 
-  let appName = 'JanaGana'
+  const platformName = getPlatformBrandName()
   let defaultOrgName = ''
   let defaultTimezone = 'America/New_York'
   let defaultPrimaryColor = '#4F46E5'
   try {
     const tenantProfile = getTenantProfile()
-    appName = tenantProfile.branding.appName
     defaultOrgName = tenantProfile.onboardingDefaults.defaultOrganizationName ?? ''
     defaultTimezone = tenantProfile.onboardingDefaults.timezone
     defaultPrimaryColor = tenantProfile.onboardingDefaults.primaryColor
@@ -25,7 +25,7 @@ export default async function OnboardingPage() {
 
   return (
     <OnboardingClient
-      appName={appName}
+      platformName={platformName}
       defaultOrganizationName={defaultOrgName}
       defaultTimezone={defaultTimezone}
       defaultPrimaryColor={defaultPrimaryColor}
