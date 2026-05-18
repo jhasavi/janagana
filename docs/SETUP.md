@@ -49,7 +49,7 @@ Open `.env.local` and set:
 
 | Variable | Where to get it |
 |----------|----------------|
-| `TENANT_SLUG` | Short slug for this isolated customer deployment (example: `purple-wings`) |
+| `TENANT_SLUG` | Short slug for this isolated customer deployment (example: `purple-wings`; onboarding strips leading articles like `The`, `A`, or `An`) |
 | `TENANT_BRAND_NAME` | Customer-facing brand/app name for this deployment |
 | `TENANT_APP_BASE_URL` | Public base URL for this deployment |
 | `DATABASE_URL` | [neon.tech](https://neon.tech) → your project → Connection string |

@@ -6,7 +6,7 @@ async function testEventCreation() {
     console.log('=== Event Creation Test ===');
     
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     // Create a test event

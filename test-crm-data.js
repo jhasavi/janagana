@@ -5,9 +5,9 @@ async function testCRM() {
   try {
     console.log('=== CRM Data Test ===');
     
-    // Check contacts in the-purple-wings tenant
+    // Check contacts in the purple-wings tenant
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     console.log('Active tenant:', tenant.name);

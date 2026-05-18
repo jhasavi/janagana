@@ -7,7 +7,7 @@ async function debugNewsletter() {
     
     // Test tenant lookup
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     console.log('Tenant found:', tenant ? tenant.name : 'Not found');

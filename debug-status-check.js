@@ -6,7 +6,7 @@ async function debugStatusCheck() {
     console.log('=== Debug Status Check ===');
     
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     const testEmail = 'test-1778444031757@newsletter-test.com';

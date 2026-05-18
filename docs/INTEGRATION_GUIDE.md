@@ -37,7 +37,7 @@ Expected response:
 ```json
 {
   "ok": true,
-  "tenant": { "id": "...", "name": "The Purple Wings", "slug": "the-purple-wings" },
+  "tenant": { "id": "...", "name": "The Purple Wings", "slug": "purple-wings" },
   "apiBase": "https://janagana.namasteneedham.com/api/plugin",
   "timestamp": "2026-05-13T00:00:00Z"
 }

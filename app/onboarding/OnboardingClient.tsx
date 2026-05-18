@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrganizationList } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Users, ArrowRight, Loader2 } from 'lucide-react'
 import { completeOnboarding } from '@/lib/actions/tenant'
+import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,6 +29,11 @@ export default function OnboardingClient({
   const { setActive, isLoaded } = useOrganizationList()
   const [isPending, startTransition] = useTransition()
   const [orgName, setOrgName] = useState(defaultOrganizationName)
+
+  const slugPreview = useMemo(() => {
+    const candidate = orgName.trim() || defaultOrganizationName || ''
+    return candidate ? slugify(candidate) : 'your-workspace'
+  }, [defaultOrganizationName, orgName])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -113,6 +119,10 @@ export default function OnboardingClient({
                   disabled={isPending}
                   autoFocus
                 />
+                <p className="text-sm text-muted-foreground">
+                  This name will become your workspace slug: <span className="font-medium text-slate-900 dark:text-slate-100">{slugPreview}</span>.
+                  Leading articles like <strong>The</strong>, <strong>A</strong>, and <strong>An</strong> are removed automatically.
+                </p>
               </div>
               <Button type="submit" className="w-full" disabled={!orgName.trim() || isPending}>
                 {isPending ? (
