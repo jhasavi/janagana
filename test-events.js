@@ -3,9 +3,9 @@ const prisma = new PrismaClient();
 
 async function testEventRetrieval() {
   try {
-    // Test: Get the-purple-wings tenant
+    // Test: Get the purple-wings tenant
     const activeTenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     console.log('Active tenant:', activeTenant);

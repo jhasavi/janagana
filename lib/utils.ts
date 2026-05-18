@@ -38,7 +38,9 @@ export function initials(firstName: string, lastName: string): string {
 
 export function slugify(text: string): string {
   return text
+    .trim()
     .toLowerCase()
+    .replace(/^(?:the|a|an)\s+/i, '')
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '')

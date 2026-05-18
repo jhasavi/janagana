@@ -6,7 +6,7 @@ async function checkNewsletterContacts() {
     console.log('=== Newsletter Subscribers in CRM ===');
     
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     const contacts = await prisma.contact.findMany({

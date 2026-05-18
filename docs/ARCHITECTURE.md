@@ -6,6 +6,8 @@ JanaGana is a **multi-tenant SaaS platform** for managing memberships, events, a
 
 Each organization ("tenant") is isolated — members, events, and volunteer data belong to one org and can never be seen by another.
 
+When the platform generates a tenant slug from an organization name, it strips leading articles such as `The`, `A`, and `An`. For example, "The Purple Wings" becomes `purple-wings`.
+
 ---
 
 ## Technical Stack

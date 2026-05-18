@@ -7,7 +7,7 @@ async function testNewsletter() {
     
     // Check for newsletter campaigns
     const tenant = await prisma.tenant.findFirst({
-      where: { slug: 'the-purple-wings' }
+      where: { slug: 'purple-wings' }
     });
     
     const campaigns = await prisma.newsletterCampaign.findMany({
