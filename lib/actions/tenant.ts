@@ -36,14 +36,14 @@ export async function completeOnboarding(input: unknown) {
     })
 
     let org = null
-    if (memberships.data.length === 1) {
-      org = memberships.data[0].organization
+    const normalizedOrgName = data.orgName.trim().toLowerCase()
+    const existingOrgWithSameName = memberships.data.find(({ organization }) =>
+      organization.name?.trim().toLowerCase() === normalizedOrgName,
+    )?.organization
+
+    if (existingOrgWithSameName) {
+      org = existingOrgWithSameName
       console.log('[completeOnboarding] reusing existing org', org.id, 'for user', userId)
-    } else if (memberships.data.length > 1) {
-      return {
-        success: false,
-        error: 'Multiple organizations already exist for this account. Please sign in to the correct workspace.',
-      }
     } else {
       org = await client.organizations.createOrganization({
         name: data.orgName,
