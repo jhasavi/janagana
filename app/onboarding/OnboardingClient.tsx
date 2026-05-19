@@ -1,10 +1,11 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useOrganizationList } from '@clerk/nextjs'
+import { useOrganizationList, useSignOut } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { Users, ArrowRight, Loader2 } from 'lucide-react'
+import { Users, ArrowRight, Loader2, LogOut } from 'lucide-react'
 import { completeOnboarding } from '@/lib/actions/tenant'
 import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -27,18 +28,31 @@ export default function OnboardingClient({
 }: OnboardingClientProps) {
   const router = useRouter()
   const { setActive, isLoaded } = useOrganizationList()
+  const { signOut, isLoaded: signOutLoaded } = useSignOut()
   const [isPending, startTransition] = useTransition()
   const [orgName, setOrgName] = useState(defaultOrganizationName)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const slugPreview = useMemo(() => {
     const candidate = orgName.trim() || defaultOrganizationName || ''
     return candidate ? slugify(candidate) : 'your-workspace'
   }, [defaultOrganizationName, orgName])
 
+  async function handleSignOut() {
+    if (!signOutLoaded) return
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('[onboarding] signOut failed', error)
+    }
+    router.push('/sign-in')
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!orgName.trim() || !isLoaded) return
 
+    setErrorMessage(null)
     startTransition(async () => {
       const result = await completeOnboarding({
         orgName: orgName.trim(),
@@ -79,7 +93,9 @@ export default function OnboardingClient({
 
         router.replace('/dashboard')
       } else {
-        toast.error(result.error ?? 'Failed to create organization')
+        const error = result.error ?? 'Failed to create organization'
+        setErrorMessage(error)
+        toast.error(error)
       }
     })
   }
@@ -108,6 +124,12 @@ export default function OnboardingClient({
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {errorMessage ? (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive-foreground">
+                  <p className="font-semibold">Onboarding failed</p>
+                  <p className="mt-2">{errorMessage}</p>
+                </div>
+              ) : null}
               <div className="space-y-1.5">
                 <Label htmlFor="org-name">Organization name</Label>
                 <Input
@@ -137,6 +159,19 @@ export default function OnboardingClient({
                   </>
                 )}
               </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={handleSignOut}
+                disabled={!signOutLoaded || isPending}
+              >
+                <LogOut className="h-4 w-4" />
+                Use a different account
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                If you want to switch accounts without signing out here, <Link href="/sign-in" className="text-primary underline">go to sign-in</Link>.
+              </p>
             </form>
           </CardContent>
         </Card>

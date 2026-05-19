@@ -9,12 +9,37 @@ import { getTenantProfile } from '@/lib/tenant-profile'
 import { slugify } from '@/lib/utils'
 import { extractApiKeyPrefix, generateApiKey, hashApiKey } from '@/lib/plugin-auth'
 
+function getOnboardingDefaults() {
+  try {
+    const profile = getTenantProfile()
+    return {
+      timezone: profile.onboardingDefaults.timezone,
+      primaryColor: profile.onboardingDefaults.primaryColor,
+    }
+  } catch {
+    return {
+      timezone: process.env.TENANT_ONBOARDING_DEFAULT_TIMEZONE ?? process.env.TENANT_DEFAULT_TIMEZONE ?? 'America/New_York',
+      primaryColor:
+        process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR ?? process.env.TENANT_BRAND_PRIMARY_COLOR ?? '#4F46E5',
+    }
+  }
+}
+
+function normalizeApiKeyPermissions(rawPermissions: string | undefined) {
+  const permissions = (rawPermissions ?? 'contacts:write,events:read')
+    .split(',')
+    .map((permission) => permission.trim())
+    .filter(Boolean)
+
+  return permissions.length > 0 ? permissions : ['contacts:write', 'events:read']
+}
+
 function getOnboardingSchema() {
-  const profile = getTenantProfile()
+  const defaults = getOnboardingDefaults()
   return z.object({
     orgName: z.string().min(2, 'Organization name must be at least 2 characters').max(100),
-    timezone: z.string().default(profile.onboardingDefaults.timezone),
-    primaryColor: z.string().default(profile.onboardingDefaults.primaryColor),
+    timezone: z.string().default(defaults.timezone),
+    primaryColor: z.string().default(defaults.primaryColor),
   })
 }
 
@@ -27,18 +52,18 @@ export async function completeOnboarding(input: unknown) {
     const normalized = typeof input === 'string' ? { orgName: input } : input
     const data = getOnboardingSchema().parse(normalized)
 
-    // If the user already has exactly one Clerk org membership, reuse that
-    // organization rather than creating a duplicate org with the same name.
+    // If the user already belongs to an organization with the same name,
+    // reuse that org rather than creating a duplicate.
     const client = await clerkClient()
     const memberships = await client.users.getOrganizationMembershipList({
       userId,
-      limit: 2,
+      limit: 100,
     })
 
     let org = null
     const normalizedOrgName = data.orgName.trim().toLowerCase()
     const existingOrgWithSameName = memberships.data.find(({ organization }) =>
-      organization.name?.trim().toLowerCase() === normalizedOrgName,
+      organization?.name?.trim().toLowerCase() === normalizedOrgName,
     )?.organization
 
     if (existingOrgWithSameName) {
@@ -113,9 +138,16 @@ export async function completeOnboarding(input: unknown) {
     }
 
     // Idempotent default API key provisioning for plugin integrations.
-    const profile = getTenantProfile()
-    const defaultApiKeyName = profile.integrations.defaultApiKeyName
-    const defaultApiKeyPermissions = profile.integrations.defaultApiKeyPermissions
+    let defaultApiKeyName = 'Default Plugin Key'
+    let defaultApiKeyPermissions = ['contacts:write', 'events:read']
+    try {
+      const profile = getTenantProfile()
+      defaultApiKeyName = profile.integrations.defaultApiKeyName
+      defaultApiKeyPermissions = profile.integrations.defaultApiKeyPermissions
+    } catch {
+      defaultApiKeyName = process.env.ONBOARDING_DEFAULT_API_KEY_NAME ?? defaultApiKeyName
+      defaultApiKeyPermissions = normalizeApiKeyPermissions(process.env.ONBOARDING_DEFAULT_API_KEY_PERMISSIONS)
+    }
 
     const existingApiKey = await prisma.apiKey.findFirst({
       where: { tenantId: tenant.id, name: defaultApiKeyName, isActive: true },
@@ -162,8 +194,16 @@ export async function completeOnboarding(input: unknown) {
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
+
+    let message = 'Failed to set up organization'
+    if (error instanceof Error) {
+      message = error.message || message
+    } else if (typeof error === 'string') {
+      message = error
+    }
+
     console.error('[completeOnboarding]', error)
-    return { success: false, error: 'Failed to set up organization' }
+    return { success: false, error: message }
   }
 }
 
