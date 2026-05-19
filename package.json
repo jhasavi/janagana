@@ -41,7 +41,7 @@
     "bootstrap:provision-tenant": "node --import tsx scripts/bootstrap-provision-tenant.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.39.2",
+    "@clerk/nextjs": "^6.39.3",
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.6",
