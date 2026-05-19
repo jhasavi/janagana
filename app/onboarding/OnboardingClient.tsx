@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOrganizationList } from '@clerk/nextjs'
 import { toast } from 'sonner'
