@@ -2,8 +2,9 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useOrganizationList, useSignOut } from '@clerk/nextjs'
+import { useOrganizationList } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Users, ArrowRight, Loader2, LogOut } from 'lucide-react'
 import { completeOnboarding } from '@/lib/actions/tenant'
@@ -28,7 +29,6 @@ export default function OnboardingClient({
 }: OnboardingClientProps) {
   const router = useRouter()
   const { setActive, isLoaded } = useOrganizationList()
-  const { signOut, isLoaded: signOutLoaded } = useSignOut()
   const [isPending, startTransition] = useTransition()
   const [orgName, setOrgName] = useState(defaultOrganizationName)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -37,16 +37,6 @@ export default function OnboardingClient({
     const candidate = orgName.trim() || defaultOrganizationName || ''
     return candidate ? slugify(candidate) : 'your-workspace'
   }, [defaultOrganizationName, orgName])
-
-  async function handleSignOut() {
-    if (!signOutLoaded) return
-    try {
-      await signOut()
-    } catch (error) {
-      console.error('[onboarding] signOut failed', error)
-    }
-    router.push('/sign-in')
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -159,18 +149,15 @@ export default function OnboardingClient({
                   </>
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full"
-                onClick={handleSignOut}
-                disabled={!signOutLoaded || isPending}
+              <Link
+                href="/sign-in"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
               >
                 <LogOut className="h-4 w-4" />
                 Use a different account
-              </Button>
+              </Link>
               <p className="text-center text-sm text-muted-foreground">
-                If you want to switch accounts without signing out here, <Link href="/sign-in" className="text-primary underline">go to sign-in</Link>.
+                If you want to switch accounts, <Link href="/sign-in" className="text-primary underline">go to sign-in</Link>.
               </p>
             </form>
           </CardContent>
