@@ -8,6 +8,7 @@ export type TenantActionPermission =
   | 'import_commit_safe'
   | 'import_commit_overwrite'
   | 'duplicates_merge'
+  | 'crm_manage'
 
 function normalizeRole(rawRole: string) {
   const role = String(rawRole ?? '').toLowerCase()
@@ -34,6 +35,7 @@ const ADMIN_OR_OWNER_ACTIONS = new Set<TenantActionPermission>([
   'bulk_assign_tags',
   'import_preview',
   'import_commit_safe',
+  'crm_manage',
 ])
 
 export function roleCanPerformAction(role: string, action: TenantActionPermission) {

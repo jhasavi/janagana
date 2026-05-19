@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { MoreHorizontal, Pencil, Trash2, Eye, Phone, Mail, Building2, Linkedin } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate, initials } from '@/lib/utils'
@@ -50,9 +51,11 @@ type ContactWithRelations = Contact & {
 
 interface ContactTableProps {
   contacts: ContactWithRelations[]
+  onArchive: (contactId: string) => Promise<{ success: boolean; error?: string }>
 }
 
-export function ContactTable({ contacts }: ContactTableProps) {
+export function ContactTable({ contacts, onArchive }: ContactTableProps) {
+  const router = useRouter()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, startDelete] = useTransition()
   const [searchQuery, setSearchQuery] = useState('')
@@ -94,14 +97,11 @@ export function ContactTable({ contacts }: ContactTableProps) {
     if (!deleteId) return
     startDelete(async () => {
       try {
-        const response = await fetch(`/api/dashboard/crm/contacts/${deleteId}`, {
-          method: 'DELETE',
-        })
-        const result = await response.json()
+        const result = await onArchive(deleteId)
         if (result.success) {
           toast.success('Contact deleted')
           setDeleteId(null)
-          window.location.reload()
+          router.refresh()
         } else {
           toast.error(result.error || 'Failed to delete contact')
         }

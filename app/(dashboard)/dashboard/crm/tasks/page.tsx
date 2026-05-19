@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TaskTable } from '../_components/task-table'
+import { deleteTaskAction } from '@/lib/actions/crm'
 
 export default async function TasksPage() {
   const tenant = await getTenant()
@@ -39,7 +40,7 @@ export default async function TasksPage() {
         </Button>
       </div>
 
-      <TaskTable tasks={tasks} />
+      <TaskTable tasks={tasks} onDelete={deleteTaskAction} />
     </div>
   )
 }

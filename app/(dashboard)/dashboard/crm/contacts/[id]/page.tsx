@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ActivityTimeline } from '../../_components/activity-timeline'
 import { ActivityQuickAdd } from '../../_components/activity-quick-add'
+import { createActivityAction } from '@/lib/actions/crm'
 
 export default async function ContactDetailPage({
   params,
@@ -286,7 +287,7 @@ export default async function ContactDetailPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Activity Timeline</CardTitle>
-              <ActivityQuickAdd contactId={contact.id} />
+              <ActivityQuickAdd contactId={contact.id} onAdd={createActivityAction} />
             </CardHeader>
             <CardContent>
               <ActivityTimeline activities={contact.activities} />

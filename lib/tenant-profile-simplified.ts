@@ -88,6 +88,11 @@ function parseJson<T>(key: string, value: string | undefined, defaultValue: T): 
   }
 }
 
+function optionalEnv(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
 function normalizePermissions(value: string | undefined): string[] {
   if (!value) return ['events:read', 'events:write']
   
@@ -95,7 +100,12 @@ function normalizePermissions(value: string | undefined): string[] {
     const parsed = JSON.parse(value)
     return Array.isArray(parsed) ? parsed : ['events:read', 'events:write']
   } catch {
-    return ['events:read', 'events:write']
+    const fromCsv = value
+      .split(',')
+      .map((permission) => permission.trim())
+      .filter(Boolean)
+
+    return fromCsv.length > 0 ? fromCsv : ['events:read', 'events:write']
   }
 }
 
@@ -122,8 +132,8 @@ function buildSimplifiedProfile() {
   }
 
   // Build URLs with fallbacks
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://janagana.namasteneedham.com`
-  const apiBaseUrl = process.env.API_URL || `${appBaseUrl}/api`
+  const appBaseUrl = optionalEnv(process.env.TENANT_APP_BASE_URL) || optionalEnv(process.env.NEXT_PUBLIC_APP_URL) || `https://janagana.namasteneedham.com`
+  const apiBaseUrl = optionalEnv(process.env.TENANT_API_BASE_URL) || optionalEnv(process.env.API_URL) || `${appBaseUrl}/api`
 
   // Parse optional JSON configs
   const featureFlagsJson = parseJson(
@@ -186,7 +196,7 @@ function buildSimplifiedProfile() {
       embedApiEnabled: process.env.TENANT_EMBED_API_ENABLED !== 'false',
       defaultApiKeyName: process.env.ONBOARDING_DEFAULT_API_KEY_NAME || 'Default Plugin Key',
       defaultApiKeyPermissions: normalizePermissions(process.env.ONBOARDING_DEFAULT_API_KEY_PERMISSIONS),
-      webhookBaseUrl: process.env.TENANT_WEBHOOK_BASE_URL,
+      webhookBaseUrl: optionalEnv(process.env.TENANT_WEBHOOK_BASE_URL),
       ...(integrationsJson.ok ? integrationsJson.data : {}),
     },
     onboardingDefaults: {

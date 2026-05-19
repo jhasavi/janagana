@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resolvePluginTenantContext } from '@/lib/plugin-auth'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
  * GET /api/plugin/health
@@ -7,6 +8,10 @@ import { resolvePluginTenantContext } from '@/lib/plugin-auth'
  * Useful for integrators to verify their key is correct before going live.
  */
 export async function GET(request: NextRequest) {
+  if (checkRateLimit(request, { maxRequests: 60, windowMs: 60_000 })) {
+    return NextResponse.json({ ok: false, error: 'Too many requests' }, { status: 429 })
+  }
+
   const result = await resolvePluginTenantContext(request)
   if (!result.ok) {
     return NextResponse.json(

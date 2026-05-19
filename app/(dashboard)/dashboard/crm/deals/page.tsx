@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DealKanban } from '../_components/deal-kanban'
+import { deleteDealAction } from '@/lib/actions/crm'
 
 export default async function DealsPage() {
   const tenant = await getTenant()
@@ -39,7 +40,7 @@ export default async function DealsPage() {
         </Button>
       </div>
 
-      <DealKanban deals={deals} />
+      <DealKanban deals={deals} onDelete={deleteDealAction} />
     </div>
   )
 }

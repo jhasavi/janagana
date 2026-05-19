@@ -55,6 +55,28 @@ function getRouteFromRequest(request?: Pick<NextRequest, 'nextUrl' | 'url'>) {
   return request.nextUrl?.pathname ?? new URL(request.url).pathname
 }
 
+async function userBelongsToOrganization(userId: string | null, organizationId: string) {
+  if (!userId) return false
+
+  try {
+    const client = await clerkClient()
+    const memberships = await client.organizations.getOrganizationMembershipList({
+      organizationId,
+      userId: [userId],
+      limit: 1,
+    })
+
+    return memberships.data.length > 0
+  } catch (error) {
+    console.warn('[resolveTenant] Clerk membership verification failed', {
+      userId,
+      organizationId,
+      error,
+    })
+    return false
+  }
+}
+
 async function resolveTenantForAuthState(
   authState: TenantAuthState,
   options?: { allowAutoCreateFromClerkOrg?: boolean }
@@ -64,25 +86,43 @@ async function resolveTenantForAuthState(
   const allowAutoCreateFromClerkOrg = options?.allowAutoCreateFromClerkOrg ?? true
 
   try {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore-next-line
     const cookieStore = await cookies()
     tenantIdCookie = cookieStore?.get?.('JG_TENANT_ID')?.value
+
+    let activeOrgId = orgId
+    if (!activeOrgId) {
+      const activeCookie = cookieStore?.get?.('JG_ACTIVE_ORG')?.value
+      if (activeCookie && await userBelongsToOrganization(userId, activeCookie)) {
+        activeOrgId = activeCookie
+      } else if (activeCookie) {
+        console.warn('[resolveTenant] ignored active org cookie without Clerk membership', {
+          activeOrgId: activeCookie,
+          userId,
+        })
+      }
+    }
+
     if (tenantIdCookie) {
       const tenant = await withDbRetry(
         'resolveTenant.findUnique.byId',
         () => prisma.tenant.findUnique({ where: { id: tenantIdCookie } })
       )
       if (tenant) {
-        console.log('[resolveTenant] resolved tenant via JG_TENANT_ID cookie=', tenant.id)
-        return tenant
-      }
-    }
+        const matchesActiveOrg = !activeOrgId || activeOrgId === tenant.clerkOrgId
+        const hasMembership = await userBelongsToOrganization(userId, tenant.clerkOrgId)
 
-    let activeOrgId = orgId
-    if (!activeOrgId) {
-      const activeCookie = cookieStore?.get?.('JG_ACTIVE_ORG')?.value
-      if (activeCookie) activeOrgId = activeCookie
+        if (matchesActiveOrg && hasMembership) {
+          console.log('[resolveTenant] resolved tenant via verified JG_TENANT_ID cookie=', tenant.id)
+          return tenant
+        }
+
+        console.warn('[resolveTenant] ignored tenant cookie without matching Clerk membership', {
+          tenantId: tenant.id,
+          tenantClerkOrgId: tenant.clerkOrgId,
+          activeOrgId,
+          userId,
+        })
+      }
     }
 
     if (!activeOrgId && userId) {

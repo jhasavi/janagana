@@ -46,9 +46,10 @@ interface DealFormProps {
   companies: Company[]
   initialData?: Partial<DealFormValues>
   dealId?: string
+  onSubmit: (values: DealFormValues) => Promise<{ success: boolean; error?: string }>
 }
 
-export function DealForm({ contacts, companies, initialData, dealId }: DealFormProps) {
+export function DealForm({ contacts, companies, initialData, dealId, onSubmit }: DealFormProps) {
   const router = useRouter()
   const [isSubmitting, startSubmit] = useTransition()
 
@@ -68,21 +69,10 @@ export function DealForm({ contacts, companies, initialData, dealId }: DealFormP
     },
   })
 
-  const onSubmit = (values: DealFormValues) => {
+  const handleSubmit = (values: DealFormValues) => {
     startSubmit(async () => {
       try {
-        const url = dealId
-          ? `/api/dashboard/crm/deals/${dealId}`
-          : '/api/dashboard/crm/deals'
-        const method = dealId ? 'PUT' : 'POST'
-
-        const response = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        })
-
-        const result = await response.json()
+        const result = await onSubmit(values)
 
         if (result.success) {
           toast.success(dealId ? 'Deal updated' : 'Deal created')
@@ -99,7 +89,7 @@ export function DealForm({ contacts, companies, initialData, dealId }: DealFormP
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 max-w-2xl">
         <FormField
           control={form.control}
           name="contactId"

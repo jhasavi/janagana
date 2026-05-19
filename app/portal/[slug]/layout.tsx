@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import Link from 'next/link'
-import { LayoutDashboard, CalendarDays, Heart, CreditCard, LogOut, IdCard, Users, ClipboardCheck } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Heart, CreditCard, LogOut, IdCard, Users } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
 import { cn } from '@/lib/utils'
 
@@ -41,7 +41,6 @@ export default async function PortalLayout({
     { label: 'Volunteer', href: `/portal/${slug}/volunteers`, icon: Heart },
     { label: 'Directory', href: `/portal/${slug}/directory`, icon: Users },
     { label: 'Membership', href: `/portal/${slug}/membership`, icon: CreditCard },
-    { label: 'Surveys', href: `/portal/${slug}/surveys`, icon: ClipboardCheck },
     { label: 'My Card', href: `/portal/${slug}/card`, icon: IdCard },
   ]
 

@@ -49,9 +49,10 @@ type FormData = z.infer<typeof schema>
 interface MemberFormProps {
   member?: Member | null
   tiers: MembershipTier[]
+  onSearchContact?: (email: string) => Promise<{ success: boolean; data?: any; error?: string }>
 }
 
-export function MemberForm({ member, tiers }: MemberFormProps) {
+export function MemberForm({ member, tiers, onSearchContact }: MemberFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isLookingUpContact, startLookupTransition] = useTransition()
@@ -98,15 +99,19 @@ export function MemberForm({ member, tiers }: MemberFormProps) {
 
     startLookupTransition(async () => {
       try {
-        const response = await fetch(`/api/dashboard/crm/contacts/search?q=${encodeURIComponent(email)}`)
-        const result = await response.json()
+        if (!onSearchContact) {
+          toast.error('Contact search is unavailable')
+          return
+        }
 
-        if (!response.ok || !result.success) {
+        const result = await onSearchContact(email)
+
+        if (!result.success || !result.data) {
           toast.error(result.error ?? 'Failed to search contacts')
           return
         }
 
-        const match = (result.contacts ?? [])[0]
+        const match = result.data[0]
         if (!match) {
           toast.info('No existing contact found. A new contact will be created with this membership.')
           return

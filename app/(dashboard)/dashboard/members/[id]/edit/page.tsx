@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getMember, getTiers } from '@/lib/actions/members'
 import { MemberForm } from '../../_components/member-form'
+import { searchContactsAction } from '@/lib/actions/crm'
 
 export const metadata: Metadata = { title: 'Edit Member' }
 
@@ -22,6 +23,7 @@ export default async function EditMemberPage({
     <MemberForm
       member={memberResult.data}
       tiers={tiersResult.data ?? []}
+      onSearchContact={searchContactsAction}
     />
   )
 }

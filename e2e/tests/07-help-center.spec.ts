@@ -52,10 +52,10 @@ test.describe('Public Help Center', () => {
     await expect(page.locator('text=/api key/i').first()).toBeVisible()
   })
 
-  test('help article for features/photo-gallery is reachable', async ({ page }) => {
-    await page.goto('/help/features/photo-gallery', { waitUntil: 'domcontentloaded' })
+  test('help article for features/email-campaigns is reachable', async ({ page }) => {
+    await page.goto('/help/features/email-campaigns', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=/album/i').first()).toBeVisible()
+    await expect(page.locator('text=/campaign/i').first()).toBeVisible()
   })
 
   test('unknown help category returns 404 gracefully', async ({ page }) => {

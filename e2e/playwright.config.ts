@@ -3,9 +3,12 @@ import path from 'path'
 import { config as dotenv } from 'dotenv'
 import { expand as dotenvExpand } from 'dotenv-expand'
 
-// Load .env from project root (parent of e2e/)
+// Load project env the same way bootstrap scripts do: .env first, then .env.local overrides.
 dotenvExpand(
   dotenv({ path: path.join(__dirname, '..', '.env'), override: false })
+)
+dotenvExpand(
+  dotenv({ path: path.join(__dirname, '..', '.env.local'), override: true })
 )
 
 // Auth state file reused across all tests
@@ -24,6 +27,7 @@ const resolvedDevPort = (() => {
 const resolvedDevCommand = `PORT=${resolvedDevPort} npm run dev`
 
 export default defineConfig({
+  globalSetup: path.join(__dirname, 'global-setup.ts'),
   testDir: './tests',
   fullyParallel: false,     // Sequential — DB state must be consistent
   forbidOnly: !!process.env.CI,
@@ -42,19 +46,12 @@ export default defineConfig({
     actionTimeout: 15_000,
   },
   projects: [
-    // ── 1. Global auth setup (runs first, once) ──
-    {
-      name: 'setup',
-      testMatch: /global-setup\.ts/,
-    },
-    // ── 2. Authenticated tests (require Clerk login via setup) ──
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
         storageState: STORAGE_STATE,
       },
-      dependencies: ['setup'],
       testIgnore: [/global-setup\.ts/, /no-auth/],
     },
     // ── 3. Unauthenticated tests (public pages, redirects) ──
