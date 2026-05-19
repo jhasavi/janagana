@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CompanyForm } from '../../../_components/company-form'
+import { updateCompanyAction } from '@/lib/actions/crm'
 
 export default async function EditCompanyPage({
   params,
@@ -55,6 +56,7 @@ export default async function EditCompanyPage({
           description: company.description || '',
         }}
         companyId={id}
+        onSubmit={(values) => updateCompanyAction(id, values)}
       />
     </div>
   )

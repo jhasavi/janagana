@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTenant } from '@/lib/tenant'
 import { getTiers } from '@/lib/actions/members'
 import { MemberForm } from '../_components/member-form'
+import { searchContactsAction } from '@/lib/actions/crm'
 
 export const metadata: Metadata = { title: 'Add Membership' }
 
@@ -13,5 +14,5 @@ export default async function NewMemberPage() {
   const tiersResult = await getTiers()
   const tiers = tiersResult.data ?? []
 
-  return <MemberForm tiers={tiers} />
+  return <MemberForm tiers={tiers} onSearchContact={searchContactsAction} />
 }

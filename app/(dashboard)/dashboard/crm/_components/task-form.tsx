@@ -43,9 +43,10 @@ interface TaskFormProps {
   deals: Deal[]
   initialData?: Partial<TaskFormValues>
   taskId?: string
+  onSubmit: (values: TaskFormValues) => Promise<{ success: boolean; error?: string }>
 }
 
-export function TaskForm({ contacts, deals, initialData, taskId }: TaskFormProps) {
+export function TaskForm({ contacts, deals, initialData, taskId, onSubmit }: TaskFormProps) {
   const router = useRouter()
   const [isSubmitting, startSubmit] = useTransition()
 
@@ -62,21 +63,10 @@ export function TaskForm({ contacts, deals, initialData, taskId }: TaskFormProps
     },
   })
 
-  const onSubmit = (values: TaskFormValues) => {
+  const handleSubmit = (values: TaskFormValues) => {
     startSubmit(async () => {
       try {
-        const url = taskId
-          ? `/api/dashboard/crm/tasks/${taskId}`
-          : '/api/dashboard/crm/tasks'
-        const method = taskId ? 'PUT' : 'POST'
-
-        const response = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        })
-
-        const result = await response.json()
+        const result = await onSubmit(values)
 
         if (result.success) {
           toast.success(taskId ? 'Task updated' : 'Task created')
@@ -93,7 +83,7 @@ export function TaskForm({ contacts, deals, initialData, taskId }: TaskFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 max-w-2xl">
         <FormField
           control={form.control}
           name="title"

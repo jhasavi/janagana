@@ -55,9 +55,10 @@ type ContactFormValues = z.infer<typeof contactSchema>
 interface ContactFormProps {
   initialData?: Partial<ContactFormValues>
   contactId?: string
+  onSubmit: (values: ContactFormValues) => Promise<{ success: boolean; error?: string }>
 }
 
-export function ContactForm({ initialData, contactId }: ContactFormProps) {
+export function ContactForm({ initialData, contactId, onSubmit }: ContactFormProps) {
   const router = useRouter()
   const [isSubmitting, startSubmit] = useTransition()
 
@@ -76,21 +77,10 @@ export function ContactForm({ initialData, contactId }: ContactFormProps) {
     },
   })
 
-  const onSubmit = (values: ContactFormValues) => {
+  const handleSubmit = (values: ContactFormValues) => {
     startSubmit(async () => {
       try {
-        const url = contactId
-          ? `/api/dashboard/crm/contacts/${contactId}`
-          : '/api/dashboard/crm/contacts'
-        const method = contactId ? 'PUT' : 'POST'
-
-        const response = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        })
-
-        const result = await response.json()
+        const result = await onSubmit(values)
 
         if (result.success) {
           toast.success(contactId ? 'Contact updated' : 'Contact created')
@@ -108,7 +98,7 @@ export function ContactForm({ initialData, contactId }: ContactFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 max-w-2xl">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}

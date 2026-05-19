@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '../../_components/contact-form'
+import { createContactAction } from '@/lib/actions/crm'
 
 export default async function NewContactPage() {
   const tenant = await getTenant()
@@ -27,7 +28,7 @@ export default async function NewContactPage() {
         </p>
       </div>
 
-      <ContactForm />
+      <ContactForm onSubmit={createContactAction} />
     </div>
   )
 }

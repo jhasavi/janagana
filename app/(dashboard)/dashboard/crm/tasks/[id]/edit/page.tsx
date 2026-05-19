@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TaskForm } from '../../../_components/task-form'
+import { updateTaskAction } from '@/lib/actions/crm'
 
 export default async function EditTaskPage({
   params,
@@ -65,6 +66,7 @@ export default async function EditTaskPage({
           dueDate: task.dueDate ? task.dueDate.toISOString().split('T')[0] : '',
         }}
         taskId={id}
+        onSubmit={(values) => updateTaskAction(id, values)}
       />
     </div>
   )

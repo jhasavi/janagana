@@ -15,8 +15,11 @@ coverage/
 .env.production
 .env.development
 .env.test
+.env.*
 .env.*.local
 !.env.example
+!.env.local.example
+env.txt
 
 # Turbo
 .turbo/

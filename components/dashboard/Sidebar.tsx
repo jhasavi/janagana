@@ -11,15 +11,8 @@ import {
   Heart,
   Settings,
   BarChart2,
-  Users2,
   HeartHandshake,
   Mail,
-  Briefcase,
-  MessageSquare,
-  ClipboardList,
-  ClipboardCheck,
-  FileText,
-  Images,
   ChevronRight,
   Building2,
   UserCircle,
@@ -30,6 +23,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { isDashboardFeatureHidden } from '@/lib/feature-flags'
 
 const navSections = [
   {
@@ -59,28 +53,8 @@ const navSections = [
     ],
   },
   {
-    title: 'Community',
-    items: [
-      { label: 'Clubs', href: '/dashboard/clubs', icon: Users2 },
-      { label: 'Chapters', href: '/dashboard/chapters', icon: Building2 },
-      { label: 'Forum', href: '/dashboard/forum', icon: MessageSquare },
-      { label: 'Forms', href: '/dashboard/forms', icon: ClipboardList },
-      { label: 'Surveys', href: '/dashboard/surveys', icon: ClipboardCheck },
-    ],
-  },
-  {
-    title: 'Content',
-    items: [
-      { label: 'Pages', href: '/dashboard/pages', icon: FileText },
-      { label: 'Gallery', href: '/dashboard/gallery', icon: Images },
-    ],
-  },
-  {
     title: 'Organization',
-    items: [
-      { label: 'Careers', href: '/dashboard/jobs', icon: Briefcase },
-      { label: 'Governance', href: '/dashboard/governance', icon: Shield },
-    ],
+    items: [],
   },
   {
     title: 'Admin',
@@ -96,6 +70,12 @@ const navSections = [
 export function Sidebar() {
   const pathname = usePathname()
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+  const visibleNavSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !isDashboardFeatureHidden(item.href)),
+    }))
+    .filter((section) => section.items.length > 0)
 
   const toggleSection = (title: string) => {
     setCollapsedSections((prev) => ({ ...prev, [title]: !prev[title] }))
@@ -120,7 +100,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {navSections.map((section) => {
+        {visibleNavSections.map((section) => {
           const sectionActive = section.items.some((item) =>
             item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)
           )

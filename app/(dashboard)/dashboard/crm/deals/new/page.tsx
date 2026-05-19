@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DealForm } from '../../_components/deal-form'
+import { createDealAction } from '@/lib/actions/crm'
 
 export default async function NewDealPage() {
   const tenant = await getTenant()
@@ -38,7 +39,7 @@ export default async function NewDealPage() {
         </p>
       </div>
 
-      <DealForm contacts={contacts} companies={companies} />
+      <DealForm contacts={contacts} companies={companies} onSubmit={createDealAction} />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DealForm } from '../../../_components/deal-form'
+import { updateDealAction } from '@/lib/actions/crm'
 
 export default async function EditDealPage({
   params,
@@ -68,6 +69,7 @@ export default async function EditDealPage({
           source: deal.source || '',
         }}
         dealId={id}
+        onSubmit={(values) => updateDealAction(id, values)}
       />
     </div>
   )

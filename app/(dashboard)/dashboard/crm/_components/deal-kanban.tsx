@@ -30,6 +30,7 @@ type DealWithRelations = Deal & {
 
 interface DealKanbanProps {
   deals: DealWithRelations[]
+  onDelete: (dealId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const stages = [
@@ -41,7 +42,7 @@ const stages = [
   { id: 'CLOSED_LOST', label: 'Lost', color: 'bg-red-100' },
 ]
 
-export function DealKanban({ deals }: DealKanbanProps) {
+export function DealKanban({ deals, onDelete }: DealKanbanProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const groupedDeals = stages.reduce((acc, stage) => {
@@ -52,10 +53,7 @@ export function DealKanban({ deals }: DealKanbanProps) {
   const handleDelete = async () => {
     if (!deleteId) return
     try {
-      const response = await fetch(`/api/dashboard/crm/deals/${deleteId}`, {
-        method: 'DELETE',
-      })
-      const result = await response.json()
+      const result = await onDelete(deleteId)
       if (result.success) {
         window.location.reload()
       }

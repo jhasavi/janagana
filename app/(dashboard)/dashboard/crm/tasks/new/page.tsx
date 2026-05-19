@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TaskForm } from '../../_components/task-form'
+import { createTaskAction } from '@/lib/actions/crm'
 
 export default async function NewTaskPage() {
   const tenant = await getTenant()
@@ -38,7 +39,7 @@ export default async function NewTaskPage() {
         </p>
       </div>
 
-      <TaskForm contacts={contacts} deals={deals} />
+      <TaskForm contacts={contacts} deals={deals} onSubmit={createTaskAction} />
     </div>
   )
 }

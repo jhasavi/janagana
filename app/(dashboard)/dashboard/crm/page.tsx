@@ -6,6 +6,7 @@ import { UserPlus, GitMerge, Upload, Download, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContactTable } from './_components/contact-table'
 import { HelpButton } from '@/components/dashboard/help-button'
+import { archiveContactAction } from '@/lib/actions/crm'
 
 export default async function CRMPage() {
   const tenant = await getTenant()
@@ -97,7 +98,7 @@ export default async function CRMPage() {
         </div>
       </div>
 
-      <ContactTable contacts={contacts} />
+      <ContactTable contacts={contacts} onArchive={archiveContactAction} />
     </div>
   )
 }

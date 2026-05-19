@@ -61,6 +61,11 @@ type ValidationError = {
 let cachedProfile: TenantProfile | null = null
 let cachedValidationErrors: ValidationError[] | null = null
 
+function optionalEnv(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
+}
+
 function parseJson<T>(key: string, raw: string | undefined, fallback: T): ParsedJsonResult<T> {
   if (!raw || raw.trim() === '') {
     return { ok: true, data: fallback }
@@ -86,8 +91,8 @@ function normalizePermissions(rawPermissions: string | undefined): string[] {
 }
 
 function buildRawProfile() {
-  const appBaseUrl = process.env.TENANT_APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL
-  const apiBaseUrl = process.env.TENANT_API_BASE_URL ?? (appBaseUrl ? `${appBaseUrl.replace(/\/$/, '')}/api` : undefined)
+  const appBaseUrl = optionalEnv(process.env.TENANT_APP_BASE_URL) ?? optionalEnv(process.env.NEXT_PUBLIC_APP_URL)
+  const apiBaseUrl = optionalEnv(process.env.TENANT_API_BASE_URL) ?? (appBaseUrl ? `${appBaseUrl.replace(/\/$/, '')}/api` : undefined)
 
   const featureFlagsJson = parseJson<Record<string, boolean>>(
     'TENANT_FEATURE_FLAGS_JSON',
@@ -115,8 +120,8 @@ function buildRawProfile() {
     slug: process.env.TENANT_SLUG,
     branding: {
       appName: process.env.TENANT_BRAND_NAME,
-      legalName: process.env.TENANT_BRAND_LEGAL_NAME,
-      primaryColor: process.env.TENANT_BRAND_PRIMARY_COLOR ?? process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR ?? '#4F46E5',
+      legalName: optionalEnv(process.env.TENANT_BRAND_LEGAL_NAME),
+      primaryColor: optionalEnv(process.env.TENANT_BRAND_PRIMARY_COLOR) ?? optionalEnv(process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR) ?? '#4F46E5',
     },
     baseUrls: {
       app: appBaseUrl,
@@ -137,13 +142,13 @@ function buildRawProfile() {
       embedApiEnabled: process.env.TENANT_EMBED_API_ENABLED !== 'false',
       defaultApiKeyName: process.env.ONBOARDING_DEFAULT_API_KEY_NAME ?? 'Default Plugin Key',
       defaultApiKeyPermissions: normalizePermissions(process.env.ONBOARDING_DEFAULT_API_KEY_PERMISSIONS),
-      webhookBaseUrl: process.env.TENANT_WEBHOOK_BASE_URL,
+      webhookBaseUrl: optionalEnv(process.env.TENANT_WEBHOOK_BASE_URL),
       ...(integrationsJson.ok ? integrationsJson.data : {}),
     },
     onboardingDefaults: {
-      defaultOrganizationName: process.env.TENANT_ONBOARDING_DEFAULT_ORG_NAME,
-      timezone: process.env.TENANT_ONBOARDING_DEFAULT_TIMEZONE ?? process.env.TENANT_DEFAULT_TIMEZONE ?? 'America/New_York',
-      primaryColor: process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR ?? process.env.TENANT_BRAND_PRIMARY_COLOR ?? '#4F46E5',
+      defaultOrganizationName: optionalEnv(process.env.TENANT_ONBOARDING_DEFAULT_ORG_NAME),
+      timezone: optionalEnv(process.env.TENANT_ONBOARDING_DEFAULT_TIMEZONE) ?? optionalEnv(process.env.TENANT_DEFAULT_TIMEZONE) ?? 'America/New_York',
+      primaryColor: optionalEnv(process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR) ?? optionalEnv(process.env.TENANT_BRAND_PRIMARY_COLOR) ?? '#4F46E5',
       ...(onboardingJson.ok ? onboardingJson.data : {}),
     },
   }

@@ -35,9 +35,10 @@ type CompanyFormValues = z.infer<typeof companySchema>
 interface CompanyFormProps {
   initialData?: Partial<CompanyFormValues>
   companyId?: string
+  onSubmit: (values: CompanyFormValues) => Promise<{ success: boolean; error?: string }>
 }
 
-export function CompanyForm({ initialData, companyId }: CompanyFormProps) {
+export function CompanyForm({ initialData, companyId, onSubmit }: CompanyFormProps) {
   const router = useRouter()
   const [isSubmitting, startSubmit] = useTransition()
 
@@ -56,21 +57,10 @@ export function CompanyForm({ initialData, companyId }: CompanyFormProps) {
     },
   })
 
-  const onSubmit = (values: CompanyFormValues) => {
+  const handleSubmit = (values: CompanyFormValues) => {
     startSubmit(async () => {
       try {
-        const url = companyId
-          ? `/api/dashboard/crm/companies/${companyId}`
-          : '/api/dashboard/crm/companies'
-        const method = companyId ? 'PUT' : 'POST'
-
-        const response = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        })
-
-        const result = await response.json()
+        const result = await onSubmit(values)
 
         if (result.success) {
           toast.success(companyId ? 'Company updated' : 'Company created')
@@ -87,7 +77,7 @@ export function CompanyForm({ initialData, companyId }: CompanyFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 max-w-2xl">
         <FormField
           control={form.control}
           name="name"

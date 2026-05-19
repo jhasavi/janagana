@@ -38,6 +38,7 @@ type TaskWithRelations = Task & {
 
 interface TaskTableProps {
   tasks: TaskWithRelations[]
+  onDelete: (taskId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const statusConfig = {
@@ -54,7 +55,7 @@ const priorityConfig = {
   URGENT: { label: 'Urgent', variant: 'destructive' as const },
 }
 
-export function TaskTable({ tasks }: TaskTableProps) {
+export function TaskTable({ tasks, onDelete }: TaskTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, startDelete] = useTransition()
 
@@ -62,10 +63,7 @@ export function TaskTable({ tasks }: TaskTableProps) {
     if (!deleteId) return
     startDelete(async () => {
       try {
-        const response = await fetch(`/api/dashboard/crm/tasks/${deleteId}`, {
-          method: 'DELETE',
-        })
-        const result = await response.json()
+        const result = await onDelete(deleteId)
         if (result.success) {
           toast.success('Task deleted')
           setDeleteId(null)

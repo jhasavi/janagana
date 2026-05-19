@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { MoreHorizontal, Pencil, Trash2, Eye, Building2, Users, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
@@ -38,9 +39,11 @@ type CompanyWithCount = Company & {
 
 interface CompanyTableProps {
   companies: CompanyWithCount[]
+  onDelete: (companyId: string) => Promise<{ success: boolean; error?: string }>
 }
 
-export function CompanyTable({ companies }: CompanyTableProps) {
+export function CompanyTable({ companies, onDelete }: CompanyTableProps) {
+  const router = useRouter()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, startDelete] = useTransition()
 
@@ -48,14 +51,11 @@ export function CompanyTable({ companies }: CompanyTableProps) {
     if (!deleteId) return
     startDelete(async () => {
       try {
-        const response = await fetch(`/api/dashboard/crm/companies/${deleteId}`, {
-          method: 'DELETE',
-        })
-        const result = await response.json()
+        const result = await onDelete(deleteId)
         if (result.success) {
           toast.success('Company deleted')
           setDeleteId(null)
-          window.location.reload()
+          router.refresh()
         } else {
           toast.error(result.error || 'Failed to delete company')
         }

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CompanyForm } from '../../_components/company-form'
+import { createCompanyAction } from '@/lib/actions/crm'
 
 export default async function NewCompanyPage() {
   const tenant = await getTenant()
@@ -27,7 +28,7 @@ export default async function NewCompanyPage() {
         </p>
       </div>
 
-      <CompanyForm />
+      <CompanyForm onSubmit={createCompanyAction} />
     </div>
   )
 }

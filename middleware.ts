@@ -1,10 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { isDashboardFeatureHidden } from '@/lib/feature-flags'
 import { assertSimplifiedTenantProfileConfigured } from '@/lib/tenant-profile-simplified'
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
 const isPortalRoute = createRouteMatcher(['/portal(.*)'])
 const isAdminRoute = createRouteMatcher(['/admin(.*)'])
+const isPreviewRoute = createRouteMatcher(['/preview(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   // Fail fast on startup if tenant-specific profile config is incomplete.
@@ -28,6 +30,10 @@ export default clerkMiddleware(async (auth, request) => {
   // Admin routes: require Clerk auth (email check happens in page/action)
   if (isAdminRoute(request)) return NextResponse.next()
 
+  if (isPreviewRoute(request) || isDashboardFeatureHidden(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   // Dashboard routes should be handled by app route logic rather than
   // blocking them based on Clerk orgId here, because orgId may not be present
   // immediately after authentication organization creation.
@@ -42,6 +48,6 @@ export const config = {
     '/onboarding/:path*',
     '/portal/:path*',
     '/admin/:path*',
+    '/preview/:path*',
   ],
 }
-

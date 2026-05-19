@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContactForm } from '../../../_components/contact-form'
+import { updateContactAction } from '@/lib/actions/crm'
 
 export default async function EditContactPage({
   params,
@@ -55,6 +56,7 @@ export default async function EditContactPage({
           notes: contact.notes || '',
         }}
         contactId={id}
+        onSubmit={(values) => updateContactAction(id, values)}
       />
     </div>
   )

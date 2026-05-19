@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CompanyTable } from '../_components/company-table'
+import { deleteCompanyAction } from '@/lib/actions/crm'
 
 export default async function CompaniesPage() {
   const tenant = await getTenant()
@@ -43,7 +44,7 @@ export default async function CompaniesPage() {
         </Button>
       </div>
 
-      <CompanyTable companies={companies} />
+      <CompanyTable companies={companies} onDelete={deleteCompanyAction} />
     </div>
   )
 }

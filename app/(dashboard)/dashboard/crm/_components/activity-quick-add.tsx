@@ -24,10 +24,18 @@ import { toast } from 'sonner'
 
 interface ActivityQuickAddProps {
   contactId: string
+  onAdd: (activity: {
+    contactId: string
+    type: string
+    title: string
+    description?: string
+    duration?: number | null
+    location?: string | null
+  }) => Promise<{ success: boolean; error?: string }>
   onActivityAdded?: () => void
 }
 
-export function ActivityQuickAdd({ contactId, onActivityAdded }: ActivityQuickAddProps) {
+export function ActivityQuickAdd({ contactId, onAdd, onActivityAdded }: ActivityQuickAddProps) {
   const [open, setOpen] = useState(false)
   const [isSubmitting, startSubmit] = useTransition()
   const [type, setType] = useState('NOTE')
@@ -40,20 +48,14 @@ export function ActivityQuickAdd({ contactId, onActivityAdded }: ActivityQuickAd
     e.preventDefault()
     startSubmit(async () => {
       try {
-        const response = await fetch('/api/dashboard/crm/activities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contactId,
-            type,
-            title,
-            description,
-            duration: duration ? parseInt(duration) : null,
-            location: location || null,
-          }),
+        const result = await onAdd({
+          contactId,
+          type,
+          title,
+          description,
+          duration: duration ? parseInt(duration) : null,
+          location: location || null,
         })
-
-        const result = await response.json()
 
         if (result.success) {
           toast.success('Activity logged')
