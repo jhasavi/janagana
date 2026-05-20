@@ -58,6 +58,10 @@ export function PortalEventsClient({ events, registeredEventIds: initial, waitli
     })
   }
 
+  function handleCheckout(eventId: string) {
+    window.location.href = `/portal/${slug}/events/${eventId}/checkout`
+  }
+
   if (events.length === 0) {
     return (
       <p className="text-muted-foreground text-sm py-8 text-center">
@@ -126,6 +130,14 @@ export function PortalEventsClient({ events, registeredEventIds: initial, waitli
                       disabled={isPending}
                     >
                       Join Waitlist
+                    </Button>
+                  ) : event.priceCents > 0 ? (
+                    <Button
+                      size="sm"
+                      onClick={() => handleCheckout(event.id)}
+                      disabled={isPending}
+                    >
+                      Buy Ticket
                     </Button>
                   ) : (
                     <Button

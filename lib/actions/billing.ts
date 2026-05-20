@@ -50,6 +50,69 @@ export async function createMemberCheckoutSession(slug: string, priceId: string)
   }
 }
 
+export async function createEventCheckoutSession(slug: string, eventId: string) {
+  try {
+    const ctx = await getPortalContext(slug)
+    if (!ctx) return { success: false, error: 'Not authenticated or no membership found' }
+    const { member, tenant } = ctx
+
+    const event = await prisma.event.findFirst({
+      where: { id: eventId, tenantId: tenant.id, priceCents: { gt: 0 } },
+      select: { id: true, title: true, shortSummary: true, description: true, priceCents: true, capacity: true },
+    })
+    if (!event) return { success: false, error: 'Event not found or not payable' }
+
+    if (event.capacity != null) {
+      const confirmedCount = await prisma.eventRegistration.count({
+        where: { eventId: event.id, status: { in: ['CONFIRMED', 'ATTENDED'] } },
+      })
+      if (confirmedCount >= event.capacity) {
+        return { success: false, error: 'Event is full' }
+      }
+    }
+
+    const stripe = getStripe()
+
+    const customerId = member.stripeCustomerId ?? undefined
+    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/${slug}/events?checkout=success`
+    const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/${slug}/events`
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer: customerId,
+      customer_email: customerId ? undefined : member.email,
+      payment_method_types: ['card'],
+      billing_address_collection: 'auto',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            unit_amount: event.priceCents,
+            product_data: {
+              name: event.title,
+              description: event.shortSummary ?? event.description ?? undefined,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        tenantId: tenant.id,
+        memberId: member.id,
+        eventId: event.id,
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    })
+
+    return { success: true, url: session.url }
+  } catch (e) {
+    console.error('[createEventCheckoutSession]', e)
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+    return { success: false, error: `Failed to create checkout session: ${errorMessage}` }
+  }
+}
+
 // ─── CREATE BILLING PORTAL SESSION ───────────────────────────────────────────
 // Let existing subscribers manage their subscription via Stripe Customer Portal.
 

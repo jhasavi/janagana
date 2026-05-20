@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { syncEventRegistrationToActivity } from '@/lib/crm-sync'
 
 export async function POST(request: Request) {
   // Initialize Stripe at runtime to avoid build-time errors
@@ -58,6 +59,8 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session
       const tenantId = session.metadata?.tenantId
       const memberId = session.metadata?.memberId
+      const eventId = session.metadata?.eventId
+
       if (tenantId && memberId && session.customer) {
         try {
           await prisma.member.update({
@@ -66,6 +69,23 @@ export async function POST(request: Request) {
           })
         } catch (error) {
           console.error('[stripe webhook] Failed to update member stripeCustomerId:', error)
+          dbError = true
+        }
+      }
+
+      if (eventId && memberId) {
+        try {
+          const existing = await prisma.eventRegistration.findFirst({
+            where: { eventId, memberId },
+          })
+          if (!existing) {
+            const reg = await prisma.eventRegistration.create({
+              data: { eventId, memberId, status: 'CONFIRMED' },
+            })
+            await syncEventRegistrationToActivity(reg.id)
+          }
+        } catch (error) {
+          console.error('[stripe webhook] Failed to create paid event registration:', error)
           dbError = true
         }
       }

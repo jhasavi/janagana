@@ -5,7 +5,7 @@ import { getTiers } from '@/lib/actions/members'
 import { MemberForm } from '../_components/member-form'
 import { searchContactsAction } from '@/lib/actions/crm'
 
-export const metadata: Metadata = { title: 'Add Membership' }
+export const metadata: Metadata = { title: 'Add Member' }
 
 export default async function NewMemberPage() {
   const tenant = await getTenant()

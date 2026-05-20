@@ -31,7 +31,7 @@ type CreateKind =
 const createOptions: Array<{ value: CreateKind; label: string }> = [
   { value: 'contact', label: 'Add Contact' },
   { value: 'company', label: 'Add Company' },
-  { value: 'membership', label: 'Add Membership' },
+  { value: 'membership', label: 'Add Member' },
   { value: 'event', label: 'Create Event' },
   { value: 'donation', label: 'Record Donation' },
   { value: 'deal', label: 'Create Deal' },

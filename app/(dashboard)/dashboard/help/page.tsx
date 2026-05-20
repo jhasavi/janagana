@@ -66,14 +66,14 @@ export default async function HelpPage() {
             <div>
               <h3 className="font-semibold text-lg">Still need help?</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Can&apos;t find what you&apos;re looking for? Contact our support team.
+                Can&apos;t find what you&apos;re looking for? Let us know and we&apos;ll follow up.
               </p>
             </div>
             <Link
-              href="mailto:support@janagana.com"
+              href="/help/report"
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Contact Support
+              Report Issue
             </Link>
           </div>
         </CardContent>
