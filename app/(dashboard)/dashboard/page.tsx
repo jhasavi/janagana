@@ -52,9 +52,11 @@ function StatCard({
   )
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ onboardingComplete?: string }> }) {
+  const { onboardingComplete } = await searchParams
   const statsResult = await getDashboardStats()
   const stats = statsResult.data
+  const showOnboardingBanner = onboardingComplete === '1'
 
   return (
     <div className="space-y-8">
@@ -81,6 +83,31 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {showOnboardingBanner ? (
+        <Card className="border-blue-200 bg-blue-50/90 dark:bg-blue-950/20 dark:border-blue-900">
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-blue-700 dark:text-blue-200">Welcome to your new workspace</p>
+              <h2 className="text-xl font-bold">Finish the setup in a few quick steps</h2>
+              <p className="text-sm text-muted-foreground">
+                Start by adding a membership tier, inviting members, and creating your first event. The getting started checklist is below.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant="default">
+                <Link href="/dashboard/settings#tiers">Add Tier</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/dashboard/members/new">Add Member</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/dashboard/events/new">Create Event</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Getting Started Checklist (disappears once fully complete) */}
       <Suspense fallback={null}>

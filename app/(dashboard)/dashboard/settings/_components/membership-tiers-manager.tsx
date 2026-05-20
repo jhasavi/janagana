@@ -32,6 +32,7 @@ interface Tier {
   interval: BillingInterval
   color: string
   benefits: string[]
+  stripePriceId?: string | null
   isActive: boolean
   _count?: {
     members: number
@@ -46,6 +47,7 @@ interface TierFormState {
   interval: BillingInterval
   color: string
   benefits: string
+  stripePriceId: string
   isActive: boolean
 }
 
@@ -60,6 +62,7 @@ const emptyForm: TierFormState = {
   interval: 'ANNUAL',
   color: '#4F46E5',
   benefits: '',
+  stripePriceId: '',
   isActive: true,
 }
 
@@ -83,6 +86,7 @@ function tierToForm(tier: Tier): TierFormState {
     interval: tier.interval,
     color: tier.color,
     benefits: tier.benefits.join('\n'),
+    stripePriceId: tier.stripePriceId ?? '',
     isActive: tier.isActive,
   }
 }
@@ -133,6 +137,7 @@ export function MembershipTiersManager({ initialTiers }: MembershipTiersManagerP
         .split('\n')
         .map((benefit) => benefit.trim())
         .filter(Boolean),
+      stripePriceId: form.stripePriceId.trim() || undefined,
       isActive: form.isActive,
     }
 
@@ -225,6 +230,11 @@ export function MembershipTiersManager({ initialTiers }: MembershipTiersManagerP
               {(tier.description || tier.benefits.length > 0) && (
                 <CardContent className="space-y-2 pt-0">
                   {tier.description && <p className="text-sm text-muted-foreground">{tier.description}</p>}
+                  {tier.stripePriceId && (
+                    <p className="text-xs text-muted-foreground">
+                      Stripe price ID: <span className="font-medium">{tier.stripePriceId}</span>
+                    </p>
+                  )}
                   {tier.benefits.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {tier.benefits.map((benefit) => (
@@ -294,6 +304,18 @@ export function MembershipTiersManager({ initialTiers }: MembershipTiersManagerP
                   className="h-10 p-1"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tier-stripe-price-id">Stripe price ID</Label>
+              <Input
+                id="tier-stripe-price-id"
+                value={form.stripePriceId}
+                onChange={(event) => updateForm('stripePriceId', event.target.value)}
+                placeholder="price_xxx"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional. Use a Stripe price ID for paid membership checkout.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tier-benefits">Benefits</Label>

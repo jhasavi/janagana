@@ -40,7 +40,9 @@ const schema = z.object({
   tags: z.array(z.string()).default([]),
 })
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema> & {
+  price: string
+}
 
 function toDatetimeLocal(date: Date | null | undefined) {
   if (!date) return ''
@@ -51,6 +53,14 @@ function toDatetimeLocal(date: Date | null | undefined) {
   const hh = String(d.getHours()).padStart(2, '0')
   const mi = String(d.getMinutes()).padStart(2, '0')
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
+}
+
+function dollarsToCents(value: string) {
+  const normalized = value.trim().replace('$', '')
+  if (normalized === '') return 0
+  const amount = Number(normalized)
+  if (!Number.isFinite(amount) || amount < 0) return null
+  return Math.round(amount * 100)
 }
 
 interface EventFormProps {
@@ -82,7 +92,7 @@ export function EventForm({ event }: EventFormProps) {
       attendeeCount: event?.attendeeCount ?? null,
       virtualLink: event?.virtualLink ?? '',
       capacity: event?.capacity ?? null,
-      priceCents: event?.priceCents ?? 0,
+      price: ((event?.priceCents ?? 0) / 100).toFixed(2),
       status: event?.status ?? 'DRAFT',
       format: event?.format ?? 'IN_PERSON',
       coverImageUrl: event?.coverImageUrl ?? '',
@@ -92,9 +102,20 @@ export function EventForm({ event }: EventFormProps) {
 
   const onSubmit = (data: FormData) => {
     startTransition(async () => {
+      const priceCents = dollarsToCents(data.price)
+      if (priceCents === null) {
+        toast.error('Enter a valid ticket price')
+        return
+      }
+
+      const payload = {
+        ...data,
+        priceCents,
+      }
+
       const result = event
-        ? await updateEvent(event.id, data)
-        : await createEvent(data)
+        ? await updateEvent(event.id, payload)
+        : await createEvent(payload)
 
       if (result.success) {
         toast.success(event ? 'Event updated' : 'Event created')
@@ -293,15 +314,14 @@ export function EventForm({ event }: EventFormProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="priceCents">Ticket Price (cents)</Label>
+                <Label htmlFor="price">Ticket Price (USD)</Label>
                 <Input
-                  id="priceCents"
-                  type="number"
-                  min="0"
-                  placeholder="0 = free"
-                  {...register('priceCents')}
+                  id="price"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  {...register('price')}
                 />
-                <p className="text-xs text-muted-foreground">Enter 0 for free events</p>
+                <p className="text-xs text-muted-foreground">Enter the ticket price in dollars. Use 0 for free events.</p>
               </div>
             </CardContent>
           </Card>

@@ -80,7 +80,7 @@ export default function OnboardingClient({
           toast.message('Default integration API key provisioned for this workspace.')
         }
 
-        router.replace('/dashboard')
+        router.replace('/dashboard?onboardingComplete=1')
       } else {
         const error = result.error ?? 'Failed to create organization'
         setErrorMessage(error)

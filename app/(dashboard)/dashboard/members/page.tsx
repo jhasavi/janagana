@@ -68,7 +68,7 @@ export default async function MembersPage({
           <Button asChild>
             <Link href="/dashboard/members/new">
               <UserPlus className="h-4 w-4" />
-              Add Membership
+              Add Member
             </Link>
           </Button>
         </div>
