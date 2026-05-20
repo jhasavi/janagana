@@ -34,15 +34,14 @@ const schema = z.object({
   virtualLink: z.string().optional(),
   capacity: z.coerce.number().int().positive().optional().nullable(),
   priceCents: z.coerce.number().int().min(0).default(0),
+  price: z.string().default('0'),
   status: z.enum(['DRAFT', 'PUBLISHED', 'CANCELED', 'COMPLETED']),
   format: z.enum(['IN_PERSON', 'VIRTUAL', 'HYBRID']),
   coverImageUrl: z.string().optional(),
   tags: z.array(z.string()).default([]),
 })
 
-type FormData = z.infer<typeof schema> & {
-  price: string
-}
+type FormData = z.infer<typeof schema>
 
 function toDatetimeLocal(date: Date | null | undefined) {
   if (!date) return ''
