@@ -74,7 +74,7 @@ export function MemberTable({ members }: MemberTableProps) {
           Memberships are enrollment records linked to contacts. Add a contact first, or create one while adding a membership.
         </p>
         <Button asChild size="sm">
-          <Link href="/dashboard/members/new">Add Membership</Link>
+          <Link href="/dashboard/members/new">Add Member</Link>
         </Button>
       </div>
     )

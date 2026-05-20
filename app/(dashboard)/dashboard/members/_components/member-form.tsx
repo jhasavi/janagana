@@ -173,7 +173,7 @@ export function MemberForm({ member, tiers, onSearchContact }: MemberFormProps) 
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            {member ? 'Edit Membership' : 'Add Membership'}
+            {member ? 'Edit Member' : 'Add Member'}
           </h1>
           <p className="text-muted-foreground text-sm">
             {member
@@ -183,7 +183,7 @@ export function MemberForm({ member, tiers, onSearchContact }: MemberFormProps) 
         </div>
         <Button type="submit" disabled={isPending}>
           <Save className="h-4 w-4" />
-          {isPending ? 'Saving...' : 'Save Membership'}
+          {isPending ? 'Saving...' : 'Save Member'}
         </Button>
       </div>
 

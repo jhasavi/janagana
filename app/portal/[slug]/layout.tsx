@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import { SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { LayoutDashboard, CalendarDays, Heart, CreditCard, LogOut, IdCard, Users } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Heart, CreditCard, IdCard, Users, MessageSquare, LogOut } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +43,7 @@ export default async function PortalLayout({
     { label: 'Directory', href: `/portal/${slug}/directory`, icon: Users },
     { label: 'Membership', href: `/portal/${slug}/membership`, icon: CreditCard },
     { label: 'My Card', href: `/portal/${slug}/card`, icon: IdCard },
+    { label: 'Report Issue', href: `/portal/${slug}/support`, icon: MessageSquare },
   ]
 
   return (

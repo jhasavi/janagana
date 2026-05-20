@@ -105,7 +105,7 @@ async function createTask(page: any, title: string) {
 
 async function searchMemberContact(page: any, email: string) {
   await page.goto('/dashboard/members/new', { waitUntil: 'networkidle' })
-  await expect(page.locator('text=Add Membership')).toBeVisible({ timeout: 15000 })
+  await expect(page.locator('text=Add Member')).toBeVisible({ timeout: 15000 })
   await page.fill('input#email', email)
   await page.getByRole('button', { name: /Find Contact/i }).click()
   await expect(page.locator(`text=Using existing contact`)).toBeVisible({ timeout: 20000 })
