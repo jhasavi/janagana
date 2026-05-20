@@ -3,14 +3,19 @@ import Link from 'next/link'
 import { FileClock, Key, Webhook, LayoutList, ShieldCheck } from 'lucide-react'
 import { SettingsForm } from './_components/settings-form'
 import { getTenantSettings } from '@/lib/actions/tenant'
+import { getTiers } from '@/lib/actions/members'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { HelpButton } from '@/components/dashboard/help-button'
+import { MembershipTiersManager } from './_components/membership-tiers-manager'
 
 export const metadata: Metadata = { title: 'Settings' }
 
 export default async function SettingsPage() {
-  const result = await getTenantSettings()
+  const [settingsResult, tiersResult] = await Promise.all([
+    getTenantSettings(),
+    getTiers(),
+  ])
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -27,7 +32,9 @@ export default async function SettingsPage() {
           link="/dashboard/help/settings/organization-settings"
         />
       </div>
-      <SettingsForm initialData={result.success ? result.data : null} />
+      <SettingsForm initialData={settingsResult.success ? settingsResult.data : null} />
+
+      <MembershipTiersManager initialTiers={tiersResult.data ?? []} />
 
       <Separator />
 

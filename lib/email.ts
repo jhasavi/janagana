@@ -1,8 +1,8 @@
 import { Resend } from 'resend'
 
-const FROM = process.env.EMAIL_FROM ?? 'noreply@janagana.com'
-const FROM_NAME = process.env.EMAIL_FROM_NAME ?? 'JanaGana'
-const fromAddress = `${FROM_NAME} <${FROM}>`
+const FROM = process.env.EMAIL_FROM?.trim()
+const FROM_NAME = process.env.EMAIL_FROM_NAME ?? process.env.PLATFORM_BRAND_NAME ?? process.env.TENANT_BRAND_NAME ?? 'Janagana'
+const fromAddress = FROM ? `${FROM_NAME} <${FROM}>` : null
 
 function getResendClient() {
   const key = process.env.RESEND_API_KEY
@@ -17,6 +17,10 @@ export async function sendEmail(opts: {
 }): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
     console.warn('[email] RESEND_API_KEY not set — skipping email to', opts.to)
+    return false
+  }
+  if (!fromAddress) {
+    console.warn('[email] EMAIL_FROM not set — skipping email to', opts.to)
     return false
   }
 

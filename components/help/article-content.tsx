@@ -7,7 +7,18 @@ interface ArticleContentProps {
 type Block =
   | { type: 'code'; lang: string; code: string }
   | { type: 'heading'; level: 2 | 3; text: string }
-  | { type: 'paragraph'; lines: string[] }
+  | { type: 'paragraph'; text: string }
+  | { type: 'list'; ordered: boolean; items: string[] }
+
+function getListItem(line: string) {
+  const unordered = line.match(/^\s*[-*]\s+(.+)$/)
+  if (unordered) return { ordered: false, text: unordered[1] }
+
+  const ordered = line.match(/^\s*\d+\.\s+(.+)$/)
+  if (ordered) return { ordered: true, text: ordered[1] }
+
+  return null
+}
 
 function parseBlocks(content: string): Block[] {
   const blocks: Block[] = []
@@ -49,6 +60,20 @@ function parseBlocks(content: string): Block[] {
       continue
     }
 
+    const listItem = getListItem(line)
+    if (listItem) {
+      const ordered = listItem.ordered
+      const items: string[] = []
+      while (i < lines.length) {
+        const item = getListItem(lines[i])
+        if (!item || item.ordered !== ordered) break
+        items.push(item.text.trim())
+        i++
+      }
+      blocks.push({ type: 'list', ordered, items })
+      continue
+    }
+
     // Accumulate paragraph lines
     const paraLines: string[] = []
     while (
@@ -56,13 +81,14 @@ function parseBlocks(content: string): Block[] {
       lines[i].trim() !== '' &&
       !lines[i].trimStart().startsWith('```') &&
       !lines[i].startsWith('## ') &&
-      !lines[i].startsWith('### ')
+      !lines[i].startsWith('### ') &&
+      !getListItem(lines[i])
     ) {
-      paraLines.push(lines[i])
+      paraLines.push(lines[i].trim())
       i++
     }
     if (paraLines.length > 0) {
-      blocks.push({ type: 'paragraph', lines: paraLines })
+      blocks.push({ type: 'paragraph', text: paraLines.join(' ') })
     }
   }
 
@@ -117,15 +143,24 @@ export function ArticleContent({ article }: ArticleContentProps) {
           )
         }
 
-        // paragraph block — render each line
+        if (block.type === 'list') {
+          const ListTag = block.ordered ? 'ol' : 'ul'
+          return (
+            <ListTag
+              key={idx}
+              className={`text-sm text-muted-foreground space-y-1 pl-5 ${block.ordered ? 'list-decimal' : 'list-disc'}`}
+            >
+              {block.items.map((item, itemIndex) => (
+                <li key={`${item}-${itemIndex}`}>{renderInline(item)}</li>
+              ))}
+            </ListTag>
+          )
+        }
+
         return (
-          <div key={idx} className="space-y-1">
-            {block.lines.map((line, li) => (
-              <p key={li} className="text-muted-foreground text-sm">
-                {renderInline(line)}
-              </p>
-            ))}
-          </div>
+          <p key={idx} className="text-muted-foreground text-sm leading-6">
+            {renderInline(block.text)}
+          </p>
         )
       })}
 

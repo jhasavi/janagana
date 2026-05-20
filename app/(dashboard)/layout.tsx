@@ -18,7 +18,7 @@ export default async function DashboardLayout({
     <div className="flex h-screen overflow-hidden bg-muted/30">
       <Sidebar brandName={tenant.name} logoUrl={tenant.logoUrl} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        <Header orgName={tenant.name} />
         <main className="flex-1 overflow-y-auto p-6">
           <DashboardErrorBoundary>{children}</DashboardErrorBoundary>
         </main>
