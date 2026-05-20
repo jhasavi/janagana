@@ -53,10 +53,6 @@ const navSections = [
     ],
   },
   {
-    title: 'Organization',
-    items: [],
-  },
-  {
     title: 'Admin',
     items: [
       { label: 'Integrations', href: '/dashboard/integrations', icon: PlugZap },
@@ -67,7 +63,13 @@ const navSections = [
   },
 ]
 
-export function Sidebar() {
+export function Sidebar({
+  brandName = 'Dashboard',
+  logoUrl,
+}: {
+  brandName?: string
+  logoUrl?: string | null
+}) {
   const pathname = usePathname()
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
   const visibleNavSections = navSections
@@ -87,14 +89,14 @@ export function Sidebar() {
       <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
-            src="/images/logo.png"
-            alt="Jana Gana"
+            src={logoUrl ?? '/images/logo.png'}
+            alt={brandName}
             width={32}
             height={32}
             className="h-8 w-8 rounded-lg object-cover"
             priority
           />
-          <span className="text-sidebar-foreground font-semibold text-lg">Jana Gana</span>
+          <span className="text-sidebar-foreground font-semibold text-lg">{brandName}</span>
         </Link>
       </div>
 

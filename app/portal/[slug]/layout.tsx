@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
+import { SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { LayoutDashboard, CalendarDays, Heart, CreditCard, LogOut, IdCard, Users } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
@@ -63,9 +64,11 @@ export default async function PortalLayout({
             <span>
               {ctx.member.firstName} {ctx.member.lastName}
             </span>
-            <Link href="/sign-out" className="hover:text-foreground transition-colors">
-              <LogOut className="h-4 w-4" />
-            </Link>
+            <SignOutButton redirectUrl="/sign-in">
+              <button className="hover:text-foreground transition-colors" aria-label="Sign out">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </SignOutButton>
           </div>
         </div>
       </header>

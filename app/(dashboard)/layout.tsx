@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
-      <Sidebar />
+      <Sidebar brandName={tenant.name} logoUrl={tenant.logoUrl} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-6">

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { tenant } = result.context
-  const appBase = process.env.NEXT_PUBLIC_APP_URL ?? 'https://janagana.namasteneedham.com'
+  const appBase = process.env.NEXT_PUBLIC_APP_URL ?? ''
   return NextResponse.json({
     ok: true,
     tenant: {

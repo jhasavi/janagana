@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
 
-export const metadata: Metadata = { title: 'Global Admin — Jana Gana' }
+export const metadata: Metadata = { title: `Global Admin — ${process.env.PLATFORM_BRAND_NAME ?? 'Platform'}` }
 
 export default async function AdminPage() {
   const tenants = await getAllTenants()

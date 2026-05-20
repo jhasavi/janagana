@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     const res = NextResponse.json({ success: true })
     res.cookies.set('JG_ACTIVE_ORG', orgId, {
       path: '/',
-      maxAge: 60,
+      maxAge: 3600,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     if (tenant) {
       res.cookies.set('JG_TENANT_ID', tenant.id, {
         path: '/',
-        maxAge: 60,
+        maxAge: 3600,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
