@@ -18,7 +18,7 @@ function getStripe() {
 // ─── CREATE PORTAL CHECKOUT SESSION ──────────────────────────────────────────
 // Called from the member portal when a member wants to start/renew a subscription.
 
-export async function createMemberCheckoutSession(slug: string, priceId: string) {
+export async function createMemberCheckoutSession(slug: string, priceId: string, tierId?: string | null) {
   try {
     const ctx = await getPortalContext(slug)
     if (!ctx) return { success: false, error: 'Not authenticated or no membership found' }
@@ -31,13 +31,19 @@ export async function createMemberCheckoutSession(slug: string, priceId: string)
 
     const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/${slug}/membership?billing=success`
     const cancelUrl  = `${process.env.NEXT_PUBLIC_APP_URL}/portal/${slug}/membership`
+    const metadata = {
+      tenantId: tenant.id,
+      memberId: member.id,
+      ...(tierId ? { tierId } : {}),
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
       customer_email: customerId ? undefined : member.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      metadata: { tenantId: tenant.id, memberId: member.id },
+      metadata,
+      subscription_data: { metadata },
       success_url: successUrl,
       cancel_url: cancelUrl,
     })
@@ -100,6 +106,7 @@ export async function createEventCheckoutSession(slug: string, eventId: string) 
         tenantId: tenant.id,
         memberId: member.id,
         eventId: event.id,
+        paidAmount: String(event.priceCents),
       },
       success_url: successUrl,
       cancel_url: cancelUrl,

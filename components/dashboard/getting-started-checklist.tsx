@@ -18,10 +18,11 @@ export async function GettingStartedChecklist() {
   const tenant = await getTenant()
   if (!tenant) return null
 
-  const [memberCount, eventCount, tierCount] = await Promise.all([
+  const [memberCount, eventCount, tierCount, stripeCount] = await Promise.all([
     prisma.member.count({ where: { tenantId: tenant.id } }),
     prisma.event.count({ where: { tenantId: tenant.id } }),
     prisma.membershipTier.count({ where: { tenantId: tenant.id } }),
+    prisma.membershipTier.count({ where: { tenantId: tenant.id, stripePriceId: { not: null } } }),
   ])
 
   const steps: Step[] = [
@@ -40,6 +41,14 @@ export async function GettingStartedChecklist() {
       done: tierCount > 0,
       href: '/dashboard/settings#tiers',
       cta: 'Add Tier',
+    },
+    {
+      id: 'stripe',
+      label: 'Connect Stripe for paid memberships',
+      description: 'Add a Stripe Price ID to a tier to enable online billing.',
+      done: stripeCount > 0,
+      href: '/dashboard/settings#tiers',
+      cta: 'Connect Stripe',
     },
     {
       id: 'members',

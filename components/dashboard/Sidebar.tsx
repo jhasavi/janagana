@@ -21,6 +21,7 @@ import {
   PlugZap,
   Shield,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isDashboardFeatureHidden } from '@/lib/feature-flags'
@@ -58,6 +59,7 @@ const navSections = [
       { label: 'Integrations', href: '/dashboard/integrations', icon: PlugZap },
       { label: 'Organization Console', href: '/dashboard/settings/organization-console', icon: Shield },
       { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+      { label: 'Support', href: '/dashboard/support', icon: MessageSquare },
       { label: 'Help', href: '/dashboard/help', icon: HelpCircle },
     ],
   },

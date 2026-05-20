@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { syncEventRegistrationToActivity } from '@/lib/crm-sync'
+import { ensureContactForMember } from '@/lib/contact-linking'
 
 export async function POST(request: Request) {
   // Initialize Stripe at runtime to avoid build-time errors
@@ -60,29 +61,155 @@ export async function POST(request: Request) {
       const tenantId = session.metadata?.tenantId
       const memberId = session.metadata?.memberId
       const eventId = session.metadata?.eventId
+      const tierId = session.metadata?.tierId
+      const customerId =
+        typeof session.customer === 'string' ? session.customer : session.customer?.id
+      const subscriptionId =
+        typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id
 
-      if (tenantId && memberId && session.customer) {
+      if (tenantId && memberId && (customerId || subscriptionId || tierId)) {
         try {
-          await prisma.member.update({
-            where: { id: memberId },
-            data: { stripeCustomerId: session.customer as string },
+          const updateData: {
+            stripeCustomerId?: string
+            stripeSubscriptionId?: string
+            renewsAt?: Date | null
+            tierId?: string | null
+          } = {}
+
+          if (customerId) updateData.stripeCustomerId = customerId
+          if (subscriptionId) {
+            updateData.stripeSubscriptionId = subscriptionId
+            try {
+              const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+              updateData.renewsAt = subscription.current_period_end
+                ? new Date(subscription.current_period_end * 1000)
+                : null
+            } catch (subscriptionError) {
+              console.error('[stripe webhook] Failed to retrieve subscription:', subscriptionError)
+            }
+          }
+
+          if (tierId) {
+            const tier = await prisma.membershipTier.findFirst({
+              where: { id: tierId, tenantId },
+              select: { id: true },
+            })
+            if (tier) {
+              updateData.tierId = tier.id
+            } else {
+              console.warn('[stripe webhook] Ignoring tierId outside tenant scope:', { tenantId, tierId })
+            }
+          }
+
+          const member = await prisma.member.update({
+            where: { id: memberId, tenantId },
+            data: updateData,
           })
+
+          if (tierId || subscriptionId || customerId) {
+            const contact = await ensureContactForMember({
+              id: member.id,
+              tenantId: member.tenantId,
+              email: member.email,
+              firstName: member.firstName,
+              lastName: member.lastName,
+              phone: member.phone,
+              address: member.address,
+              city: member.city,
+              state: member.state,
+              postalCode: member.postalCode,
+              country: member.country,
+            })
+
+            const latestEnrollment = await prisma.membershipEnrollment.findFirst({
+              where: { tenantId, contactId: contact.id },
+              orderBy: [{ startDate: 'desc' }, { createdAt: 'desc' }],
+              select: { id: true },
+            })
+
+            if (latestEnrollment) {
+              await prisma.membershipEnrollment.update({
+                where: { id: latestEnrollment.id },
+                data: {
+                  tierId: updateData.tierId,
+                  renewalDate: updateData.renewsAt,
+                  stripeCustomerId: customerId,
+                  stripeSubscriptionId: subscriptionId,
+                  paymentStatus: subscriptionId ? 'active' : undefined,
+                },
+              })
+            }
+          }
         } catch (error) {
-          console.error('[stripe webhook] Failed to update member stripeCustomerId:', error)
+          console.error('[stripe webhook] Failed to update member subscription state:', error)
           dbError = true
         }
       }
 
-      if (eventId && memberId) {
+      if (tenantId && eventId && memberId) {
         try {
+          const [paidEvent, member] = await Promise.all([
+            prisma.event.findFirst({ where: { id: eventId, tenantId } }),
+            prisma.member.findFirst({ where: { id: memberId, tenantId } }),
+          ])
+
+          if (!paidEvent || !member) {
+            console.warn('[stripe webhook] Ignoring paid event registration outside tenant scope:', {
+              tenantId,
+              eventId,
+              memberId,
+            })
+            break
+          }
+
+          const contact = await ensureContactForMember({
+            id: member.id,
+            tenantId: member.tenantId,
+            email: member.email,
+            firstName: member.firstName,
+            lastName: member.lastName,
+            phone: member.phone,
+            address: member.address,
+            city: member.city,
+            state: member.state,
+            postalCode: member.postalCode,
+            country: member.country,
+          })
+
+          const paidAmount =
+            typeof session.amount_total === 'number'
+              ? session.amount_total
+              : Number(session.metadata?.paidAmount ?? 0)
           const existing = await prisma.eventRegistration.findFirst({
             where: { eventId, memberId },
           })
+
           if (!existing) {
             const reg = await prisma.eventRegistration.create({
-              data: { eventId, memberId, status: 'CONFIRMED' },
+              data: {
+                eventId,
+                memberId,
+                contactId: contact.id,
+                status: 'CONFIRMED',
+                paidAmount,
+                stripePaymentId: paymentIntentId,
+              },
             })
             await syncEventRegistrationToActivity(reg.id)
+          } else {
+            await prisma.eventRegistration.update({
+              where: { id: existing.id },
+              data: {
+                status: 'CONFIRMED',
+                contactId: contact.id,
+                paidAmount,
+                stripePaymentId: paymentIntentId,
+              },
+            })
           }
         } catch (error) {
           console.error('[stripe webhook] Failed to create paid event registration:', error)

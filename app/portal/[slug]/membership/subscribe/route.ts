@@ -38,7 +38,7 @@ export async function GET(
     return NextResponse.json({ error: 'Stripe price ID is not configured' }, { status: 500 })
   }
 
-  const result = await createMemberCheckoutSession(slug, priceId)
+  const result = await createMemberCheckoutSession(slug, priceId, tierId)
   if (!result.success || !result.url) {
     return NextResponse.json({ error: result.error ?? 'Unable to create checkout session' }, { status: 500 })
   }

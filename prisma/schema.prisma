@@ -1763,3 +1763,32 @@ model ChapterMember {
   @@index([memberId])
   @@index([contactId])
 }
+
+model SupportRequest {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  name      String?
+  email     String?
+  message   String   @db.Text
+  context   String?
+  status    String   @default("open")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model HelpFeedback {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  articleSlug String
+  helpful     Boolean
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([articleSlug])
+}
