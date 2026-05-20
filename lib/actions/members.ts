@@ -37,6 +37,7 @@ const TierSchema = z.object({
   interval: z.enum(['MONTHLY', 'ANNUAL']).default('ANNUAL'),
   color: z.string().default('#4F46E5'),
   benefits: z.array(z.string()).default([]),
+  stripePriceId: z.string().trim().optional().nullable(),
   isActive: z.boolean().default(true),
 })
 

@@ -50,7 +50,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         </CardContent>
       </Card>
 
-      <ArticleFeedback />
+      <ArticleFeedback articleSlug={article.slug} />
 
       <div className="flex items-center justify-between">
         {prevArticle && (

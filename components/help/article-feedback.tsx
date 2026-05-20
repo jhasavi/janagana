@@ -5,15 +5,29 @@ import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
-export function ArticleFeedback() {
+export function ArticleFeedback({ articleSlug }: { articleSlug: string }) {
   const [feedback, setFeedback] = useState<'helpful' | 'not-helpful' | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
-  const handleFeedback = (type: 'helpful' | 'not-helpful') => {
+  const handleFeedback = async (type: 'helpful' | 'not-helpful') => {
     setFeedback(type)
-    setSubmitted(true)
-    // In production, you would send this to an API
-    console.log('Feedback submitted:', type)
+
+    try {
+      const response = await fetch('/api/help/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleSlug, helpful: type === 'helpful' }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Unable to submit feedback')
+      }
+
+      setSubmitted(true)
+    } catch (error) {
+      console.error('[ArticleFeedback]', error)
+      setSubmitted(true)
+    }
   }
 
   if (submitted) {
