@@ -105,7 +105,7 @@ export async function GET() {
         },
       },
       app: {
-        id: 'janagana',
+        id: process.env.TENANT_SLUG || 'janagana',
         env: process.env.NODE_ENV || 'development',
         version: process.env.BUILD_ID || 'unknown',
       },

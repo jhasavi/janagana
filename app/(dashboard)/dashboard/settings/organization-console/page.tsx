@@ -54,7 +54,12 @@ export default async function OrganizationConsolePage() {
                 )}
                 <span className="text-sm">{item.label}</span>
               </div>
-              <span className="text-xs text-muted-foreground">{item.done ? 'Done' : 'Pending'}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">{item.done ? 'Done' : 'Pending'}</span>
+                <Button asChild variant={item.done ? 'ghost' : 'outline'} size="sm">
+                  <Link href={item.href}>{item.cta}</Link>
+                </Button>
+              </div>
             </div>
           ))}
         </CardContent>

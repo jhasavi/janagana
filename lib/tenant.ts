@@ -1,7 +1,10 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { logDbError, prisma, withDbRetry } from '@/lib/prisma'
-import { getTenantProfile } from '@/lib/tenant-profile'
+import {
+  getSimplifiedTenantProfile,
+  getSimplifiedTenantProfileValidationErrors,
+} from '@/lib/tenant-profile-simplified'
 import { slugify } from '@/lib/utils'
 import type { Tenant } from '@prisma/client'
 import type { NextRequest } from 'next/server'
@@ -53,6 +56,25 @@ export function logTenantRequest(
 function getRouteFromRequest(request?: Pick<NextRequest, 'nextUrl' | 'url'>) {
   if (!request) return 'server-action'
   return request.nextUrl?.pathname ?? new URL(request.url).pathname
+}
+
+function getTenantCreationDefaults() {
+  const fallback = {
+    timezone: process.env.TENANT_DEFAULT_TIMEZONE ?? 'America/New_York',
+    primaryColor: process.env.TENANT_ONBOARDING_DEFAULT_PRIMARY_COLOR ?? process.env.TENANT_BRAND_PRIMARY_COLOR ?? '#4F46E5',
+  }
+
+  try {
+    if (getSimplifiedTenantProfileValidationErrors().length > 0) return fallback
+    const profile = getSimplifiedTenantProfile()
+    return {
+      timezone: profile.onboardingDefaults.timezone ?? fallback.timezone,
+      primaryColor: profile.onboardingDefaults.primaryColor ?? fallback.primaryColor,
+    }
+  } catch (error) {
+    console.warn('[resolveTenant] using fallback tenant defaults', error)
+    return fallback
+  }
 }
 
 async function userBelongsToOrganization(userId: string | null, organizationId: string) {
@@ -159,6 +181,7 @@ async function resolveTenantForAuthState(
             attempt++
             slug = `${baseSlug}-${attempt}`
           }
+          const defaults = getTenantCreationDefaults()
 
           tenant = await withDbRetry('resolveTenant.createMissingTenantFromClerkOrg', () =>
             prisma.tenant.create({
@@ -166,8 +189,8 @@ async function resolveTenantForAuthState(
                 clerkOrgId: activeOrgId,
                 name: org.name || org.slug || `Organization ${activeOrgId.slice(0, 8)}`,
                 slug,
-                timezone: getTenantProfile().onboardingDefaults.timezone,
-                primaryColor: getTenantProfile().onboardingDefaults.primaryColor,
+                timezone: defaults.timezone,
+                primaryColor: defaults.primaryColor,
               },
             })
           )

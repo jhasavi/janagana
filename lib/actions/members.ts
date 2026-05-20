@@ -404,7 +404,7 @@ export async function getTiers() {
 
     const tiers = await prisma.membershipTier.findMany({
       where: { tenantId: tenant.id },
-      include: { _count: { select: { members: true } } },
+      include: { _count: { select: { members: true, enrollments: true } } },
       orderBy: { priceCents: 'asc' },
     })
 
@@ -425,6 +425,7 @@ export async function createTier(input: unknown) {
     })
 
     revalidatePath('/dashboard/members')
+    revalidatePath('/dashboard/settings')
     return { success: true, data: tier }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -446,6 +447,7 @@ export async function updateTier(id: string, input: unknown) {
     })
 
     revalidatePath('/dashboard/members')
+    revalidatePath('/dashboard/settings')
     return { success: true, data: tier }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -465,12 +467,17 @@ export async function deleteTier(id: string) {
       where: { tenantId: tenant.id, tierId: id },
       data: { tierId: null },
     })
+    await prisma.membershipEnrollment.updateMany({
+      where: { tenantId: tenant.id, tierId: id },
+      data: { tierId: null },
+    })
 
     await prisma.membershipTier.delete({
       where: { id, tenantId: tenant.id },
     })
 
     revalidatePath('/dashboard/members')
+    revalidatePath('/dashboard/settings')
     return { success: true }
   } catch (error) {
     console.error('[deleteTier]', error)
@@ -669,4 +676,3 @@ export async function sendRenewalSmsReminders(daysAhead = 30) {
     return { success: false, error: 'Failed to send renewal reminders' }
   }
 }
-

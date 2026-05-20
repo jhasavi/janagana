@@ -1,6 +1,7 @@
-import fs from 'fs'
-import path from 'path'
+import * as fs from 'fs'
+import * as path from 'path'
 import { chromium, type BrowserContext, type FullConfig, type Page } from '@playwright/test'
+import { createClerkClient } from '@clerk/backend'
 
 const STORAGE_STATE = path.join(__dirname, '.auth', 'user.json')
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || process.env.TENANT_APP_BASE_URL || 'http://localhost:3000'
@@ -19,39 +20,159 @@ async function waitForDashboard(page: Page) {
   return current
 }
 
+async function getLocator(page: Page, selector: string) {
+  const primary = page.locator(selector)
+  if (await primary.count()) return primary.first()
+
+  for (const frame of page.frames()) {
+    const frameLocator = frame.locator(selector)
+    if (await frameLocator.count()) return frameLocator.first()
+  }
+
+  return page.locator(selector).first()
+}
+
+async function findPrimaryButton(page: Page) {
+  const buttons = page.locator('button')
+  const count = await buttons.count()
+  for (let i = 0; i < count; i++) {
+    const button = buttons.nth(i)
+    if (!(await button.isVisible({ timeout: 5000 }).catch(() => false))) continue
+    const text = (await button.textContent())?.trim() ?? ''
+    if (!text) continue
+    if (['Continue', 'Sign in', 'Sign In', 'Log in', 'Log In', 'Submit', 'Create'].includes(text)) {
+      return button
+    }
+  }
+
+  return page.locator('button:has-text("Continue")').first()
+}
+
 async function clickPrimaryButton(page: Page) {
-  const button = page.locator('button:has-text("Sign in"), button:has-text("Sign In"), button:has-text("Continue"), button:has-text("Log in"), button:has-text("Log In"), button:has-text("Next")').first()
+  const button = await findPrimaryButton(page)
   if (await button.isVisible({ timeout: 5000 }).catch(() => false)) {
     await button.click()
+    await page.waitForLoadState('networkidle').catch(() => {})
     return true
   }
   return false
 }
 
 async function loginWithEmail(page: Page, email: string, password: string) {
-  const emailInput = page.locator('input[type="email"], input[name*="email"], input[id*="email"]').first()
-  if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+  const emailSelector = [
+    'input[type="email"]',
+    'input[name="identifier"]',
+    'input[name*="email"]',
+    'input[id*="email"]',
+    'input[placeholder*="email"]',
+    'input[type="text"][inputmode="email"]',
+  ].join(', ')
+
+  await page.waitForSelector(emailSelector, { timeout: 20000 })
+  const emailInput = await getLocator(page, emailSelector)
+  if (await emailInput.isVisible({ timeout: 10000 }).catch(() => false)) {
     await emailInput.fill(email)
-    await clickPrimaryButton(page)
+  } else {
+    throw new Error('Unable to find Clerk email/identifier input on sign-in page')
   }
 
-  const passwordInput = page.locator('input[type="password"], input[name*="password"], input[id*="password"]').first()
+  const passwordSelector = [
+    'input[type="password"]',
+    'input[name*="password"]',
+    'input[id*="password"]',
+    'input[name*="pass"]',
+    'input[placeholder*="password"]',
+  ].join(', ')
+
+  await page.waitForSelector(passwordSelector, { timeout: 20000 })
+  const passwordInput = await getLocator(page, passwordSelector)
   if (await passwordInput.isVisible({ timeout: 10000 }).catch(() => false)) {
     await passwordInput.fill(password)
-    await clickPrimaryButton(page)
+  } else {
+    throw new Error('Unable to find Clerk password input on sign-in page')
+  }
+
+  const clicked = await clickPrimaryButton(page)
+  if (!clicked) {
+    throw new Error('Unable to submit Clerk sign-in form; primary button not found')
   }
 }
 
+async function getDebugState(page: Page) {
+  const frameUrls = page.frames().map((frame) => frame.url())
+  const buttonCount = await page.locator('button').count()
+  const inputCount = await page.locator('input').count()
+  return { url: page.url(), frameUrls, buttonCount, inputCount }
+}
+
+async function signInWithClerkToken(page: Page, email: string) {
+  const secretKey = process.env.CLERK_SECRET_KEY
+  if (!secretKey) {
+    throw new Error('CLERK_SECRET_KEY is required for token-based E2E auth')
+  }
+
+  const clerk = createClerkClient({ secretKey })
+  const users = await clerk.users.getUserList({ emailAddress: [email] })
+  if (!users.data.length) {
+    throw new Error(`Clerk user not found for ${email}`)
+  }
+
+  const userId = users.data[0].id
+  const token = await clerk.signInTokens.createSignInToken({
+    userId,
+    expiresInSeconds: 300,
+  })
+  if (!token?.url) {
+    throw new Error('Failed to create Clerk sign-in token for E2E auth')
+  }
+
+  await page.goto(token.url, { waitUntil: 'domcontentloaded' })
+  await waitForDashboard(page)
+}
+
 async function ensureLoggedIn(page: Page, email: string, password: string) {
-  await page.goto(signInURL, { waitUntil: 'domcontentloaded' })
+  await page.goto(signInURL, { waitUntil: 'load' })
   const current = page.url()
 
   if (current.includes('/dashboard') || current.includes('/onboarding')) {
     return
   }
 
+  if (process.env.E2E_USE_SIGNIN_TOKEN === 'true') {
+    try {
+      await signInWithClerkToken(page, email)
+      return
+    } catch (error) {
+      console.warn('[global-setup] Clerk sign-in token failed, falling back to email/password auth', error)
+    }
+  }
+
   await loginWithEmail(page, email, password)
-  await waitForDashboard(page)
+  try {
+    await waitForDashboard(page)
+  } catch (error) {
+    const debugState = await getDebugState(page)
+    console.error('[global-setup] sign-in debug state', debugState)
+    throw error
+  }
+}
+
+async function verifyExistingAuthState() {
+  if (!fs.existsSync(STORAGE_STATE)) return false
+
+  const browser = await chromium.launch({ headless: true })
+  const context = await browser.newContext({ storageState: STORAGE_STATE })
+  const page = await context.newPage()
+
+  try {
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+    const url = page.url()
+    return url.includes('/dashboard') || url.includes('/onboarding')
+  } catch {
+    return false
+  } finally {
+    await browser.close()
+  }
 }
 
 async function globalSetup(_config: FullConfig) {
@@ -64,8 +185,12 @@ async function globalSetup(_config: FullConfig) {
     )
   }
 
-  if (fs.existsSync(STORAGE_STATE)) {
+  if (await verifyExistingAuthState()) {
     return
+  }
+
+  if (fs.existsSync(STORAGE_STATE)) {
+    await fs.promises.unlink(STORAGE_STATE).catch(() => undefined)
   }
 
   const browser = await chromium.launch({ headless: true })

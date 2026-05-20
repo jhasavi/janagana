@@ -378,56 +378,8 @@ export async function getEventStats() {
 async function resolveEventsTenant() {
   const activeTenant = await requireTenant()
 
-  const aliasSlugs = new Set<string>([activeTenant.slug])
-  if (activeTenant.slug.startsWith('the-')) {
-    aliasSlugs.add(activeTenant.slug.replace(/^the-/, ''))
-  } else {
-    aliasSlugs.add(`the-${activeTenant.slug}`)
-  }
-
-  const candidates = await prisma.tenant.findMany({
-    where: {
-      OR: [
-        { id: activeTenant.id },
-        { name: activeTenant.name },
-        { slug: { in: Array.from(aliasSlugs) } },
-      ],
-    },
-    select: { id: true, slug: true, name: true },
-  })
-
-  if (candidates.length <= 1) return activeTenant
-
-  const counts = await prisma.event.groupBy({
-    by: ['tenantId'],
-    where: { tenantId: { in: candidates.map((c) => c.id) } },
-    _count: { _all: true },
-  })
-
-  const countMap = new Map<string, number>(counts.map((c) => [c.tenantId, c._count._all]))
-  const activeCount = countMap.get(activeTenant.id) ?? 0
-
-  let best = activeTenant
-  let bestCount = activeCount
-  for (const candidate of candidates) {
-    const candidateCount = countMap.get(candidate.id) ?? 0
-    if (candidateCount > bestCount) {
-      best = { ...activeTenant, id: candidate.id, slug: candidate.slug, name: candidate.name }
-      bestCount = candidateCount
-    }
-  }
-
-  if (best.id !== activeTenant.id && activeCount <= 1 && bestCount >= 3) {
-    console.warn('[events.resolveTenant] Switched to canonical events tenant', {
-      activeTenantId: activeTenant.id,
-      activeTenantSlug: activeTenant.slug,
-      activeCount,
-      selectedTenantId: best.id,
-      selectedTenantSlug: best.slug,
-      selectedCount: bestCount,
-    })
-    return best
-  }
-
+  // Tenant resolution must be strict for event data.
+  // Do not fallback to tenants with similar names/slugs or higher event counts.
+  // This prevents cross-tenant leakage if tenant context is ambiguous.
   return activeTenant
 }

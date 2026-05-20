@@ -9,7 +9,7 @@ This file contains all help content for the JanaGana documentation system.
 **Title:** Sign Up & Create Organization
 
 **Content:**
-1. Go to janagana.namasteneedham.com
+1. Go to your Janagana app URL
 2. Click "Sign Up"
 3. Sign in with your email or Google account
 4. Enter your organization name (e.g., "Purple Wings")
@@ -43,21 +43,20 @@ After creating your organization, complete your profile:
 
 ---
 
-### Invite Team Members
+### Admin Access
 
-**Title:** Invite Team Members
+**Title:** Admin Access
 
 **Content:**
-1. Go to Settings → Team
-2. Click "Invite Member"
-3. Enter their email address
-4. Select their role (Admin, Editor, Viewer)
-5. Click "Send Invite"
+Admin access currently follows Clerk organization membership.
+1. Open your Clerk dashboard
+2. Invite the person to the correct organization
+3. Assign the correct organization role
+4. Ask them to sign in to your Janagana app
 
 **Roles:**
 - **Admin:** Full access to all features
-- **Editor:** Can manage content but not settings
-- **Viewer:** Read-only access
+- **Member:** Can be used for limited internal access when you add more role rules
 
 ---
 
@@ -68,7 +67,6 @@ After creating your organization, complete your profile:
 **Content:**
 The dashboard shows:
 - **Analytics:** Member growth, event attendance, donations
-- **Quick Actions:** Create event, add contact, send email
 - **Recent Activity:** Latest changes across your organization
 - **Upcoming Events:** Events happening soon
 
@@ -510,21 +508,21 @@ Prerequisites:
 - Edit access to your website HTML or CMS code block
 
 Canonical values:
-- Script URL: https://janagana.namasteneedham.com/janagana-embed.js
-- API base URL: https://janagana.namasteneedham.com
+- Script URL: https://your-janagana-app.example.com/janagana-embed.js
+- API base URL: https://your-janagana-app.example.com
 
 How to find your tenant slug:
-1. Sign in to JanaGana
-2. Go to Settings → Organization
+1. Sign in to Janagana
+2. Go to Settings
 3. Copy the slug value (example: purple-wings)
 
 Step 1: Add the script once on your site
 ```html
-<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script src="https://your-janagana-app.example.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'purple-wings',
-    apiUrl: 'https://janagana.namasteneedham.com'
+    apiUrl: 'https://your-janagana-app.example.com'
   });
 </script>
 ```
@@ -578,7 +576,7 @@ Step 1: Load and initialize once in your root layout
 import Script from 'next/script'
 
 const janaganaTenantSlug = process.env.NEXT_PUBLIC_JANAGANA_TENANT_SLUG || 'your-org-slug'
-const janaganaApiUrl = process.env.NEXT_PUBLIC_JANAGANA_API_URL || 'https://janagana.namasteneedham.com'
+const janaganaApiUrl = process.env.NEXT_PUBLIC_JANAGANA_API_URL || 'https://your-janagana-app.example.com'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -663,7 +661,7 @@ Troubleshooting:
 2. If API calls fail, verify tenantSlug and apiUrl
 3. Use debug mode during testing:
 ```js
-Janagana.init({ tenantSlug: 'purple-wings', apiUrl: 'https://janagana.namasteneedham.com', debug: true })
+Janagana.init({ tenantSlug: 'purple-wings', apiUrl: 'https://your-janagana-app.example.com', debug: true })
 ```
 
 Next steps:
@@ -753,17 +751,17 @@ Who this is for:
 
 Prerequisites:
 - WordPress admin access
-- Tenant slug from JanaGana Settings → Organization
+- Tenant slug from Janagana Settings
 
 Step 1: Add script and init in header
 1. Install "WPCode" or "Insert Headers and Footers"
 2. Add this to header scripts:
 ```html
-<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script src="https://your-janagana-app.example.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'purple-wings',
-    apiUrl: 'https://janagana.namasteneedham.com'
+    apiUrl: 'https://your-janagana-app.example.com'
   });
 </script>
 ```
@@ -805,15 +803,15 @@ Who this is for:
 
 Prerequisites:
 - Access to Online Store → Themes
-- Tenant slug from JanaGana settings
+- Tenant slug from Janagana settings
 
 Step 1: Add script and init in theme head
 ```html
-<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script src="https://your-janagana-app.example.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'purple-wings',
-    apiUrl: 'https://janagana.namasteneedham.com'
+    apiUrl: 'https://your-janagana-app.example.com'
   });
 </script>
 ```
@@ -847,18 +845,18 @@ Who this is for:
 
 Prerequisites:
 - Wix site editor access
-- Tenant slug from JanaGana
+- Tenant slug from Janagana
 
 Step 1: Add script globally
 1. Wix Settings → Tracking & Analytics
 2. Add Custom tool in Head
 3. Paste:
 ```html
-<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script src="https://your-janagana-app.example.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'purple-wings',
-    apiUrl: 'https://janagana.namasteneedham.com'
+    apiUrl: 'https://your-janagana-app.example.com'
   });
 </script>
 ```
@@ -892,15 +890,15 @@ Who this is for:
 
 Prerequisites:
 - Squarespace admin access
-- Tenant slug from JanaGana settings
+- Tenant slug from Janagana settings
 
 Step 1: Add global script in Code Injection (Header)
 ```html
-<script src="https://janagana.namasteneedham.com/janagana-embed.js"></script>
+<script src="https://your-janagana-app.example.com/janagana-embed.js"></script>
 <script>
   Janagana.init({
     tenantSlug: 'purple-wings',
-    apiUrl: 'https://janagana.namasteneedham.com'
+    apiUrl: 'https://your-janagana-app.example.com'
   });
 </script>
 ```
@@ -984,7 +982,7 @@ Who this is for:
 - Technical teams building custom integrations
 
 Use these APIs for server-to-server integrations:
-- Plugin API base: https://janagana.namasteneedham.com/api/plugin
+- Plugin API base: https://your-janagana-app.example.com/api/plugin
 
 Do not expose your API key in browser JavaScript.
 
@@ -995,12 +993,12 @@ Step 1: Generate API key
 Step 2: Make authenticated request
 ```bash
 curl -H "X-API-Key: your-key" \
-  https://janagana.namasteneedham.com/api/plugin/events
+  https://your-janagana-app.example.com/api/plugin/events
 ```
 
 Step 3: Create CRM contact
 ```bash
-curl -X POST https://janagana.namasteneedham.com/api/plugin/crm/contacts \
+curl -X POST https://your-janagana-app.example.com/api/plugin/crm/contacts \
   -H "X-API-Key: your-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1031,7 +1029,7 @@ JanaGana provides REST APIs for:
 - Volunteer Opportunities
 
 Recommended for external integrations:
-- Base URL: `https://janagana.namasteneedham.com/api/plugin`
+- Base URL: `https://your-janagana-app.example.com/api/plugin`
 - Auth: API key via `X-API-Key` header
 
 Dashboard API routes are primarily internal app routes and not the main external integration surface.
@@ -1061,7 +1059,7 @@ Core plugin paths:
 **Use API key:**
 ```bash
 curl -H "X-API-Key: your-key" \
-  https://janagana.namasteneedham.com/api/plugin/crm/contacts
+  https://your-janagana-app.example.com/api/plugin/crm/contacts
 ```
 
 **Security:**

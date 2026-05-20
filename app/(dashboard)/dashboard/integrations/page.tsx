@@ -1,16 +1,39 @@
 import type { Metadata } from 'next'
 import { PlugZap } from 'lucide-react'
 import { getTenant } from '@/lib/tenant'
-import { getTenantProfile } from '@/lib/tenant-profile'
+import {
+  getSimplifiedTenantProfile,
+  getSimplifiedTenantProfileValidationErrors,
+} from '@/lib/tenant-profile-simplified'
 import { IntegrationsClient } from './_components/integrations-client'
 
 export const metadata: Metadata = { title: 'Integrations' }
 
+function trimTrailingSlash(value: string) {
+  return value.replace(/\/$/, '')
+}
+
+function getSafeAppBaseUrl() {
+  const fallback =
+    process.env.TENANT_APP_BASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    ''
+
+  const errors = getSimplifiedTenantProfileValidationErrors()
+  if (errors.length > 0) return trimTrailingSlash(fallback)
+
+  try {
+    return trimTrailingSlash(getSimplifiedTenantProfile().baseUrls.app || fallback)
+  } catch (error) {
+    console.error('[IntegrationsPage] tenant profile unavailable', error)
+    return trimTrailingSlash(fallback)
+  }
+}
+
 export default async function IntegrationsPage() {
   const tenant = await getTenant()
-  const tenantProfile = getTenantProfile()
   const tenantSlug = tenant?.slug ?? ''
-  const appBaseUrl = tenantProfile.baseUrls.app
+  const appBaseUrl = getSafeAppBaseUrl()
 
   return (
     <div className="max-w-5xl space-y-6">
