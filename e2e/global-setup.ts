@@ -32,20 +32,67 @@ async function getLocator(page: Page, selector: string) {
   return page.locator(selector).first()
 }
 
+async function waitForLocator(page: Page, selector: string, timeout = 20000) {
+  const start = Date.now()
+  while (Date.now() - start < timeout) {
+    const locator = await getLocator(page, selector)
+    if (await locator.count()) {
+      return locator
+    }
+    await page.waitForTimeout(250)
+  }
+  throw new Error(`Timed out waiting for selector: ${selector}`)
+}
+
+async function getButtonLocator(page: Page, selector: string) {
+  const primary = page.locator(selector)
+  if (await primary.count()) return primary.first()
+
+  for (const frame of page.frames()) {
+    const frameLocator = frame.locator(selector)
+    if (await frameLocator.count()) return frameLocator.first()
+  }
+
+  return page.locator(selector).first()
+}
+
 async function findPrimaryButton(page: Page) {
-  const buttons = page.locator('button')
-  const count = await buttons.count()
-  for (let i = 0; i < count; i++) {
-    const button = buttons.nth(i)
-    if (!(await button.isVisible({ timeout: 5000 }).catch(() => false))) continue
-    const text = (await button.textContent())?.trim() ?? ''
-    if (!text) continue
-    if (['Continue', 'Sign in', 'Sign In', 'Log in', 'Log In', 'Submit', 'Create'].includes(text)) {
-      return button
+  const selectors = 'button, input[type="submit"], input[type="button"]'
+  const candidates = [
+    'Continue',
+    'Continue with email',
+    'Continue with password',
+    'Sign in',
+    'Sign In',
+    'Log in',
+    'Log In',
+    'Submit',
+    'Create',
+    'Next',
+  ]
+
+  const locators = [page.locator(selectors), ...page.frames().map((frame) => frame.locator(selectors))]
+
+  for (const locator of locators) {
+    const count = await locator.count()
+    for (let i = 0; i < count; i++) {
+      const button = locator.nth(i)
+      if (!(await button.isVisible({ timeout: 5000 }).catch(() => false))) continue
+      if (!(await button.isEnabled({ timeout: 5000 }).catch(() => false))) continue
+      const text = (await button.textContent())?.trim() ?? ''
+      if (!text) continue
+      if (candidates.some((candidate) => text.includes(candidate))) {
+        return button
+      }
     }
   }
 
-  return page.locator('button:has-text("Continue")').first()
+  const fallback = await getButtonLocator(page, 'button:has-text("Continue")')
+  if (await fallback.isVisible({ timeout: 5000 }).catch(() => false)) {
+    return fallback
+  }
+
+  return await getButtonLocator(page, 'button[type="submit"]')
 }
 
 async function clickPrimaryButton(page: Page) {
@@ -58,7 +105,32 @@ async function clickPrimaryButton(page: Page) {
   return false
 }
 
+async function loginWithGoogle(page: Page, email: string, password: string) {
+  const emailSelector = 'input[type="email"], input#identifierId'
+  const emailInput = await waitForLocator(page, emailSelector, 30000)
+  if (!(await emailInput.isVisible({ timeout: 10000 }).catch(() => false))) {
+    throw new Error('Unable to find Google email input on sign-in page')
+  }
+
+  await emailInput.fill(email)
+  await clickPrimaryButton(page)
+
+  const passwordSelector = 'input[type="password"]'
+  const passwordInput = await waitForLocator(page, passwordSelector, 30000)
+  if (!(await passwordInput.isVisible({ timeout: 10000 }).catch(() => false))) {
+    throw new Error('Unable to find Google password input on sign-in page')
+  }
+
+  await passwordInput.fill(password)
+  await clickPrimaryButton(page)
+}
+
 async function loginWithEmail(page: Page, email: string, password: string) {
+  const currentUrl = page.url()
+  if (currentUrl.includes('accounts.google.com')) {
+    return loginWithGoogle(page, email, password)
+  }
+
   const emailSelector = [
     'input[type="email"]',
     'input[name="identifier"]',
@@ -68,8 +140,7 @@ async function loginWithEmail(page: Page, email: string, password: string) {
     'input[type="text"][inputmode="email"]',
   ].join(', ')
 
-  await page.waitForSelector(emailSelector, { timeout: 20000 })
-  const emailInput = await getLocator(page, emailSelector)
+  const emailInput = await waitForLocator(page, emailSelector, 20000)
   if (await emailInput.isVisible({ timeout: 10000 }).catch(() => false)) {
     await emailInput.fill(email)
   } else {
@@ -84,8 +155,7 @@ async function loginWithEmail(page: Page, email: string, password: string) {
     'input[placeholder*="password"]',
   ].join(', ')
 
-  await page.waitForSelector(passwordSelector, { timeout: 20000 })
-  const passwordInput = await getLocator(page, passwordSelector)
+  const passwordInput = await waitForLocator(page, passwordSelector, 20000)
   if (await passwordInput.isVisible({ timeout: 10000 }).catch(() => false)) {
     await passwordInput.fill(password)
   } else {
@@ -138,13 +208,21 @@ async function ensureLoggedIn(page: Page, email: string, password: string) {
     return
   }
 
-  if (process.env.E2E_USE_SIGNIN_TOKEN === 'true') {
+  const shouldUseTokenAuth = process.env.E2E_USE_SIGNIN_TOKEN !== 'false' && Boolean(process.env.CLERK_SECRET_KEY)
+  if (shouldUseTokenAuth) {
     try {
       await signInWithClerkToken(page, email)
       return
     } catch (error) {
       console.warn('[global-setup] Clerk sign-in token failed, falling back to email/password auth', error)
+      await page.goto(signInURL, { waitUntil: 'load' })
     }
+  }
+
+  if (!email || !password) {
+    throw new Error(
+      'E2E_CLERK_EMAIL and E2E_CLERK_PASSWORD must be set to run email/password authenticated E2E tests when token auth is unavailable.'
+    )
   }
 
   await loginWithEmail(page, email, password)

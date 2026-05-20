@@ -51,6 +51,8 @@ const COLOR_PRESETS = [
   '#16A34A', '#0891B2', '#0369A1', '#374151', '#1E293B',
 ]
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 type OnboardingClientProps = {
   platformName: string
   defaultOrganizationName: string
@@ -226,6 +228,7 @@ export default function OnboardingClient({
     if (!memberFirstName.trim()) { setMemberError('First name is required'); return }
     if (!memberLastName.trim())  { setMemberError('Last name is required'); return }
     if (!memberEmail.trim())     { setMemberError('Email is required'); return }
+    if (!EMAIL_REGEX.test(memberEmail.trim())) { setMemberError('Enter a valid email address'); return }
 
     startTransition(async () => {
       const result = await createMember({
@@ -247,6 +250,9 @@ export default function OnboardingClient({
     setEventError(null)
     if (!eventTitle.trim()) { setEventError('Event title is required'); return }
     if (!eventDate)         { setEventError('Start date is required'); return }
+    const start = new Date(eventDate)
+    if (Number.isNaN(start.getTime())) { setEventError('Enter a valid start date'); return }
+    if (start <= new Date()) { setEventError('Event start time must be in the future'); return }
 
     startTransition(async () => {
       const result = await createEvent({

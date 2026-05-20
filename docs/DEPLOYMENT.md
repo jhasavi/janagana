@@ -67,6 +67,9 @@ vercel login
 vercel --prod
 ```
 
+> Note: this repository builds from the root package using `npm run build`.
+> The GitHub Actions deploy workflow also expects Vercel env vars to be preconfigured in the target project.
+
 ---
 
 ## 5. Environment Variables on Vercel
