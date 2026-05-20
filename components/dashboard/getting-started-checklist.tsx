@@ -18,11 +18,12 @@ export async function GettingStartedChecklist() {
   const tenant = await getTenant()
   if (!tenant) return null
 
-  const [memberCount, eventCount, tierCount, stripeCount] = await Promise.all([
+  const [memberCount, eventCount, tierCount, stripeCount, apiKeyCount] = await Promise.all([
     prisma.member.count({ where: { tenantId: tenant.id } }),
     prisma.event.count({ where: { tenantId: tenant.id } }),
     prisma.membershipTier.count({ where: { tenantId: tenant.id } }),
     prisma.membershipTier.count({ where: { tenantId: tenant.id, stripePriceId: { not: null } } }),
+    prisma.apiKey.count({ where: { tenantId: tenant.id } }),
   ])
 
   const steps: Step[] = [
@@ -68,11 +69,19 @@ export async function GettingStartedChecklist() {
     },
     {
       id: 'embed',
-      label: 'Install the member portal embed',
-      description: 'Add JanaGana to your website so members can self-serve.',
-      done: false, // static — no persistence needed
+      label: 'Set up your member portal embed',
+      description: 'Add an API key and embed JanaGana on your website so members can self-serve.',
+      done: apiKeyCount > 0,
       href: '/dashboard/integrations',
       cta: 'Get Embed Code',
+    },
+    {
+      id: 'brand',
+      label: 'Upload your organization logo',
+      description: 'Add a logo to personalize your portal and emails.',
+      done: Boolean(tenant.logoUrl),
+      href: '/dashboard/settings',
+      cta: 'Upload Logo',
     },
   ]
 
