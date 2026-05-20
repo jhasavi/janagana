@@ -34,7 +34,7 @@ export default async function AdminLayout({
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 text-amber-400" />
-            <span className="font-semibold">Jana Gana Global Admin</span>
+            <span className="font-semibold">{process.env.PLATFORM_BRAND_NAME ?? 'Platform'} Global Admin</span>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-slate-400">

@@ -132,7 +132,7 @@ function buildSimplifiedProfile() {
   }
 
   // Build URLs with fallbacks
-  const appBaseUrl = optionalEnv(process.env.TENANT_APP_BASE_URL) || optionalEnv(process.env.NEXT_PUBLIC_APP_URL) || `https://janagana.namasteneedham.com`
+  const appBaseUrl = optionalEnv(process.env.TENANT_APP_BASE_URL) || optionalEnv(process.env.NEXT_PUBLIC_APP_URL) || ''
   const apiBaseUrl = optionalEnv(process.env.TENANT_API_BASE_URL) || optionalEnv(process.env.API_URL) || `${appBaseUrl}/api`
 
   // Parse optional JSON configs
