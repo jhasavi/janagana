@@ -5,7 +5,14 @@ import { getPlatformBrandName } from '@/lib/platform-brand'
 import OnboardingClient from './OnboardingClient'
 
 export default async function OnboardingPage() {
-  const tenant = await getTenant()
+  let tenant = null
+
+  try {
+    tenant = await getTenant()
+  } catch (error) {
+    console.error('[OnboardingPage] failed to resolve tenant', error)
+  }
+
   if (tenant) {
     redirect('/dashboard')
   }
