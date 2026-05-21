@@ -126,6 +126,8 @@ export default function OnboardingClient({
   const [primaryColor, setPrimaryColor] = useState(defaultPrimaryColor || '#4F46E5')
   const [profileError, setProfileError] = useState<string | null>(null)
   const [tenantSlug, setTenantSlug] = useState<string | null>(null)
+  const [orgId, setOrgId] = useState<string | null>(null)
+  const [tenantId, setTenantId] = useState<string | null>(null)
 
   // Step 2: tier
   const [tierName, setTierName] = useState('Member')
@@ -158,6 +160,45 @@ export default function OnboardingClient({
 
   const currentIdx = STEP_ORDER.indexOf(step)
 
+  async function syncActiveOrg(activeOrgId: string, activeTenantId: string | null = null, attempts = 3) {
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        const response = await fetch('/api/active-org', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orgId: activeOrgId, tenantId: activeTenantId }),
+        })
+
+        const payload = await response.json().catch(() => null)
+        if (response.ok && payload?.success) {
+          return true
+        }
+
+        console.warn('[OnboardingClient] /api/active-org failed', {
+          attempt,
+          status: response.status,
+          payload,
+        })
+      } catch (error) {
+        console.warn('[OnboardingClient] /api/active-org request error', { attempt, error })
+      }
+
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+      }
+    }
+
+    return false
+  }
+
+  async function handleGoToDashboard() {
+    if (orgId) {
+      await syncActiveOrg(orgId, tenantId)
+    }
+
+    router.replace('/dashboard?onboardingComplete=1')
+  }
+
   // ─── Step Handlers ─────────────────────────────────────────────────────────
 
   function handleSubmitProfile(e: React.FormEvent) {
@@ -188,6 +229,8 @@ export default function OnboardingClient({
         } catch { /* ok */ }
 
         toast.success(`Workspace created! Welcome to ${platformName}.`)
+        setOrgId(orgId ?? null)
+        setTenantId(tenantId ?? null)
         setTenantSlug(slug ?? null)
         setStep('tier')
       } else {
@@ -579,7 +622,7 @@ export default function OnboardingClient({
                 </ul>
               </div>
 
-              <Button onClick={() => router.replace('/dashboard?onboardingComplete=1')} className="w-full">
+              <Button onClick={handleGoToDashboard} className="w-full">
                 Go to Dashboard <ArrowRight className="h-4 w-4" />
               </Button>
             </CardContent>

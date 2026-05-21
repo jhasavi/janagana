@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation'
-import { QrCode, Calendar, Heart, Star, CheckCircle2 } from 'lucide-react'
+import Link from 'next/link'
+import { QrCode, Calendar, Heart, Star, CheckCircle2, CreditCard, MessageSquare, UserRoundPen, ArrowRight, DollarSign } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
 import { QRCodeDisplay } from '@/components/dashboard/qr-code-display'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { formatDate } from '@/lib/utils'
@@ -25,6 +27,12 @@ export default async function PortalProfilePage({
     BANNED: { label: 'Suspended', variant: 'destructive' },
   }
   const status = statusConfig[member.status] ?? statusConfig.INACTIVE
+  const paidMembershipNeedsBilling = !!member.tier && member.tier.priceCents > 0 && !member.stripeSubscriptionId
+  const renewalDueSoon = !!member.renewsAt && member.renewsAt.getTime() <= Date.now() + 30 * 24 * 60 * 60 * 1000
+
+  const ticketedRegistrations = (member.eventRegistrations ?? []).filter(
+    (registration) => registration.event && registration.ticketCode
+  )
 
   return (
     <div className="space-y-6">
@@ -36,9 +44,62 @@ export default async function PortalProfilePage({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        <Card className="md:col-span-2 border-indigo-200 bg-indigo-50/60">
+          <CardHeader>
+            <CardTitle className="text-base">Your next best actions</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Button asChild variant={paidMembershipNeedsBilling || renewalDueSoon ? 'default' : 'outline'} className="justify-between">
+              <Link href={`/portal/${slug}/membership`}>
+                <span className="inline-flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Membership
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href={`/portal/${slug}/events`}>
+                <span className="inline-flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Events
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href={`/portal/${slug}/profile/edit`}>
+                <span className="inline-flex items-center gap-2">
+                  <UserRoundPen className="h-4 w-4" />
+                  Profile
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href={`/portal/${slug}/donations`}>
+                <span className="inline-flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Donations
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-between">
+              <Link href={`/portal/${slug}/support`}>
+                <span className="inline-flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Support
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Membership card */}
         <Card className="md:col-span-2">
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-6">
             <div className="flex items-start justify-between gap-6 flex-wrap">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -74,16 +135,44 @@ export default async function PortalProfilePage({
                   )}
                 </div>
               </div>
-              {/* QR code */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-3 bg-white border rounded-xl shadow-sm">
-                  <QRCodeDisplay value={member.id} size={120} />
+              {ticketedRegistrations.length === 0 ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-3 bg-white border rounded-xl shadow-sm">
+                    <QRCodeDisplay value={member.id} size={120} />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Your member QR code for general portal access
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Show at events for check-in
-                </p>
-              </div>
+              ) : null}
             </div>
+
+            {ticketedRegistrations.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-semibold">Event ticket codes</p>
+                  <p className="text-xs text-muted-foreground">Show the event-specific QR code below at check-in.</p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {ticketedRegistrations.map((registration) => (
+                    <div key={registration.id} className="rounded-2xl border bg-background p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-sm">{registration.event?.title ?? 'Event ticket'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {registration.status} • {registration.event?.startDate ? formatDate(registration.event.startDate) : 'Date pending'}
+                          </p>
+                        </div>
+                        <div className="p-2 bg-white border rounded-xl">
+                          <QRCodeDisplay value={registration.ticketCode} size={92} />
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground break-all">{registration.ticketCode}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

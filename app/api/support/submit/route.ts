@@ -21,6 +21,15 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#039;')
 }
 
+function tenantSlugFromContext(context?: string) {
+  const [source, slug] = context?.split(':') ?? []
+  if ((source === 'portal' || source === 'tenant') && slug) {
+    return slug
+  }
+
+  return null
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -42,6 +51,17 @@ export async function POST(request: Request) {
       }
     } catch {
       // auth context not available in unauthenticated portal flows
+    }
+
+    if (!tenantId) {
+      const tenantSlug = tenantSlugFromContext(context)
+      if (tenantSlug) {
+        const tenant = await prisma.tenant.findUnique({
+          where: { slug: tenantSlug },
+          select: { id: true },
+        })
+        tenantId = tenant?.id ?? null
+      }
     }
 
     // Persist to database

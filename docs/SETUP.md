@@ -118,6 +118,24 @@ npm run bootstrap:preflight:post-onboarding  # Post-onboarding checks (tenant + 
 npm run bootstrap:provision-tenant           # Engineer-assisted break-glass provision helper
 
 # E2E Tests (after configuring E2E_CLERK_EMAIL + E2E_CLERK_PASSWORD in .env)
+
+## Reset local database state
+
+If you need to wipe local development data and start fresh, use the reset script:
+
+```bash
+npm run reset:local -- --confirm
+```
+
+To reset a single tenant by slug instead of truncating the whole database:
+
+```bash
+npm run reset:local -- --confirm --tenant=your-tenant-slug
+```
+
+> This script is intentionally guarded and refuses to run in a `production` environment.
+
+
 npm run test:e2e           # Run all E2E tests (headless)
 npm run test:e2e:headed    # Run with browser visible
 npm run test:e2e:ui        # Run with Playwright interactive UI

@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
+import type { EventCancellationStatus } from '@prisma/client'
 import { requireTenant } from '@/lib/tenant'
 import { sendEventReminder } from '@/lib/sms'
 import { ensureContactForMember } from '@/lib/contact-linking'
@@ -11,6 +13,14 @@ import { uploadFile } from '@/lib/upload'
 const CAPACITY_REGISTRATION_STATUSES: Array<'CONFIRMED' | 'ATTENDED'> = ['CONFIRMED', 'ATTENDED']
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
+
+const TicketTypeSchema = z.object({
+  name: z.string().min(1, 'Ticket name is required'),
+  description: z.string().optional(),
+  priceCents: z.number().int().min(0).default(0),
+  quantityLimit: z.number().int().positive().optional().nullable(),
+  isActive: z.boolean().default(true),
+})
 
 const EventSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -25,6 +35,7 @@ const EventSchema = z.object({
   format: z.enum(['IN_PERSON', 'VIRTUAL', 'HYBRID']).default('IN_PERSON'),
   coverImageUrl: z.string().url().optional().or(z.literal('')),
   tags: z.array(z.string()).default([]),
+  ticketTypes: z.array(TicketTypeSchema).optional(),
 })
 
 // ─── EVENT ACTIONS ────────────────────────────────────────────────────────────
@@ -85,7 +96,14 @@ export async function getEvent(id: string) {
     const event = await prisma.event.findFirst({
       where: { id, tenantId: tenant.id },
       include: {
+        ticketTypes: {
+          orderBy: { priceCents: 'asc' },
+        },
         registrations: {
+          include: { member: true, ticketType: true },
+          orderBy: { createdAt: 'desc' },
+        },
+        cancellationRequests: {
           include: { member: true },
           orderBy: { createdAt: 'desc' },
         },
@@ -107,14 +125,35 @@ export async function getEvent(id: string) {
   }
 }
 
+export async function getPendingCancellationRequests() {
+  try {
+    const tenant = await resolveEventsTenant()
+
+    const requests = await prisma.eventCancellationRequest.findMany({
+      where: { tenantId: tenant.id, status: 'REQUESTED' },
+      include: {
+        event: { select: { id: true, title: true } },
+        member: { select: { id: true, firstName: true, lastName: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return { success: true, data: requests }
+  } catch (error) {
+    console.error('[getPendingCancellationRequests]', error)
+    return { success: false, error: 'Failed to load cancellation requests', data: [] }
+  }
+}
+
 export async function createEvent(input: unknown) {
   try {
     const tenant = await resolveEventsTenant()
     const data = EventSchema.parse(input)
+    const { ticketTypes, ...eventData } = data
 
     const event = await prisma.event.create({
       data: {
-        ...data,
+        ...eventData,
         tenantId: tenant.id,
         startDate: new Date(data.startDate),
         endDate: data.endDate ? new Date(data.endDate) : null,
@@ -125,6 +164,20 @@ export async function createEvent(input: unknown) {
         virtualLink: data.virtualLink || null,
       },
     })
+
+    if (ticketTypes?.length) {
+      await prisma.eventTicketType.createMany({
+        data: ticketTypes.map((ticketType) => ({
+          tenantId: tenant.id,
+          eventId: event.id,
+          name: ticketType.name,
+          description: ticketType.description,
+          priceCents: ticketType.priceCents,
+          quantityLimit: ticketType.quantityLimit ?? null,
+          isActive: ticketType.isActive,
+        })),
+      })
+    }
 
     revalidatePath('/dashboard/events')
     return { success: true, data: event }
@@ -141,11 +194,12 @@ export async function updateEvent(id: string, input: unknown) {
   try {
     const tenant = await resolveEventsTenant()
     const data = EventSchema.parse(input)
+    const { ticketTypes, ...eventData } = data
 
     const event = await prisma.event.update({
       where: { id, tenantId: tenant.id },
       data: {
-        ...data,
+        ...eventData,
         startDate: new Date(data.startDate),
         endDate: data.endDate ? new Date(data.endDate) : null,
         capacity: data.capacity ?? null,
@@ -155,6 +209,23 @@ export async function updateEvent(id: string, input: unknown) {
         virtualLink: data.virtualLink || null,
       },
     })
+
+    if (ticketTypes) {
+      await prisma.eventTicketType.deleteMany({ where: { eventId: event.id } })
+      if (ticketTypes.length) {
+        await prisma.eventTicketType.createMany({
+          data: ticketTypes.map((ticketType) => ({
+            tenantId: tenant.id,
+            eventId: event.id,
+            name: ticketType.name,
+            description: ticketType.description,
+            priceCents: ticketType.priceCents,
+            quantityLimit: ticketType.quantityLimit ?? null,
+            isActive: ticketType.isActive,
+          })),
+        })
+      }
+    }
 
     revalidatePath('/dashboard/events')
     revalidatePath(`/dashboard/events/${id}`)
@@ -305,6 +376,54 @@ export async function updateRegistrationStatus(
   }
 }
 
+export async function updateEventCancellationRequestStatus(
+  requestId: string,
+  status: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'REFUNDED'
+) {
+  try {
+    const tenant = await resolveEventsTenant()
+
+    const request = await prisma.eventCancellationRequest.findFirst({
+      where: { id: requestId, tenantId: tenant.id },
+    })
+
+    if (!request) {
+      return { success: false, error: 'Cancellation request not found' }
+    }
+
+    let updateData: { status: EventCancellationStatus; refundId?: string | null; refundStatus?: string | null } = { status }
+
+    if (status === 'REFUNDED') {
+      if (request.stripePaymentId) {
+        try {
+          const stripe = getStripe()
+          const refund = await stripe.refunds.create({
+            payment_intent: request.stripePaymentId,
+          })
+          updateData.refundId = refund.id
+          updateData.refundStatus = refund.status
+        } catch (stripeError) {
+          console.error('[updateEventCancellationRequestStatus] Stripe refund failed', stripeError)
+          return { success: false, error: 'Stripe refund failed' }
+        }
+      } else {
+        updateData.refundStatus = 'MANUAL'
+      }
+    }
+
+    const updated = await prisma.eventCancellationRequest.update({
+      where: { id: requestId },
+      data: updateData,
+    })
+
+    revalidatePath(`/dashboard/events/${request.eventId}`)
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error('[updateEventCancellationRequestStatus]', error)
+    return { success: false, error: 'Failed to update cancellation request' }
+  }
+}
+
 // ─── SMS REMINDERS ───────────────────────────────────────────────────────────
 
 /**
@@ -382,4 +501,12 @@ async function resolveEventsTenant() {
   // Do not fallback to tenants with similar names/slugs or higher event counts.
   // This prevents cross-tenant leakage if tenant context is ambiguous.
   return activeTenant
+}
+
+function getStripe() {
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY
+  if (!STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY not configured')
+  }
+  return new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-02-24.acacia' })
 }

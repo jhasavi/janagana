@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Pencil, DollarSign, Users } from 'lucide-react'
+import { ArrowLeft, Pencil, DollarSign, ExternalLink } from 'lucide-react'
 import { getCampaign } from '@/lib/actions/fundraising'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { DonationReceiptActions } from './_components/donation-receipt-actions'
 import { RecordDonationPanel } from './_components/record-donation-panel'
 
 export const metadata: Metadata = { title: 'Campaign Detail' }
@@ -52,6 +53,13 @@ export default async function CampaignDetailPage({
             <Pencil className="h-4 w-4" /> Edit
           </Link>
         </Button>
+        {campaign.status === 'ACTIVE' && (
+          <Button asChild>
+            <Link href={`/fundraising/${campaign.tenant.slug}/${campaign.id}`} target="_blank">
+              <ExternalLink className="h-4 w-4" /> Public Page
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -102,7 +110,7 @@ export default async function CampaignDetailPage({
               ) : (
                 <div className="divide-y">
                   {campaign.donations.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between px-6 py-3">
+                    <div key={d.id} className="flex flex-col gap-3 px-6 py-3 md:flex-row md:items-center md:justify-between">
                       <div>
                         <p className="text-sm font-medium">
                           {d.isAnonymous ? 'Anonymous' : d.donorName}
@@ -114,9 +122,10 @@ export default async function CampaignDetailPage({
                           <p className="text-xs text-muted-foreground italic">&quot;{d.message}&quot;</p>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="flex flex-col gap-2 items-end text-right md:items-center md:text-right">
                         <p className="font-semibold text-emerald-600">{formatCurrency(d.amountCents)}</p>
                         <p className="text-xs text-muted-foreground">{formatDate(d.createdAt)}</p>
+                        {d.status === 'COMPLETED' && <DonationReceiptActions donationId={d.id} />}
                       </div>
                     </div>
                   ))}

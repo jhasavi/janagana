@@ -51,6 +51,8 @@ DATABASE_URL="<production-url>" npx prisma migrate deploy
 
 ## 4. Deploy to Vercel
 
+This repository is a single Next.js application with built-in API routes under `app/api`. There is no separate `apps/api` service in this repo, so production deployment should target the root app only.
+
 ### Via Vercel Dashboard
 
 1. Click **New Project** → Import from Git
@@ -86,6 +88,7 @@ Go to **Project Settings → Environment Variables** and add:
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | ✅ Yes | `/dashboard` |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | ✅ Yes | `/onboarding` |
 | `NEXT_PUBLIC_APP_URL` | ✅ Yes | `https://your-app.vercel.app` |
+| `NEXT_PUBLIC_API_URL` | Optional | `https://your-app.vercel.app/api` — only needed if client code uses absolute API URLs |
 | `STRIPE_SECRET_KEY` | Optional | Stripe live secret key |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional | Stripe live publishable key |
 | `STRIPE_WEBHOOK_SECRET` | Optional | Stripe webhook signing secret |
@@ -103,6 +106,7 @@ Go to **Project Settings → Environment Variables** and add:
 - [ ] Visit `/dashboard` — should render stats page
 - [ ] Create a test member
 - [ ] Create a test event
+- [ ] Confirm `/api/health/onboarding` returns 200 on production
 - [ ] Check Vercel logs for any errors: **Project → Deployments → Functions**
 - [ ] Test Stripe webhook: `stripe trigger checkout.session.completed`
 

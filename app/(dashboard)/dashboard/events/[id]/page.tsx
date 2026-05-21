@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventRegistrationPanel } from './_components/event-registration-panel'
+import { EventCancellationRequestsPanel } from './_components/event-cancellation-requests'
 
 export const metadata: Metadata = { title: 'Event Detail' }
 
@@ -130,10 +131,35 @@ export default async function EventDetailPage({
                   </span>
                 </div>
               )}
-              {event.priceCents > 0 && (
+              {(event.priceCents > 0 || (event.ticketTypes && event.ticketTypes.length > 0)) && (
                 <div className="flex items-center gap-3 text-sm">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span>{formatCurrency(event.priceCents)}</span>
+                  <span>
+                    {event.ticketTypes && event.ticketTypes.length > 0
+                      ? 'Tiers available'
+                      : formatCurrency(event.priceCents)}
+                  </span>
+                </div>
+              )}
+              {event.ticketTypes && event.ticketTypes.length > 0 && (
+                <div className="rounded-lg border border-muted p-4 bg-muted/30 text-sm">
+                  <p className="font-semibold">Ticket tiers</p>
+                  <div className="space-y-3 mt-3">
+                    {event.ticketTypes.map((type) => (
+                      <div key={type.id} className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-medium">{type.name}</p>
+                          {type.description && (
+                            <p className="text-xs text-muted-foreground">{type.description}</p>
+                          )}
+                        </div>
+                        <div className="text-right text-xs text-muted-foreground">
+                          <p>{formatCurrency(type.priceCents)}</p>
+                          <p>{type.quantityLimit ? `${type.quantityLimit} max` : 'Unlimited'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               {event.description && (
@@ -148,9 +174,14 @@ export default async function EventDetailPage({
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  Registrations ({event._count.registrations})
-                </CardTitle>
+                <div>
+                  <CardTitle className="text-base">
+                    Registrations ({event._count.registrations})
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Confirmed registrations are synced to CRM activity and can be managed from this event.
+                  </p>
+                </div>
                 {event.registrations.length > 0 && (
                   <Button asChild variant="outline" size="sm">
                     <a href={`/api/events/${event.id}/export-csv`} download>
@@ -192,6 +223,11 @@ export default async function EventDetailPage({
                             <p className="text-xs text-muted-foreground">
                               {reg.member.email}
                             </p>
+                            {reg.ticketType && (
+                              <p className="text-xs text-muted-foreground">
+                                Ticket: {reg.ticketType.name}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <Badge variant={regStatus.variant}>{regStatus.label}</Badge>
@@ -205,11 +241,12 @@ export default async function EventDetailPage({
         </div>
 
         {/* Add registration panel */}
-        <div>
+        <div className="space-y-6">
           <EventRegistrationPanel
             eventId={event.id}
             members={unregisteredMembers}
           />
+          <EventCancellationRequestsPanel requests={event.cancellationRequests ?? []} />
         </div>
       </div>
     </div>

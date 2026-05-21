@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ContactTable } from './_components/contact-table'
 import { HelpButton } from '@/components/dashboard/help-button'
 import { archiveContactAction } from '@/lib/actions/crm'
+import { getSavedContactFilters } from '@/lib/actions/saved-filters'
 
 export default async function CRMPage() {
   const tenant = await getTenant()
@@ -15,24 +16,29 @@ export default async function CRMPage() {
     redirect('/onboarding')
   }
 
-  const contacts = await prisma.contact.findMany({
-    where: { tenantId: tenant.id },
-    include: {
-      member: true,
-      company: true,
-      _count: {
-        select: {
-          donations: true,
-          volunteerSignups: true,
-          eventRegistrations: true,
-          deals: true,
-          tasks: true,
-          enrollments: true,
+  const [contacts, savedFiltersResult] = await Promise.all([
+    prisma.contact.findMany({
+      where: { tenantId: tenant.id },
+      include: {
+        member: true,
+        company: true,
+        _count: {
+          select: {
+            donations: true,
+            volunteerSignups: true,
+            eventRegistrations: true,
+            deals: true,
+            tasks: true,
+            enrollments: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+      orderBy: { createdAt: 'desc' },
+    }),
+    getSavedContactFilters(),
+  ])
+
+  const savedFilters = savedFiltersResult.success ? savedFiltersResult.data : []
 
   return (
     <div className="p-6">
@@ -98,7 +104,7 @@ export default async function CRMPage() {
         </div>
       </div>
 
-      <ContactTable contacts={contacts} onArchive={archiveContactAction} />
+      <ContactTable contacts={contacts} savedFilters={savedFilters} onArchive={archiveContactAction} />
     </div>
   )
 }

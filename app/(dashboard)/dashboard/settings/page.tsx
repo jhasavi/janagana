@@ -4,6 +4,7 @@ import { FileClock, Key, Webhook, LayoutList, ShieldCheck } from 'lucide-react'
 import { SettingsForm } from './_components/settings-form'
 import { getTenantSettings } from '@/lib/actions/tenant'
 import { getTiers } from '@/lib/actions/members'
+import { getStripeSetupReadiness } from '@/lib/actions/stripe'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { HelpButton } from '@/components/dashboard/help-button'
@@ -12,13 +13,26 @@ import { MembershipTiersManager } from './_components/membership-tiers-manager'
 export const metadata: Metadata = { title: 'Settings' }
 
 export default async function SettingsPage() {
-  const [settingsResult, tiersResult] = await Promise.all([
+  const [settingsResult, tiersResult, stripeResult] = await Promise.all([
     getTenantSettings(),
     getTiers(),
+    getStripeSetupReadiness(),
   ])
+
+  const stripeWarnings = stripeResult.success ? stripeResult.warnings : []
 
   return (
     <div className="max-w-2xl space-y-6">
+      {stripeWarnings.length > 0 ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Stripe setup warnings</p>
+          <ul className="mt-2 space-y-2 list-disc list-inside text-amber-800">
+            {stripeWarnings.map((warning) => (
+              <li key={warning.key}>{warning.message}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="flex items-center gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>

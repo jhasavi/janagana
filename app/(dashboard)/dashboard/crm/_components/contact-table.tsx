@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { MoreHorizontal, Pencil, Trash2, Eye, Phone, Mail, Building2, Linkedin } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate, initials } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { deleteContactFilter, saveContactFilter } from '@/lib/actions/saved-filters'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,12 +50,24 @@ type ContactWithRelations = Contact & {
   }
 }
 
+type SavedContactFilter = {
+  id: string
+  name: string
+  filters: {
+    search?: string | null
+    status?: string | null
+    role?: string | null
+    tag?: string | null
+  }
+}
+
 interface ContactTableProps {
   contacts: ContactWithRelations[]
+  savedFilters: SavedContactFilter[]
   onArchive: (contactId: string) => Promise<{ success: boolean; error?: string }>
 }
 
-export function ContactTable({ contacts, onArchive }: ContactTableProps) {
+export function ContactTable({ contacts, savedFilters, onArchive }: ContactTableProps) {
   const router = useRouter()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, startDelete] = useTransition()
@@ -62,6 +75,15 @@ export function ContactTable({ contacts, onArchive }: ContactTableProps) {
   const [roleFilter, setRoleFilter] = useState<'all' | 'members' | 'donors' | 'volunteers' | 'attendees' | 'leads'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all')
   const [tagFilter, setTagFilter] = useState('')
+  const [savedFiltersState, setSavedFiltersState] = useState<SavedContactFilter[]>(savedFilters)
+  const [selectedFilterId, setSelectedFilterId] = useState<string | null>(null)
+  const [saveName, setSaveName] = useState('')
+  const [isSaving, startSave] = useTransition()
+  const [isDeletingSaved, startDeleteSaved] = useTransition()
+
+  useEffect(() => {
+    setSavedFiltersState(savedFilters)
+  }, [savedFilters])
 
   const filteredContacts = contacts.filter((contact) => {
     const searchMatches =
@@ -188,41 +210,124 @@ export function ContactTable({ contacts, onArchive }: ContactTableProps) {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Saved filters:</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setRoleFilter('donors')
-              setStatusFilter('active')
-              setTagFilter('')
-            }}
-          >
-            Active Donors
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setRoleFilter('leads')
-              setStatusFilter('active')
-              setTagFilter('')
-            }}
-          >
-            Open Leads
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setRoleFilter('all')
-              setStatusFilter('archived')
-              setTagFilter('')
-            }}
-          >
-            Archived Contacts
-          </Button>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Saved filters:</span>
+            {savedFiltersState.length === 0 ? (
+              <span className="text-muted-foreground">No saved views yet.</span>
+            ) : (
+              savedFiltersState.map((filter) => (
+                <Button
+                  key={filter.id}
+                  size="sm"
+                  variant={selectedFilterId === filter.id ? 'secondary' : 'outline'}
+                  onClick={() => {
+                    setSearchQuery(filter.filters.search ?? '')
+                    setStatusFilter(filter.filters.status === 'archived' ? 'archived' : filter.filters.status === 'active' ? 'active' : 'all')
+                    setRoleFilter((filter.filters.role ?? 'all') as typeof roleFilter)
+                    setTagFilter(filter.filters.tag ?? '')
+                    setSelectedFilterId(filter.id)
+                  }}
+                >
+                  {filter.name}
+                </Button>
+              ))
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="Save current view..."
+              value={saveName}
+              onChange={(event) => setSaveName(event.target.value)}
+              className="max-w-[220px]"
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!saveName.trim()) return
+                startSave(async () => {
+                  const result = await saveContactFilter({
+                    name: saveName.trim(),
+                    filters: {
+                      search: searchQuery || undefined,
+                      status: statusFilter !== 'all' ? statusFilter : undefined,
+                      role: roleFilter !== 'all' ? roleFilter : undefined,
+                      tag: tagFilter || undefined,
+                    },
+                  })
+                  if (result.success) {
+                    setSavedFiltersState([result.data, ...savedFiltersState])
+                    setSelectedFilterId(result.data.id)
+                    setSaveName('')
+                    toast.success('Saved view')
+                    router.refresh()
+                  } else {
+                    toast.error(result.error ?? 'Failed to save view')
+                  }
+                })
+              }}
+              disabled={!saveName.trim() || isSaving}
+            >
+              {isSaving ? 'Saving…' : 'Save view'}
+            </Button>
+            {selectedFilterId && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  startDeleteSaved(async () => {
+                    const result = await deleteContactFilter(selectedFilterId)
+                    if (result.success) {
+                      setSavedFiltersState((prev) => prev.filter((filter) => filter.id !== selectedFilterId))
+                      setSelectedFilterId(null)
+                      toast.success('Deleted saved view')
+                      router.refresh()
+                    } else {
+                      toast.error(result.error ?? 'Failed to delete saved view')
+                    }
+                  })
+                }}
+                disabled={isDeletingSaved}
+              >
+                {isDeletingSaved ? 'Deleting…' : 'Delete view'}
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setRoleFilter('donors')
+                setStatusFilter('active')
+                setTagFilter('')
+              }}
+            >
+              Active Donors
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setRoleFilter('leads')
+                setStatusFilter('active')
+                setTagFilter('')
+              }}
+            >
+              Open Leads
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setRoleFilter('all')
+                setStatusFilter('archived')
+                setTagFilter('')
+              }}
+            >
+              Archived Contacts
+            </Button>
+          </div>
         </div>
       </div>
 

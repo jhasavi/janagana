@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { syncEventRegistrationToActivity } from '@/lib/crm-sync'
+import { syncDonationToActivity, syncEventRegistrationToActivity } from '@/lib/crm-sync'
 import { ensureContactForMember } from '@/lib/contact-linking'
+import { sendDonationReceiptEmail, sendEventRegistrationConfirmationEmail } from '@/lib/email'
 
 export async function POST(request: Request) {
   // Initialize Stripe at runtime to avoid build-time errors
@@ -62,6 +63,8 @@ export async function POST(request: Request) {
       const memberId = session.metadata?.memberId
       const eventId = session.metadata?.eventId
       const tierId = session.metadata?.tierId
+      const donationId = session.metadata?.donationId
+      const campaignId = session.metadata?.campaignId
       const customerId =
         typeof session.customer === 'string' ? session.customer : session.customer?.id
       const subscriptionId =
@@ -70,6 +73,73 @@ export async function POST(request: Request) {
         typeof session.payment_intent === 'string'
           ? session.payment_intent
           : session.payment_intent?.id
+
+      if (tenantId && donationId && campaignId) {
+        try {
+          const donation = await prisma.donation.findFirst({
+            where: { id: donationId, tenantId },
+            include: {
+              campaign: { select: { id: true, title: true } },
+              tenant: { select: { name: true } },
+            },
+          })
+
+          if (!donation) {
+            console.warn('[stripe webhook] Ignoring donation outside tenant scope:', { tenantId, donationId, campaignId })
+          } else if (donation.status !== 'COMPLETED') {
+            const amountCents = typeof session.amount_total === 'number' ? session.amount_total : donation.amountCents
+            const existingContact = await prisma.contact.findFirst({
+              where: {
+                tenantId,
+                OR: [
+                  { emails: { has: donation.donorEmail } },
+                  { email: { equals: donation.donorEmail, mode: 'insensitive' } },
+                ],
+              },
+              select: { id: true },
+            })
+            const contactId = existingContact?.id ?? (await prisma.contact.create({
+              data: {
+                tenantId,
+                firstName: donation.donorName.trim().split(/\s+/)[0] || '',
+                lastName: donation.donorName.trim().split(/\s+/).slice(1).join(' '),
+                email: donation.donorEmail,
+                emails: [donation.donorEmail],
+                lifecycleStage: 'DONOR',
+                source: 'donation',
+              },
+              select: { id: true },
+            })).id
+
+            await prisma.donation.update({
+              where: { id: donation.id },
+              data: {
+                status: 'COMPLETED',
+                amountCents,
+                contactId,
+                stripePaymentId: paymentIntentId,
+              },
+            })
+            await prisma.donationCampaign.update({
+              where: { id: campaignId, tenantId },
+              data: { raisedCents: { increment: amountCents } },
+            })
+            await syncDonationToActivity(donation.id).catch((syncError) =>
+              console.error('[stripe webhook] Failed to sync donation activity:', syncError)
+            )
+            await sendDonationReceiptEmail({
+              to: donation.donorEmail,
+              donorName: donation.donorName,
+              orgName: donation.tenant.name,
+              campaignTitle: donation.campaign?.title,
+              amountCents,
+            }).catch((emailError) => console.error('[stripe webhook] donation receipt email error:', emailError))
+          }
+        } catch (error) {
+          console.error('[stripe webhook] Failed to complete donation:', error)
+          dbError = true
+        }
+      }
 
       if (tenantId && memberId && (customerId || subscriptionId || tierId)) {
         try {
@@ -153,7 +223,16 @@ export async function POST(request: Request) {
       if (tenantId && eventId && memberId) {
         try {
           const [paidEvent, member] = await Promise.all([
-            prisma.event.findFirst({ where: { id: eventId, tenantId } }),
+            prisma.event.findFirst({
+              where: { id: eventId, tenantId },
+              select: {
+                id: true,
+                title: true,
+                startDate: true,
+                location: true,
+                tenant: { select: { name: true, slug: true } },
+              },
+            }),
             prisma.member.findFirst({ where: { id: memberId, tenantId } }),
           ])
 
@@ -184,12 +263,17 @@ export async function POST(request: Request) {
             typeof session.amount_total === 'number'
               ? session.amount_total
               : Number(session.metadata?.paidAmount ?? 0)
+          const ticketTypeId = typeof session.metadata?.ticketTypeId === 'string'
+            ? session.metadata.ticketTypeId
+            : undefined
           const existing = await prisma.eventRegistration.findFirst({
             where: { eventId, memberId },
           })
+          let shouldSendConfirmation = false
+          let registration: { id: string; ticketCode: string } | null = null
 
           if (!existing) {
-            const reg = await prisma.eventRegistration.create({
+            registration = await prisma.eventRegistration.create({
               data: {
                 eventId,
                 memberId,
@@ -197,19 +281,41 @@ export async function POST(request: Request) {
                 status: 'CONFIRMED',
                 paidAmount,
                 stripePaymentId: paymentIntentId,
+                ticketTypeId,
               },
+              select: { id: true, ticketCode: true },
             })
-            await syncEventRegistrationToActivity(reg.id)
+            await syncEventRegistrationToActivity(registration.id)
+            shouldSendConfirmation = true
           } else {
-            await prisma.eventRegistration.update({
+            registration = await prisma.eventRegistration.update({
               where: { id: existing.id },
               data: {
                 status: 'CONFIRMED',
                 contactId: contact.id,
                 paidAmount,
                 stripePaymentId: paymentIntentId,
+                ticketTypeId,
               },
+              select: { id: true, ticketCode: true },
             })
+            shouldSendConfirmation = existing.status !== 'CONFIRMED' || !existing.stripePaymentId
+          }
+
+          if (shouldSendConfirmation && registration) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
+            await sendEventRegistrationConfirmationEmail({
+              to: member.email,
+              firstName: member.firstName,
+              orgName: paidEvent.tenant.name,
+              eventTitle: paidEvent.title,
+              eventDate: paidEvent.startDate,
+              eventLocation: paidEvent.location,
+              paidAmountCents: paidAmount,
+              portalUrl: `${appUrl ?? ''}/portal/${paidEvent.tenant.slug}/events#event-${paidEvent.id}`,
+              status: 'CONFIRMED',
+              ticketCode: registration.ticketCode,
+            }).catch((emailError) => console.error('[stripe webhook] event confirmation email error:', emailError))
           }
         } catch (error) {
           console.error('[stripe webhook] Failed to create paid event registration:', error)
