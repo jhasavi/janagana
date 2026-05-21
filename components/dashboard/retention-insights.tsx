@@ -9,46 +9,47 @@ import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 
 export async function RetentionInsights() {
-  const tenant = await getTenant()
-  if (!tenant) return null
+  try {
+    const tenant = await getTenant()
+    if (!tenant) return null
 
-  const now = new Date()
-  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const now = new Date()
+    const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-  const [renewalsDue, expiredRenewals, membersWithoutTier, quietMembers, dueSoonMembers] = await Promise.all([
-    prisma.member.count({
-      where: { tenantId: tenant.id, status: 'ACTIVE', renewsAt: { gte: now, lte: in30Days } },
-    }),
-    prisma.member.count({
-      where: { tenantId: tenant.id, status: 'ACTIVE', renewsAt: { lt: now } },
-    }),
-    prisma.member.count({
-      where: { tenantId: tenant.id, status: 'ACTIVE', tierId: null },
-    }),
-    prisma.member.count({
-      where: {
-        tenantId: tenant.id,
-        status: 'ACTIVE',
-        eventRegistrations: { none: {} },
-        volunteerSignups: { none: {} },
-        donations: { none: {} },
-      },
-    }),
-    prisma.member.findMany({
-      where: { tenantId: tenant.id, status: 'ACTIVE', renewsAt: { gte: now, lte: in30Days } },
-      select: { id: true, firstName: true, lastName: true, renewsAt: true },
-      orderBy: { renewsAt: 'asc' },
-      take: 5,
-    }),
-  ])
+    const [renewalsDue, expiredRenewals, membersWithoutTier, quietMembers, dueSoonMembers] = await Promise.all([
+      prisma.member.count({
+        where: { tenantId: tenant.id, status: 'ACTIVE', renewsAt: { gte: now, lte: in30Days } },
+      }).catch(() => 0),
+      prisma.member.count({
+        where: { tenantId: tenant.id, status: 'ACTIVE', renewsAt: { lt: now } },
+      }).catch(() => 0),
+      prisma.member.count({
+        where: { tenantId: tenant.id, status: 'ACTIVE', tierId: null },
+      }).catch(() => 0),
+      prisma.member.count({
+        where: {
+          tenantId: tenant.id,
+          status: 'ACTIVE',
+          eventRegistrations: { none: {} },
+          volunteerSignups: { none: {} },
+          donations: { none: {} },
+        },
+      }).catch(() => 0),
+      prisma.member.findMany({
+        where: { tenantId: tenant.id, status: 'ACTIVE', renewsAt: { gte: now, lte: in30Days } },
+        select: { id: true, firstName: true, lastName: true, renewsAt: true },
+        orderBy: { renewsAt: 'asc' },
+        take: 5,
+      }).catch(() => []),
+    ])
 
-  const recommendedAction = expiredRenewals > 0
-    ? 'Start with overdue renewals before inviting more members.'
-    : renewalsDue > 0
-      ? 'Send renewal reminders this week.'
-      : quietMembers > 0
-        ? 'Invite quiet members to the next event or volunteer opportunity.'
-        : 'Retention signals look healthy.'
+    const recommendedAction = expiredRenewals > 0
+      ? 'Start with overdue renewals before inviting more members.'
+      : renewalsDue > 0
+        ? 'Send renewal reminders this week.'
+        : quietMembers > 0
+          ? 'Invite quiet members to the next event or volunteer opportunity.'
+          : 'Retention signals look healthy.'
 
   return (
     <Card>
@@ -128,4 +129,8 @@ export async function RetentionInsights() {
       </CardContent>
     </Card>
   )
+  } catch (error) {
+    console.error('[RetentionInsights]', error)
+    return null
+  }
 }
