@@ -9,9 +9,6 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 const isPreviewRoute = createRouteMatcher(['/preview(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
-  // Fail fast on startup if tenant-specific profile config is incomplete.
-  assertSimplifiedTenantProfileConfigured()
-
   const { userId } = await auth()
 
   // Redirect unauthenticated users to sign-in
@@ -21,8 +18,13 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(signInUrl)
   }
 
-  // Authenticated users on onboarding → let them through
+  // Authenticated users on onboarding → let them through.
+  // Onboarding needs to be available even when tenant profile env vars
+  // are not fully configured yet.
   if (isOnboardingRoute(request)) return NextResponse.next()
+
+  // Fail fast on startup if tenant-specific profile config is incomplete.
+  assertSimplifiedTenantProfileConfigured()
 
   // Portal routes: require Clerk auth (personal, no org needed)
   if (isPortalRoute(request)) return NextResponse.next()
