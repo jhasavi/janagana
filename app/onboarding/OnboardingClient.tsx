@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useOrganizationList } from '@clerk/nextjs'
+import { SignOutButton, useOrganizationList } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import {
   Users, ArrowRight, Loader2, LogOut, Check, Copy,
@@ -413,13 +413,12 @@ export default function OnboardingClient({
                 <Button type="submit" className="w-full" disabled={!orgName.trim() || isPending}>
                   {isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : <>Save &amp; Continue <ArrowRight className="h-4 w-4" /></>}
                 </Button>
-                <Link
-                  href="/sign-in"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Use a different account
-                </Link>
+                <SignOutButton redirectUrl="/sign-in">
+                  <Button type="button" variant="outline" className="w-full">
+                    <LogOut className="h-4 w-4" />
+                    Sign out and switch account
+                  </Button>
+                </SignOutButton>
               </form>
             </CardContent>
           </Card>
