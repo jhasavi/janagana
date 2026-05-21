@@ -9,7 +9,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const tenant = await getTenant()
+  let tenant = null
+
+  try {
+    tenant = await getTenant()
+  } catch (error) {
+    console.error('[DashboardLayout] tenant resolution failed', error)
+  }
+
   if (!tenant) {
     redirect('/onboarding')
   }
