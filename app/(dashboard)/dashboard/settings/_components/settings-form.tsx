@@ -9,6 +9,7 @@ import { updateTenantSettings } from '@/lib/actions/tenant'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -21,6 +22,8 @@ const settingsSchema = z.object({
     .regex(/^[a-z0-9-]+$/, 'Slug may only contain lowercase letters, numbers, and hyphens'),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color'),
   timezone: z.string().min(1),
+  donationReceiptFooter: z.string().optional().nullable(),
+  donationReceiptDisclaimer: z.string().optional().nullable(),
 })
 
 type SettingsData = z.infer<typeof settingsSchema>
@@ -45,6 +48,8 @@ interface Props {
     primaryColor: string
     timezone: string
     slug: string
+    donationReceiptFooter?: string | null
+    donationReceiptDisclaimer?: string | null
   } | null | undefined
 }
 
@@ -64,6 +69,8 @@ export function SettingsForm({ initialData }: Props) {
       slug: initialData?.slug ?? '',
       primaryColor: initialData?.primaryColor ?? '#e11d48',
       timezone: initialData?.timezone ?? 'America/New_York',
+      donationReceiptFooter: initialData?.donationReceiptFooter ?? '',
+      donationReceiptDisclaimer: initialData?.donationReceiptDisclaimer ?? '',
     },
   })
 
@@ -144,6 +151,26 @@ export function SettingsForm({ initialData }: Props) {
             {errors.primaryColor && (
               <p className="text-xs text-destructive">{errors.primaryColor.message}</p>
             )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="donationReceiptFooter">Donation receipt footer</Label>
+            <Textarea
+              id="donationReceiptFooter"
+              {...register('donationReceiptFooter')}
+              placeholder="Thank you for your support."
+              rows={4}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="donationReceiptDisclaimer">Receipt disclaimer</Label>
+            <Textarea
+              id="donationReceiptDisclaimer"
+              {...register('donationReceiptDisclaimer')}
+              placeholder="This gift may be tax-deductible."
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>

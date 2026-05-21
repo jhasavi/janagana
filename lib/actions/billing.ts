@@ -56,17 +56,40 @@ export async function createMemberCheckoutSession(slug: string, priceId: string,
   }
 }
 
-export async function createEventCheckoutSession(slug: string, eventId: string) {
+export async function createEventCheckoutSession(slug: string, eventId: string, ticketTypeId?: string) {
   try {
     const ctx = await getPortalContext(slug)
     if (!ctx) return { success: false, error: 'Not authenticated or no membership found' }
     const { member, tenant } = ctx
 
     const event = await prisma.event.findFirst({
-      where: { id: eventId, tenantId: tenant.id, priceCents: { gt: 0 } },
+      where: { id: eventId, tenantId: tenant.id },
       select: { id: true, title: true, shortSummary: true, description: true, priceCents: true, capacity: true },
     })
-    if (!event) return { success: false, error: 'Event not found or not payable' }
+    if (!event) return { success: false, error: 'Event not found' }
+
+    const ticketType = ticketTypeId
+      ? await prisma.eventTicketType.findFirst({
+          where: { id: ticketTypeId, eventId: event.id, tenantId: tenant.id, isActive: true },
+        })
+      : null
+
+    if (ticketTypeId && !ticketType) {
+      return { success: false, error: 'Selected ticket option is unavailable' }
+    }
+
+    if (ticketType?.quantityLimit != null) {
+      const usedCount = await prisma.eventRegistration.count({
+        where: {
+          eventId: event.id,
+          ticketTypeId: ticketType.id,
+          status: { in: ['CONFIRMED', 'ATTENDED'] },
+        },
+      })
+      if (usedCount >= ticketType.quantityLimit) {
+        return { success: false, error: 'Selected ticket option is sold out' }
+      }
+    }
 
     if (event.capacity != null) {
       const confirmedCount = await prisma.eventRegistration.count({
@@ -83,20 +106,25 @@ export async function createEventCheckoutSession(slug: string, eventId: string) 
     const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/${slug}/events?checkout=success`
     const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/${slug}/events`
 
+    const lineItemPrice = ticketType?.priceCents ?? event.priceCents
+    const lineItemDescription = ticketType
+      ? `${ticketType.name} ticket for ${event.title}`
+      : event.shortSummary ?? event.description ?? undefined
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer: customerId,
-      customer_email: customerId ? undefined : member.email,
+      customer_email: customerId ? null : member.email,
       payment_method_types: ['card'],
       billing_address_collection: 'auto',
       line_items: [
         {
           price_data: {
             currency: 'usd',
-            unit_amount: event.priceCents,
+            unit_amount: lineItemPrice,
             product_data: {
               name: event.title,
-              description: event.shortSummary ?? event.description ?? undefined,
+              description: lineItemDescription,
             },
           },
           quantity: 1,
@@ -106,11 +134,12 @@ export async function createEventCheckoutSession(slug: string, eventId: string) 
         tenantId: tenant.id,
         memberId: member.id,
         eventId: event.id,
-        paidAmount: String(event.priceCents),
+        paidAmount: String(lineItemPrice),
+        ticketTypeId: ticketType?.id,
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
-    })
+    } as Stripe.Checkout.SessionCreateParams)
 
     return { success: true, url: session.url }
   } catch (e) {

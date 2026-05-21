@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteMember } from '@/lib/actions/members'
@@ -40,6 +40,15 @@ const statusConfig = {
   INACTIVE: { label: 'Inactive', variant: 'secondary' as const },
   PENDING: { label: 'Pending', variant: 'warning' as const },
   BANNED: { label: 'Banned', variant: 'destructive' as const },
+}
+
+function getRenewalRisk(renewsAt?: Date | null) {
+  if (!renewsAt) return { label: 'No renewal', variant: 'secondary' as const }
+  const deltaDays = Math.ceil((renewsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  if (deltaDays < 0) return { label: 'Expired', variant: 'destructive' as const }
+  if (deltaDays <= 14) return { label: `Due ${deltaDays}d`, variant: 'destructive' as const }
+  if (deltaDays <= 30) return { label: `Due ${deltaDays}d`, variant: 'warning' as const }
+  return { label: `${deltaDays}d`, variant: 'success' as const }
 }
 
 interface MemberTableProps {
@@ -92,6 +101,7 @@ export function MemberTable({ members }: MemberTableProps) {
               <TableHead>Phone</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Renews</TableHead>
+              <TableHead>Renewal</TableHead>
               <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -139,6 +149,15 @@ export function MemberTable({ members }: MemberTableProps) {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {member.renewsAt ? formatDate(member.renewsAt) : '—'}
+                  </TableCell>
+                  <TableCell>
+                    {member.renewsAt ? (
+                      <Badge variant={getRenewalRisk(member.renewsAt).variant} className="text-xs">
+                        {getRenewalRisk(member.renewsAt).label}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

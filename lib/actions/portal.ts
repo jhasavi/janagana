@@ -4,8 +4,23 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { syncEventRegistrationToActivity, syncVolunteerSignupToActivity } from '@/lib/crm-sync'
-import type { Member, MembershipTier, Tenant, EventRegistration, Event, VolunteerSignup, VolunteerOpportunity } from '@prisma/client'
-import { sendMemberJoinConfirmationEmail } from '@/lib/email'
+import type {
+  Member,
+  MembershipTier,
+  Tenant,
+  EventRegistration,
+  Event,
+  EventTicketType,
+  VolunteerSignup,
+  VolunteerOpportunity,
+  Contact,
+} from '@prisma/client'
+import {
+  sendEventCancellationRequestEmail,
+  sendEventRegistrationConfirmationEmail,
+  sendMemberJoinConfirmationEmail,
+  sendWaitlistPromotionEmail,
+} from '@/lib/email'
 import { getTenantProfile } from '@/lib/tenant-profile'
 
 const CAPACITY_REGISTRATION_STATUSES: Array<'CONFIRMED' | 'ATTENDED'> = ['CONFIRMED', 'ATTENDED']
@@ -16,8 +31,11 @@ export type PortalContext = {
   tenant: Tenant
   member: Member & {
     tier: MembershipTier | null
-    eventRegistrations: (EventRegistration & { event: Pick<Event, 'title'> | null })[]
+    eventRegistrations: (EventRegistration & { event: Pick<Event, 'title' | 'startDate'> | null })[]
     volunteerSignups: (VolunteerSignup & { opportunity: Pick<VolunteerOpportunity, 'title'> | null })[]
+    contact: (Contact & {
+      household?: { contacts: Contact[] } | null
+    }) | null
   }
 }
 
@@ -49,7 +67,7 @@ export async function getPortalContext(slug: string): Promise<PortalContext | nu
     include: {
       tier: true,
       eventRegistrations: {
-        include: { event: { select: { title: true } } },
+        include: { event: { select: { title: true, startDate: true } } },
         orderBy: { createdAt: 'desc' },
         take: 10,
       },
@@ -61,6 +79,23 @@ export async function getPortalContext(slug: string): Promise<PortalContext | nu
     },
   })
 
+  let contact: (Contact & { household?: { contacts: Contact[] } | null }) | null = null
+  if (member) {
+    contact = await prisma.contact.findFirst({
+      where: {
+        tenantId: tenant.id,
+        OR: [
+          { emails: { has: member.email } },
+          { email: { equals: member.email, mode: 'insensitive' } },
+          member.clerkUserId ? { clerkUserId: member.clerkUserId } : undefined,
+        ].filter(Boolean) as any,
+      },
+      include: {
+        household: { include: { contacts: true } },
+      },
+    })
+  }
+
   if (!member) return null
 
   // Persist clerkUserId on first portal login
@@ -71,7 +106,10 @@ export async function getPortalContext(slug: string): Promise<PortalContext | nu
     })
   }
 
-  return { tenant, member: { ...member, tier: member.tier ?? null } }
+  return {
+    tenant,
+    member: { ...member, tier: member.tier ?? null, contact },
+  }
 }
 
 // ─── PORTAL EVENTS ───────────────────────────────────────────────────────────
@@ -93,6 +131,10 @@ export async function getPortalEvents(slug: string) {
             where: { status: { in: CAPACITY_REGISTRATION_STATUSES } },
           },
         },
+      },
+      ticketTypes: {
+        where: { isActive: true },
+        orderBy: { priceCents: 'asc' },
       },
     },
     orderBy: { startDate: 'asc' },
@@ -116,7 +158,7 @@ export async function getPortalOpportunities(slug: string) {
 
 // ─── PORTAL SELF-REGISTER FOR EVENT ──────────────────────────────────────────
 
-export async function portalRegisterForEvent(slug: string, eventId: string, joinWaitlist = false) {
+export async function portalRegisterForEvent(slug: string, eventId: string, joinWaitlist = false, ticketTypeId?: string) {
   try {
     const ctx = await getPortalContext(slug)
     if (!ctx) return { success: false, error: 'Not authorized' }
@@ -126,11 +168,34 @@ export async function portalRegisterForEvent(slug: string, eventId: string, join
     })
     if (existing) return { success: false, error: 'Already registered' }
 
+    const ticketType = ticketTypeId
+      ? await prisma.eventTicketType.findFirst({
+          where: { id: ticketTypeId, eventId, tenantId: ctx.tenant.id, isActive: true },
+        })
+      : null
+
+    if (ticketTypeId && !ticketType) {
+      return { success: false, error: 'Selected ticket option is not available' }
+    }
+
     const event = await prisma.event.findFirst({
       where: { id: eventId, tenantId: ctx.tenant.id },
-      select: { id: true, capacity: true },
+      select: { id: true, title: true, startDate: true, location: true, capacity: true },
     })
     if (!event) return { success: false, error: 'Event not found' }
+
+    if (ticketType?.quantityLimit != null) {
+      const typeCount = await prisma.eventRegistration.count({
+        where: {
+          eventId,
+          ticketTypeId: ticketTypeId,
+          status: { in: CAPACITY_REGISTRATION_STATUSES },
+        },
+      })
+      if (typeCount >= ticketType.quantityLimit) {
+        return { success: false, error: 'Selected ticket type is sold out' }
+      }
+    }
 
     const confirmedCount = await prisma.eventRegistration.count({
       where: { eventId, status: { in: CAPACITY_REGISTRATION_STATUSES } },
@@ -143,7 +208,8 @@ export async function portalRegisterForEvent(slug: string, eventId: string, join
     const status = isFull ? 'WAITLISTED' : 'CONFIRMED'
 
     const reg = await prisma.eventRegistration.create({
-      data: { eventId, memberId: ctx.member.id, status },
+      data: { eventId, memberId: ctx.member.id, status, ticketTypeId },
+      select: { id: true, ticketCode: true },
     })
 
     // Sync to CRM (only for confirmed registrations)
@@ -153,6 +219,23 @@ export async function portalRegisterForEvent(slug: string, eventId: string, join
       } catch (error) {
         console.error('[portalRegisterForEvent] Failed to sync to CRM:', error)
       }
+    }
+
+    try {
+      const profile = getTenantProfile()
+      await sendEventRegistrationConfirmationEmail({
+        to: ctx.member.email,
+        firstName: ctx.member.firstName,
+        orgName: ctx.tenant.name,
+        eventTitle: event.title,
+        eventDate: event.startDate,
+        eventLocation: event.location,
+        portalUrl: `${profile.baseUrls.app}/portal/${slug}/events#event-${event.id}`,
+        status,
+        ticketCode: reg.ticketCode,
+      })
+    } catch (emailError) {
+      console.error('[portalRegisterForEvent] confirmation email error', emailError)
     }
 
     return { success: true, data: reg, waitlisted: status === 'WAITLISTED' }
@@ -172,9 +255,66 @@ export async function portalCancelEventRegistration(slug: string, eventId: strin
     })
     if (!reg) return { success: false, error: 'No confirmed registration found' }
 
-    await prisma.eventRegistration.delete({ where: { id: reg.id } })
+    const isPaid = reg.paidAmount > 0 || Boolean(reg.stripePaymentId)
+    if (isPaid) {
+      const existingRequest = await prisma.eventCancellationRequest.findFirst({
+        where: { registrationId: reg.id, status: { in: ['REQUESTED', 'APPROVED'] } },
+      })
+      if (existingRequest) {
+        return { success: false, error: 'A cancellation request is already pending for this registration.' }
+      }
 
-    // Promote first waitlisted member if capacity freed
+      const event = await prisma.event.findUnique({ where: { id: eventId } })
+
+      const cancellationRequest = await prisma.eventCancellationRequest.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          registrationId: reg.id,
+          eventId: reg.eventId,
+          memberId: ctx.member.id,
+          stripePaymentId: reg.stripePaymentId || undefined,
+          reason: `Member requested cancellation for paid registration`,
+          status: 'REQUESTED',
+        },
+      })
+
+      await prisma.notification.create({
+        data: {
+          tenantId: ctx.tenant.id,
+          title: 'Paid event cancellation request received',
+          body: `A paid cancellation request for ${event?.title ?? 'an event'} was submitted by ${ctx.member.firstName ?? ''} ${ctx.member.lastName ?? ''} (${ctx.member.email}).`,
+          type: 'INFO',
+          resourceType: 'EventCancellationRequest',
+          resourceId: cancellationRequest.id,
+          actionUrl: `/dashboard/events/${eventId}`,
+        },
+      })
+
+      try {
+        const profile = getTenantProfile()
+        await sendEventCancellationRequestEmail({
+          to: ctx.member.email,
+          firstName: ctx.member.firstName,
+          orgName: ctx.tenant.name,
+          eventTitle: event?.title ?? 'your event',
+          portalUrl: `${profile.baseUrls.app}/portal/${slug}/events#event-${eventId}`,
+        })
+      } catch (emailError) {
+        console.error('[portalCancelEventRegistration] cancellation email error', emailError)
+      }
+
+      return {
+        success: true,
+        status: 'requested',
+        message: 'Cancellation request submitted. An administrator will review it shortly.',
+      }
+    }
+
+    await prisma.eventRegistration.update({
+      where: { id: reg.id },
+      data: { status: 'CANCELED' },
+    })
+
     const event = await prisma.event.findUnique({ where: { id: eventId } })
     if (event?.capacity) {
       const waitlisted = await prisma.eventRegistration.findFirst({
@@ -182,14 +322,30 @@ export async function portalCancelEventRegistration(slug: string, eventId: strin
         orderBy: { createdAt: 'asc' },
       })
       if (waitlisted) {
-        await prisma.eventRegistration.update({
+        const promoted = await prisma.eventRegistration.update({
           where: { id: waitlisted.id },
           data: { status: 'CONFIRMED' },
+          select: { id: true, ticketCode: true, member: { select: { email: true, firstName: true } } },
         })
-        // Fire-and-forget CRM sync for promoted member
-        syncEventRegistrationToActivity(waitlisted.id).catch((err) =>
+        syncEventRegistrationToActivity(promoted.id).catch((err) =>
           console.error('[portalCancelEventRegistration] CRM sync error', err)
         )
+
+        try {
+          const profile = getTenantProfile()
+          await sendWaitlistPromotionEmail({
+            to: promoted.member.email,
+            firstName: promoted.member.firstName,
+            orgName: ctx.tenant.name,
+            eventTitle: event.title,
+            eventDate: event.startDate,
+            eventLocation: event.location,
+            ticketCode: promoted.ticketCode,
+            portalUrl: `${profile.baseUrls.app}/portal/${slug}/events#event-${event.id}`,
+          })
+        } catch (emailError) {
+          console.error('[portalCancelEventRegistration] waitlist promotion email error', emailError)
+        }
       }
     }
 
@@ -197,6 +353,22 @@ export async function portalCancelEventRegistration(slug: string, eventId: strin
   } catch (e) {
     console.error('[portalCancelEventRegistration]', e)
     return { success: false, error: 'Cancellation failed' }
+  }
+}
+
+export async function getPortalEventCancellationRequests(memberId: string, tenantId: string) {
+  try {
+    const requests = await prisma.eventCancellationRequest.findMany({
+      where: { memberId, tenantId },
+      include: {
+        event: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    return { success: true, data: requests }
+  } catch (error) {
+    console.error('[getPortalEventCancellationRequests]', error)
+    return { success: false, error: 'Failed to load cancellation requests', data: [] }
   }
 }
 

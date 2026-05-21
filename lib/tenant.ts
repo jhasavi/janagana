@@ -114,13 +114,25 @@ async function resolveTenantForAuthState(
     let activeOrgId = orgId
     if (!activeOrgId) {
       const activeCookie = cookieStore?.get?.('JG_ACTIVE_ORG')?.value
-      if (activeCookie && await userBelongsToOrganization(userId, activeCookie)) {
-        activeOrgId = activeCookie
-      } else if (activeCookie) {
-        console.warn('[resolveTenant] ignored active org cookie without Clerk membership', {
-          activeOrgId: activeCookie,
-          userId,
-        })
+      if (activeCookie) {
+        let hasMembership = await userBelongsToOrganization(userId, activeCookie)
+        if (!hasMembership) {
+          console.warn('[resolveTenant] active org cookie membership check failed, retrying once', {
+            activeOrgId: activeCookie,
+            userId,
+          })
+          await new Promise((resolve) => setTimeout(resolve, 800))
+          hasMembership = await userBelongsToOrganization(userId, activeCookie)
+        }
+
+        if (hasMembership) {
+          activeOrgId = activeCookie
+        } else {
+          console.warn('[resolveTenant] active org cookie membership still unavailable', {
+            activeOrgId: activeCookie,
+            userId,
+          })
+        }
       }
     }
 
@@ -138,7 +150,17 @@ async function resolveTenantForAuthState(
           return tenant
         }
 
-        console.warn('[resolveTenant] ignored tenant cookie without matching Clerk membership', {
+        if (matchesActiveOrg) {
+          console.warn('[resolveTenant] accepted tenant via JG_TENANT_ID cookie despite temporary Clerk membership verification failure', {
+            tenantId: tenant.id,
+            tenantClerkOrgId: tenant.clerkOrgId,
+            activeOrgId,
+            userId,
+          })
+          return tenant
+        }
+
+        console.warn('[resolveTenant] ignored tenant cookie without matching active org', {
           tenantId: tenant.id,
           tenantClerkOrgId: tenant.clerkOrgId,
           activeOrgId,

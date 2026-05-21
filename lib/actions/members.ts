@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireTenant } from '@/lib/tenant'
 import { sendMembershipRenewalReminder } from '@/lib/sms'
+import { sendMembershipRenewalReminderEmail } from '@/lib/email'
 import { ensureContactForMember } from '@/lib/contact-linking'
 import { shouldBlockDuplicateActiveEnrollment } from '@/lib/members-guards'
 
@@ -205,6 +206,13 @@ export async function getMember(id: string) {
       where: { id, tenantId: tenant.id },
       include: {
         tier: true,
+        contact: {
+          include: {
+            household: {
+              include: { contacts: true },
+            },
+          },
+        },
         eventRegistrations: {
           include: { event: true },
           orderBy: { createdAt: 'desc' },
@@ -675,5 +683,41 @@ export async function sendRenewalSmsReminders(daysAhead = 30) {
   } catch (error) {
     console.error('[sendRenewalSmsReminders]', error)
     return { success: false, error: 'Failed to send renewal reminders' }
+  }
+}
+
+export async function sendRenewalEmailReminders(daysAhead = 30) {
+  try {
+    const tenant = await requireTenant()
+    const cutoff = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000)
+
+    const members = await prisma.member.findMany({
+      where: {
+        tenantId: tenant.id,
+        status: 'ACTIVE',
+        renewsAt: { lte: cutoff, gte: new Date() },
+      },
+      select: { email: true, firstName: true, renewsAt: true },
+    })
+
+    let sent = 0
+    let skipped = 0
+    for (const m of members) {
+      if (!m.email || !m.renewsAt) { skipped++; continue }
+      const result = await sendMembershipRenewalReminderEmail({
+        to: m.email,
+        firstName: m.firstName,
+        orgName: tenant.name,
+        renewalDate: m.renewsAt,
+        portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${tenant.slug}/membership`,
+      })
+      if (result) sent++
+      else skipped++
+    }
+
+    return { success: true, data: { sent, skipped } }
+  } catch (error) {
+    console.error('[sendRenewalEmailReminders]', error)
+    return { success: false, error: 'Failed to send renewal email reminders' }
   }
 }

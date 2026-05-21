@@ -229,6 +229,8 @@ const SettingsSchema = z.object({
   timezone: z.string(),
   primaryColor: z.string(),
   logoUrl: z.string().url().optional().or(z.literal('')),
+  donationReceiptFooter: z.string().optional().nullable(),
+  donationReceiptDisclaimer: z.string().optional().nullable(),
 })
 
 export async function updateTenantSettings(input: unknown) {
@@ -253,6 +255,8 @@ export async function updateTenantSettings(input: unknown) {
         timezone: data.timezone,
         primaryColor: data.primaryColor,
         logoUrl: data.logoUrl || null,
+        donationReceiptFooter: data.donationReceiptFooter ?? null,
+        donationReceiptDisclaimer: data.donationReceiptDisclaimer ?? null,
       },
     })
 
@@ -282,6 +286,7 @@ export async function getDashboardStats() {
       upcomingEvents,
       totalOpportunities,
       openOpportunities,
+      pendingCancellationRequests,
       totalVolunteerHours,
     ] = await Promise.all([
       prisma.member.count({ where: { tenantId: tenant.id } }),
@@ -293,6 +298,9 @@ export async function getDashboardStats() {
       prisma.volunteerOpportunity.count({ where: { tenantId: tenant.id } }),
       prisma.volunteerOpportunity.count({
         where: { tenantId: tenant.id, status: 'OPEN' },
+      }),
+      prisma.eventCancellationRequest.count({
+        where: { tenantId: tenant.id, status: 'REQUESTED' },
       }),
       prisma.volunteerSignup.aggregate({
         where: {
@@ -312,6 +320,7 @@ export async function getDashboardStats() {
         upcomingEvents,
         totalOpportunities,
         openOpportunities,
+        pendingCancellationRequests,
         totalVolunteerHours: totalVolunteerHours._sum.hoursLogged ?? 0,
       },
     }

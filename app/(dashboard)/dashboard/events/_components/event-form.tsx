@@ -43,6 +43,15 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+type TicketTypeInput = {
+  id?: string
+  name: string
+  description?: string
+  price: string
+  quantityLimit?: number | null
+  isActive: boolean
+}
+
 function toDatetimeLocal(date: Date | null | undefined) {
   if (!date) return ''
   const d = new Date(date)
@@ -63,7 +72,7 @@ function dollarsToCents(value: string) {
 }
 
 interface EventFormProps {
-  event?: Event | null
+  event?: (Event & { ticketTypes?: Array<{ id: string; name: string; description?: string | null; priceCents: number; quantityLimit?: number | null; isActive: boolean }> }) | null
 }
 
 export function EventForm({ event }: EventFormProps) {
@@ -71,6 +80,16 @@ export function EventForm({ event }: EventFormProps) {
   const [isPending, startTransition] = useTransition()
   const [coverTab, setCoverTab] = useState<'url' | 'upload'>('url')
   const [isUploading, setIsUploading] = useState(false)
+  const [ticketTypes, setTicketTypes] = useState<TicketTypeInput[]>(
+    event?.ticketTypes?.map((type) => ({
+      id: type.id,
+      name: type.name,
+      description: type.description ?? undefined,
+      price: (type.priceCents / 100).toFixed(2),
+      quantityLimit: type.quantityLimit ?? null,
+      isActive: type.isActive,
+    })) ?? []
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
@@ -110,6 +129,13 @@ export function EventForm({ event }: EventFormProps) {
       const payload = {
         ...data,
         priceCents,
+        ticketTypes: ticketTypes.map((ticketType) => ({
+          name: ticketType.name,
+          description: ticketType.description,
+          priceCents: Math.max(0, Math.round(Number(ticketType.price) * 100)),
+          quantityLimit: ticketType.quantityLimit ?? null,
+          isActive: ticketType.isActive,
+        })),
       }
 
       const result = event
@@ -321,6 +347,101 @@ export function EventForm({ event }: EventFormProps) {
                   {...register('price')}
                 />
                 <p className="text-xs text-muted-foreground">Enter the ticket price in dollars. Use 0 for free events.</p>
+              </div>
+
+              <div className="space-y-4 rounded-lg border border-muted p-4 bg-muted/10">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-sm">Ticket tiers</Label>
+                    <p className="text-xs text-muted-foreground">Create optional ticket tiers to support multiple pricing levels.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTicketTypes((current) => [
+                        ...current,
+                        { name: '', description: '', price: '0.00', quantityLimit: null, isActive: true },
+                      ])
+                    }
+                    className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90"
+                  >
+                    Add tier
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {ticketTypes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No ticket tiers defined.</p>
+                  ) : (
+                    ticketTypes.map((type, index) => (
+                      <div key={`${type.id ?? index}-${type.name}`} className="rounded-lg border bg-background p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <Input
+                              value={type.name}
+                              placeholder="Tier name"
+                              onChange={(event) => {
+                                const value = event.target.value
+                                setTicketTypes((current) => current.map((item, idx) => idx === index ? { ...item, name: value } : item))
+                              }}
+                            />
+                            <Input
+                              value={type.price}
+                              placeholder="Price"
+                              className="mt-2"
+                              inputMode="decimal"
+                              onChange={(event) => {
+                                const value = event.target.value
+                                setTicketTypes((current) => current.map((item, idx) => idx === index ? { ...item, price: value } : item))
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setTicketTypes((current) => current.filter((_, idx) => idx !== index))}
+                            className="rounded-md border border-destructive px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2 mt-3">
+                          <Textarea
+                            value={type.description ?? ''}
+                            placeholder="Description"
+                            rows={2}
+                            onChange={(event) => {
+                              const value = event.target.value
+                              setTicketTypes((current) => current.map((item, idx) => idx === index ? { ...item, description: value } : item))
+                            }}
+                          />
+                          <div className="grid gap-3">
+                            <Input
+                              value={type.quantityLimit ?? ''}
+                              type="number"
+                              min="1"
+                              placeholder="Quantity limit"
+                              onChange={(event) => {
+                                const value = event.target.value
+                                setTicketTypes((current) => current.map((item, idx) => idx === index ? { ...item, quantityLimit: value ? Number(value) : null } : item))
+                              }}
+                            />
+                            <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                checked={type.isActive}
+                                onChange={(event) => {
+                                  const checked = event.target.checked
+                                  setTicketTypes((current) => current.map((item, idx) => idx === index ? { ...item, isActive: checked } : item))
+                                }}
+                                className="h-4 w-4 rounded border-muted"
+                              />
+                              Active
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

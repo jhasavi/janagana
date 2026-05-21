@@ -2,9 +2,10 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import { SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { LayoutDashboard, CalendarDays, Heart, CreditCard, IdCard, Users, MessageSquare, LogOut } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Heart, Star, CheckCircle2, CreditCard, IdCard, Users, MessageSquare, LogOut, DollarSign } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
 import { cn } from '@/lib/utils'
+import { PortalBottomNav } from './_components/portal-bottom-nav'
 
 export default async function PortalLayout({
   children,
@@ -40,6 +41,7 @@ export default async function PortalLayout({
     { label: 'Edit Profile', href: `/portal/${slug}/profile/edit`, icon: LayoutDashboard },
     { label: 'Events', href: `/portal/${slug}/events`, icon: CalendarDays },
     { label: 'Volunteer', href: `/portal/${slug}/volunteers`, icon: Heart },
+    { label: 'Donations', href: `/portal/${slug}/donations`, icon: DollarSign },
     { label: 'Directory', href: `/portal/${slug}/directory`, icon: Users },
     { label: 'Membership', href: `/portal/${slug}/membership`, icon: CreditCard },
     { label: 'My Card', href: `/portal/${slug}/card`, icon: IdCard },
@@ -93,8 +95,9 @@ export default async function PortalLayout({
         </nav>
 
         {/* Page content */}
-        <main className="flex-1 min-w-0">{children}</main>
+        <main className="flex-1 min-w-0 pb-24">{children}</main>
       </div>
+      <PortalBottomNav slug={slug} />
     </div>
   )
 }

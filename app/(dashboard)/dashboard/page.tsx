@@ -10,12 +10,15 @@ import {
   ArrowRight,
   UserPlus,
   CalendarPlus,
+  PlusCircle,
 } from 'lucide-react'
 import { getDashboardStats } from '@/lib/actions/tenant'
+import { getStripeSetupReadiness } from '@/lib/actions/stripe'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { GettingStartedChecklist } from '@/components/dashboard/getting-started-checklist'
+import { LaunchCenter } from '@/components/dashboard/launch-center'
+import { RetentionInsights } from '@/components/dashboard/retention-insights'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -54,8 +57,9 @@ function StatCard({
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ onboardingComplete?: string }> }) {
   const { onboardingComplete } = await searchParams
-  const statsResult = await getDashboardStats()
+  const [statsResult, stripeResult] = await Promise.all([getDashboardStats(), getStripeSetupReadiness()])
   const stats = statsResult.data
+  const stripeWarnings = stripeResult.success ? stripeResult.warnings : []
   const showOnboardingBanner = onboardingComplete === '1'
 
   return (
@@ -69,6 +73,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </p>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/tiers/new">
+              <PlusCircle className="h-4 w-4" />
+              Add Tier
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/dashboard/members/new">
               <UserPlus className="h-4 w-4" />
@@ -96,7 +106,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm" variant="default">
-                <Link href="/dashboard/settings#tiers">Add Tier</Link>
+                <Link href="/dashboard/tiers/new">Add Tier</Link>
               </Button>
               <Button asChild size="sm" variant="outline">
                 <Link href="/dashboard/members/new">Add Member</Link>
@@ -109,9 +119,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Card>
       ) : null}
 
-      {/* Getting Started Checklist (disappears once fully complete) */}
+      {stripeWarnings.length > 0 ? (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-amber-900">Stripe setup warnings</p>
+              <ul className="list-disc list-inside text-sm text-amber-800">
+                {stripeWarnings.map((warning) => (
+                  <li key={warning.key}>{warning.message}</li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Suspense fallback={null}>
-        <GettingStartedChecklist />
+        <LaunchCenter />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <RetentionInsights />
       </Suspense>
 
       {/* Stats grid */}
@@ -129,6 +157,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           subtitle={`${stats?.totalEvents ?? 0} total events`}
           icon={CalendarDays}
           color="bg-purple-500"
+        />
+        <StatCard
+          title="Pending Cancellation Requests"
+          value={stats?.pendingCancellationRequests ?? 0}
+          subtitle="Paid refund requests awaiting review"
+          icon={Clock}
+          color="bg-amber-500"
         />
         <StatCard
           title="Open Opportunities"

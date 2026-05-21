@@ -114,6 +114,7 @@ export async function syncDonationToActivity(donationId: string) {
       member: {
         include: { contact: true },
       },
+      contact: true,
       campaign: true,
     },
   })
@@ -127,11 +128,11 @@ export async function syncDonationToActivity(donationId: string) {
     await syncMemberToContact(donation.member.id)
   }
 
-  const contact = donation.member
+  const contact = donation.contact ?? (donation.member
     ? await prisma.contact.findUnique({
         where: { memberId: donation.member.id },
       })
-    : null
+    : null)
 
   if (!contact) {
     // Create contact from donor info if no member
@@ -146,6 +147,7 @@ export async function syncDonationToActivity(donationId: string) {
           firstName,
           lastName,
           email: donation.donorEmail,
+          emails: [donation.donorEmail],
           source: 'donation',
         },
       })

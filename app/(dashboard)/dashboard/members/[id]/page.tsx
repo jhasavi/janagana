@@ -143,6 +143,27 @@ export default async function MemberDetailPage({
             </Card>
           )}
 
+          {member.contact?.household && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Household</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Linked household: {member.contact.household.name}
+                </p>
+                {member.contact.household.contacts.map((contact) => (
+                  <div key={contact.id} className="rounded-lg border bg-muted/30 p-3">
+                    <p className="font-medium">{contact.firstName} {contact.lastName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {contact.email || contact.emails?.[0] || 'No email'}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Event registrations */}
           {member.eventRegistrations.length > 0 && (
             <Card>

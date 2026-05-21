@@ -42,12 +42,19 @@ export default async function EventsPage({
             link="/dashboard/help/events/create-an-event"
           />
         </div>
-        <Button asChild>
-          <Link href="/dashboard/events/new">
-            <CalendarPlus className="h-4 w-4" />
-            Create Event
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/events/cancellations">
+              Pending Cancellations
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/dashboard/events/new">
+              <CalendarPlus className="h-4 w-4" />
+              Create Event
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <EventFilters stats={stats} />

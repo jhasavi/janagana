@@ -40,7 +40,7 @@ export async function GettingStartedChecklist() {
       label: 'Add a membership tier',
       description: 'Define the plans members can join (Free, Annual, etc.).',
       done: tierCount > 0,
-      href: '/dashboard/settings#tiers',
+      href: '/dashboard/tiers/new',
       cta: 'Add Tier',
     },
     {
@@ -74,6 +74,14 @@ export async function GettingStartedChecklist() {
       done: apiKeyCount > 0,
       href: '/dashboard/integrations',
       cta: 'Get Embed Code',
+    },
+    {
+      id: 'launch',
+      label: 'Run launch readiness check',
+      description: 'Verify Stripe, email, webhook, and tenant configuration before going live.',
+      done: false,
+      href: '/dashboard/launch',
+      cta: 'Run Check',
     },
     {
       id: 'brand',

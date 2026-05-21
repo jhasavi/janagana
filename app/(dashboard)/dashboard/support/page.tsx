@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { MessageSquare, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
@@ -139,9 +140,9 @@ export default async function SupportQueuePage({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium truncate">
+                      <Link href={`/dashboard/support/${req.id}`} className="text-sm font-medium truncate hover:underline">
                         {req.name || req.email || 'Anonymous'}
-                      </p>
+                      </Link>
                       {req.email && req.name && (
                         <p className="text-xs text-muted-foreground truncate">{req.email}</p>
                       )}

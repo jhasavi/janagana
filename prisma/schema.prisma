@@ -215,16 +215,22 @@ model Tenant {
   planSlug             String  @default("free")
   planExpiresAt        DateTime?
 
+  donationReceiptFooter      String? @db.Text
+  donationReceiptDisclaimer  String? @db.Text
+
   members                Member[]
   membershipTiers        MembershipTier[]
   membershipEnrollments  MembershipEnrollment[]
   households             Household[]
   events                 Event[]
+  eventTicketTypes       EventTicketType[]
   volunteerOpportunities VolunteerOpportunity[]
   clubs                  Club[]
   donationCampaigns      DonationCampaign[]
   donations              Donation[]
   apiKeys                ApiKey[]
+  supportRequestComments SupportRequestComment[]
+  eventCancellationRequests EventCancellationRequest[]
   notifications          Notification[]
   webhookEndpoints       WebhookEndpoint[]
   emailCampaigns         EmailCampaign[]
@@ -243,6 +249,7 @@ model Tenant {
   chapterMembers         ChapterMember[]
   companies              Company[]
   contacts               Contact[]
+  savedContactFilters    SavedContactFilter[]
   deals                  Deal[]
   activities             Activity[]
   tasks                  Task[]
@@ -318,6 +325,7 @@ model Member {
   notifications        Notification[]
   eventRegistrations   EventRegistration[]
   volunteerSignups     VolunteerSignup[]
+  eventCancellationRequests EventCancellationRequest[]
   customFieldValues    MemberCustomFieldValue[]
   jobPostings          JobPosting[]             @relation("MemberJobPostings")
   forumThreads         ForumThread[]
@@ -452,7 +460,9 @@ model Event {
   status         EventStatus @default(DRAFT)
   format         EventFormat @default(IN_PERSON)
 
+  ticketTypes    EventTicketType[]
   registrations  EventRegistration[]
+  cancellationRequests EventCancellationRequest[]
 
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -460,6 +470,27 @@ model Event {
   @@index([tenantId])
   @@index([tenantId, startDate])
   @@index([tenantId, status])
+}
+
+model EventTicketType {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?  @db.Text
+  priceCents    Int      @default(0)
+  quantityLimit Int?
+  isActive      Boolean  @default(true)
+
+  registrations EventRegistration[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([eventId])
 }
 
 // ─── EVENT REGISTRATION ──────────────────────────────────────────────────────
@@ -472,11 +503,14 @@ model EventRegistration {
   member      Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
   contactId   String?
   contact     Contact?           @relation("ContactEventRegistrations", fields: [contactId], references: [id], onDelete: SetNull)
+  ticketTypeId String?
+  ticketType  EventTicketType?   @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
 
   status      RegistrationStatus @default(CONFIRMED)
   ticketCode  String             @unique @default(cuid())
   paidAmount  Int                @default(0)
   stripePaymentId String?
+  cancellationRequests EventCancellationRequest[]
 
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
@@ -1613,6 +1647,19 @@ model Contact {
   @@index([companyId])
 }
 
+model SavedContactFilter {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String
+  filters    Json
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
 model Deal {
   id          String    @id @default(cuid())
   tenantId    String
@@ -1764,6 +1811,19 @@ model ChapterMember {
   @@index([contactId])
 }
 
+enum SupportRequestAuthorType {
+  ADMIN
+  MEMBER
+  SYSTEM
+}
+
+enum EventCancellationStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
 model SupportRequest {
   id        String   @id @default(cuid())
   tenantId  String?
@@ -1773,12 +1833,57 @@ model SupportRequest {
   context   String?
   status    String   @default("open")
 
+  comments  SupportRequestComment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@index([status])
   @@index([createdAt])
+}
+
+model SupportRequestComment {
+  id               String                      @id @default(cuid())
+  tenantId         String
+  tenant           Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supportRequestId String
+  supportRequest   SupportRequest              @relation(fields: [supportRequestId], references: [id], onDelete: Cascade)
+  authorType       SupportRequestAuthorType    @default(MEMBER)
+  authorName       String?
+  body             String                      @db.Text
+  isPublic         Boolean                     @default(false)
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  @@index([tenantId])
+  @@index([supportRequestId])
+  @@index([authorType])
+}
+
+model EventCancellationRequest {
+  id              String                 @id @default(cuid())
+  tenantId        String
+  tenant          Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  registrationId  String
+  registration    EventRegistration      @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  eventId         String
+  event           Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  memberId        String
+  member          Member                 @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  stripePaymentId String?
+  refundId        String?
+  refundStatus    String?
+  reason          String?                @db.Text
+  status          EventCancellationStatus @default(REQUESTED)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([tenantId])
+  @@index([registrationId])
+  @@index([eventId])
+  @@index([memberId])
+  @@index([status])
 }
 
 model HelpFeedback {
