@@ -4,6 +4,7 @@ import { getPortalContext } from '@/lib/actions/portal'
 import { QRCodeDisplay } from '@/components/dashboard/qr-code-display'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { MembershipCardPrintButton } from './_components/membership-card-print-button'
 import { formatDate } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Membership Card' }
@@ -34,12 +35,7 @@ export default async function MembershipCardPage({
       </div>
 
       {/* Print button — hidden when printing */}
-      <button
-        onClick={() => window.print()}
-        className="print:hidden px-4 py-2 rounded bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-      >
-        Print / Save as PDF
-      </button>
+      <MembershipCardPrintButton />
 
       {/* Card — styled for print */}
       <div
