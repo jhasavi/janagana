@@ -1,3 +1,4 @@
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Header } from '@/components/dashboard/header'
@@ -18,6 +19,25 @@ export default async function DashboardLayout({
   }
 
   if (!tenant) {
+    // Distinguish: user has existing org memberships (pick one) vs truly zero
+    // orgs (must create first org).
+    const { userId } = await auth()
+    if (userId) {
+      try {
+        const client = await clerkClient()
+        const memberships = await client.users.getOrganizationMembershipList({
+          userId,
+          limit: 2,
+        })
+        if (memberships.data.length > 0) {
+          // User has at least one org but none is active yet — send to picker.
+          redirect('/select-organization')
+        }
+      } catch (error) {
+        console.error('[DashboardLayout] membership check failed', error)
+      }
+    }
+    // Zero orgs — must complete onboarding to create the first org.
     redirect('/onboarding')
   }
 

@@ -4,6 +4,7 @@ import { isDashboardFeatureHidden } from '@/lib/feature-flags'
 import { assertSimplifiedTenantProfileConfigured } from '@/lib/tenant-profile-simplified'
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)'])
+const isSelectOrgRoute = createRouteMatcher(['/select-organization(.*)'])
 const isPortalRoute = createRouteMatcher(['/portal(.*)'])
 const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 const isPreviewRoute = createRouteMatcher(['/preview(.*)'])
@@ -18,10 +19,9 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(signInUrl)
   }
 
-  // Authenticated users on onboarding → let them through.
-  // Onboarding needs to be available even when tenant profile env vars
-  // are not fully configured yet.
-  if (isOnboardingRoute(request)) return NextResponse.next()
+  // Authenticated users on onboarding or org-select → let them through.
+  // Both pages are available before tenant/profile env vars are fully set.
+  if (isOnboardingRoute(request) || isSelectOrgRoute(request)) return NextResponse.next()
 
   // Fail fast on startup if tenant-specific profile config is incomplete.
   assertSimplifiedTenantProfileConfigured()
@@ -48,6 +48,7 @@ export const config = {
     '/',
     '/dashboard/:path*',
     '/onboarding/:path*',
+    '/select-organization/:path*',
     '/portal/:path*',
     '/admin/:path*',
     '/preview/:path*',
