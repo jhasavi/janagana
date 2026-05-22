@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { getTenant } from '@/lib/tenant'
 import { getTenantProfile } from '@/lib/tenant-profile'
 import { getPlatformBrandName } from '@/lib/platform-brand'
@@ -17,6 +18,26 @@ export default async function OnboardingPage() {
     redirect('/dashboard')
   }
 
+  // If the user already belongs to at least one organization but no tenant
+  // resolved (e.g. multiple orgs, expired cookie), send them to the org picker
+  // rather than showing the create-organization wizard.
+  const { userId } = await auth()
+  if (userId) {
+    try {
+      const client = await clerkClient()
+      const memberships = await client.users.getOrganizationMembershipList({
+        userId,
+        limit: 2,
+      })
+      if (memberships.data.length > 0) {
+        redirect('/select-organization')
+      }
+    } catch (error) {
+      console.error('[OnboardingPage] membership check failed', error)
+    }
+  }
+
+  // Truly zero org memberships — show the create-organization wizard.
   const platformName = getPlatformBrandName()
   let defaultOrgName = ''
   let defaultTimezone = 'America/New_York'
