@@ -1,6 +1,5 @@
 'use server'
 
-import { auth, clerkClient } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
@@ -8,6 +7,11 @@ import { getTenant } from '@/lib/tenant'
 import { getTenantProfile } from '@/lib/tenant-profile'
 import { slugify } from '@/lib/utils'
 import { extractApiKeyPrefix, generateApiKey, hashApiKey } from '@/lib/plugin-auth'
+import {
+  createTestOnboardingTenant,
+  getCurrentIdentity,
+  isAppTestAuthEnabled,
+} from '@/lib/auth/auth-provider'
 
 function getOnboardingDefaults() {
   try {
@@ -45,54 +49,61 @@ function getOnboardingSchema() {
 
 export async function completeOnboarding(input: unknown) {
   try {
-    const { userId } = await auth()
+    const { userId } = await getCurrentIdentity()
     if (!userId) return { success: false, error: 'Not authenticated' }
 
     // Accept either a plain string (org name) or a full object
     const normalized = typeof input === 'string' ? { orgName: input } : input
     const data = getOnboardingSchema().parse(normalized)
 
-    // If the user already belongs to an organization with the same name,
-    // reuse that org rather than creating a duplicate.
-    const client = await clerkClient()
-    const memberships = await client.users.getOrganizationMembershipList({
-      userId,
-      limit: 100,
-    })
-
-    let org = null
-    const normalizedOrgName = data.orgName.trim().toLowerCase()
-    const existingOrgWithSameName = memberships.data.find(({ organization }) =>
-      organization?.name?.trim().toLowerCase() === normalizedOrgName,
-    )?.organization
-
-    if (existingOrgWithSameName) {
-      org = existingOrgWithSameName
-      console.log('[completeOnboarding] reusing existing org', org.id, 'for user', userId)
+    let org = null as null | { id: string; name: string }
+    if (isAppTestAuthEnabled()) {
+      const created = await createTestOnboardingTenant(userId, data.orgName, {
+        slug: slugify(data.orgName),
+        timezone: data.timezone,
+        primaryColor: data.primaryColor,
+      })
+      org = { id: created.orgId, name: data.orgName }
     } else {
-      org = await client.organizations.createOrganization({
-        name: data.orgName,
-        createdBy: userId,
+      const client = await (await import('@clerk/nextjs/server')).clerkClient()
+      const memberships = await client.users.getOrganizationMembershipList({
+        userId,
+        limit: 100,
       })
 
-      try {
-        const orgMemberships = await client.organizations.getOrganizationMembershipList({
-          organizationId: org.id,
-          userId: [userId],
-          limit: 1,
+      const normalizedOrgName = data.orgName.trim().toLowerCase()
+      const existingOrgWithSameName = memberships.data.find(({ organization }) =>
+        organization?.name?.trim().toLowerCase() === normalizedOrgName,
+      )?.organization
+
+      if (existingOrgWithSameName) {
+        org = existingOrgWithSameName
+        console.log('[completeOnboarding] reusing existing org', org.id, 'for user', userId)
+      } else {
+        org = await client.organizations.createOrganization({
+          name: data.orgName,
+          createdBy: userId,
         })
 
-        if (orgMemberships.data.length === 0) {
-          await client.organizations.createOrganizationMembership({
+        try {
+          const orgMemberships = await client.organizations.getOrganizationMembershipList({
             organizationId: org.id,
-            userId,
-            role: 'admin',
+            userId: [userId],
+            limit: 1,
           })
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        if (!message.toLowerCase().includes('already') && !message.toLowerCase().includes('membership') && !message.toLowerCase().includes('duplicate')) {
-          throw error
+
+          if (orgMemberships.data.length === 0) {
+            await client.organizations.createOrganizationMembership({
+              organizationId: org.id,
+              userId,
+              role: 'admin',
+            })
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          if (!message.toLowerCase().includes('already') && !message.toLowerCase().includes('membership') && !message.toLowerCase().includes('duplicate')) {
+            throw error
+          }
         }
       }
     }

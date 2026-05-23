@@ -1,4 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { logAuthOrgRedirectDecision } from '@/lib/auth-org-redirect-log'
+import { clearActiveOrgCookies } from '@/lib/auth/auth-provider'
 
 /**
  * GET /api/sign-out
@@ -18,16 +20,17 @@ export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin
   const redirectResponse = NextResponse.redirect(`${origin}/sign-in`)
 
-  const cookieOptions = {
-    path: '/',
-    maxAge: 0,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
-  }
+  await clearActiveOrgCookies(redirectResponse)
 
-  redirectResponse.cookies.set('JG_ACTIVE_ORG', '', cookieOptions)
-  redirectResponse.cookies.set('JG_TENANT_ID', '', cookieOptions)
+  logAuthOrgRedirectDecision({
+    route: '/api/sign-out',
+    userPresent: false,
+    membershipCount: null,
+    activeOrgCookiePresent: true,
+    selectedTenantIdPresent: true,
+    redirectTarget: '/sign-in',
+    reasonCode: 'LOGOUT_CLEAR_COOKIES',
+  })
 
   return redirectResponse
 }

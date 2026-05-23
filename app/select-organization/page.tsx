@@ -1,30 +1,17 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { getTenant } from '@/lib/tenant'
+import { getCurrentIdentity, getUserOrgMemberships } from '@/lib/auth/auth-provider'
 import SelectOrgClient from './SelectOrgClient'
 
 export const metadata = { title: 'Select Organization' }
 
 export default async function SelectOrganizationPage() {
-  const { userId } = await auth()
+  const { userId } = await getCurrentIdentity()
   if (!userId) redirect('/sign-in')
 
-  // If a tenant is already active (cookie + active org), skip straight to dashboard
-  let activeTenant = null
-  try {
-    activeTenant = await getTenant()
-  } catch {
-    // ignore — we'll let the user pick below
-  }
-  if (activeTenant) redirect('/dashboard')
+  const memberships = await getUserOrgMemberships(userId)
 
-  const client = await clerkClient()
-  const membershipsResult = await client.users.getOrganizationMembershipList({
-    userId,
-    limit: 100,
-  })
-
-  const orgs = membershipsResult.data.map((m) => ({
+  const orgs = memberships.map((m) => ({
     id: m.organization.id,
     name: m.organization.name,
     slug: m.organization.slug ?? '',
@@ -34,6 +21,18 @@ export default async function SelectOrganizationPage() {
 
   if (orgs.length === 0) {
     redirect('/onboarding')
+  }
+
+  // If there is exactly one org, keep dashboard auto-entry behavior.
+  // For multi-org users, always render picker so switching remains possible.
+  let activeTenant = null
+  try {
+    activeTenant = await getTenant()
+  } catch {
+    // ignore — we'll let the user pick below
+  }
+  if (activeTenant && orgs.length === 1) {
+    redirect('/dashboard')
   }
 
   return <SelectOrgClient orgs={orgs} />

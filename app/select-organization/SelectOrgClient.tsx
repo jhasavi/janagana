@@ -40,7 +40,7 @@ export default function SelectOrgClient({ orgs }: Props) {
     startTransition(async () => {
       try {
         // 1. Set the Clerk active organization (updates JWT session claims)
-        if (isLoaded && setActive) {
+        if (process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true' && isLoaded && setActive) {
           try {
             await setActive({ organization: orgId })
           } catch {
@@ -51,14 +51,22 @@ export default function SelectOrgClient({ orgs }: Props) {
 
         // 2. Sync to server-side cookies so DashboardLayout can read the
         //    active org without waiting for Clerk session propagation.
-        const response = await fetch('/api/active-org', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orgId }),
-        })
+        let response: Response | null = null
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          response = await fetch('/api/active-org', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orgId }),
+          })
 
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null)
+          if (response.ok) break
+          if (attempt < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 600))
+          }
+        }
+
+        if (!response?.ok) {
+          const payload = await response?.json().catch(() => null)
           const message = payload?.error ?? 'Failed to activate organization'
           toast.error(message)
           setSelectingOrgId(null)
@@ -105,6 +113,7 @@ export default function SelectOrgClient({ orgs }: Props) {
             return (
               <Card
                 key={org.id}
+                data-testid="organization-card"
                 className="bg-slate-800/60 border-slate-700 hover:border-indigo-500 transition-colors cursor-pointer"
                 onClick={() => !isDisabled && handleSelect(org.id)}
               >

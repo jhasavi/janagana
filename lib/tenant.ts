@@ -1,10 +1,16 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { clerkClient } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { logDbError, prisma, withDbRetry } from '@/lib/prisma'
 import {
   getSimplifiedTenantProfile,
   getSimplifiedTenantProfileValidationErrors,
 } from '@/lib/tenant-profile-simplified'
+import { logAuthOrgRedirectDecision } from '@/lib/auth-org-redirect-log'
+import {
+  getCurrentIdentity,
+  getUserOrgMemberships,
+  userBelongsToOrg,
+} from '@/lib/auth/auth-provider'
 import { slugify } from '@/lib/utils'
 import type { Tenant } from '@prisma/client'
 import type { NextRequest } from 'next/server'
@@ -77,28 +83,6 @@ function getTenantCreationDefaults() {
   }
 }
 
-async function userBelongsToOrganization(userId: string | null, organizationId: string) {
-  if (!userId) return false
-
-  try {
-    const client = await clerkClient()
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId,
-      userId: [userId],
-      limit: 1,
-    })
-
-    return memberships.data.length > 0
-  } catch (error) {
-    console.warn('[resolveTenant] Clerk membership verification failed', {
-      userId,
-      organizationId,
-      error,
-    })
-    return false
-  }
-}
-
 async function resolveTenantForAuthState(
   authState: TenantAuthState,
   options?: { allowAutoCreateFromClerkOrg?: boolean }
@@ -112,27 +96,64 @@ async function resolveTenantForAuthState(
     tenantIdCookie = cookieStore?.get?.('JG_TENANT_ID')?.value
 
     let activeOrgId = orgId
+    const activeOrgCookie = cookieStore?.get?.('JG_ACTIVE_ORG')?.value
     if (!activeOrgId) {
-      const activeCookie = cookieStore?.get?.('JG_ACTIVE_ORG')?.value
-      if (activeCookie) {
-        let hasMembership = await userBelongsToOrganization(userId, activeCookie)
+      if (activeOrgCookie) {
+        let hasMembership = await userBelongsToOrg(userId, activeOrgCookie)
         if (!hasMembership) {
           console.warn('[resolveTenant] active org cookie membership check failed, retrying once', {
-            activeOrgId: activeCookie,
+            activeOrgId: activeOrgCookie,
             userId,
           })
           await new Promise((resolve) => setTimeout(resolve, 800))
-          hasMembership = await userBelongsToOrganization(userId, activeCookie)
+          hasMembership = await userBelongsToOrg(userId, activeOrgCookie)
         }
 
         if (hasMembership) {
-          activeOrgId = activeCookie
+          activeOrgId = activeOrgCookie
         } else {
+          logAuthOrgRedirectDecision({
+            route: 'resolveTenant',
+            userPresent: Boolean(userId),
+            membershipCount: null,
+            activeOrgCookiePresent: true,
+            selectedTenantIdPresent: Boolean(tenantIdCookie),
+            redirectTarget: null,
+            reasonCode: 'STALE_COOKIE_IGNORED',
+          })
           console.warn('[resolveTenant] active org cookie membership still unavailable', {
-            activeOrgId: activeCookie,
+            activeOrgId: activeOrgCookie,
             userId,
           })
         }
+      }
+    }
+
+    // Deterministic multi-org behavior: if the Clerk session has an orgId but
+    // app-side active-org cookies are absent, force explicit selection when the
+    // user belongs to multiple orgs.
+    if (activeOrgId && userId && !activeOrgCookie && !tenantIdCookie) {
+      try {
+        const memberships = await getUserOrgMemberships(userId)
+
+        if (memberships.length > 1) {
+          logAuthOrgRedirectDecision({
+            route: 'resolveTenant',
+            userPresent: true,
+            membershipCount: memberships.length,
+            activeOrgCookiePresent: false,
+            selectedTenantIdPresent: false,
+            redirectTarget: '/select-organization',
+            reasonCode: 'MULTI_ORG_REDIRECT_SELECT_ORG',
+          })
+          return null
+        }
+      } catch (error) {
+        console.warn('[resolveTenant] multi-org check failed; continuing with Clerk active org', {
+          userId,
+          activeOrgId,
+          error,
+        })
       }
     }
 
@@ -143,46 +164,77 @@ async function resolveTenantForAuthState(
       )
       if (tenant) {
         const matchesActiveOrg = !activeOrgId || activeOrgId === tenant.clerkOrgId
-        const hasMembership = await userBelongsToOrganization(userId, tenant.clerkOrgId)
-
-        if (matchesActiveOrg && hasMembership) {
-          console.log('[resolveTenant] resolved tenant via verified JG_TENANT_ID cookie=', tenant.id)
-          return tenant
-        }
-
-        if (matchesActiveOrg) {
-          console.warn('[resolveTenant] accepted tenant via JG_TENANT_ID cookie despite temporary Clerk membership verification failure', {
+        if (!matchesActiveOrg) {
+          logAuthOrgRedirectDecision({
+            route: 'resolveTenant',
+            userPresent: Boolean(userId),
+            membershipCount: null,
+            activeOrgCookiePresent: Boolean(cookieStore?.get?.('JG_ACTIVE_ORG')?.value),
+            selectedTenantIdPresent: true,
+            redirectTarget: null,
+            reasonCode: 'STALE_ACTIVE_ORG_REJECTED',
+          })
+          console.warn('[resolveTenant] rejected stale tenant cookie due to active org mismatch', {
             tenantId: tenant.id,
             tenantClerkOrgId: tenant.clerkOrgId,
             activeOrgId,
             userId,
           })
+        } else {
+        const hasMembership = await userBelongsToOrg(userId, tenant.clerkOrgId)
+
+        if (hasMembership) {
+          console.log('[resolveTenant] resolved tenant via verified JG_TENANT_ID cookie=', tenant.id)
           return tenant
         }
 
-        console.warn('[resolveTenant] ignored tenant cookie without matching active org', {
+        console.warn('[resolveTenant] rejected tenant cookie because membership verification failed', {
           tenantId: tenant.id,
           tenantClerkOrgId: tenant.clerkOrgId,
           activeOrgId,
           userId,
         })
+        }
       }
     }
 
     if (!activeOrgId && userId) {
-      const client = await clerkClient()
-      const memberships = await client.users.getOrganizationMembershipList({
-        userId,
-        limit: 2,
-      })
+      const memberships = await getUserOrgMemberships(userId)
 
-      if (memberships.data.length === 1) {
-        activeOrgId = memberships.data[0].organization.id
+      if (memberships.length === 1) {
+        logAuthOrgRedirectDecision({
+          route: 'resolveTenant',
+          userPresent: true,
+          membershipCount: 1,
+          activeOrgCookiePresent: Boolean(cookieStore?.get?.('JG_ACTIVE_ORG')?.value),
+          selectedTenantIdPresent: Boolean(tenantIdCookie),
+          redirectTarget: '/dashboard',
+          reasonCode: 'ONE_ORG_AUTO_SELECT_DASHBOARD',
+        })
+        activeOrgId = memberships[0].organization.id
       }
     }
 
     if (!activeOrgId) {
       console.log('[resolveTenant] no activeOrgId resolved — auth returned', { orgId, userId })
+      return null
+    }
+
+    const activeOrgMembership = await userBelongsToOrg(userId, activeOrgId)
+    if (!activeOrgMembership) {
+      logAuthOrgRedirectDecision({
+        route: 'resolveTenant',
+        userPresent: Boolean(userId),
+        membershipCount: null,
+        activeOrgCookiePresent: Boolean(cookieStore?.get?.('JG_ACTIVE_ORG')?.value),
+        selectedTenantIdPresent: Boolean(tenantIdCookie),
+        redirectTarget: null,
+        reasonCode: 'STALE_ACTIVE_ORG_REJECTED',
+      })
+      console.warn('[resolveTenant] rejected active org without user membership', {
+        activeOrgId,
+        userId,
+      })
       return null
     }
 
@@ -216,9 +268,30 @@ async function resolveTenantForAuthState(
               },
             })
           )
+          logAuthOrgRedirectDecision({
+            route: 'resolveTenant',
+            userPresent: Boolean(userId),
+            membershipCount: null,
+            activeOrgCookiePresent: Boolean(cookieStore?.get?.('JG_ACTIVE_ORG')?.value),
+            selectedTenantIdPresent: Boolean(tenantIdCookie),
+            redirectTarget: null,
+            reasonCode: 'TENANT_REPAIR_CREATED',
+          })
           console.log('[resolveTenant] created missing tenant from Clerk org', tenant.id)
         }
       } catch (error) {
+        const message = error instanceof Error ? error.message.toLowerCase() : ''
+        if (message.includes('unique') || message.includes('duplicate')) {
+          logAuthOrgRedirectDecision({
+            route: 'resolveTenant',
+            userPresent: Boolean(userId),
+            membershipCount: null,
+            activeOrgCookiePresent: Boolean(cookieStore?.get?.('JG_ACTIVE_ORG')?.value),
+            selectedTenantIdPresent: Boolean(tenantIdCookie),
+            redirectTarget: null,
+            reasonCode: 'TENANT_DUPLICATE_BLOCKED',
+          })
+        }
         logDbError('resolveTenant.createMissingTenantFromClerkOrg', { clerkOrgId: activeOrgId }, error)
       }
     }
@@ -238,7 +311,7 @@ async function resolveTenantForAuthState(
  * Returns null if no org is active.
  */
 export async function getTenant(): Promise<Tenant | null> {
-  const authState = await auth()
+  const authState = await getCurrentIdentity()
   return resolveTenantForAuthState(
     {
       orgId: authState.orgId ?? null,
@@ -263,8 +336,9 @@ export async function resolveDashboardTenantContext(
   request: NextRequest
 ): Promise<TenantContextResolutionResult> {
   const route = getRouteFromRequest(request)
-  const { userId, orgId } = await auth()
-  const authPrincipal = userId ? `clerk:user:${userId}` : 'anonymous'
+  const identity = await getCurrentIdentity()
+  const { userId, orgId } = identity
+  const authPrincipal = userId ? `${identity.mode}:user:${userId}` : 'anonymous'
 
   if (!userId) {
     return {

@@ -203,7 +203,8 @@ export default function OnboardingClient({
 
   function handleSubmitProfile(e: React.FormEvent) {
     e.preventDefault()
-    if (!orgName.trim() || !isLoaded) return
+    const requiresClerkOrganizationReady = process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true'
+    if (!orgName.trim() || (requiresClerkOrganizationReady && !isLoaded)) return
     setProfileError(null)
 
     startTransition(async () => {
@@ -217,7 +218,7 @@ export default function OnboardingClient({
         const slug  = result.data?.tenant?.slug
         const tenantId = result.data?.tenant?.id
 
-        if (orgId && setActive) {
+        if (orgId && setActive && process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true') {
           try { await setActive({ organization: orgId }) } catch { /* ok */ }
         }
         try {

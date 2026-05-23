@@ -9,6 +9,7 @@ import { requireTenant } from '@/lib/tenant'
 import { sendEventReminder } from '@/lib/sms'
 import { ensureContactForMember } from '@/lib/contact-linking'
 import { uploadFile } from '@/lib/upload'
+import { logAuthOrgRedirectDecision } from '@/lib/auth-org-redirect-log'
 
 const CAPACITY_REGISTRATION_STATUSES: Array<'CONFIRMED' | 'ATTENDED'> = ['CONFIRMED', 'ATTENDED']
 
@@ -117,7 +118,24 @@ export async function getEvent(id: string) {
       },
     })
 
-    if (!event) return { success: false, error: 'Event not found', data: null }
+    if (!event) {
+      const crossTenantEvent = await prisma.event.findUnique({
+        where: { id },
+        select: { id: true, tenantId: true },
+      })
+      if (crossTenantEvent && crossTenantEvent.tenantId !== tenant.id) {
+        logAuthOrgRedirectDecision({
+          route: '/dashboard/events/[id]',
+          userPresent: true,
+          membershipCount: null,
+          activeOrgCookiePresent: true,
+          selectedTenantIdPresent: true,
+          redirectTarget: null,
+          reasonCode: 'EVENT_TENANT_MISMATCH_BLOCKED',
+        })
+      }
+      return { success: false, error: 'Event not found', data: null }
+    }
     return { success: true, data: event }
   } catch (error) {
     console.error('[getEvent]', error)

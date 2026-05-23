@@ -1,159 +1,146 @@
-/**
- * E2E Test Suite: Auth → Org → Tenant → Dashboard State Machine
- *
- * Tests the core user journeys:
- *   1. New user, zero orgs   → onboarding → dashboard
- *   2. Returning user, one org  → dashboard directly (no create-org)
- *   3. Returning user, multiple orgs → select-organization screen
- *   4. Account switching  → old org does not leak into new account
- *   5. Logout  → cookies cleared, /sign-in reached
- *   6. Tenant isolation → Org A data not visible to Org B session
- *
- * Notes:
- * - All tests run against the authenticated Playwright session (storageState).
- * - Tests 1-3 rely on the E2E test user being in a known org state.
- * - Tests that need a fresh-user state (zero orgs) use a dedicated env var
- *   E2E_ZERO_ORG_CLERK_USER_ID / E2E_ZERO_ORG_CLERK_EMAIL if available;
- *   otherwise they are skipped.
- * - Test 4 uses the primary E2E user (logged in) + verifies no cross-account leak.
- */
-
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
+import {
+  readE2EFixtureRecord,
+  seedE2EFixtures,
+} from '../test-auth-fixtures'
 
 const prisma = new PrismaClient()
 
-// ─── Test 1: Returning user with one org lands directly on dashboard ───────────
+let fixtureRecordPromise: ReturnType<typeof seedE2EFixtures> | null = null
+const APP_BASE_URL = process.env.PLAYWRIGHT_BASE_URL || process.env.TENANT_APP_BASE_URL || 'http://localhost:3000'
 
-test('Test 2 – returning user with existing org goes to dashboard, not create-org', async ({ page }) => {
-  // The global-setup has already authenticated the E2E user (who has an existing org).
-  await page.goto('/dashboard', { waitUntil: 'networkidle' })
+async function getFixtureRecord() {
+  const existing = await readE2EFixtureRecord()
+  if (existing) {
+    await fetch(`${APP_BASE_URL.replace(/\/$/, '')}/api/test-auth/reset`, { method: 'POST' }).catch(() => undefined)
+    return existing
+  }
 
-  // Must land on dashboard — not onboarding, not select-organization
+  if (!fixtureRecordPromise) {
+    fixtureRecordPromise = seedE2EFixtures()
+  }
+
+  const record = await fixtureRecordPromise
+  await fetch(`${APP_BASE_URL.replace(/\/$/, '')}/api/test-auth/reset`, { method: 'POST' }).catch(() => undefined)
+  return record
+}
+
+async function signInAs(page: Page, userId: string, email: string) {
+  await page.context().clearCookies()
+  await page.context().addCookies([
+    {
+      name: 'JG_TEST_AUTH',
+      value: encodeURIComponent(JSON.stringify({ userId, email })),
+      url: APP_BASE_URL,
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: APP_BASE_URL.startsWith('https://'),
+    },
+  ])
+}
+
+async function openRoot(page: Page) {
+  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.waitForURL(/\/(dashboard|onboarding|select-organization)/, { timeout: 30_000 })
+}
+
+async function signOut(page: Page) {
+  await page.goto('/api/sign-out', { waitUntil: 'networkidle' })
+  await page.waitForURL(/\/sign-in/, { timeout: 30_000 })
+}
+
+async function expectSidebarOrgName(page: Page, orgName: string) {
+  const sidebarBrand = page.locator('aside a[href="/dashboard"] span').first()
+  await expect(sidebarBrand).toHaveText(orgName, { timeout: 20_000 })
+}
+
+async function selectOrgViaUI(page: Page, orgName: string) {
+  await page.goto('/select-organization', { waitUntil: 'networkidle' })
+  const card = page.locator('[data-testid="organization-card"]').filter({ hasText: orgName }).first()
+  await expect(card).toBeVisible({ timeout: 20_000 })
+  await card.click()
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
+}
+
+async function completeOnboarding(page: Page, orgName: string) {
+  await expect(page.locator('#org-name')).toBeVisible({ timeout: 20_000 })
+  await page.locator('#org-name').fill(orgName)
+  await page.locator('button[type="submit"]:not([disabled])').click()
+
+  const reachedAfterProfile = await Promise.race<"dashboard" | "tier">([
+    page.waitForURL(/\/dashboard/, { timeout: 30_000 }).then(() => 'dashboard' as const),
+    expect(page.locator('#tier-name')).toBeVisible({ timeout: 60_000 }).then(() => 'tier' as const),
+  ])
+
+  if (reachedAfterProfile === 'dashboard') {
+    return
+  }
+
+  await page.locator('#tier-name').fill('E2E Member')
+  await page.locator('button:has-text("Save & Continue")').click()
+
+  await expect(page.locator('text=Your public entry points')).toBeVisible({ timeout: 20_000 })
+  await page.locator('button:has-text("Continue")').click()
+
+  await expect(page.locator('#m-first')).toBeVisible({ timeout: 20_000 })
+  await page.locator('#m-first').fill('Jane')
+  await page.locator('#m-last').fill('Doe')
+  await page.locator('#m-email').fill(`e2e+${Date.now()}@example.com`)
+  await page.locator('button:has-text("Add Member")').click()
+
+  await expect(page.locator('#ev-title')).toBeVisible({ timeout: 20_000 })
+  await page.locator('#ev-title').fill('E2E Kickoff')
+  const eventDate = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16)
+  await page.locator('#ev-date').fill(eventDate)
+  await page.locator('button:has-text("Create Event")').click()
+
+  await expect(page.locator('text=You\'re all set!')).toBeVisible({ timeout: 20_000 })
+  await page.locator('button:has-text("Go to Dashboard")').click()
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
+}
+
+test('returning user with existing org goes to dashboard, not create-org', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
+
+  await signInAs(page, fixtures.userB.userId, fixtures.userB.email)
+  await openRoot(page)
+
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
   await expect(page).not.toHaveURL(/\/onboarding/)
   await expect(page).not.toHaveURL(/\/select-organization/)
+  await expectSidebarOrgName(page, 'E2E Org B')
 
-  // Sidebar must be visible (proves tenant resolved successfully)
-  await expect(page.locator('aside')).toBeVisible({ timeout: 15_000 })
+  await signOut(page)
+
+  await signInAs(page, fixtures.userB.userId, fixtures.userB.email)
+  await openRoot(page)
+
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
+  await expect(page).not.toHaveURL(/\/onboarding/)
+  await expectSidebarOrgName(page, 'E2E Org B')
 })
 
-// ─── Test 2a: Root / redirects authenticated user to dashboard ─────────────────
+test('multi-org user can select Org C1 and Org C2 without data leakage', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
 
-test('Test 2a – authenticated root / redirects to /dashboard', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'networkidle' })
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
-})
+  const orgC1TenantId = fixtures.userC.tenantIds[0]
+  const orgC2TenantId = fixtures.userC.tenantIds[1]
 
-// ─── Test 2b: Returning user does NOT see create-org wizard ───────────────────
-
-test('Test 2b – authenticated user with existing org never sees create-org wizard', async ({ page }) => {
-  await page.goto('/onboarding', { waitUntil: 'networkidle' })
-
-  // Should be redirected away from onboarding (either to dashboard or select-organization)
-  await expect(page).not.toHaveURL(/\/onboarding/, { timeout: 20_000 })
-
-  const url = page.url()
-  const wentToDashboard = url.includes('/dashboard')
-  const wentToSelectOrg = url.includes('/select-organization')
-  expect(wentToDashboard || wentToSelectOrg).toBeTruthy()
-})
-
-// ─── Test 3: /select-organization shows org list (not create-org) for multi-org ─
-
-test('Test 3 – /select-organization page is accessible and shows orgs', async ({ page }) => {
-  // Navigate to select-org directly (simulates multi-org redirect path)
-  await page.goto('/select-organization', { waitUntil: 'networkidle' })
-
-  const url = page.url()
-
-  if (url.includes('/dashboard')) {
-    // Single-org user was auto-selected — valid outcome
-    await expect(page.locator('aside')).toBeVisible({ timeout: 15_000 })
-    return
-  }
-
-  if (url.includes('/onboarding')) {
-    // Zero-org user — also valid (different user state)
-    test.skip()
-    return
-  }
-
-  // Must be on /select-organization
-  expect(url).toContain('/select-organization')
-
-  // Must NOT show the create-org form (which has id="org-name")
-  const createOrgInput = page.locator('#org-name')
-  await expect(createOrgInput).not.toBeVisible({ timeout: 5_000 })
-
-  // Must show at least one org card (Building2 icon or org name text)
-  const orgCards = page.locator('[class*="Card"]')
-  await expect(orgCards.first()).toBeVisible({ timeout: 10_000 })
-})
-
-// ─── Test 5: Logout clears cookies and lands on sign-in ───────────────────────
-
-test('Test 5 – logout clears session cookies and redirects to sign-in', async ({ page }) => {
-  // Start authenticated on dashboard
-  await page.goto('/dashboard', { waitUntil: 'networkidle' })
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
-
-  // Confirm cookies are present before sign-out
-  const cookiesBefore = await page.context().cookies()
-  const hasClerkSession = cookiesBefore.some((c) => c.name.startsWith('__session') || c.name.startsWith('__client'))
-  expect(hasClerkSession).toBeTruthy()
-
-  // Hit the sign-out API route directly (simulates afterSignOutUrl="/api/sign-out")
-  const response = await page.goto('/api/sign-out', { waitUntil: 'networkidle' })
-
-  // Should redirect to /sign-in (or sign-in URL)
-  await expect(page).toHaveURL(/sign-in/, { timeout: 15_000 })
-
-  // App-side cookies must be cleared
-  const cookiesAfter = await page.context().cookies()
-  const activeOrgCookie = cookiesAfter.find((c) => c.name === 'JG_ACTIVE_ORG')
-  const tenantIdCookie  = cookiesAfter.find((c) => c.name === 'JG_TENANT_ID')
-
-  // maxAge=0 means cookie was deleted (may appear with empty value or be absent)
-  const isCleared = (c: typeof activeOrgCookie) => !c || !c.value || c.value === ''
-  expect(isCleared(activeOrgCookie)).toBeTruthy()
-  expect(isCleared(tenantIdCookie)).toBeTruthy()
-})
-
-// ─── Test 4: Account switch — no state leaks from previous session ─────────────
-
-test('Test 4 – /api/sign-out clears JG_ cookies before new login', async ({ page }) => {
-  // Verify that JG_ACTIVE_ORG and JG_TENANT_ID are absent after sign-out,
-  // preventing cross-account state leakage.
-  await page.goto('/api/sign-out', { waitUntil: 'networkidle' })
-  await expect(page).toHaveURL(/sign-in/, { timeout: 15_000 })
-
-  const cookies = await page.context().cookies()
-  const activeOrg = cookies.find((c) => c.name === 'JG_ACTIVE_ORG')
-  const tenantId  = cookies.find((c) => c.name === 'JG_TENANT_ID')
-
-  expect(!activeOrg || !activeOrg.value).toBeTruthy()
-  expect(!tenantId  || !tenantId.value).toBeTruthy()
-})
-
-// ─── Test 6: Tenant isolation ─────────────────────────────────────────────────
-
-test('Test 6 – tenant isolation: events from another tenant are not visible', async ({ page }) => {
-  // Create a scratch tenant (different from the E2E user's tenant)
-  const isolationSlug = `isolation-sm-${Date.now()}`
-  const tenant = await prisma.tenant.create({
+  const c1Event = await prisma.event.create({
     data: {
-      clerkOrgId: `org_isolation_${Date.now()}`,
-      name: `Isolation Tenant ${Date.now()}`,
-      slug: isolationSlug,
+      tenantId: orgC1TenantId,
+      title: `E2E C1 Event ${Date.now()}`,
+      status: 'PUBLISHED',
+      startDate: new Date(Date.now() + 86_400_000),
       updatedAt: new Date(),
     },
   })
 
-  const event = await prisma.event.create({
+  const c2Event = await prisma.event.create({
     data: {
-      title: `Secret Event ${Date.now()}`,
-      tenantId: tenant.id,
+      tenantId: orgC2TenantId,
+      title: `E2E C2 Event ${Date.now()}`,
       status: 'PUBLISHED',
       startDate: new Date(Date.now() + 86_400_000),
       updatedAt: new Date(),
@@ -161,35 +148,107 @@ test('Test 6 – tenant isolation: events from another tenant are not visible', 
   })
 
   try {
-    await page.goto('/dashboard', { waitUntil: 'networkidle' })
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 })
+    await signInAs(page, fixtures.userC.userId, fixtures.userC.email)
+    await openRoot(page)
 
-    // The isolation event must NOT appear in the E2E user's event list
+    await expect(page).toHaveURL(/\/select-organization/, { timeout: 30_000 })
+    await expect(page.getByText('E2E Org C1')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText('E2E Org C2')).toBeVisible({ timeout: 20_000 })
+
+    await selectOrgViaUI(page, 'E2E Org C1')
+    await expectSidebarOrgName(page, 'E2E Org C1')
+
     await page.goto('/dashboard/events', { waitUntil: 'networkidle' })
-    await expect(page.locator(`text=${event.title}`)).not.toBeVisible({ timeout: 5_000 })
+    const c1VisibleResponse = await page.goto(`/dashboard/events/${c1Event.id}`, { waitUntil: 'networkidle' })
+    expect(c1VisibleResponse?.status()).toBe(200)
+    const c2HiddenResponse = await page.goto(`/dashboard/events/${c2Event.id}`, { waitUntil: 'networkidle' })
+    expect(c2HiddenResponse?.status()).toBe(404)
 
-    // Direct access to the isolation event must return 404
-    const resp = await page.goto(`/dashboard/events/${event.id}`, { waitUntil: 'networkidle' })
-    expect(resp?.status()).toBe(404)
+    await selectOrgViaUI(page, 'E2E Org C2')
+    await expectSidebarOrgName(page, 'E2E Org C2')
+
+    await page.goto('/dashboard/events', { waitUntil: 'networkidle' })
+    const c1HiddenResponse = await page.goto(`/dashboard/events/${c1Event.id}`, { waitUntil: 'networkidle' })
+    expect(c1HiddenResponse?.status()).toBe(404)
   } finally {
-    await prisma.event.delete({ where: { id: event.id } }).catch(() => undefined)
-    await prisma.tenant.delete({ where: { id: tenant.id } }).catch(() => undefined)
-    await prisma.$disconnect()
+    await prisma.event.delete({ where: { id: c1Event.id } }).catch(() => undefined)
+    await prisma.event.delete({ where: { id: c2Event.id } }).catch(() => undefined)
   }
 })
 
-// ─── Test 6b: /select-organization cannot be accessed unauthenticated ──────────
+test('account switching clears old org cookies and loads the new user org', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
 
-test('Test 6b – unauthenticated access to /select-organization redirects to sign-in', async ({
-  browser,
-}) => {
-  const freshContext = await browser.newContext() // no storageState = no cookies
-  const page = await freshContext.newPage()
+  await signInAs(page, fixtures.userA.userId, fixtures.userA.email)
+  await openRoot(page)
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
+  await expectSidebarOrgName(page, 'E2E Org A')
+
+  await signOut(page)
+
+  const cookiesAfterLogout = await page.context().cookies()
+  expect(cookiesAfterLogout.find((cookie) => cookie.name === 'JG_ACTIVE_ORG')).toBeUndefined()
+  expect(cookiesAfterLogout.find((cookie) => cookie.name === 'JG_TENANT_ID')).toBeUndefined()
+
+  await signInAs(page, fixtures.userB.userId, fixtures.userB.email)
+  await openRoot(page)
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
+  await expectSidebarOrgName(page, 'E2E Org B')
+})
+
+test('zero-org onboarding creates tenant and reaches dashboard', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
+  const orgName = `E2E New Org ${Date.now()}`
+
+  await signInAs(page, fixtures.userD.userId, fixtures.userD.email)
+  await openRoot(page)
+
+  await expect(page).toHaveURL(/\/onboarding/, { timeout: 30_000 })
+  await completeOnboarding(page, orgName)
+  await expectSidebarOrgName(page, orgName)
+
+  await signOut(page)
+})
+
+test('tenant isolation blocks cross-tenant event access', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
+
+  const tenantA = fixtures.userA.tenantIds[0]
+  const tenantB = fixtures.userB.tenantIds[0]
+
+  const eventA = await prisma.event.create({
+    data: {
+      tenantId: tenantA,
+      title: `Isolation Event A ${Date.now()}`,
+      status: 'PUBLISHED',
+      startDate: new Date(Date.now() + 86_400_000),
+      updatedAt: new Date(),
+    },
+  })
+
+  const eventB = await prisma.event.create({
+    data: {
+      tenantId: tenantB,
+      title: `Isolation Event B ${Date.now()}`,
+      status: 'PUBLISHED',
+      startDate: new Date(Date.now() + 86_400_000),
+      updatedAt: new Date(),
+    },
+  })
 
   try {
-    await page.goto('/select-organization', { waitUntil: 'commit' })
-    await expect(page).toHaveURL(/sign-in/, { timeout: 15_000 })
+    await signInAs(page, fixtures.userA.userId, fixtures.userA.email)
+    await openRoot(page)
+    await expectSidebarOrgName(page, 'E2E Org A')
+
+    await page.goto('/dashboard/events', { waitUntil: 'networkidle' })
+    await expect(page.getByText(eventA.title)).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(eventB.title)).not.toBeVisible({ timeout: 5_000 })
+
+    const response = await page.goto(`/dashboard/events/${eventB.id}`, { waitUntil: 'networkidle' })
+    expect(response?.status()).toBe(404)
   } finally {
-    await freshContext.close()
+    await prisma.event.delete({ where: { id: eventA.id } }).catch(() => undefined)
+    await prisma.event.delete({ where: { id: eventB.id } }).catch(() => undefined)
   }
 })
