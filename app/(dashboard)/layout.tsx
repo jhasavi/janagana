@@ -1,15 +1,20 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Header } from '@/components/dashboard/header'
 import { DashboardErrorBoundary } from '@/components/dashboard/error-boundary'
 import { getTenant } from '@/lib/tenant'
+import { logAuthOrgRedirectDecision } from '@/lib/auth-org-redirect-log'
+import { getCurrentIdentity, getUserOrgMemberships } from '@/lib/auth/auth-provider'
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const activeOrgCookiePresent = Boolean(cookieStore.get('JG_ACTIVE_ORG')?.value)
+  const selectedTenantIdPresent = Boolean(cookieStore.get('JG_TENANT_ID')?.value)
   let tenant = null
 
   try {
@@ -21,22 +26,46 @@ export default async function DashboardLayout({
   if (!tenant) {
     // Distinguish: user has existing org memberships (pick one) vs truly zero
     // orgs (must create first org).
-    const { userId } = await auth()
+    const { userId } = await getCurrentIdentity()
     if (userId) {
       try {
-        const client = await clerkClient()
-        const memberships = await client.users.getOrganizationMembershipList({
-          userId,
-          limit: 2,
-        })
-        if (memberships.data.length > 0) {
+        const memberships = await getUserOrgMemberships(userId)
+        if (memberships.length > 0) {
+          logAuthOrgRedirectDecision({
+            route: '/dashboard',
+            userPresent: true,
+            membershipCount: memberships.length,
+            activeOrgCookiePresent,
+            selectedTenantIdPresent,
+            redirectTarget: '/select-organization',
+            reasonCode: 'MULTI_ORG_REDIRECT_SELECT_ORG',
+          })
           // User has at least one org but none is active yet — send to picker.
           redirect('/select-organization')
         }
       } catch (error) {
         console.error('[DashboardLayout] membership check failed', error)
+        logAuthOrgRedirectDecision({
+          route: '/dashboard',
+          userPresent: true,
+          membershipCount: null,
+          activeOrgCookiePresent,
+          selectedTenantIdPresent,
+          redirectTarget: '/select-organization',
+          reasonCode: 'MULTI_ORG_REDIRECT_SELECT_ORG',
+        })
+        redirect('/select-organization')
       }
     }
+    logAuthOrgRedirectDecision({
+      route: '/dashboard',
+      userPresent: Boolean(userId),
+      membershipCount: 0,
+      activeOrgCookiePresent,
+      selectedTenantIdPresent,
+      redirectTarget: '/onboarding',
+      reasonCode: 'ZERO_ORGS_REDIRECT_ONBOARDING',
+    })
     // Zero orgs — must complete onboarding to create the first org.
     redirect('/onboarding')
   }

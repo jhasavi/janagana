@@ -16,6 +16,7 @@
     "ci": "npm run validate:stripe-env && npm run lint && npm run typecheck && npm run db:generate && npm run db:migrate:deploy",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "prisma:validate:e2e": "node --import tsx scripts/prisma-validate-env.ts",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
