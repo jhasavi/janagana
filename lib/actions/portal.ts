@@ -1,7 +1,7 @@
 'use server'
 
-import { auth, currentUser } from '@clerk/nextjs/server'
 import { z } from 'zod'
+import { getCurrentIdentity } from '@/lib/auth/auth-provider'
 import { prisma } from '@/lib/prisma'
 import { syncEventRegistrationToActivity, syncVolunteerSignupToActivity } from '@/lib/crm-sync'
 import type {
@@ -40,21 +40,16 @@ export type PortalContext = {
 }
 
 /**
- * Get current Clerk user's Member record for a given org slug.
- * Used in every portal server component.
+ * Get authenticated user's Member record for a given org slug.
+ * Works in both Clerk and test-auth modes.
+ * Tenant is resolved by URL slug — never by dashboard active-org cookies.
  */
 export async function getPortalContext(slug: string): Promise<PortalContext | null> {
-  const { userId } = await auth()
-  if (!userId) return null
+  const identity = await getCurrentIdentity()
+  if (!identity.userId || !identity.email) return null
 
-  // Get Clerk user email
-  const user = await currentUser()
-  if (!user) return null
-
-  const primaryEmail = user.emailAddresses.find(
-    (e) => e.id === user.primaryEmailAddressId
-  )?.emailAddress
-  if (!primaryEmail) return null
+  const userId = identity.userId
+  const primaryEmail = identity.email
 
   const tenant = await prisma.tenant.findUnique({ where: { slug } })
   if (!tenant) return null
@@ -98,8 +93,8 @@ export async function getPortalContext(slug: string): Promise<PortalContext | nu
 
   if (!member) return null
 
-  // Persist clerkUserId on first portal login
-  if (!member.clerkUserId) {
+  // Persist clerkUserId on first portal login (Clerk mode only)
+  if (!member.clerkUserId && identity.mode === 'clerk') {
     await prisma.member.update({
       where: { id: member.id, tenantId: tenant.id },
       data: { clerkUserId: userId },
