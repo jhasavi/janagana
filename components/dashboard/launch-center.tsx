@@ -26,6 +26,7 @@ type LaunchItem = {
   done: boolean
   href: string
   cta: string
+  doneCta?: string
   critical?: boolean
   icon: React.ElementType
 }
@@ -67,7 +68,6 @@ export async function LaunchCenter() {
     const stripeReady = stripeWarnings.length === 0
     const emailReady = Boolean(process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim())
     const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''
-    const portalUrl = appBaseUrl ? `${appBaseUrl}/portal/${tenant.slug}` : `/portal/${tenant.slug}`
     const fundraisingUrl = appBaseUrl ? `${appBaseUrl}/fundraising/${tenant.slug}` : `/fundraising/${tenant.slug}`
 
     const items: LaunchItem[] = [
@@ -78,6 +78,7 @@ export async function LaunchCenter() {
         done: Boolean(tenant.name && tenant.slug && tenant.timezone),
         href: '/dashboard/settings',
         cta: 'Review settings',
+        doneCta: 'Open settings',
         critical: true,
         icon: Rocket,
       },
@@ -88,6 +89,7 @@ export async function LaunchCenter() {
         done: tierCount > 0,
         href: '/dashboard/tiers/new',
         cta: 'Add tier',
+        doneCta: 'Manage tiers',
         critical: true,
         icon: CreditCard,
       },
@@ -98,6 +100,7 @@ export async function LaunchCenter() {
         done: memberCount > 0,
         href: '/dashboard/members/new',
         cta: 'Add member',
+        doneCta: 'Open members',
         critical: true,
         icon: Users,
       },
@@ -108,6 +111,7 @@ export async function LaunchCenter() {
         done: eventCount > 0,
         href: '/dashboard/events/new',
         cta: 'Create event',
+        doneCta: 'Open events',
         critical: true,
         icon: CalendarDays,
       },
@@ -117,7 +121,8 @@ export async function LaunchCenter() {
         description: 'Share the portal so members can manage profile, events, cards, and support.',
         done: apiKeyCount > 0,
         href: '/dashboard/integrations',
-        cta: 'Open integrations',
+        cta: 'Configure portal',
+        doneCta: 'Open portal setup',
         critical: true,
         icon: KeyRound,
       },
@@ -126,8 +131,9 @@ export async function LaunchCenter() {
         label: 'Payment confidence',
         description: stripeReady ? 'Stripe environment and paid tier setup are ready.' : 'Finish Stripe setup before relying on paid checkout.',
         done: stripeReady || paidTierCount > 0,
-        href: '/dashboard/settings',
+        href: '/dashboard/integrations',
         cta: 'Fix payments',
+        doneCta: 'Review payments',
         critical: true,
         icon: CreditCard,
       },
@@ -138,6 +144,7 @@ export async function LaunchCenter() {
         done: true,
         href: '/dashboard/support',
         cta: 'View support',
+        doneCta: 'Open support',
         critical: true,
         icon: LifeBuoy,
       },
@@ -146,8 +153,9 @@ export async function LaunchCenter() {
         label: 'Email delivery',
         description: emailReady ? 'Email sender is configured for receipts and confirmations.' : 'Configure Resend and EMAIL_FROM for confirmations.',
         done: emailReady,
-        href: '/dashboard/settings',
+        href: '/dashboard/integrations',
         cta: 'Review email',
+        doneCta: 'Open email setup',
         icon: Mail,
       },
       {
@@ -157,6 +165,7 @@ export async function LaunchCenter() {
         done: activeCampaignCount > 0,
         href: '/dashboard/fundraising',
         cta: 'Create campaign',
+        doneCta: 'Open fundraising',
         icon: HeartHandshake,
       },
       {
@@ -166,6 +175,7 @@ export async function LaunchCenter() {
         done: Boolean(tenant.logoUrl),
         href: '/dashboard/settings',
         cta: 'Add logo',
+        doneCta: 'Open branding',
         icon: CheckCircle2,
       },
     ]
@@ -173,9 +183,7 @@ export async function LaunchCenter() {
     const launchScore = scoreLaunch(items)
     const nextItems = items.filter((item) => !item.done).slice(0, 4)
     const criticalOpen = items.filter((item) => item.critical && !item.done).length
-    const statusLabel = criticalOpen === 0
-      ? 'Ready for pilot launch'
-      : `${criticalOpen} launch blockers`
+    const statusLabel = criticalOpen === 0 ? 'All core setup items complete' : `${criticalOpen} setup items pending`
 
     return (
       <Card className="border-indigo-200 bg-indigo-50/50">
@@ -188,12 +196,12 @@ export async function LaunchCenter() {
                 <Badge variant={criticalOpen === 0 ? 'success' : 'warning'}>{statusLabel}</Badge>
               </div>
               <CardDescription className="mt-1">
-                Use this as the go-to-market cockpit before inviting real organizations.
+                Use this as your setup checklist before inviting members.
               </CardDescription>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-indigo-700">{launchScore}%</p>
-              <p className="text-xs text-muted-foreground">launch readiness</p>
+                  <p className="text-xs text-muted-foreground">setup completion</p>
             </div>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-indigo-100">
@@ -217,21 +225,24 @@ export async function LaunchCenter() {
             {items.map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg border bg-white p-3">
+                <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg border bg-white p-3" data-testid={`launch-center-item-${item.id}`}>
                   <div className="flex min-w-0 items-start gap-3">
                     <div className={item.done ? 'text-emerald-600' : 'text-muted-foreground'}>
                       {item.done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium">{item.label}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <Badge variant={item.done ? 'success' : 'warning'}>
+                          {item.done ? 'Complete' : 'Setup required'}
+                        </Badge>
+                      </div>
                       <p className="text-xs text-muted-foreground">{item.description}</p>
                     </div>
                   </div>
-                  {!item.done ? (
-                    <Button asChild size="sm" variant="ghost" className="shrink-0">
-                      <Link href={item.href}>{item.cta}</Link>
-                    </Button>
-                  ) : null}
+                  <Button asChild size="sm" variant="ghost" className="shrink-0" data-testid={`launch-center-cta-${item.id}`}>
+                    <Link href={item.href}>{item.done ? (item.doneCta ?? 'Open') : item.cta}</Link>
+                  </Button>
                 </div>
               )
             })}
@@ -243,10 +254,8 @@ export async function LaunchCenter() {
               <p className="text-xs text-muted-foreground">Use these to inspect the member and donor experience.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild size="sm" variant="outline">
-                <Link href={portalUrl} target="_blank">
-                  Member portal <ExternalLink className="h-3.5 w-3.5" />
-                </Link>
+              <Button size="sm" variant="outline" disabled data-testid="member-portal-public-url-disabled">
+                Member portal setup required
               </Button>
               <Button asChild size="sm" variant="outline">
                 <Link href={fundraisingUrl} target="_blank">

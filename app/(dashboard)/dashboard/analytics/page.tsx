@@ -3,6 +3,7 @@ import { BarChart2, Users, CalendarDays, Heart, Clock } from 'lucide-react'
 import { getAnalytics } from '@/lib/actions/analytics'
 import { Card, CardContent } from '@/components/ui/card'
 import { AnalyticsCharts } from './_components/analytics-charts'
+import { AnalyticsWidgetBoundary } from './_components/analytics-widget-boundary'
 
 export const metadata: Metadata = { title: 'Analytics' }
 
@@ -34,6 +35,30 @@ export default async function AnalyticsPage() {
   const result = await getAnalytics()
   const data = result.success && result.data ? result.data : null
 
+  const summary = {
+    totalMembers: typeof data?.summary?.totalMembers === 'number' ? data.summary.totalMembers : 0,
+    totalEvents: typeof data?.summary?.totalEvents === 'number' ? data.summary.totalEvents : 0,
+    totalVolunteerOpps: typeof data?.summary?.totalVolunteerOpps === 'number' ? data.summary.totalVolunteerOpps : 0,
+    totalApprovedHours: typeof data?.summary?.totalApprovedHours === 'number' ? data.summary.totalApprovedHours : 0,
+  }
+
+  const hasChartData = Boolean(
+    data
+    && Array.isArray(data.memberGrowth)
+    && Array.isArray(data.eventAttendance)
+    && Array.isArray(data.volunteerHours)
+    && Array.isArray(data.memberStatus),
+  )
+
+  if (data && !hasChartData) {
+    console.error('[AnalyticsPage] invalid analytics payload shape', {
+      hasMemberGrowth: Array.isArray(data.memberGrowth),
+      hasEventAttendance: Array.isArray(data.eventAttendance),
+      hasVolunteerHours: Array.isArray(data.volunteerHours),
+      hasMemberStatus: Array.isArray(data.memberStatus),
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -48,23 +73,25 @@ export default async function AnalyticsPage() {
 
       {/* Summary stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Members"      value={data?.summary.totalMembers      ?? 0} icon={Users} />
-        <StatCard label="Total Events"       value={data?.summary.totalEvents       ?? 0} icon={CalendarDays} />
-        <StatCard label="Volunteer Opps"     value={data?.summary.totalVolunteerOpps ?? 0} icon={Heart} />
-        <StatCard label="Approved Vol. Hours" value={(data?.summary.totalApprovedHours ?? 0).toFixed(1)} icon={Clock} />
+        <StatCard label="Total Members" value={summary.totalMembers} icon={Users} />
+        <StatCard label="Total Events" value={summary.totalEvents} icon={CalendarDays} />
+        <StatCard label="Volunteer Opps" value={summary.totalVolunteerOpps} icon={Heart} />
+        <StatCard label="Approved Vol. Hours" value={summary.totalApprovedHours.toFixed(1)} icon={Clock} />
       </div>
 
       {/* Charts */}
-      {data ? (
-        <AnalyticsCharts
-          memberGrowth={data.memberGrowth}
-          eventAttendance={data.eventAttendance}
-          volunteerHours={data.volunteerHours}
-          memberStatus={data.memberStatus}
-        />
+      {data && hasChartData ? (
+        <AnalyticsWidgetBoundary>
+          <AnalyticsCharts
+            memberGrowth={data.memberGrowth}
+            eventAttendance={data.eventAttendance}
+            volunteerHours={data.volunteerHours}
+            memberStatus={data.memberStatus}
+          />
+        </AnalyticsWidgetBoundary>
       ) : (
-        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground text-sm">
-          Analytics data could not be loaded.
+        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground text-sm" data-testid="analytics-fallback">
+          Unable to load this section. No analytics data is available yet.
         </div>
       )}
     </div>
