@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { auth } from '@clerk/nextjs/server'
-import { SignOutButton } from '@clerk/nextjs'
+import { getCurrentIdentity } from '@/lib/auth/auth-provider'
 import Link from 'next/link'
 import { LayoutDashboard, CalendarDays, Heart, Star, CheckCircle2, CreditCard, IdCard, Users, MessageSquare, LogOut, DollarSign } from 'lucide-react'
 import { getPortalContext } from '@/lib/actions/portal'
@@ -14,8 +13,8 @@ export default async function PortalLayout({
   children: React.ReactNode
   params: Promise<{ slug: string }>
 }) {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
+  const identity = await getCurrentIdentity()
+  if (!identity.userId) redirect('/sign-in')
 
   const { slug } = await params
   const ctx = await getPortalContext(slug)
@@ -67,11 +66,13 @@ export default async function PortalLayout({
             <span>
               {ctx.member.firstName} {ctx.member.lastName}
             </span>
-            <SignOutButton redirectUrl="/api/sign-out">
-              <button className="hover:text-foreground transition-colors" aria-label="Sign out">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </SignOutButton>
+            <Link
+              href="/api/sign-out"
+              className="hover:text-foreground transition-colors"
+              aria-label="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </header>

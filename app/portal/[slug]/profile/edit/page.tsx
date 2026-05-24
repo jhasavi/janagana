@@ -1,5 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
-import { auth } from '@clerk/nextjs/server'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,9 +10,6 @@ export default async function EditProfilePage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
   const { slug } = await params
   const ctx = await getPortalContext(slug)
 

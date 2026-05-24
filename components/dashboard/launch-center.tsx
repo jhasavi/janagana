@@ -254,8 +254,10 @@ export async function LaunchCenter() {
               <p className="text-xs text-muted-foreground">Use these to inspect the member and donor experience.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" disabled data-testid="member-portal-public-url-disabled">
-                Member portal setup required
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/portal/${tenant.slug}`} target="_blank" data-testid="member-portal-public-url">
+                  Member portal <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </Button>
               <Button asChild size="sm" variant="outline">
                 <Link href={fundraisingUrl} target="_blank">

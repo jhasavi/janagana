@@ -50,26 +50,30 @@ export function PortalEventsClient({
 
   function handleRegister(eventId: string, joinWaitlist = false) {
     startTransition(async () => {
-      const ticketTypeId = selectedTicketTypeIds[eventId]
-      const res = await portalRegisterForEvent(slug, eventId, joinWaitlist, ticketTypeId)
-      if (res.success) {
-        if ('waitlisted' in res && res.waitlisted) {
-          setWaitlisted((prev) => new Set([...prev, eventId]))
-          toast.success('Added to waitlist! You\'ll be notified if a spot opens up.')
+      try {
+        const ticketTypeId = selectedTicketTypeIds[eventId]
+        const res = await portalRegisterForEvent(slug, eventId, joinWaitlist, ticketTypeId)
+        if (res.success) {
+          if ('waitlisted' in res && res.waitlisted) {
+            setWaitlisted((prev) => new Set([...prev, eventId]))
+            toast.success('Added to waitlist! You\'ll be notified if a spot opens up.')
+          } else {
+            setRegistered((prev) => new Set([...prev, eventId]))
+            toast.success('Registered successfully!')
+          }
+        } else if ('waitlistAvailable' in res && res.waitlistAvailable) {
+          toast('This event is full.', {
+            description: 'Would you like to join the waitlist?',
+            action: {
+              label: 'Join Waitlist',
+              onClick: () => handleRegister(eventId, true),
+            },
+          })
         } else {
-          setRegistered((prev) => new Set([...prev, eventId]))
-          toast.success('Registered successfully!')
+          toast.error(res.error ?? 'Registration failed')
         }
-      } else if ('waitlistAvailable' in res && res.waitlistAvailable) {
-        toast('This event is full.', {
-          description: 'Would you like to join the waitlist?',
-          action: {
-            label: 'Join Waitlist',
-            onClick: () => handleRegister(eventId, true),
-          },
-        })
-      } else {
-        toast.error(res.error ?? 'Registration failed')
+      } catch {
+        toast.error('Registration failed. Please try again.')
       }
     })
   }
@@ -82,21 +86,25 @@ export function PortalEventsClient({
 
   function handleCancel(eventId: string) {
     startTransition(async () => {
-      const res = await portalCancelEventRegistration(slug, eventId)
-      if (res.success) {
-        if (res.status === 'requested') {
-          setRequested((prev) => new Set([...prev, eventId]))
-          toast.success(res.message ?? 'Cancellation request submitted.')
+      try {
+        const res = await portalCancelEventRegistration(slug, eventId)
+        if (res.success) {
+          if (res.status === 'requested') {
+            setRequested((prev) => new Set([...prev, eventId]))
+            toast.success(res.message ?? 'Cancellation request submitted.')
+          } else {
+            setRegistered((prev) => {
+              const next = new Set(prev)
+              next.delete(eventId)
+              return next
+            })
+            toast.success(res.message ?? 'Registration cancelled.')
+          }
         } else {
-          setRegistered((prev) => {
-            const next = new Set(prev)
-            next.delete(eventId)
-            return next
-          })
-          toast.success(res.message ?? 'Registration cancelled.')
+          toast.error(res.error ?? 'Cancellation failed')
         }
-      } else {
-        toast.error(res.error ?? 'Cancellation failed')
+      } catch {
+        toast.error('Cancellation failed. Please try again.')
       }
     })
   }
