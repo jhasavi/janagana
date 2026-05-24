@@ -24,10 +24,51 @@ interface Window {
 // Single in-process store — resets on cold start
 const store = new Map<string, Window>()
 
+const MAX_RATE_LIMIT_ENTRIES = 10_000
+
+function normalizeIp(raw: string | null) {
+  if (!raw) return null
+  const value = raw.trim().replace(/^\[|\]$/g, '')
+  if (!value) return null
+  // Keep parsing intentionally lightweight; this only improves key hygiene.
+  const ipv4Like = /^\d{1,3}(\.\d{1,3}){3}$/.test(value)
+  const ipv6Like = /^[0-9a-fA-F:]+$/.test(value)
+  return ipv4Like || ipv6Like ? value : null
+}
+
 function getIp(request: Request): string {
-  const forwarded = (request.headers as Headers).get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0].trim()
-  return 'unknown'
+  const headers = request.headers as Headers
+  const candidates = [
+    headers.get('cf-connecting-ip'),
+    headers.get('x-real-ip'),
+    headers.get('x-vercel-forwarded-for'),
+    headers.get('x-forwarded-for')?.split(',')[0] ?? null,
+  ]
+
+  for (const candidate of candidates) {
+    const normalized = normalizeIp(candidate)
+    if (normalized) return normalized
+  }
+
+  const userAgent = headers.get('user-agent') ?? 'unknown'
+  return `unknown:${userAgent.slice(0, 80)}`
+}
+
+function pruneExpiredEntries(now: number) {
+  for (const [key, entry] of store.entries()) {
+    if (now > entry.resetAt) {
+      store.delete(key)
+    }
+  }
+
+  if (store.size <= MAX_RATE_LIMIT_ENTRIES) return
+  const overflow = store.size - MAX_RATE_LIMIT_ENTRIES
+  let removed = 0
+  for (const key of store.keys()) {
+    store.delete(key)
+    removed++
+    if (removed >= overflow) break
+  }
 }
 
 /**
@@ -38,8 +79,10 @@ export function checkRateLimit(
   options: RateLimitOptions = {}
 ): boolean {
   const { maxRequests = 60, windowMs = 60_000 } = options
-  const key = getIp(request)
   const now = Date.now()
+  pruneExpiredEntries(now)
+
+  const key = getIp(request)
 
   const entry = store.get(key)
 

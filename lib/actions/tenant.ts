@@ -29,6 +29,10 @@ function getOnboardingDefaults() {
   }
 }
 
+function normalizeOrganizationNameKey(name: string) {
+  return slugify(name.trim())
+}
+
 function normalizeApiKeyPermissions(rawPermissions: string | undefined) {
   const permissions = (rawPermissions ?? 'contacts:write,events:read')
     .split(',')
@@ -71,9 +75,9 @@ export async function completeOnboarding(input: unknown) {
         limit: 100,
       })
 
-      const normalizedOrgName = data.orgName.trim().toLowerCase()
+      const normalizedOrgName = normalizeOrganizationNameKey(data.orgName)
       const existingOrgWithSameName = memberships.data.find(({ organization }) =>
-        organization?.name?.trim().toLowerCase() === normalizedOrgName,
+        normalizeOrganizationNameKey(organization?.name ?? '') === normalizedOrgName,
       )?.organization
 
       if (existingOrgWithSameName) {
@@ -108,46 +112,6 @@ export async function completeOnboarding(input: unknown) {
       }
     }
 
-    // Create or update Tenant in DB synced to Clerk org. If a tenant already
-    // exists for this Clerk org id, update its basic fields. Otherwise create
-    // a new tenant while ensuring slug uniqueness.
-    const existing = await prisma.tenant.findUnique({ where: { clerkOrgId: org.id } })
-    let tenant
-    let tenantCreated = false
-    if (existing) {
-      tenant = await prisma.tenant.update({
-        where: { id: existing.id },
-        data: {
-          name: data.orgName,
-          timezone: data.timezone,
-          primaryColor: data.primaryColor,
-        },
-      })
-      console.log('[completeOnboarding] updated existing tenant', tenant.id, 'for org', org.id)
-    } else {
-      const baseSlug = slugify(data.orgName)
-      let slug = baseSlug
-      let attempt = 0
-
-      while (await prisma.tenant.findUnique({ where: { slug } })) {
-        attempt++
-        slug = `${baseSlug}-${attempt}`
-      }
-
-      tenant = await prisma.tenant.create({
-        data: {
-          clerkOrgId: org.id,
-          name: data.orgName,
-          slug,
-          timezone: data.timezone,
-          primaryColor: data.primaryColor,
-        },
-      })
-      tenantCreated = true
-
-      console.log('[completeOnboarding] created org', org.id, 'tenant', tenant.id)
-    }
-
     // Idempotent default API key provisioning for plugin integrations.
     let defaultApiKeyName = 'Default Plugin Key'
     let defaultApiKeyPermissions = ['contacts:write', 'events:read']
@@ -160,27 +124,84 @@ export async function completeOnboarding(input: unknown) {
       defaultApiKeyPermissions = normalizeApiKeyPermissions(process.env.ONBOARDING_DEFAULT_API_KEY_PERMISSIONS)
     }
 
-    const existingApiKey = await prisma.apiKey.findFirst({
-      where: { tenantId: tenant.id, name: defaultApiKeyName, isActive: true },
-      select: { id: true },
+    const generatedApiPrefix = process.env.NODE_ENV === 'production' ? 'jg_live_' : 'jg_test_'
+
+    const provisioning = await prisma.$transaction(async (tx) => {
+      // Create or update Tenant in DB synced to Clerk org. If a tenant already
+      // exists for this Clerk org id, update its basic fields. Otherwise create
+      // a new tenant while ensuring slug uniqueness.
+      const existing = await tx.tenant.findUnique({ where: { clerkOrgId: org.id } })
+      let tenant
+      let tenantCreated = false
+      if (existing) {
+        tenant = await tx.tenant.update({
+          where: { id: existing.id },
+          data: {
+            name: data.orgName,
+            timezone: data.timezone,
+            primaryColor: data.primaryColor,
+          },
+        })
+      } else {
+        const baseSlug = slugify(data.orgName)
+        let slug = baseSlug
+        let attempt = 0
+
+        while (await tx.tenant.findUnique({ where: { slug } })) {
+          attempt++
+          slug = `${baseSlug}-${attempt}`
+        }
+
+        tenant = await tx.tenant.create({
+          data: {
+            clerkOrgId: org.id,
+            name: data.orgName,
+            slug,
+            timezone: data.timezone,
+            primaryColor: data.primaryColor,
+          },
+        })
+        tenantCreated = true
+      }
+
+      const existingApiKey = await tx.apiKey.findFirst({
+        where: { tenantId: tenant.id, name: defaultApiKeyName, isActive: true },
+        select: { id: true },
+      })
+
+      let onboardingApiKey: string | undefined
+      let apiKeyCreated = false
+
+      if (!existingApiKey) {
+        const rawKey = generateApiKey(generatedApiPrefix)
+        await tx.apiKey.create({
+          data: {
+            tenantId: tenant.id,
+            name: defaultApiKeyName,
+            keyHash: hashApiKey(rawKey),
+            keyPrefix: extractApiKeyPrefix(rawKey),
+            permissions: defaultApiKeyPermissions,
+          },
+        })
+        onboardingApiKey = rawKey
+        apiKeyCreated = true
+      }
+
+      return { tenant, tenantCreated, onboardingApiKey, apiKeyCreated }
     })
 
-    let onboardingApiKey: string | undefined
-    let apiKeyCreated = false
+    const tenant = provisioning.tenant
+    const tenantCreated = provisioning.tenantCreated
+    const onboardingApiKey = provisioning.onboardingApiKey
+    const apiKeyCreated = provisioning.apiKeyCreated
 
-    if (!existingApiKey) {
-      const rawKey = generateApiKey('jg_live_')
-      await prisma.apiKey.create({
-        data: {
-          tenantId: tenant.id,
-          name: defaultApiKeyName,
-          keyHash: hashApiKey(rawKey),
-          keyPrefix: extractApiKeyPrefix(rawKey),
-          permissions: defaultApiKeyPermissions,
-        },
-      })
-      onboardingApiKey = rawKey
-      apiKeyCreated = true
+    if (tenantCreated) {
+      console.log('[completeOnboarding] created org', org.id, 'tenant', tenant.id)
+    } else {
+      console.log('[completeOnboarding] updated existing tenant', tenant.id, 'for org', org.id)
+    }
+
+    if (apiKeyCreated) {
       console.log('[completeOnboarding] created default api key', {
         tenantId: tenant.id,
         keyName: defaultApiKeyName,

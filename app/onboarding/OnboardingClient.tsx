@@ -193,7 +193,11 @@ export default function OnboardingClient({
 
   async function handleGoToDashboard() {
     if (orgId) {
-      await syncActiveOrg(orgId, tenantId)
+      const synced = await syncActiveOrg(orgId, tenantId)
+      if (!synced) {
+        toast.error('Unable to activate your organization. Please try again.')
+        return
+      }
     }
 
     router.replace('/dashboard?onboardingComplete=1')
@@ -221,13 +225,15 @@ export default function OnboardingClient({
         if (orgId && setActive && process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true') {
           try { await setActive({ organization: orgId }) } catch { /* ok */ }
         }
-        try {
-          await fetch('/api/active-org', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orgId, tenantId }),
-          })
-        } catch { /* ok */ }
+        if (orgId) {
+          const synced = await syncActiveOrg(orgId, tenantId ?? null)
+          if (!synced) {
+            const message = 'Workspace created but organization activation failed. Please retry.'
+            setProfileError(message)
+            toast.error(message)
+            return
+          }
+        }
 
         toast.success(`Workspace created! Welcome to ${platformName}.`)
         setOrgId(orgId ?? null)

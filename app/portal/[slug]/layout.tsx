@@ -67,7 +67,7 @@ export default async function PortalLayout({
             <span>
               {ctx.member.firstName} {ctx.member.lastName}
             </span>
-            <SignOutButton redirectUrl="/sign-in">
+            <SignOutButton redirectUrl="/api/sign-out">
               <button className="hover:text-foreground transition-colors" aria-label="Sign out">
                 <LogOut className="h-4 w-4" />
               </button>

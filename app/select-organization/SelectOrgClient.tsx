@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useOrganizationList } from '@clerk/nextjs'
-import { Building2, ArrowRight, Loader2, PlusCircle } from 'lucide-react'
+import { useClerk, useOrganizationList } from '@clerk/nextjs'
+import { Building2, ArrowRight, Loader2, PlusCircle, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
@@ -18,34 +18,34 @@ type Org = {
 
 type Props = {
   orgs: Org[]
+  signedInUser: {
+    name: string | null
+    email: string | null
+    imageUrl: string | null
+    userId: string | null
+  }
 }
 
-export default function SelectOrgClient({ orgs }: Props) {
+export default function SelectOrgClient({ orgs, signedInUser }: Props) {
   const router = useRouter()
+  const clerk = useClerk()
   const { setActive, isLoaded } = useOrganizationList()
   const [isPending, startTransition] = useTransition()
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [selectingOrgId, setSelectingOrgId] = useState<string | null>(null)
 
-  // If exactly one org, auto-select it immediately
-  useEffect(() => {
-    if (orgs.length === 1 && isLoaded) {
-      void handleSelect(orgs[0].id)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded])
-
-  async function handleSelect(orgId: string) {
+  const handleSelect = useCallback(async (orgId: string) => {
     setSelectingOrgId(orgId)
 
     startTransition(async () => {
+      let routed = false
       try {
         // 1. Set the Clerk active organization (updates JWT session claims)
         if (process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true' && isLoaded && setActive) {
           try {
             await setActive({ organization: orgId })
-          } catch {
-            // Non-fatal: Clerk session update can be slow. Cookie path below
-            // is the authoritative fallback for server resolution.
+          } catch (error) {
+            console.warn('[SelectOrgClient] setActive failed, continuing with cookie sync fallback', error)
           }
         }
 
@@ -69,17 +69,43 @@ export default function SelectOrgClient({ orgs }: Props) {
           const payload = await response?.json().catch(() => null)
           const message = payload?.error ?? 'Failed to activate organization'
           toast.error(message)
-          setSelectingOrgId(null)
           return
         }
 
+        routed = true
         router.push('/dashboard')
       } catch (error) {
         console.error('[SelectOrgClient] handleSelect error', error)
         toast.error('Something went wrong. Please try again.')
-        setSelectingOrgId(null)
+      } finally {
+        if (!routed) {
+          setSelectingOrgId(null)
+        }
       }
     })
+  }, [isLoaded, router, setActive, startTransition])
+
+  // If exactly one org, auto-select it immediately
+  useEffect(() => {
+    if (orgs.length === 1 && isLoaded) {
+      void handleSelect(orgs[0].id)
+    }
+  }, [handleSelect, isLoaded, orgs])
+
+  async function handleSignOut() {
+    setIsSigningOut(true)
+    try {
+      if (process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true') {
+        await clerk.signOut({ redirectUrl: '/api/sign-out' })
+        return
+      }
+
+      window.location.assign('/api/sign-out')
+    } catch (error) {
+      console.error('[SelectOrgClient] sign-out failed', error)
+      toast.error('Unable to sign out cleanly. Redirecting to sign-in.')
+      window.location.assign('/api/sign-out')
+    }
   }
 
   // Single-org: show a loading state while auto-selecting
@@ -97,6 +123,51 @@ export default function SelectOrgClient({ orgs }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 px-4">
       <div className="w-full max-w-md">
+        <Card className="mb-4 bg-slate-800/60 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex items-center gap-3">
+                {signedInUser.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={signedInUser.imageUrl}
+                    alt={signedInUser.name ?? signedInUser.email ?? 'Signed-in user'}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">
+                    {(signedInUser.name ?? signedInUser.email ?? 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0" data-testid="signed-in-user-identity">
+                  <p className="text-xs text-slate-400">Signed in as</p>
+                  <p className="text-sm font-medium text-white truncate">
+                    {signedInUser.name ?? signedInUser.email ?? signedInUser.userId ?? 'Unknown user'}
+                  </p>
+                  {signedInUser.email ? (
+                    <p className="text-xs text-slate-400 truncate">{signedInUser.email}</p>
+                  ) : null}
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                disabled={isSigningOut || isPending}
+                data-testid="select-org-sign-out"
+                className="border-slate-600 text-slate-200 hover:bg-slate-700"
+              >
+                <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                {isSigningOut ? 'Signing out…' : 'Sign out'}
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Wrong account? Sign out and switch account before choosing an organization.
+            </p>
+          </CardContent>
+        </Card>
+
         <div className="text-center mb-8">
           <Building2 className="mx-auto h-10 w-10 text-indigo-400 mb-4" />
           <h1 className="text-2xl font-bold text-white">Select an Organization</h1>
@@ -114,35 +185,44 @@ export default function SelectOrgClient({ orgs }: Props) {
               <Card
                 key={org.id}
                 data-testid="organization-card"
-                className="bg-slate-800/60 border-slate-700 hover:border-indigo-500 transition-colors cursor-pointer"
-                onClick={() => !isDisabled && handleSelect(org.id)}
+                className="bg-slate-800/60 border-slate-700 hover:border-indigo-500 transition-colors"
               >
-                <CardContent className="flex items-center gap-4 p-4">
-                  {org.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={org.imageUrl}
-                      alt={org.name}
-                      className="h-10 w-10 rounded-lg object-cover shrink-0"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-                      <span className="text-white font-bold text-sm">
-                        {org.name.charAt(0).toUpperCase()}
-                      </span>
+                <CardContent className="p-0">
+                  <button
+                    type="button"
+                    onClick={() => !isDisabled && handleSelect(org.id)}
+                    disabled={isDisabled}
+                    aria-busy={isSelecting}
+                    aria-label={`Select organization ${org.name}`}
+                    data-testid="select-org-button"
+                    className="flex w-full items-center gap-4 p-4 text-left disabled:opacity-70 hover:bg-slate-700/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {org.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={org.imageUrl}
+                        alt={org.name}
+                        className="h-10 w-10 rounded-lg object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+                        <span className="text-white font-bold text-sm">
+                          {org.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{org.name}</p>
+                      <p className="text-xs text-slate-400 capitalize">{org.role.replace('org:', '')}</p>
                     </div>
-                  )}
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate">{org.name}</p>
-                    <p className="text-xs text-slate-400 capitalize">{org.role.replace('org:', '')}</p>
-                  </div>
-
-                  {isSelecting ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-indigo-400 shrink-0" />
-                  ) : (
-                    <ArrowRight className="h-4 w-4 text-slate-500 shrink-0" />
-                  )}
+                    {isSelecting ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-400 shrink-0" />
+                    ) : (
+                      <ArrowRight className="h-4 w-4 text-slate-500 shrink-0" />
+                    )}
+                  </button>
                 </CardContent>
               </Card>
             )
@@ -155,7 +235,8 @@ export default function SelectOrgClient({ orgs }: Props) {
             size="sm"
             className="text-slate-400 hover:text-white"
             onClick={() => router.push('/onboarding')}
-            disabled={isPending}
+            disabled={isPending || isSigningOut}
+            data-testid="create-organization-cta"
           >
             <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
             Create a new organization

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { currentUser } from '@clerk/nextjs/server'
 import { getTenant } from '@/lib/tenant'
 import { getCurrentIdentity, getUserOrgMemberships } from '@/lib/auth/auth-provider'
 import SelectOrgClient from './SelectOrgClient'
@@ -6,7 +7,8 @@ import SelectOrgClient from './SelectOrgClient'
 export const metadata = { title: 'Select Organization' }
 
 export default async function SelectOrganizationPage() {
-  const { userId } = await getCurrentIdentity()
+  const identity = await getCurrentIdentity()
+  const { userId } = identity
   if (!userId) redirect('/sign-in')
 
   const memberships = await getUserOrgMemberships(userId)
@@ -35,5 +37,22 @@ export default async function SelectOrganizationPage() {
     redirect('/dashboard')
   }
 
-  return <SelectOrgClient orgs={orgs} />
+  let signedInUser = {
+    name: null as string | null,
+    email: identity.email,
+    imageUrl: null as string | null,
+    userId: identity.userId,
+  }
+
+  if (identity.mode === 'clerk') {
+    const user = await currentUser().catch(() => null)
+    signedInUser = {
+      name: user?.fullName ?? null,
+      email: user?.primaryEmailAddress?.emailAddress ?? identity.email,
+      imageUrl: user?.imageUrl ?? null,
+      userId: identity.userId,
+    }
+  }
+
+  return <SelectOrgClient orgs={orgs} signedInUser={signedInUser} />
 }

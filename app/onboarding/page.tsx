@@ -36,6 +36,10 @@ export default async function OnboardingPage() {
   // resolved (e.g. multiple orgs, expired cookie), send them to the org picker
   // rather than showing the create-organization wizard.
   const { userId } = await getCurrentIdentity()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
   if (userId) {
     try {
       const memberships = await getUserOrgMemberships(userId)
@@ -53,16 +57,8 @@ export default async function OnboardingPage() {
       }
     } catch (error) {
       console.error('[OnboardingPage] membership check failed', error)
-      logAuthOrgRedirectDecision({
-        route: '/onboarding',
-        userPresent: true,
-        membershipCount: null,
-        activeOrgCookiePresent,
-        selectedTenantIdPresent,
-        redirectTarget: '/select-organization',
-        reasonCode: 'MULTI_ORG_REDIRECT_SELECT_ORG',
-      })
-      redirect('/select-organization')
+      // Fail open to onboarding for resiliency; transient membership lookup
+      // failures should not block first-org creation.
     }
   }
 

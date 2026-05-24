@@ -1,27 +1,58 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { logAuthOrgRedirectDecision } from '@/lib/auth-org-redirect-log'
 import {
+  clearActiveOrgCookies,
   getCurrentIdentity,
   setActiveOrgCookies,
   userBelongsToOrg,
 } from '@/lib/auth/auth-provider'
 
+const activeOrgRequestSchema = z
+  .object({
+    orgId: z.string().trim().min(1).max(128).optional(),
+    tenantId: z.string().trim().min(1).max(128).optional(),
+  })
+  .refine((value) => Boolean(value.orgId || value.tenantId), {
+    message: 'Missing orgId or tenantId',
+  })
+
 export async function POST(req: Request) {
   try {
+    const requestOrigin = new URL(req.url).origin
+    const originHeader = req.headers.get('origin')
+    const fetchSiteHeader = req.headers.get('sec-fetch-site')
+
+    if ((originHeader && originHeader !== requestOrigin) || fetchSiteHeader === 'cross-site') {
+      return NextResponse.json({ success: false, error: 'Invalid request origin' }, { status: 403 })
+    }
+
     if (checkRateLimit(req, { maxRequests: 20, windowMs: 60_000 })) {
       return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 })
     }
 
-    const { userId } = await getCurrentIdentity()
+    const { userId, mode } = await getCurrentIdentity()
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const requestedOrgId = typeof body?.orgId === 'string' ? body.orgId.trim() : ''
-    const requestedTenantId = typeof body?.tenantId === 'string' ? body.tenantId.trim() : ''
+    const rawBody = await req.json().catch(() => null)
+    const parsedBody = activeOrgRequestSchema.safeParse(rawBody)
+    if (!parsedBody.success) {
+      return NextResponse.json({ success: false, error: 'Missing orgId or tenantId' }, { status: 400 })
+    }
+
+    const requestedOrgId = parsedBody.data.orgId ?? ''
+    const requestedTenantId = parsedBody.data.tenantId ?? ''
+
+    async function denyWithCookieReset(error: string, status: number) {
+      const response = NextResponse.json({ success: false, error }, { status })
+      await clearActiveOrgCookies(response)
+      return response
+    }
+
     logAuthOrgRedirectDecision({
       route: '/api/active-org',
       userPresent: true,
@@ -31,9 +62,6 @@ export async function POST(req: Request) {
       redirectTarget: null,
       reasonCode: 'MULTI_ORG_SELECT_REQUEST',
     })
-    if (!requestedOrgId && !requestedTenantId) {
-      return NextResponse.json({ success: false, error: 'Missing orgId or tenantId' }, { status: 400 })
-    }
 
     const tenant = requestedTenantId
       ? await prisma.tenant.findUnique({ where: { id: requestedTenantId } })
@@ -42,7 +70,7 @@ export async function POST(req: Request) {
         : null
 
     if (requestedTenantId && !tenant) {
-      return NextResponse.json({ success: false, error: 'Tenant not found' }, { status: 404 })
+      return denyWithCookieReset('Tenant not found', 404)
     }
 
     const orgId = tenant?.clerkOrgId ?? requestedOrgId
@@ -51,7 +79,7 @@ export async function POST(req: Request) {
     }
 
     if (requestedOrgId && tenant && requestedOrgId !== tenant.clerkOrgId) {
-      return NextResponse.json({ success: false, error: 'Tenant/org mismatch' }, { status: 403 })
+      return denyWithCookieReset('Tenant/org mismatch', 403)
     }
 
     const allowed = await userBelongsToOrg(userId, orgId)
@@ -65,7 +93,7 @@ export async function POST(req: Request) {
         redirectTarget: null,
         reasonCode: 'STALE_ACTIVE_ORG_REJECTED',
       })
-      return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 })
+      return denyWithCookieReset('Access denied', 403)
     }
 
     // Set short-lived cookies for server-side tenant/org resolution
@@ -102,15 +130,13 @@ export async function POST(req: Request) {
     })
     console.log('[api/active-org] set cookies', {
       route: '/api/active-org',
-      authPrincipal: `clerk:user:${userId}`,
+      authPrincipal: `${mode}:user:${userId}`,
       orgId,
       tenantId: tenant?.id ?? null,
     })
     return res
   } catch (err) {
     console.error('[api/active-org] error', err)
-    const isTestMode = process.env.E2E_TEST_MODE === 'true' || process.env.PLAYWRIGHT_TEST === 'true'
-    const message = err instanceof Error ? err.message : 'Server error'
-    return NextResponse.json({ success: false, error: isTestMode ? message : 'Server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 })
   }
 }
