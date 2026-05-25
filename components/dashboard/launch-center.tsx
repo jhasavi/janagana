@@ -287,6 +287,13 @@ export async function LaunchCenter() {
             </div>
           </div>
 
+          <div className="rounded-lg bg-white p-3 text-sm">
+            <p className="font-medium">Need help with setup?</p>
+            <p className="mt-1 text-muted-foreground">
+              Visit the <Link href="/help/integrations/website-integration-quick-start" className="text-primary hover:underline">integration quick start guide</Link> or the <Link href="/help" className="text-primary hover:underline">Help Center</Link> for step-by-step support.
+            </p>
+          </div>
+
           {nextItems.length > 0 ? (
             <div className="rounded-lg bg-white p-3 text-sm">
               <p className="font-medium">Fastest path to 9/10</p>
