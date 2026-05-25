@@ -168,6 +168,63 @@ test('BUG-003: stripe warning appears when tenant has no paid tier with Stripe P
   ).toBeVisible({ timeout: 20_000 })
 })
 
+test('BUG-003a: free-only tenant shows setup guidance, not Stripe error', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
+
+  await signInAs(page, fixtures.userB.userId, fixtures.userB.email)
+  await goDashboard(page)
+
+  await expect(
+    page.getByText('Add a paid tier when you are ready to accept paid memberships.').first(),
+  ).toBeVisible({ timeout: 20_000 })
+  await expect(
+    page.getByText('No paid membership tier is configured with a Stripe Price ID').first(),
+  ).toHaveCount(0)
+})
+
+test('BUG-003b: tenant with no tiers shows create tiers guidance instead of Stripe error', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
+
+  await signInAs(page, fixtures.userA.userId, fixtures.userA.email)
+  await goDashboard(page)
+
+  await expect(
+    page.getByText('Create membership tiers before accepting paid memberships.').first(),
+  ).toBeVisible({ timeout: 20_000 })
+  await expect(
+    page.getByText('No paid membership tier is configured with a Stripe Price ID').first(),
+  ).toHaveCount(0)
+})
+
+test('BUG-003c: switching organizations refreshes Stripe readiness state', async ({ page }) => {
+  const fixtures = await getFixtureRecord()
+
+  await signInAs(page, fixtures.userC.userId, fixtures.userC.email)
+  await page.goto('/select-organization', { waitUntil: 'networkidle' })
+
+  const orgC1Card = page.getByTestId('organization-card').filter({ hasText: 'E2E Org C1' }).first()
+  await expect(orgC1Card).toBeVisible({ timeout: 20_000 })
+  await orgC1Card.click()
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
+
+  await expect(
+    page.getByText('Paid membership tier is missing a Stripe Price ID.').first(),
+  ).toBeVisible({ timeout: 20_000 })
+
+  await page.goto('/select-organization', { waitUntil: 'networkidle' })
+  const orgC2Card = page.getByTestId('organization-card').filter({ hasText: 'E2E Org C2' }).first()
+  await expect(orgC2Card).toBeVisible({ timeout: 20_000 })
+  await orgC2Card.click()
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000 })
+
+  await expect(
+    page.getByText('Create membership tiers before accepting paid memberships.').first(),
+  ).toBeVisible({ timeout: 20_000 })
+  await expect(
+    page.getByText('Paid membership tier is missing a Stripe Price ID.').first(),
+  ).toHaveCount(0)
+})
+
 // ── BUG-004: mechanism baseline still holds alongside body-click tests ────────
 
 test('BUG-004: all 10 launch center CTA links navigate to concrete routes', async ({ page }) => {

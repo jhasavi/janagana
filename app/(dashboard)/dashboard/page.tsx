@@ -60,6 +60,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const [statsResult, stripeResult] = await Promise.all([getDashboardStats(), getStripeSetupReadiness()])
   const stats = statsResult.data
   const stripeWarnings = stripeResult.success ? stripeResult.warnings : []
+  const stripeErrors = stripeWarnings.filter((warning) => warning.severity === 'warning')
+  const stripeInfos = stripeWarnings.filter((warning) => warning.severity === 'info')
   const showOnboardingBanner = onboardingComplete === '1'
 
   return (
@@ -119,13 +121,26 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </Card>
       ) : null}
 
-      {stripeWarnings.length > 0 ? (
+      {stripeErrors.length > 0 ? (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent>
             <div className="space-y-2">
               <p className="text-sm font-semibold text-amber-900">Stripe setup warnings</p>
               <ul className="list-disc list-inside text-sm text-amber-800">
-                {stripeWarnings.map((warning) => (
+                {stripeErrors.map((warning) => (
+                  <li key={warning.key}>{warning.message}</li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      ) : stripeInfos.length > 0 ? (
+        <Card className="border-sky-200 bg-sky-50">
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-sky-900">Stripe setup guidance</p>
+              <ul className="list-disc list-inside text-sm text-sky-800">
+                {stripeInfos.map((warning) => (
                   <li key={warning.key}>{warning.message}</li>
                 ))}
               </ul>
