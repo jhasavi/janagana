@@ -66,7 +66,9 @@ export async function LaunchCenter() {
     ])
 
     const stripeWarnings = stripeResult.success ? stripeResult.warnings : []
-    const stripeReady = stripeWarnings.length === 0
+    const stripeErrors = stripeWarnings.filter((warning) => warning.severity === 'warning')
+    const stripeInfos = stripeWarnings.filter((warning) => warning.severity === 'info')
+    const stripeReady = stripeErrors.length === 0 && stripeInfos.length === 0
     const emailReady = Boolean(process.env.RESEND_API_KEY?.trim() && process.env.EMAIL_FROM?.trim())
     const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''
     const fundraisingUrl = appBaseUrl ? `${appBaseUrl}/fundraising/${tenant.slug}` : `/fundraising/${tenant.slug}`
@@ -210,13 +212,23 @@ export async function LaunchCenter() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          {stripeWarnings.length > 0 ? (
+          {stripeErrors.length > 0 ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">Payment setup needs attention</p>
-                  <p className="mt-1 text-amber-800">{stripeWarnings[0].message}</p>
+                  <p className="mt-1 text-amber-800">{stripeErrors[0].message}</p>
+                </div>
+              </div>
+            </div>
+          ) : stripeInfos.length > 0 ? (
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-medium">Stripe setup guidance</p>
+                  <p className="mt-1 text-sky-800">{stripeInfos[0].message}</p>
                 </div>
               </div>
             </div>

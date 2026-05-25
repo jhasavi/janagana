@@ -95,6 +95,26 @@ export async function seedE2EFixtures() {
     update: { isActive: true },
   })
 
+  // Ensure a paid tier exists for org-c1 with no Stripe Price ID
+  await prisma.membershipTier.upsert({
+    where: { id: `e2e-tier-paid-missing-price-${orgC1Tenant.id}` },
+    create: {
+      id: `e2e-tier-paid-missing-price-${orgC1Tenant.id}`,
+      tenantId: orgC1Tenant.id,
+      name: 'Monthly Membership',
+      priceCents: 999,
+      interval: 'MONTHLY',
+      isActive: true,
+      stripePriceId: null,
+    },
+    update: {
+      priceCents: 999,
+      interval: 'MONTHLY',
+      isActive: true,
+      stripePriceId: null,
+    },
+  })
+
   // Ensure a published event exists for org-b (required by portal/events and workflow test)
   const eventB = await prisma.event.upsert({
     where: { id: `e2e-event-${orgBTenant.id}` },
