@@ -170,7 +170,7 @@ export function IntegrationsClient({ tenantSlug, appBaseUrl }: IntegrationsClien
   return (
     <div className="space-y-6">
       {/* API Key Setup Panel */}
-      <Card className="border-indigo-200 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/40">
+      <Card id="api-key" className="border-indigo-200 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/40">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Key className="h-4 w-4" /> Step 0: Connect Your API Key
@@ -267,7 +267,7 @@ export function IntegrationsClient({ tenantSlug, appBaseUrl }: IntegrationsClien
 
       {platform !== 'api' ? (
         <>
-          <Card>
+<Card id="install-script">
             <CardHeader>
               <CardTitle>Step 1: Install Script</CardTitle>
             </CardHeader>

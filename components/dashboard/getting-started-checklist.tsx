@@ -72,8 +72,8 @@ export async function GettingStartedChecklist() {
       label: 'Set up your member portal embed',
       description: 'Add an API key and embed JanaGana on your website so members can self-serve.',
       done: apiKeyCount > 0,
-      href: '/dashboard/integrations',
-      cta: 'Get Embed Code',
+      href: apiKeyCount > 0 ? '/dashboard/integrations' : '/dashboard/settings/api-keys',
+      cta: apiKeyCount > 0 ? 'Get Embed Code' : 'Create API key',
     },
     {
       id: 'launch',

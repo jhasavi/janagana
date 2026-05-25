@@ -62,7 +62,7 @@ export default defineConfig({
   webServer: {
     command: resolvedDevCommand,
     url: resolvedWebServerReadyURL,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 600_000,
   },
 })
