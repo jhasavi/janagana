@@ -12,6 +12,7 @@ interface Step {
   done: boolean
   href: string
   cta: string
+  helpHref?: string
 }
 
 export async function GettingStartedChecklist() {
@@ -50,6 +51,7 @@ export async function GettingStartedChecklist() {
       done: stripeCount > 0,
       href: '/dashboard/settings#tiers',
       cta: 'Connect Stripe',
+      helpHref: '/help/integrations/website-integration-quick-start',
     },
     {
       id: 'members',
@@ -58,6 +60,7 @@ export async function GettingStartedChecklist() {
       done: memberCount > 0,
       href: '/dashboard/members/new',
       cta: 'Add Member',
+      helpHref: '/help/crm/add-manage-contacts',
     },
     {
       id: 'event',
@@ -66,6 +69,7 @@ export async function GettingStartedChecklist() {
       done: eventCount > 0,
       href: '/dashboard/events/new',
       cta: 'Create Event',
+      helpHref: '/help/events/create-an-event',
     },
     {
       id: 'embed',
@@ -74,6 +78,7 @@ export async function GettingStartedChecklist() {
       done: apiKeyCount > 0,
       href: apiKeyCount > 0 ? '/dashboard/integrations' : '/dashboard/settings/api-keys',
       cta: apiKeyCount > 0 ? 'Get Embed Code' : 'Create API key',
+      helpHref: '/help/integrations/website-integration-quick-start',
     },
     {
       id: 'launch',
@@ -143,14 +148,21 @@ export async function GettingStartedChecklist() {
                 <p className="text-xs text-muted-foreground">{step.description}</p>
               </div>
             </div>
-            {!step.done && (
-              <Button asChild size="sm" variant="ghost" className="shrink-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100">
-                <Link href={step.href}>
-                  {step.cta}
-                  <ArrowRight className="h-3 w-3 ml-1" />
+            <div className="flex flex-col items-end gap-1">
+              {!step.done && (
+                <Button asChild size="sm" variant="ghost" className="shrink-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100">
+                  <Link href={step.href}>
+                    {step.cta}
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              )}
+              {step.helpHref && (
+                <Link href={step.helpHref} className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+                  Need help?
                 </Link>
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         ))}
       </CardContent>

@@ -71,6 +71,12 @@ export default async function RootPage() {
                   <Link href="/help">Help center</Link>
                 </Button>
               </div>
+              <div className="text-sm text-muted-foreground">
+                Already using JanaGana?{' '}
+                <Link href="/sign-in" className="text-primary underline hover:text-primary/90">
+                  Sign in
+                </Link>
+              </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border bg-card p-6 shadow-sm">
