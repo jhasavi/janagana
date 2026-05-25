@@ -53,7 +53,7 @@ async function signInAs(page: Page, fixture: E2EFixtureRecord) {
 }
 
 async function goDashboard(page: Page) {
-  await page.goto('/dashboard', { waitUntil: 'networkidle' })
+  await page.goto('/dashboard', { waitUntil: 'load' })
   await page.waitForURL(/\/dashboard(\?.*)?$/, { timeout: 30_000 })
 }
 
@@ -65,7 +65,7 @@ test('1. admin dashboard: membership tier exists for org-b', async ({ page }) =>
   await goDashboard(page)
 
   // Tiers are managed on the Settings page, not a dedicated /tiers route
-  const response = await page.goto('/dashboard/settings', { waitUntil: 'networkidle' })
+  const response = await page.goto('/dashboard/settings', { waitUntil: 'load' })
   expect(response?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
 
@@ -81,7 +81,7 @@ test('2. admin dashboard: member exists for org-b', async ({ page }) => {
   await signInAs(page, fixtures.userB)
   await goDashboard(page)
 
-  const response = await page.goto('/dashboard/members', { waitUntil: 'networkidle' })
+  const response = await page.goto('/dashboard/members', { waitUntil: 'load' })
   expect(response?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
 
@@ -97,7 +97,7 @@ test('3. admin dashboard: published event exists for org-b', async ({ page }) =>
   await signInAs(page, fixtures.userB)
   await goDashboard(page)
 
-  const response = await page.goto('/dashboard/events', { waitUntil: 'networkidle' })
+  const response = await page.goto('/dashboard/events', { waitUntil: 'load' })
   expect(response?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
 
@@ -115,7 +115,7 @@ test('4. portal/events shows the published E2E Test Event', async ({ page }) => 
   // Navigate through dashboard first to establish org context cookies
   await goDashboard(page)
 
-  const response = await page.goto('/portal/e2e-org-b/events', { waitUntil: 'networkidle' })
+  const response = await page.goto('/portal/e2e-org-b/events', { waitUntil: 'load' })
   expect(response?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
   await expect(page.locator('body')).not.toContainText('Internal Server Error')
@@ -131,7 +131,7 @@ test('5. portal event: register or confirm already-registered without crash', as
   await signInAs(page, fixtures.userB)
   await goDashboard(page)
 
-  await page.goto('/portal/e2e-org-b/events', { waitUntil: 'networkidle' })
+  await page.goto('/portal/e2e-org-b/events', { waitUntil: 'load' })
   await expect(page.locator('body')).not.toContainText('Application error')
 
   // If there's a Register button, click it
@@ -159,7 +159,7 @@ test('6. portal shows event registration state after registering', async ({ page
   await signInAs(page, fixtures.userB)
 
   // Portal resolves tenant by URL slug — no need to go through dashboard first
-  const response = await page.goto('/portal/e2e-org-b/events', { waitUntil: 'networkidle' })
+  const response = await page.goto('/portal/e2e-org-b/events', { waitUntil: 'load' })
   expect(response?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
 
@@ -168,7 +168,7 @@ test('6. portal shows event registration state after registering', async ({ page
   expect(hasEventOrEmpty).toBe(true)
 
   // Additionally: portal profile should show the member (no crash check)
-  const profileResponse = await page.goto('/portal/e2e-org-b', { waitUntil: 'networkidle' })
+  const profileResponse = await page.goto('/portal/e2e-org-b', { waitUntil: 'load' })
   expect(profileResponse?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
 })

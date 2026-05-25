@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
+
 type LaunchItem = {
   id: string
   label: string
@@ -225,7 +226,13 @@ export async function LaunchCenter() {
             {items.map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg border bg-white p-3" data-testid={`launch-center-item-${item.id}`}>
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="flex items-start justify-between gap-3 rounded-lg border bg-white p-3 transition-colors hover:bg-muted/30"
+                  data-testid={`launch-center-item-${item.id}`}
+                  aria-label={`${item.label}: ${item.done ? (item.doneCta ?? 'Open') : item.cta}`}
+                >
                   <div className="flex min-w-0 items-start gap-3">
                     <div className={item.done ? 'text-emerald-600' : 'text-muted-foreground'}>
                       {item.done ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
@@ -240,10 +247,10 @@ export async function LaunchCenter() {
                       <p className="text-xs text-muted-foreground">{item.description}</p>
                     </div>
                   </div>
-                  <Button asChild size="sm" variant="ghost" className="shrink-0" data-testid={`launch-center-cta-${item.id}`}>
-                    <Link href={item.href}>{item.done ? (item.doneCta ?? 'Open') : item.cta}</Link>
-                  </Button>
-                </div>
+                  <span className="shrink-0 text-sm font-medium text-muted-foreground" data-testid={`launch-center-cta-${item.id}`}>
+                    {item.done ? (item.doneCta ?? 'Open') : item.cta}
+                  </span>
+                </Link>
               )
             })}
           </div>

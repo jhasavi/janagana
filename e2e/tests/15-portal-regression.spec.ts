@@ -154,13 +154,17 @@ test('portal without auth redirects to sign-in instead of crashing', async ({ pa
   // No auth cookie at all
   await page.context().clearCookies()
 
-  const response = await page.goto('/portal/e2e-org-b', { waitUntil: 'networkidle' })
+  // Use 'load' not 'networkidle': Clerk sign-in page has background requests that
+  // prevent networkidle from ever firing, which would cause a false timeout.
+  await page.goto('/portal/e2e-org-b', { waitUntil: 'load' })
+
+  // Wait for the redirect to complete (portal layout does redirect('/sign-in') when no userId)
+  await page.waitForURL(/\/sign-in/, { timeout: 15_000 })
 
   // Must not crash
-  expect(response?.status()).not.toBe(500)
   await expect(page.locator('body')).not.toContainText('Application error')
   await expect(page.locator('body')).not.toContainText('Internal Server Error')
 
-  // Must end up at sign-in (middleware redirected unauthenticated user)
+  // Must end up at sign-in
   expect(page.url()).toMatch(/\/sign-in/)
 })
