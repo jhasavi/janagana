@@ -94,16 +94,18 @@ export default function SelectOrgClient({ orgs, signedInUser }: Props) {
 
   async function handleSignOut() {
     setIsSigningOut(true)
+    // Safety: if clerk.signOut() hangs or completes without redirecting, force-navigate after 3s.
+    const safeNav = setTimeout(() => window.location.assign('/api/sign-out'), 3000)
     try {
       if (process.env.NEXT_PUBLIC_E2E_TEST_MODE !== 'true') {
-        await clerk.signOut({ redirectUrl: '/api/sign-out' })
-        return
+        // Do NOT pass redirectUrl — Clerk v5 may resolve the Promise without navigating.
+        // We always call window.location.assign after the await instead.
+        await clerk.signOut()
       }
-
+      clearTimeout(safeNav)
       window.location.assign('/api/sign-out')
-    } catch (error) {
-      console.error('[SelectOrgClient] sign-out failed', error)
-      toast.error('Unable to sign out cleanly. Redirecting to sign-in.')
+    } catch {
+      clearTimeout(safeNav)
       window.location.assign('/api/sign-out')
     }
   }

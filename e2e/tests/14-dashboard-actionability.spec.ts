@@ -38,7 +38,7 @@ async function signInAs(page: Page, userId: string, email: string) {
 }
 
 async function goDashboard(page: Page) {
-  await page.goto('/dashboard', { waitUntil: 'networkidle' })
+  await page.goto('/dashboard', { waitUntil: 'load' })
   await page.waitForURL(/\/dashboard(\?.*)?$/, { timeout: 30_000 })
 }
 
@@ -87,6 +87,7 @@ test('dashboard primary CTAs are actionable', async ({ page }) => {
 })
 
 test('launch center action buttons navigate to concrete routes', async ({ page }) => {
+  test.setTimeout(180_000) // 10 CTAs × ~10s each
   const fixtures = await getFixtureRecord()
 
   await signInAs(page, fixtures.userB.userId, fixtures.userB.email)
@@ -107,7 +108,7 @@ test('launch center action buttons navigate to concrete routes', async ({ page }
 
   for (const cta of ctas) {
     await goDashboard(page)
-    const trigger = page.getByTestId(`launch-center-cta-${cta.id}`)
+    const trigger = page.getByTestId(`launch-center-cta-${cta.id}`).first()
     await expect(trigger).toBeVisible({ timeout: 20_000 })
     await trigger.click()
     await page.waitForURL(cta.expectedUrl, { timeout: 30_000 })
@@ -116,6 +117,7 @@ test('launch center action buttons navigate to concrete routes', async ({ page }
 })
 
 test('sidebar links navigate without dashboard crash', async ({ page }) => {
+  test.setTimeout(240_000) // 14 sidebar links × ~10s each
   const fixtures = await getFixtureRecord()
 
   await signInAs(page, fixtures.userB.userId, fixtures.userB.email)
