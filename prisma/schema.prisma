@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum ContactType {
+  MEMBER
+  REGISTRANT
+  VOLUNTEER
+  DONOR
+  OTHER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  CANCELED
+}
+
+enum MembershipInterval {
+  MONTHLY
+  ANNUAL
+  ONE_TIME
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELED
+  COMPLETED
+}
+
+enum RegistrationStatus {
+  CONFIRMED
+  CANCELED
+  ATTENDED
+  NO_SHOW
+  WAITLISTED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  REGISTER
+}
+
+// ─── MODELS ───────────────────────────────────────────────────────────────────
+
+/// An organization admin account.
+/// INVARIANT: One Tenant ←→ One Clerk Organization (clerkOrgId is unique).
+/// Created ONLY during explicit admin onboarding — never from public registration.
+model Tenant {
+  id         String       @id @default(cuid())
+  name       String
+  slug       String       @unique
+  clerkOrgId String       @unique
+  status     TenantStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  adminRoles    TenantAdminRole[]
+  contacts      Contact[]
+  tiers         MembershipTier[]
+  memberships   Membership[]
+  events        Event[]
+  registrations EventRegistration[]
+  auditLogs     AuditLog[]
+}
+
+/// Cache of which Clerk users are admins of which Tenants.
+/// Source of truth is Clerk organization membership — this is a read-cache only.
+/// Always re-validate against Clerk before writes.
+model TenantAdminRole {
+  id          String   @id @default(cuid())
+  tenantId    String
+  clerkUserId String
+  role        String   @default("admin")
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, clerkUserId])
+  @@index([clerkUserId])
+}
+
+/// A public-facing person (visitor, registrant, member, donor).
+/// INVARIANT: Contacts are NEVER Clerk users.
+///            Creating a Contact MUST NEVER create a Clerk Organization.
+model Contact {
+  id        String      @id @default(cuid())
+  tenantId  String
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  type      ContactType @default(REGISTRANT)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships   Membership[]
+  registrations EventRegistration[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+/// A membership plan offered by a tenant.
+model MembershipTier {
+  id            String             @id @default(cuid())
+  tenantId      String
+  name          String
+  amountCents   Int
+  interval      MembershipInterval
+  stripePriceId String?
+  active        Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+
+  @@index([tenantId])
+}
+
+/// A contact's enrollment in a membership tier.
+model Membership {
+  id        String           @id @default(cuid())
+  tenantId  String
+  contactId String
+  tierId    String
+  status    MembershipStatus @default(ACTIVE)
+  startsAt  DateTime         @default(now())
+  expiresAt DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tier    MembershipTier @relation(fields: [tierId], references: [id])
+
+  @@index([tenantId])
+  @@index([contactId])
+}
+
+/// An event created by a tenant admin.
+model Event {
+  id          String      @id @default(cuid())
+  tenantId    String
+  title       String
+  slug        String
+  description String?
+  startsAt    DateTime
+  location    String?
+  status      EventStatus @default(DRAFT)
+  priceCents  Int         @default(0)
+  capacity    Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  registrations EventRegistration[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+/// A public visitor's registration for an event.
+/// INVARIANT: Creating an EventRegistration MUST NEVER create a Clerk Organization.
+model EventRegistration {
+  id        String             @id @default(cuid())
+  tenantId  String
+  eventId   String
+  contactId String
+  status    RegistrationStatus @default(CONFIRMED)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, contactId])
+  @@index([tenantId])
+  @@index([eventId])
+}
+
+/// Immutable audit trail for all tenant operations.
+model AuditLog {
+  id          String      @id @default(cuid())
+  tenantId    String?
+  actorUserId String?
+  action      AuditAction
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([createdAt])
+}
