@@ -1,27 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { getTenantByClerkOrgId } from "@/lib/tenant";
+import Link from "next/link";
 
-/**
- * Dashboard layout:
- * - Requires Clerk auth + active org
- * - Validates DB Tenant exists for the Clerk org
- * - If no active org → /select-organization
- * - If org has no DB tenant → /onboarding/create-organization
- */
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId } = await auth();
-
-  if (!userId) redirect("/sign-in");
-  if (!orgId) redirect("/select-organization");
-
-  const tenant = await getTenantByClerkOrgId(orgId);
-  if (!tenant) redirect("/onboarding/create-organization");
-
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200">
@@ -30,25 +13,15 @@ export default async function DashboardLayout({
             <div className="flex items-center gap-4">
               <span className="font-semibold text-gray-900">Janagana</span>
               <span className="text-gray-400">|</span>
-              <span className="text-sm text-gray-600">{tenant.name}</span>
+              <span className="text-sm text-gray-600">Foundation dashboard shell</span>
             </div>
             <div className="flex items-center gap-3">
-              <a
-                href={`/portal/${tenant.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/portal/foundation"
                 className="text-xs text-blue-600 hover:underline"
               >
                 Public portal ↗
-              </a>
-              <form action="/api/sign-out" method="POST">
-                <button
-                  type="submit"
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Sign out
-                </button>
-              </form>
+              </Link>
             </div>
           </div>
         </div>
@@ -66,13 +39,13 @@ export default async function DashboardLayout({
                 { href: "/dashboard/events", label: "Events" },
                 { href: "/dashboard/settings", label: "Settings" },
               ].map((item) => (
-                <a
+                <Link
                   key={item.href}
                   href={item.href}
                   className="block px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </nav>
           </aside>

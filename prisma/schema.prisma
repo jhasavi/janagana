@@ -74,7 +74,7 @@ model Tenant {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-  adminRoles    TenantAdminRole[]
+  tenantAdmins  TenantAdmin[]
   contacts      Contact[]
   tiers         MembershipTier[]
   memberships   Membership[]
@@ -86,7 +86,7 @@ model Tenant {
 /// Cache of which Clerk users are admins of which Tenants.
 /// Source of truth is Clerk organization membership — this is a read-cache only.
 /// Always re-validate against Clerk before writes.
-model TenantAdminRole {
+model TenantAdmin {
   id          String   @id @default(cuid())
   tenantId    String
   clerkUserId String

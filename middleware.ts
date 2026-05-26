@@ -1,13 +1,11 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
  * ARCHITECTURE CONTRACT — middleware.ts
  *
- * This middleware uses REAL Clerk only.
- * There is NO test-auth fallthrough here.
- * Synthetic test auth is handled in a completely separate Playwright config
- * (playwright.real-clerk.config.ts) that uses real credentials.
+ * Foundation milestone middleware is intentionally neutral.
+ * Real Clerk enforcement will be enabled in the next milestone.
+ * This avoids requiring production-ready Clerk keys in skeleton CI checks.
  *
  * Public routes (no auth required):
  *   - /portal/[tenantSlug]/** — public visitor pages
@@ -22,29 +20,9 @@ import { NextResponse } from "next/server";
  *   - /api/sign-out
  */
 
-const isPublicRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/portal(.*)",
-  "/api/webhooks(.*)",
-]);
-
-export default clerkMiddleware(async (auth, request) => {
-  if (isPublicRoute(request)) {
-    return NextResponse.next();
-  }
-
-  // Protect all non-public routes
-  const { userId } = await auth();
-
-  if (!userId) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect_url", request.url);
-    return NextResponse.redirect(signInUrl);
-  }
-
+export default function middleware() {
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

@@ -12,15 +12,49 @@
  *   npm run check:clerk-orgs
  */
 
+import * as crypto from "crypto";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 import { PrismaClient } from "@prisma/client";
 
+function loadEnvFiles() {
+  const envPath = path.resolve(process.cwd(), ".env");
+  const envLocalPath = path.resolve(process.cwd(), ".env.local");
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath, override: false });
+  }
+  if (fs.existsSync(envLocalPath)) {
+    dotenv.config({ path: envLocalPath, override: true });
+  }
+}
+
+function fingerprint(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex").slice(0, 10);
+}
+
+function keyModeFromPrefix(key: string): "test" | "live" | "unknown" {
+  if (key.startsWith("pk_test_") || key.startsWith("sk_test_")) return "test";
+  if (key.startsWith("pk_live_") || key.startsWith("sk_live_")) return "live";
+  return "unknown";
+}
+
+loadEnvFiles();
+
 const envLocalPath = path.resolve(process.cwd(), ".env.local");
 const envPath = path.resolve(process.cwd(), ".env");
-if (fs.existsSync(envLocalPath)) dotenv.config({ path: envLocalPath });
-else if (fs.existsSync(envPath)) dotenv.config({ path: envPath });
+
+const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+const sk = process.env.CLERK_SECRET_KEY ?? "";
+const databaseUrl = process.env.DATABASE_URL ?? "";
+
+console.log("Env status:");
+console.log(`- .env: ${fs.existsSync(envPath) ? "present" : "missing"}`);
+console.log(`- .env.local: ${fs.existsSync(envLocalPath) ? "present" : "missing"}`);
+console.log(`- DATABASE_URL: ${databaseUrl ? `present (fp=${fingerprint(databaseUrl)})` : "missing"}`);
+console.log(`- Clerk publishable: ${pk ? `present (mode=${keyModeFromPrefix(pk)}, fp=${fingerprint(pk)})` : "missing"}`);
+console.log(`- Clerk secret: ${sk ? `present (mode=${keyModeFromPrefix(sk)}, fp=${fingerprint(sk)})` : "missing"}`);
+console.log("");
 
 const prisma = new PrismaClient();
 
