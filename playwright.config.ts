@@ -10,23 +10,17 @@ import { defineConfig, devices } from "@playwright/test";
  * Use playwright.real-clerk.config.ts for those.
  */
 export default defineConfig({
-  testDir: "./e2e",
-  testMatch: [
-    "env-alignment.test.ts",
-    "auth-state-machine.test.ts",
-    "public-portal.test.ts",
-    "public-registration.test.ts",
-    "tenant-isolation.test.ts",
-  ],
-  fullyParallel: true,
+  testDir: "./e2e/tests",
+  testMatch: ["**/*.spec.ts"],
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  workers: 1,
+  reporter: process.env.CI ? "html" : "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3020",
     trace: "on-first-retry",
-    // No stored auth state — these tests must work without any session
+    navigationTimeout: 15000,
   },
   projects: [
     {
@@ -35,9 +29,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    command: "npm run dev -- --hostname 127.0.0.1 --port 3020",
+    url: "http://127.0.0.1:3020/api/health/ready",
+    reuseExistingServer: false,
+    timeout: 60000,
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });

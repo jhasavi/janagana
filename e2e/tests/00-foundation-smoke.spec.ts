@@ -1,17 +1,24 @@
 import { test, expect } from "@playwright/test";
 
-test("home page renders", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/(sign-in|dashboard|$)/);
+test("health route responds", async ({ request }) => {
+  const response = await request.get("/api/health/ready");
+  expect(response.status()).toBe(200);
+  await expect(response.json()).resolves.toEqual({ ok: true, app: "janagana-v3" });
 });
 
-test("dashboard route exists or redirects", async ({ page }) => {
-  const response = await page.goto("/dashboard");
-  expect(response).not.toBeNull();
+test("home page loads", async ({ page }) => {
+  const response = await page.goto("/");
+  expect(response?.status()).toBe(200);
+  await expect(page.getByText("JanaGana v3 foundation")).toBeVisible();
+});
+
+test("dashboard placeholder loads or redirects predictably", async ({ page }) => {
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/(dashboard|sign-in|select-organization|onboarding\/create-organization)/);
 });
 
-test("portal placeholder route responds", async ({ page }) => {
-  const response = await page.goto("/portal/foundation-smoke");
+test("portal placeholder loads", async ({ page }) => {
+  const response = await page.goto("/portal/foundation");
   expect(response?.status()).toBeGreaterThanOrEqual(200);
+  await expect(page.getByText("Tenant portal")).toBeVisible();
 });
