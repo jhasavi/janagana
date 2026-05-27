@@ -35,6 +35,12 @@ export default async function DashboardLayout({
             </div>
             <div className="flex items-center gap-3">
               <Link
+                href="/select-organization"
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Switch organization
+              </Link>
+              <Link
                 href={`/portal/${tenant.slug}`}
                 className="text-xs text-blue-600 hover:underline"
               >

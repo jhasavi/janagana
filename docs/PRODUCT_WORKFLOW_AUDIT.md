@@ -2,37 +2,36 @@
 
 ## Milestone audited
 
-Members + Membership Tiers + Events minimal CRUD behind existing auth + tenant guard.
+Second-tenant hardening after registration operations.
 
 ## Included in this milestone
 
-- Dashboard overview shows tenant name and real counts for contacts, tiers, and events.
-- Members page supports create and list for tenant-scoped contacts.
-- Membership tiers page supports create and list for tenant-scoped tiers.
-- Events page supports create and list for tenant-scoped events.
-- All create flows resolve tenant context server-side.
-- Action payload schemas are strict and reject unexpected keys, including tenantId injection.
-- Tenant isolation verification script confirms cross-tenant non-visibility for contacts, tiers, and events.
+- Purple Wings workflow remains intact with no data reset.
+- Dashboard header includes switch link to `/select-organization`.
+- Select organization flow supports multi-tenant selection and sets active tenant cookie.
+- Single-tenant select flow redirects directly to dashboard and sets active tenant cookie.
+- Active tenant cookie remains cache-only and validated against mapped Clerk memberships.
+- Registration operations (capacity, duplicate handling, cancel/re-confirm) remain tenant-scoped.
+- New second-tenant isolation script verifies two-tenant portal/registration isolation behavior.
 
 ## Excluded by design
 
-- Public portal registration workflow.
-- Event registration and attendee checkout.
+- CRM, fundraising, donations, volunteering, communications, analytics.
 - Stripe integration, billing, payments, and related webhooks.
-- CRM, fundraising, and non-core modules.
+- NB/TPW website integrations.
+- Deployment/push automation.
 
 ## Guardrails validated
 
-- No client-provided tenantId is used for create/list flows.
-- Legacy "new" routes now redirect to safe list/create pages.
-- Isolation script includes empty-tenant checks.
-- Local demo seed uses explicit confirmation flag and makes no Clerk API calls.
+- Tenant context resolution always derives from Clerk org membership mapping.
+- Cookie tenant IDs not in mapped memberships are ignored as stale.
+- Public portal registrations do not create Clerk users/orgs.
+- Cross-tenant registration leakage checks pass in script coverage.
 
 ## Known blocker
 
-- Real Clerk smoke remains potentially pending when test identity flow is blocked by external SSO redirect behavior.
+- Namaste Boston final live onboarding proof is blocked until a Namaste Clerk organization is explicitly created by owner onboarding in the current Clerk environment.
 
 ## Next planned milestone (not included here)
 
-- Public portal registration flow, while preserving invariant that public registration must never create Clerk organizations.
-- Stripe remains deferred until after portal registration scope is stable.
+- Website link integration milestone for NB/TPW once both organizations are fully mapped in Clerk and validated in JanaGana.

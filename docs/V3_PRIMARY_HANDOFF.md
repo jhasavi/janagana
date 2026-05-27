@@ -1,35 +1,35 @@
 # V3 Primary Handoff
 
 Date: 2026-05-27
-Repository: janagana-v3 (to become ~/janagana)
-Latest commit: ccfdb0b
+Repository: ~/janagana (v3 primary)
+Latest commit: 62a0094
 
 ## What Works
 
-- v3 foundation and quality gates are green.
+- v3 foundation and local quality gates are green.
 - Clerk auth + tenant spine works for admin.
-- The Purple Wings tenant dashboard works.
-- Admin can create members/contacts, tiers, and events.
-- Public portal works at /portal/purple-wings.
-- Public portal shows only published events.
-- Public visitor can register with first name, last name, email, phone.
-- Registration path creates/reuses Contact and creates EventRegistration in same tenant.
-- Duplicate registration is handled without duplicate rows.
-- Admin events page shows registration counts.
-- Admin can view event registration details (name, email, phone, status, timestamp).
+- Purple Wings tenant workflow works end to end.
+- Public registration enforces capacity by confirmed registrations only.
+- Duplicate registration returns friendly already-registered result without duplicate rows.
+- Admin can cancel and re-confirm registrations from event attendee page.
+- Event list shows confirmed registration counts clearly.
+- Local sign-out redirect is stable on localhost:3020.
+- Second-tenant hardening code path is present:
+   - dashboard switch link to /select-organization
+   - active tenant cookie validated against mapped Clerk memberships
+   - two-tenant isolation scripts pass for portal and registration behavior
 
 ## Manual Demo Result
 
-Manual demo completed with one known local issue:
-- Sign-out redirected to https://127.0.0.1:3021 instead of localhost:3020.
+Manual demo completed for Purple Wings loop:
+- Admin creates event
+- Public registers
+- Admin sees attendee
+- Capacity/cancel/re-confirm operations work
 
-Manual checks confirmed:
-- Admin sign-in and The Purple Wings dashboard access.
-- Published event visible in public portal.
-- Public registration flow works end to end.
-- Admin sees registration count and attendee details.
-- Public registration does not create Clerk org/user.
-- Re-login returns to The Purple Wings dashboard without onboarding loop.
+Second-tenant status:
+- Namaste Boston Clerk organization is not yet present in Clerk for this local environment.
+- Explicit owner onboarding is required before final Namaste mapping proof.
 
 ## Deferred Scope (Not Included)
 
@@ -39,16 +39,14 @@ Manual checks confirmed:
 - Volunteering
 - Communications/automation
 - Analytics/reporting
-- NB/TPW external integration
+- NB/TPW external website integration
 - Deployment/push automation
 
 ## Known Limitations
 
-- No capacity limit enforcement at registration submit time.
-- No attendee edit/cancel admin workflow yet.
+- Namaste Boston final multi-tenant live switch proof is blocked until Namaste Clerk org is explicitly created by owner onboarding.
 - No email confirmations.
 - No pagination/filtering on registration list.
-- Local sign-out redirect host/port can be wrong if app URL env points to another origin.
 - Playwright warns about allowedDevOrigins for 127.0.0.1 in Next.js dev mode.
 
 ## Local Start
@@ -56,9 +54,21 @@ Manual checks confirmed:
 1. Install deps:
    - npm install
 2. Start app on local dev port:
-   - PORT=3020 npm run dev
+   - ./start.sh
 3. Open:
    - http://localhost:3020
+
+## Namaste Boston Setup (Local)
+
+1. Run inventory:
+   - npm run inventory:tenants
+2. If Namaste org exists in Clerk, run setup:
+   - npm run setup:namaste
+3. If Namaste org does not exist, owner must create it first:
+   - sign in and open /onboarding/create-organization
+   - create Name: Namaste Boston
+   - create Slug: namaste-boston
+   - rerun npm run setup:namaste
 
 ## Test Commands
 
@@ -70,9 +80,12 @@ Manual checks confirmed:
 - npm run check:db:test
 - npm run test:actions
 - npm run test:portal
+- npm run test:registration:ops
+- npm run test:second-tenant
 - npm run test:e2e:foundation
 - npm run test:e2e:env
 - npm run test:e2e:portal
+- npm run smoke:local-redirects
 
 ## Environment Requirements
 

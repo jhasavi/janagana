@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
+import { clearActiveTenantCookies, findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
 
 export default async function SelectOrganizationPage({
   searchParams,
@@ -21,6 +21,7 @@ export default async function SelectOrganizationPage({
 
   if (tenants.length === 1) {
     console.info("DASHBOARD_TENANT_RESOLVED", { source: "select-single-tenant", tenantId: tenants[0].id });
+    await setActiveTenantCookie(tenants[0].id);
     redirect("/dashboard");
   }
 
@@ -38,6 +39,7 @@ export default async function SelectOrganizationPage({
       redirect("/select-organization?error=invalid-tenant");
     }
 
+    await clearActiveTenantCookies();
     await setActiveTenantCookie(selected.id);
     console.info("SET_ACTIVE_TENANT", { tenantId: selected.id, source: "select-organization" });
     redirect("/dashboard");

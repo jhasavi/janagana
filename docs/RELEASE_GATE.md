@@ -17,6 +17,8 @@ No exceptions. No partial releases.
 | 6 | Foundation e2e smoke | `npm run test:e2e:foundation` | All pass |
 | 7 | Env contract e2e | `npm run test:e2e:env` | All pass |
 | 8 | Tenant isolation script | `npm run test:actions` | All pass |
+| 9 | Registration operations script | `npm run test:registration:ops` | All pass |
+| 10 | Second-tenant isolation script | `npm run test:second-tenant` | All pass |
 
 ---
 
@@ -24,9 +26,12 @@ No exceptions. No partial releases.
 
 | # | Check | Test file | Pass Condition |
 |---|---|---|---|
-| 9 | Members CRUD page | `app/dashboard/members/page.tsx` | Form creates and list reflects tenant data |
-| 10 | Tiers CRUD page | `app/dashboard/tiers/page.tsx` | Form creates and list reflects tenant data |
-| 11 | Events CRUD page | `app/dashboard/events/page.tsx` | Form creates and list reflects tenant data |
+| 11 | Members CRUD page | `app/dashboard/members/page.tsx` | Form creates and list reflects tenant data |
+| 12 | Tiers CRUD page | `app/dashboard/tiers/page.tsx` | Form creates and list reflects tenant data |
+| 13 | Events CRUD page | `app/dashboard/events/page.tsx` | Form creates and list reflects tenant data |
+| 14 | Tenant switch link present | `app/dashboard/layout.tsx` | Header includes link to `/select-organization` |
+| 15 | Select organization behavior | `app/select-organization/page.tsx` | Multi-tenant shows choices; single-tenant redirects to dashboard |
+| 16 | Portal isolation (purple vs namaste) | `scripts/test-second-tenant-hardening.ts` | Events/registrations do not cross tenant boundaries |
 
 ---
 
@@ -34,7 +39,7 @@ No exceptions. No partial releases.
 
 | # | Check | Command | Status |
 |---|---|---|---|
-| 12 | Real Clerk sign-in → dashboard | `npm run test:real-clerk` | PASS or PENDING (with reason) |
+| 17 | Real Clerk sign-in → dashboard | `npm run test:real-clerk` | PASS or PENDING (with reason) |
 
 If PENDING, this must be documented in the release notes with a date for resolution.
 A pending real Clerk smoke test means the release is a **preview only**, not a production release.
@@ -45,10 +50,11 @@ A pending real Clerk smoke test means the release is a **preview only**, not a p
 
 | # | Check | Verified by |
 |---|---|---|
-| 13 | No secrets in git | `git log --all --full-history -- .env*` returns nothing; `git grep "pk_live_\|sk_live_\|whsec_"` returns nothing |
-| 14 | No fake dashboard CTAs | Members, tiers, and events links land on functioning pages |
-| 15 | Sign out clears session | After sign out, `/dashboard` redirects to `/sign-in` |
-| 16 | Deferred scope explicitly documented | Public portal/registration and Stripe are marked deferred |
+| 18 | No secrets in git | `git log --all --full-history -- .env*` returns nothing; `git grep "pk_live_\|sk_live_\|whsec_"` returns nothing |
+| 19 | No fake dashboard CTAs | Members, tiers, and events links land on functioning pages |
+| 20 | Sign out clears session | After sign out, `/dashboard` redirects to `/sign-in` |
+| 21 | Deferred scope explicitly documented | Public portal/registration and Stripe are marked deferred |
+| 22 | Second tenant onboarding state documented | Handoff/README state whether Namaste Clerk org is mapped or pending owner onboarding |
 
 ---
 
