@@ -3,7 +3,6 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const fullGates = [
-  "npm run build",
   "npm run typecheck",
   "npm run lint",
   "npm run prisma:validate",
@@ -14,10 +13,14 @@ const fullGates = [
   "npm run test:portal",
   "npm run test:registration:ops",
   "npm run test:second-tenant",
+  // e2e tests start a dev server via playwright webServer; run before build
+  // so the production .next artifact does not conflict with next dev startup.
   "npm run test:e2e:foundation",
   "npm run test:e2e:env",
   "npm run test:e2e:portal",
   "npm run smoke:local-redirects",
+  // build last: confirms production artifact is clean after all other gates pass
+  "npm run build",
 ];
 
 const quickGates = [
