@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { clearActiveTenantCookies, findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
 
+// NOTE: Cookies cannot be set during server-component render (Next.js 15).
+// Single-tenant auto-select delegates to /api/select-tenant (a Route Handler).
+// Multi-tenant selection uses chooseTenantAction (a Server Action) — both are valid cookie contexts.
+
 export default async function SelectOrganizationPage({
   searchParams,
 }: {
@@ -21,8 +25,8 @@ export default async function SelectOrganizationPage({
 
   if (tenants.length === 1) {
     console.info("DASHBOARD_TENANT_RESOLVED", { source: "select-single-tenant", tenantId: tenants[0].id });
-    await setActiveTenantCookie(tenants[0].id);
-    redirect("/dashboard");
+    // Delegate to route handler — cookies cannot be mutated in server-component render
+    redirect(`/api/select-tenant?tenantId=${encodeURIComponent(tenants[0].id)}`);
   }
 
   const params = await searchParams;
