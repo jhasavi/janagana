@@ -18,7 +18,7 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? "html" : "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3020",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3022",
     trace: "on-first-retry",
     navigationTimeout: 15000,
   },
@@ -29,8 +29,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --port 3020",
-    url: "http://127.0.0.1:3020/api/health/ready",
+    command: "npm run dev -- --port 3022",
+    url: "http://127.0.0.1:3022/api/health/ready",
     reuseExistingServer: false,
     timeout: 60000,
     stdout: "pipe",
