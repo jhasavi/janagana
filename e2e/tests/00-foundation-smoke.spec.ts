@@ -16,8 +16,11 @@ test("dashboard placeholder loads or redirects predictably", async ({ page }) =>
   await expect(page).toHaveURL(/\/(dashboard|sign-in|select-organization|onboarding\/create-organization)/);
 });
 
-test("portal placeholder loads", async ({ page }) => {
-  const response = await page.goto("/portal/foundation");
-  expect(response?.status()).toBeGreaterThanOrEqual(200);
-  await expect(page.getByText("Tenant portal")).toBeVisible();
+test("portal loads for real tenant and 404s for unknown slug", async ({ page }) => {
+  const notFound = await page.goto("/portal/does-not-exist-xyzzy");
+  expect(notFound?.status()).toBe(404);
+
+  const real = await page.goto("/portal/purple-wings");
+  expect(real?.status()).toBe(200);
+  await expect(page.getByText("The Purple Wings").first()).toBeVisible();
 });

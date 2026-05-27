@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatCents, formatDate } from "@/lib/utils";
 import { createEvent, listEvents } from "@/lib/actions/events";
@@ -83,6 +84,7 @@ export default async function EventsPage({
                   <th className="py-2 pr-4">Starts</th>
                   <th className="py-2 pr-4">Status</th>
                   <th className="py-2 pr-4">Price</th>
+                  <th className="py-2 pr-4">Registrations</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,6 +95,14 @@ export default async function EventsPage({
                     <td className="py-2 pr-4">{formatDate(event.startsAt)}</td>
                     <td className="py-2 pr-4">{event.status}</td>
                     <td className="py-2 pr-4">{formatCents(event.priceCents)}</td>
+                    <td className="py-2 pr-4">
+                      <Link
+                        href={`/dashboard/events/${event.id}/registrations`}
+                        className="text-blue-700 hover:underline"
+                      >
+                        {event._count?.registrations ?? 0}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

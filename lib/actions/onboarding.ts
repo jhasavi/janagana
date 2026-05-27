@@ -13,18 +13,11 @@ function shortId(value: string): string {
 
 async function makeUniqueTenantSlug(base: string): Promise<string> {
   const baseSlug = slugify(base).slice(0, 60) || "organization";
-  let candidate = baseSlug;
-  let index = 1;
-
-  while (true) {
-    const existing = await prisma.tenant.findUnique({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) {
-      return candidate;
-    }
-    index += 1;
-    const suffix = `-${index}`;
-    candidate = `${baseSlug.slice(0, Math.max(1, 60 - suffix.length))}${suffix}`;
+  const existing = await prisma.tenant.findUnique({ where: { slug: baseSlug }, select: { id: true } });
+  if (existing) {
+    throw new Error("SLUG_EXISTS");
   }
+  return baseSlug;
 }
 
 export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
@@ -105,6 +98,13 @@ export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
     console.info("SET_ACTIVE_TENANT", { reason: "SET_ACTIVE_TENANT", tenantId: tenant.id, source: "setup-existing-clerk-org" });
     redirect("/dashboard");
   } catch (error: any) {
+    if (String(error?.message ?? "") === "SLUG_EXISTS") {
+      console.info("DASHBOARD_TENANT_FAILED", {
+        reason: "SLUG_EXISTS",
+        clerkOrgId: shortId(requestedClerkOrgId),
+      });
+      redirect("/onboarding/create-organization?error=slug-exists");
+    }
     if (String(error?.message ?? "").includes("NEXT_REDIRECT")) {
       throw error;
     }

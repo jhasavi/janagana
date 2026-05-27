@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
  * Does NOT create any Clerk Organization.
  */
 export async function getTenantBySlug(slug: string) {
-  return prisma.tenant.findUnique({
+  return prisma.tenant.findFirst({
     where: { slug, status: "ACTIVE" },
     select: { id: true, name: true, slug: true },
   });
@@ -21,7 +21,7 @@ export async function getTenantBySlug(slug: string) {
  * The clerkOrgId comes from the validated Clerk session — NOT a cookie.
  */
 export async function getTenantByClerkOrgId(clerkOrgId: string) {
-  return prisma.tenant.findUnique({
+  return prisma.tenant.findFirst({
     where: { clerkOrgId, status: "ACTIVE" },
   });
 }

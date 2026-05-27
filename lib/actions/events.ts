@@ -98,8 +98,41 @@ export async function listEvents() {
 
   const events = await prisma.event.findMany({
     where: { tenantId: context.tenant.id },
+    include: {
+      _count: {
+        select: { registrations: true },
+      },
+    },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
 
   return { ok: true as const, data: events };
+}
+
+export async function listEventRegistrations(eventId: string) {
+  const context = await requireActiveTenantContext();
+  if ("error" in context) {
+    return { ok: false as const, error: context.error, data: [] as any[], event: null as any };
+  }
+
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, tenantId: context.tenant.id },
+    select: { id: true, title: true, slug: true, startsAt: true, status: true },
+  });
+
+  if (!event) {
+    return { ok: false as const, error: "Event not found", data: [] as any[], event: null as any };
+  }
+
+  const registrations = await prisma.eventRegistration.findMany({
+    where: { eventId: event.id, tenantId: context.tenant.id },
+    include: {
+      contact: {
+        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return { ok: true as const, data: registrations, event };
 }
