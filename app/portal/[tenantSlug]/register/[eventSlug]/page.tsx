@@ -39,7 +39,7 @@ export default async function EventRegistrationPage({
     query.status === "registered"
       ? "Registration successful."
       : query.status === "already-registered"
-        ? "You are already registered for this event."
+        ? "You are already registered."
         : query.error
           ? query.error
           : null;

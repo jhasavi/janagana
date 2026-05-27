@@ -74,6 +74,54 @@ export async function registerPublicEvent(input: unknown) {
   }
 
   const email = parsed.data.email.toLowerCase();
+  const existingContact = await prisma.contact.findUnique({
+    where: {
+      tenantId_email: {
+        tenantId: tenant.id,
+        email,
+      },
+    },
+  });
+
+  const existingRegistration = existingContact
+    ? await prisma.eventRegistration.findFirst({
+        where: {
+          tenantId: tenant.id,
+          eventId: event.id,
+          contactId: existingContact.id,
+        },
+      })
+    : null;
+
+  if (existingRegistration) {
+    return {
+      ok: true as const,
+      alreadyRegistered: true as const,
+      tenant,
+      event,
+      contact: existingContact,
+      registration: existingRegistration,
+    };
+  }
+
+  if (event.capacity !== null) {
+    const confirmedCount = await prisma.eventRegistration.count({
+      where: {
+        tenantId: tenant.id,
+        eventId: event.id,
+        status: "CONFIRMED",
+      },
+    });
+
+    if (confirmedCount >= event.capacity) {
+      return {
+        ok: false as const,
+        alreadyRegistered: false as const,
+        error: "This event is full.",
+      };
+    }
+  }
+
   const contact = await prisma.contact.upsert({
     where: {
       tenantId_email: {
@@ -97,7 +145,7 @@ export async function registerPublicEvent(input: unknown) {
     },
   });
 
-  const existingRegistration = await prisma.eventRegistration.findFirst({
+  const contactRegistration = await prisma.eventRegistration.findFirst({
     where: {
       tenantId: tenant.id,
       eventId: event.id,
@@ -105,14 +153,14 @@ export async function registerPublicEvent(input: unknown) {
     },
   });
 
-  if (existingRegistration) {
+  if (contactRegistration) {
     return {
       ok: true as const,
       alreadyRegistered: true as const,
       tenant,
       event,
       contact,
-      registration: existingRegistration,
+      registration: contactRegistration,
     };
   }
 

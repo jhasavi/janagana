@@ -100,7 +100,10 @@ export default async function EventsPage({
                         href={`/dashboard/events/${event.id}/registrations`}
                         className="text-blue-700 hover:underline"
                       >
-                        {event._count?.registrations ?? 0}
+                        {event.registrationSummary.confirmed}
+                        {event.registrationSummary.total !== event.registrationSummary.confirmed
+                          ? ` confirmed / ${event.registrationSummary.total} total`
+                          : " confirmed"}
                       </Link>
                     </td>
                   </tr>

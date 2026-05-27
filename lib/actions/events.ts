@@ -102,11 +102,27 @@ export async function listEvents() {
       _count: {
         select: { registrations: true },
       },
+      registrations: {
+        select: { status: true },
+      },
     },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
 
-  return { ok: true as const, data: events };
+  const data = events.map((event) => {
+    const total = event._count.registrations;
+    const confirmed = event.registrations.filter((reg) => reg.status === "CONFIRMED").length;
+
+    return {
+      ...event,
+      registrationSummary: {
+        confirmed,
+        total,
+      },
+    };
+  });
+
+  return { ok: true as const, data };
 }
 
 export async function listEventRegistrations(eventId: string) {
@@ -135,4 +151,121 @@ export async function listEventRegistrations(eventId: string) {
   });
 
   return { ok: true as const, data: registrations, event };
+}
+
+type RegistrationStatusUpdate = "CONFIRMED" | "CANCELED";
+
+export async function updateRegistrationStatusForTenant(input: {
+  tenantId: string;
+  eventId: string;
+  registrationId: string;
+  nextStatus: RegistrationStatusUpdate;
+  actorUserId: string | null;
+}) {
+  const event = await prisma.event.findFirst({
+    where: {
+      id: input.eventId,
+      tenantId: input.tenantId,
+    },
+    select: {
+      id: true,
+      tenantId: true,
+      capacity: true,
+    },
+  });
+
+  if (!event) {
+    return { ok: false as const, error: "Event not found" };
+  }
+
+  const registration = await prisma.eventRegistration.findFirst({
+    where: {
+      id: input.registrationId,
+      tenantId: input.tenantId,
+      eventId: event.id,
+    },
+    select: {
+      id: true,
+      status: true,
+      eventId: true,
+      contactId: true,
+    },
+  });
+
+  if (!registration) {
+    return { ok: false as const, error: "Registration not found" };
+  }
+
+  if (registration.status === input.nextStatus) {
+    return { ok: true as const, data: registration };
+  }
+
+  if (input.nextStatus === "CONFIRMED" && event.capacity !== null) {
+    const confirmedCount = await prisma.eventRegistration.count({
+      where: {
+        tenantId: input.tenantId,
+        eventId: event.id,
+        status: "CONFIRMED",
+        id: { not: registration.id },
+      },
+    });
+
+    if (confirmedCount >= event.capacity) {
+      return { ok: false as const, error: "This event is full." };
+    }
+  }
+
+  const updated = await prisma.eventRegistration.update({
+    where: { id: registration.id },
+    data: {
+      status: input.nextStatus,
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: input.tenantId,
+      actorUserId: input.actorUserId,
+      action: "UPDATE",
+      metadata: {
+        entity: "EventRegistration",
+        eventId: event.id,
+        registrationId: registration.id,
+        fromStatus: registration.status,
+        toStatus: input.nextStatus,
+      },
+    },
+  });
+
+  return { ok: true as const, data: updated };
+}
+
+export async function cancelEventRegistration(input: { eventId: string; registrationId: string }) {
+  const context = await requireActiveTenantContext();
+  if ("error" in context) {
+    return { ok: false as const, error: context.error };
+  }
+
+  return updateRegistrationStatusForTenant({
+    tenantId: context.tenant.id,
+    eventId: input.eventId,
+    registrationId: input.registrationId,
+    nextStatus: "CANCELED",
+    actorUserId: context.user.id,
+  });
+}
+
+export async function confirmEventRegistration(input: { eventId: string; registrationId: string }) {
+  const context = await requireActiveTenantContext();
+  if ("error" in context) {
+    return { ok: false as const, error: context.error };
+  }
+
+  return updateRegistrationStatusForTenant({
+    tenantId: context.tenant.id,
+    eventId: input.eventId,
+    registrationId: input.registrationId,
+    nextStatus: "CONFIRMED",
+    actorUserId: context.user.id,
+  });
 }
