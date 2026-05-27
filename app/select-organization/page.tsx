@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { clearActiveTenantCookies, findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
+import { createRequestId } from "@/lib/utils";
 
 // NOTE: Cookies cannot be set during server-component render (Next.js 15).
 // Single-tenant auto-select delegates to /api/select-tenant (a Route Handler).
@@ -28,19 +29,20 @@ export default async function SelectOrganizationPage({
 
   async function chooseTenantAction(formData: FormData) {
     "use server";
+    const requestId = createRequestId();
 
     const tenantId = String(formData.get("tenantId") ?? "").trim();
     const mappedTenants = await findMappedTenantsForUser();
     const selected = mappedTenants.find((tenant) => tenant.id === tenantId);
 
     if (!selected) {
-      console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_SELECTED_TENANT" });
+      console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_SELECTED_TENANT", requestId, tenantId });
       redirect("/select-organization?error=invalid-tenant");
     }
 
     await clearActiveTenantCookies();
     await setActiveTenantCookie(selected.id);
-    console.info("SET_ACTIVE_TENANT", { tenantId: selected.id, source: "select-organization" });
+    console.info("SET_ACTIVE_TENANT", { requestId, tenantId: selected.id, source: "select-organization" });
     redirect("/dashboard");
   }
 

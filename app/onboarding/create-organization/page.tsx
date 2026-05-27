@@ -4,6 +4,7 @@ import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { setupExistingClerkOrgAsTenant } from "@/lib/actions/onboarding";
 import { prisma } from "@/lib/prisma";
 import { findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
+import { createRequestId } from "@/lib/utils";
 
 type OnboardingErrorCode =
   | "owner-intent-required"
@@ -12,6 +13,7 @@ type OnboardingErrorCode =
   | "clerk-org-exists"
   | "clerk-create-failed"
   | "db-create-failed"
+  | "db-create-recovery-required"
   | "invalid-clerk-org"
   | "not-a-member"
   | "tenant-already-mapped"
@@ -31,6 +33,7 @@ function toSafeErrorMessage(errorCode: string | undefined): string | null {
     "clerk-org-exists": "You already have a Clerk organization with this name or slug. Use Set up existing organization instead.",
     "clerk-create-failed": "Clerk organization creation failed.",
     "db-create-failed": "Database tenant creation failed.",
+    "db-create-recovery-required": "Tenant creation partially failed. Use Existing organization setup to map the newly created Clerk organization.",
     "invalid-clerk-org": "Invalid organization selection.",
     "not-a-member": "You must belong to the selected Clerk organization.",
     "tenant-already-mapped": "This Clerk organization is already set up in JanaGana.",
@@ -42,7 +45,7 @@ function toSafeErrorMessage(errorCode: string | undefined): string | null {
 export default async function CreateOrganizationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; requestId?: string; clerkOrgId?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -60,6 +63,7 @@ export default async function CreateOrganizationPage({
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
+    const requestId = createRequestId();
 
     // SECURITY WARNING: Public registration must never call this flow.
     // This route is the only v3 path allowed to create a Clerk Organization.
@@ -74,6 +78,7 @@ export default async function CreateOrganizationPage({
     const memberships = await getUserClerkOrganizations();
 
     console.info("CREATE_ORG_SUBMIT", {
+      requestId,
       userId: shortId(current.id),
       clerkMembershipCount: memberships.length,
       submittedOrgName: orgName,
@@ -90,6 +95,7 @@ export default async function CreateOrganizationPage({
 
     const existingSlug = await prisma.tenant.findUnique({ where: { slug: orgSlug } });
     console.info("CREATE_ORG_DB_SLUG_CHECK", {
+      requestId,
       submittedOrgSlug: orgSlug,
       tenantSlugExists: Boolean(existingSlug),
     });
@@ -101,6 +107,7 @@ export default async function CreateOrganizationPage({
       (org) => (org.slug && org.slug.toLowerCase() === orgSlug) || org.name.toLowerCase() === orgName.toLowerCase(),
     );
     console.info("CREATE_ORG_CLERK_MEMBERSHIP_MATCH", {
+      requestId,
       submittedOrgName: orgName,
       submittedOrgSlug: orgSlug,
       clerkOrgSlugOrNameExistsInMemberships: hasMatchingMembership,
@@ -127,6 +134,7 @@ export default async function CreateOrganizationPage({
             },
       );
       console.info("CREATED_CLERK_ORG", {
+        requestId,
         orgId: organization.id,
         submittedSlug: orgSlug,
         clerkSlug: organization.slug ?? null,
@@ -151,6 +159,7 @@ export default async function CreateOrganizationPage({
         });
         tenantIdForRollback = tenant.id;
         console.info("CREATED_TENANT", {
+          requestId,
           tenantId: tenant.id,
           slug: tenant.slug,
         });
@@ -171,7 +180,9 @@ export default async function CreateOrganizationPage({
         if (String(error?.message ?? "").includes("NEXT_REDIRECT")) {
           throw error;
         }
+        let cleanupFailed = false;
         console.info("DB_TENANT_CREATE_FAILED", {
+          requestId,
           userId: shortId(current.id),
           submittedOrgSlug: orgSlug,
           clerkOrgId: organization.id,
@@ -185,9 +196,13 @@ export default async function CreateOrganizationPage({
             await client.organizations.deleteOrganization(createdOrgId);
           } catch {
             // Best-effort cleanup of orphaned Clerk org.
+            cleanupFailed = true;
           }
         }
-        redirect("/onboarding/create-organization?error=db-create-failed");
+        if (cleanupFailed && createdOrgId) {
+          redirect(`/onboarding/create-organization?error=db-create-recovery-required&clerkOrgId=${encodeURIComponent(createdOrgId)}&requestId=${encodeURIComponent(requestId)}`);
+        }
+        redirect(`/onboarding/create-organization?error=db-create-failed&requestId=${encodeURIComponent(requestId)}`);
       }
     } catch (error: any) {
       if (String(error?.message ?? "").includes("NEXT_REDIRECT")) {
@@ -204,6 +219,7 @@ export default async function CreateOrganizationPage({
       const slugsDisabled = code.includes("organization_slugs_disabled") || message.includes("organization_slugs_disabled");
 
       console.info("DASHBOARD_TENANT_FAILED", {
+        requestId,
         reason: "CREATE_ORG_FAILED",
         userId: shortId(current.id),
         submittedOrgName: orgName,
@@ -222,7 +238,7 @@ export default async function CreateOrganizationPage({
           // Best-effort cleanup; onboarding error is surfaced below.
         }
       }
-      redirect(`/onboarding/create-organization?error=${clerkOrgExists ? "clerk-org-exists" : "clerk-create-failed"}`);
+      redirect(`/onboarding/create-organization?error=${clerkOrgExists ? "clerk-org-exists" : "clerk-create-failed"}&requestId=${encodeURIComponent(requestId)}`);
     }
   }
 
@@ -250,6 +266,17 @@ export default async function CreateOrganizationPage({
 
       {safeError && (
         <p className="mt-4 text-sm text-red-700">{safeError}</p>
+      )}
+
+      {params.error === "db-create-recovery-required" && params.clerkOrgId && (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="font-medium">Recovery required:</p>
+          <p>
+            We could not fully roll back a partially-created Clerk organization.
+            Use <span className="font-medium">Existing organization setup</span> below to map it into JanaGana.
+          </p>
+          {params.requestId && <p className="mt-1">Reference: {params.requestId}</p>}
+        </div>
       )}
 
       {unmappedClerkOrgs.length > 0 && (

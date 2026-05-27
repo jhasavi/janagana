@@ -9,6 +9,7 @@ No exceptions. No partial releases.
 
 | # | Check | Command | Pass Condition |
 |---|---|---|---|
+| 0 | Quick operator gate | `npm run gate:quick` | Exits 0 and writes report artifact |
 | 1 | Build | `npm run build` | Exits 0, no errors |
 | 2 | Typecheck | `npm run typecheck` | Exits 0, zero TS errors |
 | 3 | Lint | `npm run lint` | Exits 0, no errors or warnings |
@@ -20,6 +21,15 @@ No exceptions. No partial releases.
 | 9 | Registration operations script | `npm run test:registration:ops` | All pass |
 | 10 | Second-tenant isolation script | `npm run test:second-tenant` | All pass |
 
+Use full release gate command for final release verification:
+
+- `npm run gate:release`
+
+Machine-readable artifacts are written to:
+
+- `test-results/release-gate-report.quick.json`
+- `test-results/release-gate-report.full.json`
+
 ---
 
 ## Integration Checks (for this milestone)
@@ -30,7 +40,7 @@ No exceptions. No partial releases.
 | 12 | Tiers CRUD page | `app/dashboard/tiers/page.tsx` | Form creates and list reflects tenant data |
 | 13 | Events CRUD page | `app/dashboard/events/page.tsx` | Form creates and list reflects tenant data |
 | 14 | Tenant switch link present | `app/dashboard/layout.tsx` | Header includes link to `/select-organization` |
-| 15 | Select organization behavior | `app/select-organization/page.tsx` | Multi-tenant shows choices; single-tenant redirects to dashboard |
+| 15 | Select organization behavior | `app/select-organization/page.tsx` | Multi-tenant shows choices; single-tenant shows continue + create-another-org actions |
 | 16 | Portal isolation (purple vs namaste) | `scripts/test-second-tenant-hardening.ts` | Events/registrations do not cross tenant boundaries |
 
 ---
@@ -50,6 +60,7 @@ A pending real Clerk smoke test means the release is a **preview only**, not a p
 
 | # | Check | Verified by |
 |---|---|---|
+| 17A | Manual demo script run | `docs/MANUAL_DEMO_SCRIPT.md` completed successfully |
 | 18 | No secrets in git | `git log --all --full-history -- .env*` returns nothing; `git grep "pk_live_\|sk_live_\|whsec_"` returns nothing |
 | 19 | No fake dashboard CTAs | Members, tiers, and events links land on functioning pages |
 | 20 | Sign out clears session | After sign out, `/dashboard` redirects to `/sign-in` |
@@ -86,6 +97,8 @@ Copy this into your PR/release notes:
 - [ ] npm run test:e2e:foundation — PASS/FAIL
 - [ ] npm run test:e2e:env — PASS/FAIL
 - [ ] npm run test:actions — PASS/FAIL
+- [ ] npm run gate:quick — PASS/FAIL
+- [ ] npm run gate:release — PASS/FAIL
 - [ ] Real Clerk smoke — PASS/FAIL/PENDING (reason: ___)
 - [ ] No secrets in git — YES/NO
 - [ ] No fake CTAs — YES/NO

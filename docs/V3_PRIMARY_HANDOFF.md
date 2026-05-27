@@ -2,7 +2,7 @@
 
 Date: 2026-05-27
 Repository: ~/janagana (v3 primary)
-Latest commit: 62a0094
+Latest commit: a2f0228
 
 ## What Works
 
@@ -18,6 +18,12 @@ Latest commit: 62a0094
    - dashboard switch link to /select-organization
    - active tenant cookie validated against mapped Clerk memberships
    - two-tenant isolation scripts pass for portal and registration behavior
+- Real second-tenant flow is now verified in local Clerk + DB:
+   - Namaste Boston can be created from explicit owner onboarding
+   - /select-organization supports one-tenant and multi-tenant UX clearly
+   - Owner can switch between Purple Wings and Namaste Boston
+- Settings page now includes Tenant Health diagnostics.
+- Gate automation now supports both quick and full release modes with JSON reports.
 
 ## Manual Demo Result
 
@@ -28,8 +34,8 @@ Manual demo completed for Purple Wings loop:
 - Capacity/cancel/re-confirm operations work
 
 Second-tenant status:
-- Namaste Boston Clerk organization is not yet present in Clerk for this local environment.
-- Explicit owner onboarding is required before final Namaste mapping proof.
+- Namaste Boston exists and can be mapped/seeded via setup script.
+- Two-tenant switching and isolation behavior have been manually verified.
 
 ## Deferred Scope (Not Included)
 
@@ -70,6 +76,16 @@ Second-tenant status:
    - create Slug: namaste-boston
    - rerun npm run setup:namaste
 
+## Tenant Health / Recovery
+
+- Open `/dashboard/settings` to view:
+   - resolution status
+   - mapped tenant count
+   - Clerk organization count
+   - unmapped Clerk organizations
+   - stale-cookie handling status
+- If owner onboarding reports partial DB/Clerk failure, use Existing organization setup on `/onboarding/create-organization` to finish mapping.
+
 ## Test Commands
 
 - npm run build
@@ -86,6 +102,17 @@ Second-tenant status:
 - npm run test:e2e:env
 - npm run test:e2e:portal
 - npm run smoke:local-redirects
+- npm run gate:quick
+- npm run gate:release
+
+## Manual Demo
+
+- Follow: `docs/MANUAL_DEMO_SCRIPT.md`
+- Website link readiness: `docs/WEBSITE_LINK_READINESS.md`
+
+Gate report artifacts:
+- test-results/release-gate-report.quick.json
+- test-results/release-gate-report.full.json
 
 ## Environment Requirements
 

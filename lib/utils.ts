@@ -41,3 +41,10 @@ export function formatDate(date: Date | string): string {
     minute: "2-digit",
   });
 }
+
+/**
+ * Generate a short request correlation id for log stitching.
+ */
+export function createRequestId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}

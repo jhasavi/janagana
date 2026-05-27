@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getTenantBySlug } from "@/lib/tenant";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const PublicRegistrationSchema = z
   .object({
@@ -74,6 +76,31 @@ export async function registerPublicEvent(input: unknown) {
   }
 
   const email = parsed.data.email.toLowerCase();
+
+  // Lightweight anti-abuse guard for repeated submit attempts.
+  // Falls back to non-request scope when called outside HTTP request context.
+  let clientIp = "unknown";
+  try {
+    const requestHeaders = await headers();
+    const forwarded = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim();
+    clientIp = forwarded || requestHeaders.get("x-real-ip") || "unknown";
+  } catch {
+    // No request context (e.g. script usage); skip IP extraction.
+  }
+
+  const throttle = checkRateLimit(
+    `public-register:${tenant.id}:${event.id}:${clientIp}:${email}`,
+    5,
+    60_000,
+  );
+  if (!throttle.allowed) {
+    return {
+      ok: false as const,
+      alreadyRegistered: false as const,
+      error: `Too many attempts. Please wait ${throttle.retryAfterSeconds}s and try again.`,
+    };
+  }
+
   const existingContact = await prisma.contact.findUnique({
     where: {
       tenantId_email: {

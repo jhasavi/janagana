@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-const gates = [
+const fullGates = [
   "npm run build",
   "npm run typecheck",
   "npm run lint",
@@ -17,6 +19,45 @@ const gates = [
   "npm run smoke:local-redirects",
 ];
 
+const quickGates = [
+  "npm run typecheck",
+  "npm run lint",
+  "npm run prisma:validate",
+  "npm run check:env",
+  "npm run check:db:test",
+  "npm run test:actions",
+  "npm run test:portal",
+  "npm run test:registration:ops",
+  "npm run test:second-tenant",
+];
+
+type GateResult = {
+  command: string;
+  exitCode: number;
+};
+
+const mode = process.argv[2] === "quick" ? "quick" : "full";
+const gates = mode === "quick" ? quickGates : fullGates;
+const report: {
+  mode: "quick" | "full";
+  startedAt: string;
+  finishedAt?: string;
+  success?: boolean;
+  results: GateResult[];
+} = {
+  mode,
+  startedAt: new Date().toISOString(),
+  results: [],
+};
+
+function writeReport() {
+  const outDir = resolve(process.cwd(), "test-results");
+  mkdirSync(outDir, { recursive: true });
+  const outPath = resolve(outDir, `release-gate-report.${mode}.json`);
+  writeFileSync(outPath, JSON.stringify(report, null, 2));
+  console.log(`\nWrote gate report: ${outPath}`);
+}
+
 function run(cmd: string): number {
   console.log(`\n=== ${cmd} ===`);
   const result = spawnSync(cmd, {
@@ -30,10 +71,17 @@ function run(cmd: string): number {
 
 for (const gate of gates) {
   const exitCode = run(gate);
+  report.results.push({ command: gate, exitCode });
   if (exitCode !== 0) {
+    report.finishedAt = new Date().toISOString();
+    report.success = false;
+    writeReport();
     console.error(`\nGate failed: ${gate}`);
     process.exit(exitCode);
   }
 }
 
-console.log("\nAll release gates passed.");
+report.finishedAt = new Date().toISOString();
+report.success = true;
+writeReport();
+console.log(`\nAll ${mode} release gates passed.`);
