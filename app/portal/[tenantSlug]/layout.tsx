@@ -31,6 +31,9 @@ export default async function PortalTenantLayout({
             <Link href={`/portal/${tenant.slug}/events`} className="text-slate-700 hover:text-slate-950">
               Events
             </Link>
+            <Link href={`/portal/${tenant.slug}/contact`} className="text-slate-700 hover:text-slate-950">
+              Stay updated
+            </Link>
           </nav>
         </div>
       </header>

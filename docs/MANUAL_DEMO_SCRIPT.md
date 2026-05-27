@@ -69,6 +69,18 @@ Environment: local (http://localhost:3020)
 - Sign in again and verify no redirect loop
 - Confirm tenant selection/dashboard loads correctly
 
+9. Website CTA entry points
+- From TPW website, click JanaGana CTA to `.../portal/purple-wings`
+- From NB website, click JanaGana CTA to `.../portal/namaste-boston`
+- Confirm each CTA lands on the correct tenant page
+
+10. Public lead capture
+- Open `http://localhost:3020/portal/purple-wings/contact?interest=newsletter`
+- Submit lead with unique email and confirm success message
+- Open `http://localhost:3020/portal/namaste-boston/contact?interest=investment`
+- Submit lead with another unique email and confirm success message
+- Confirm no auth prompt and no cross-tenant data leak
+
 ## Pass Criteria
 
 - Owner can create/select organizations
@@ -76,3 +88,5 @@ Environment: local (http://localhost:3020)
 - Admin attendee operations (cancel/reconfirm) work
 - No data leaks across tenants
 - Sign-out/re-login flow is stable
+- Website CTA links route to correct tenant slug
+- Public lead capture works for newsletter/investment intents

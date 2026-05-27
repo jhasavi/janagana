@@ -24,6 +24,9 @@ Latest commit: a2f0228
    - Owner can switch between Purple Wings and Namaste Boston
 - Settings page now includes Tenant Health diagnostics.
 - Gate automation now supports both quick and full release modes with JSON reports.
+- Public portal now includes tenant-scoped lead capture via `/portal/[tenantSlug]/contact`.
+- Interest alias routing is available via `/portal/[tenantSlug]/interest/[interestType]`.
+- Website CTA integration has been added in TPW and NB repos using env-driven portal base URLs.
 
 ## Manual Demo Result
 
@@ -45,15 +48,14 @@ Second-tenant status:
 - Volunteering
 - Communications/automation
 - Analytics/reporting
-- NB/TPW external website integration
 - Deployment/push automation
 
 ## Known Limitations
 
-- Namaste Boston final multi-tenant live switch proof is blocked until Namaste Clerk org is explicitly created by owner onboarding.
 - No email confirmations.
 - No pagination/filtering on registration list.
 - Playwright warns about allowedDevOrigins for 127.0.0.1 in Next.js dev mode.
+- TPW repo lint/build validation is currently blocked by pre-existing repo/tool/env issues (lint script behavior on current Next CLI, missing third-party env vars in build-time route evaluation).
 
 ## Local Start
 
@@ -102,6 +104,7 @@ Second-tenant status:
 - npm run test:e2e:env
 - npm run test:e2e:portal
 - npm run smoke:local-redirects
+- npm run test:lead:capture
 - npm run gate:quick
 - npm run gate:release
 

@@ -27,6 +27,12 @@ export default async function PortalHomePage({ params }: Props) {
           >
             View events
           </Link>
+          <Link
+            href={`/portal/${result.tenant.slug}/contact?interest=newsletter`}
+            className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          >
+            Join newsletter
+          </Link>
           <span className="text-xs uppercase tracking-[0.25em] text-slate-500">Slug: {result.tenant.slug}</span>
         </div>
       </div>

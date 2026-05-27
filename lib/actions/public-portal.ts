@@ -15,6 +15,19 @@ const PublicRegistrationSchema = z
   })
   .strict();
 
+const PublicLeadCaptureSchema = z
+  .object({
+    tenantSlug: z.string().trim().min(1),
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
+    email: z.string().trim().email(),
+    phone: z.string().trim().max(30).optional().or(z.literal("")),
+    message: z.string().trim().max(1000).optional().or(z.literal("")),
+    interestType: z.enum(["NEWSLETTER", "CLASS_INTEREST", "MEMBERSHIP_INTEREST", "INVESTMENT_ANALYSIS"]),
+    source: z.string().trim().max(120).optional().or(z.literal("")),
+  })
+  .strict();
+
 export async function listPublishedPortalEvents(tenantSlug: string) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) {
@@ -221,5 +234,71 @@ export async function registerPublicEvent(input: unknown) {
     event,
     contact,
     registration,
+  };
+}
+
+export async function capturePublicLead(input: unknown) {
+  const parsed = PublicLeadCaptureSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: parsed.error.issues[0]?.message ?? "Invalid lead capture input",
+    };
+  }
+
+  const tenant = await getTenantBySlug(parsed.data.tenantSlug);
+  if (!tenant) {
+    return { ok: false as const, error: "Tenant not found" };
+  }
+
+  const email = parsed.data.email.toLowerCase();
+  const firstName = parsed.data.firstName;
+  const lastName = parsed.data.lastName;
+  const phone = parsed.data.phone || null;
+  const message = parsed.data.message || null;
+  const source = parsed.data.source || "portal_contact";
+
+  const contact = await prisma.contact.upsert({
+    where: {
+      tenantId_email: {
+        tenantId: tenant.id,
+        email,
+      },
+    },
+    update: {
+      firstName,
+      lastName,
+      phone,
+      type: "OTHER",
+    },
+    create: {
+      tenantId: tenant.id,
+      firstName,
+      lastName,
+      email,
+      phone,
+      type: "OTHER",
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: tenant.id,
+      actorUserId: null,
+      action: "CREATE",
+      metadata: {
+        entity: "ContactLead",
+        source,
+        contactId: contact.id,
+        interestType: parsed.data.interestType,
+        message,
+      },
+    },
+  });
+
+  return {
+    ok: true as const,
+    tenant,
+    contact,
   };
 }

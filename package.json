@@ -23,6 +23,7 @@
     "check:clerk-orgs": "tsx scripts/check-known-clerk-orgs.ts",
     "seed:demo:local": "tsx scripts/seed-demo-tenants.ts",
     "test:actions": "tsx scripts/test-tenant-isolation.ts",
+    "test:lead:capture": "tsx scripts/test-lead-capture.ts",
     "test:registration:ops": "tsx scripts/test-registration-operations.ts",
     "test:second-tenant": "tsx scripts/test-second-tenant-hardening.ts",
     "test:portal": "tsx scripts/test-public-registration.ts",
