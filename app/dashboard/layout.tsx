@@ -38,7 +38,7 @@ export default async function DashboardLayout({
                 href="/select-organization"
                 className="text-xs text-blue-600 hover:underline"
               >
-                Switch organization
+                Organizations
               </Link>
               <Link
                 href={`/portal/${tenant.slug}`}

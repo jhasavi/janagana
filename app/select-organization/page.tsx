@@ -23,13 +23,8 @@ export default async function SelectOrganizationPage({
     redirect("/onboarding/create-organization");
   }
 
-  if (tenants.length === 1) {
-    console.info("DASHBOARD_TENANT_RESOLVED", { source: "select-single-tenant", tenantId: tenants[0].id });
-    // Delegate to route handler — cookies cannot be mutated in server-component render
-    redirect(`/api/select-tenant?tenantId=${encodeURIComponent(tenants[0].id)}`);
-  }
-
   const params = await searchParams;
+  const hasSingleTenant = tenants.length === 1;
 
   async function chooseTenantAction(formData: FormData) {
     "use server";
@@ -60,6 +55,12 @@ export default async function SelectOrganizationPage({
         <p className="mt-4 text-sm text-red-700">Unable to select that organization. Please try again.</p>
       )}
 
+      {hasSingleTenant && (
+        <p className="mt-4 text-sm text-gray-700">
+          You currently have one organization. Continue to dashboard or create another organization.
+        </p>
+      )}
+
       <div className="mt-6 space-y-3">
         {tenants.map((tenant) => (
           <form key={tenant.id} action={chooseTenantAction} className="rounded-md border border-gray-200 p-4 bg-white">
@@ -73,7 +74,7 @@ export default async function SelectOrganizationPage({
                 type="submit"
                 className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
               >
-                Continue
+                {hasSingleTenant ? "Continue to dashboard" : "Continue"}
               </button>
             </div>
           </form>
@@ -82,7 +83,7 @@ export default async function SelectOrganizationPage({
 
       <div className="mt-6 flex items-center gap-4">
         <Link href="/onboarding/create-organization" className="text-sm text-blue-700 underline">
-          Create organization
+          Create another organization
         </Link>
         <form action="/api/sign-out" method="POST">
           <button type="submit" className="text-sm text-gray-700 underline">

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { setupExistingClerkOrgAsTenant } from "@/lib/actions/onboarding";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
 import { findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
 
 type OnboardingErrorCode =
@@ -40,22 +39,6 @@ function toSafeErrorMessage(errorCode: string | undefined): string | null {
   return map[errorCode as OnboardingErrorCode] ?? "Onboarding failed. Please retry.";
 }
 
-async function makeUniqueTenantSlug(base: string): Promise<string> {
-  const baseSlug = slugify(base).slice(0, 60) || "organization";
-  let candidate = baseSlug;
-  let index = 1;
-
-  while (true) {
-    const existing = await prisma.tenant.findUnique({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) {
-      return candidate;
-    }
-    index += 1;
-    const suffix = `-${index}`;
-    candidate = `${baseSlug.slice(0, Math.max(1, 60 - suffix.length))}${suffix}`;
-  }
-}
-
 export default async function CreateOrganizationPage({
   searchParams,
 }: {
@@ -71,10 +54,6 @@ export default async function CreateOrganizationPage({
   const mappedOrgIds = new Set(mappedTenants.map((tenant) => tenant.clerkOrgId));
   const unmappedClerkOrgs = clerkOrganizations.filter((org) => !mappedOrgIds.has(org.clerkOrgId));
 
-  if (mappedTenants.length === 1) {
-    console.info("DASHBOARD_TENANT_RESOLVED", { source: "onboarding-single-tenant", tenantId: mappedTenants[0].id });
-    redirect("/dashboard");
-  }
   if (mappedTenants.length > 1) {
     redirect("/select-organization");
   }
@@ -134,14 +113,24 @@ export default async function CreateOrganizationPage({
     let createdOrgId: string | null = null;
 
     try {
-      const organization = await client.organizations.createOrganization({
-        name: orgName,
-        slug: orgSlug,
-        createdBy: current.id,
-      });
+      const allowClerkSlug = process.env.CLERK_ENABLE_ORG_SLUGS === "true";
+      const organization = await client.organizations.createOrganization(
+        allowClerkSlug
+          ? {
+              name: orgName,
+              slug: orgSlug,
+              createdBy: current.id,
+            }
+          : {
+              name: orgName,
+              createdBy: current.id,
+            },
+      );
       console.info("CREATED_CLERK_ORG", {
         orgId: organization.id,
-        slug: orgSlug,
+        submittedSlug: orgSlug,
+        clerkSlug: organization.slug ?? null,
+        mode: allowClerkSlug ? "with-slug" : "name-only",
       });
       createdOrgId = organization.id;
 
@@ -212,6 +201,7 @@ export default async function CreateOrganizationPage({
         message.includes("already exists") ||
         message.includes("slug") ||
         message.includes("name");
+      const slugsDisabled = code.includes("organization_slugs_disabled") || message.includes("organization_slugs_disabled");
 
       console.info("DASHBOARD_TENANT_FAILED", {
         reason: "CREATE_ORG_FAILED",
@@ -220,6 +210,7 @@ export default async function CreateOrganizationPage({
         submittedOrgSlug: orgSlug,
         clerkOrgCreationFailed: true,
         clerkOrgSlugOrNameAlreadyExists: clerkOrgExists,
+        clerkOrgSlugsDisabled: slugsDisabled,
         hasCreatedClerkOrg: Boolean(createdOrgId),
         errorCode: error?.code ?? "unknown",
         message: error?.message ?? "unknown",
@@ -250,6 +241,12 @@ export default async function CreateOrganizationPage({
       <p className="mt-2 text-sm text-gray-600">
         Finish onboarding by setting up an existing Clerk organization or creating a new owner organization.
       </p>
+
+      {mappedTenants.length === 1 && (
+        <p className="mt-3 text-sm text-gray-700">
+          Current organization: <span className="font-medium">{mappedTenants[0].name}</span>. You can create another organization below.
+        </p>
+      )}
 
       {safeError && (
         <p className="mt-4 text-sm text-red-700">{safeError}</p>
