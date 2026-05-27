@@ -7,17 +7,18 @@ This document defines the first approved demo scope for janagana-v3.
 - Clerk login
 - Tenant mapped to Clerk organization
 - Select organization flow
-- Simple dashboard
-- Contacts or members
-- Membership tiers
-- Events
-- Public portal
-- Event registration
-- Tenant isolation
+- Dashboard with real tenant-scoped counts
+- Members/contacts minimal CRUD (create + list)
+- Membership tiers minimal CRUD (create + list)
+- Events minimal CRUD (create + list)
+- Tenant isolation proof for contacts, tiers, and events
 - Explicit invariant: no accidental Clerk organization creation from public registration
 
 ## Deferred (not in this milestone)
 
+- Public portal
+- Public event registration
+- Stripe and all payments/billing work
 - CRM and deals
 - Donations
 - Fundraising

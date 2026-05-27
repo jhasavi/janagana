@@ -16,6 +16,8 @@
     "db:validate": "prisma validate",
     "check:env": "tsx scripts/check-env.ts",
     "check:clerk-orgs": "tsx scripts/check-known-clerk-orgs.ts",
+    "seed:demo:local": "tsx scripts/seed-demo-tenants.ts",
+    "test:actions": "tsx scripts/test-tenant-isolation.ts",
     "test:e2e": "playwright test",
     "test:e2e:foundation": "playwright test e2e/tests/00-foundation-smoke.spec.ts --reporter=list --retries=0",
     "test:e2e:env": "playwright test e2e/tests/01-env-contract.spec.ts --reporter=list --retries=0",
