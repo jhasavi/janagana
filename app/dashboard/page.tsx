@@ -6,6 +6,12 @@ export default async function DashboardPage() {
   const resolution = await resolveTenantForDashboard();
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
 
+  if (!tenant) {
+    console.info("DASHBOARD_TENANT_FAILED", { reason: "DASHBOARD_PAGE_NO_TENANT" });
+  } else {
+    console.info("DASHBOARD_TENANT_RESOLVED", { source: "dashboard-page", tenantId: tenant.id });
+  }
+
   const [contactsCount, tiersCount, eventsCount] = tenant
     ? await Promise.all([
         prisma.contact.count({ where: { tenantId: tenant.id } }),
@@ -13,6 +19,15 @@ export default async function DashboardPage() {
         prisma.event.count({ where: { tenantId: tenant.id } }),
       ])
     : [0, 0, 0];
+
+  if (tenant) {
+    console.info("DASHBOARD_COUNTS", {
+      tenantId: tenant.id,
+      contactsCount,
+      tiersCount,
+      eventsCount,
+    });
+  }
 
   return (
     <div>

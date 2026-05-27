@@ -5,7 +5,7 @@ import { resolveTenantForDashboard } from "@/lib/tenant";
 export default async function HomePage() {
   const user = await getCurrentUser();
   if (!user) {
-    console.info("NO_AUTH_REDIRECT_SIGNIN");
+    console.info("NO_AUTH");
     redirect("/sign-in");
   }
 
@@ -15,7 +15,7 @@ export default async function HomePage() {
   }
 
   if (resolution.status === "ZERO_TENANTS") {
-    console.info("ZERO_TENANTS_REDIRECT_CREATE_ORG");
+    console.info("ZERO_TENANTS_ONBOARDING");
     redirect("/onboarding/create-organization");
   }
 

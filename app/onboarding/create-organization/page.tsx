@@ -17,7 +17,7 @@ export default async function CreateOrganizationPage({
 
   const mappedTenants = await findMappedTenantsForUser();
   if (mappedTenants.length === 1) {
-    await setActiveTenantCookie(mappedTenants[0].id);
+    console.info("DASHBOARD_TENANT_RESOLVED", { source: "onboarding-single-tenant", tenantId: mappedTenants[0].id });
     redirect("/dashboard");
   }
   if (mappedTenants.length > 1) {
@@ -60,6 +60,10 @@ export default async function CreateOrganizationPage({
         slug: orgSlug,
         createdBy: current.id,
       });
+      console.info("CREATED_CLERK_ORG", {
+        orgId: organization.id,
+        slug: orgSlug,
+      });
       createdOrgId = organization.id;
 
       const tenant = await prisma.tenant.create({
@@ -75,6 +79,10 @@ export default async function CreateOrganizationPage({
           },
         },
       });
+      console.info("CREATED_TENANT", {
+        tenantId: tenant.id,
+        slug: tenant.slug,
+      });
 
       await prisma.auditLog.create({
         data: {
@@ -86,8 +94,13 @@ export default async function CreateOrganizationPage({
       });
 
       await setActiveTenantCookie(tenant.id);
+      console.info("SET_ACTIVE_TENANT", { tenantId: tenant.id, source: "onboarding-create-org" });
       redirect("/dashboard");
     } catch (error) {
+      console.info("DASHBOARD_TENANT_FAILED", {
+        reason: "CREATE_ORG_FAILED",
+        hasCreatedClerkOrg: Boolean(createdOrgId),
+      });
       if (createdOrgId) {
         try {
           await client.organizations.deleteOrganization(createdOrgId);

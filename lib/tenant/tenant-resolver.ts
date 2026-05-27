@@ -1,9 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUserClerkOrganizations } from "@/lib/auth/clerk-orgs";
 import {
-  clearActiveTenantCookies,
   getActiveTenantCookie,
-  setActiveTenantCookie,
 } from "@/lib/tenant/active-tenant-cookie";
 
 export type MappedTenant = {
@@ -52,7 +50,10 @@ export async function validateActiveTenantCookie(
 
   const tenant = mappedTenants.find((item) => item.id === cookieTenantId) ?? null;
   if (!tenant) {
-    await clearActiveTenantCookies();
+    console.info("STALE_COOKIE_CLEARED", {
+      reason: "cookie-not-in-mapped-tenants",
+      strategy: "ignored-in-server-component",
+    });
     return { tenant: null, staleCookieIgnored: true };
   }
 
@@ -64,10 +65,15 @@ export async function resolveTenantForDashboard(): Promise<TenantResolutionResul
   const cookieCheck = await validateActiveTenantCookie(mappedTenants);
 
   if (mappedTenants.length === 0) {
+    console.info("DASHBOARD_TENANT_FAILED", { reason: "ZERO_TENANTS_ONBOARDING" });
     return { status: "ZERO_TENANTS", staleCookieIgnored: cookieCheck.staleCookieIgnored };
   }
 
   if (cookieCheck.tenant) {
+    console.info("DASHBOARD_TENANT_RESOLVED", {
+      source: "active-cookie",
+      tenantId: cookieCheck.tenant.id,
+    });
     return {
       status: "ONE_TENANT",
       tenant: cookieCheck.tenant,
@@ -76,13 +82,21 @@ export async function resolveTenantForDashboard(): Promise<TenantResolutionResul
   }
 
   if (mappedTenants.length === 1) {
-    await setActiveTenantCookie(mappedTenants[0].id);
+    console.info("DASHBOARD_TENANT_RESOLVED", {
+      source: "single-tenant",
+      tenantId: mappedTenants[0].id,
+    });
     return {
       status: "ONE_TENANT",
       tenant: mappedTenants[0],
       staleCookieIgnored: cookieCheck.staleCookieIgnored,
     };
   }
+
+  console.info("DASHBOARD_TENANT_FAILED", {
+    reason: "MULTI_TENANT_REQUIRES_SELECTION",
+    tenantCount: mappedTenants.length,
+  });
 
   return {
     status: "MULTI_TENANT",

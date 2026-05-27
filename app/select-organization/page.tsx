@@ -20,7 +20,7 @@ export default async function SelectOrganizationPage({
   }
 
   if (tenants.length === 1) {
-    await setActiveTenantCookie(tenants[0].id);
+    console.info("DASHBOARD_TENANT_RESOLVED", { source: "select-single-tenant", tenantId: tenants[0].id });
     redirect("/dashboard");
   }
 
@@ -34,10 +34,12 @@ export default async function SelectOrganizationPage({
     const selected = mappedTenants.find((tenant) => tenant.id === tenantId);
 
     if (!selected) {
+      console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_SELECTED_TENANT" });
       redirect("/select-organization?error=invalid-tenant");
     }
 
     await setActiveTenantCookie(selected.id);
+    console.info("SET_ACTIVE_TENANT", { tenantId: selected.id, source: "select-organization" });
     redirect("/dashboard");
   }
 
