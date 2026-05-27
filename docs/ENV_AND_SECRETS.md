@@ -17,7 +17,7 @@
 
 | Variable | Description | Example |
 |---|---|---|
-| `NEXT_PUBLIC_APP_URL` | Full URL of the app | `https://janagana.namasteneedham.com` |
+| `NEXT_PUBLIC_APP_URL` | Full URL of the app (local dev uses localhost:3020) | `http://localhost:3020` |
 | `DATABASE_URL` | Neon PostgreSQL connection string | `postgresql://user:pass@host/db` |
 
 ### Clerk

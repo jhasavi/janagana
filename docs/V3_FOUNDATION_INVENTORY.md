@@ -1,7 +1,7 @@
 # V3 Foundation Inventory
 
 Date: 2026-05-26
-Project: janagana-v3
+Project: janagana (v3 clean rebuild)
 
 ## What already exists
 
@@ -35,5 +35,5 @@ Project: janagana-v3
 
 ## Scope-violation check (broad modules)
 
-- No CRM, fundraising, donations, volunteering, communications, analytics, plugin API, or marketplace module directories were found in janagana-v3.
+- No CRM, fundraising, donations, volunteering, communications, analytics, plugin API, or marketplace module directories were found in janagana.
 - Current foundation remains aligned to minimal rebuild scope.

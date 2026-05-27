@@ -1,6 +1,6 @@
 # V3 Foundation Scope
 
-This document defines the first approved demo scope for janagana-v3.
+This document defines the first approved demo scope for JanaGana v3 in ~/janagana.
 
 ## In scope for first demo only
 

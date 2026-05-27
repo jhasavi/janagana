@@ -1,7 +1,7 @@
 # Old Project Reference Map
 
-**Old project:** `~/janagana`  
-**New project:** `~/janagana-v3`
+**Old project (archived):** `~/janagana-old`  
+**New primary project:** `~/janagana`
 
 This document records what was inspected in the old project and the decision made for each
 module: reuse, adapt, or discard.

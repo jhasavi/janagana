@@ -1,5 +1,5 @@
 {
-  "name": "janagana-v3",
+  "name": "janagana",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -16,6 +16,7 @@
     "db:validate": "prisma validate",
     "check:env": "tsx scripts/check-env.ts",
     "check:db:test": "tsx scripts/check-db-test-readiness.ts",
+    "smoke:redirects": "node scripts/smoke-local-redirects.mjs",
     "check:clerk-orgs": "tsx scripts/check-known-clerk-orgs.ts",
     "seed:demo:local": "tsx scripts/seed-demo-tenants.ts",
     "test:actions": "tsx scripts/test-tenant-isolation.ts",
