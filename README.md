@@ -1,28 +1,37 @@
-# JanaGana v3 Clean Rebuild
+# JanaGana v3
 
-This repository is the primary local JanaGana v3 clean rebuild at ~/janagana.
+GitHub: https://github.com/jhasavi/janagana (main)
+Production target: https://janagana.namasteneedham.com
+Local dev URL: http://localhost:3020
+Old project archive: ~/janagana-old (local reference only, not the live GitHub repo)
 
-Old project location: ~/janagana-old (archive/reference only).
+## What Works
 
-Current local demo URL: http://localhost:3020
+- Admin event management and attendee operations (cancel, re-confirm).
+- Public portal for The Purple Wings (`/portal/purple-wings`) and Namaste Boston (`/portal/namaste-boston`).
+- Public event registration with capacity enforcement and duplicate protection.
+- Tenant-scoped public lead capture at `/portal/[tenantSlug]/contact`.
+- Interest alias routing at `/portal/[tenantSlug]/interest/[interestType]`.
+- Two-tenant isolation: data is fully scoped by tenantId across events, contacts, and registrations.
+- Tenant selection and multi-org switching (`/select-organization`).
+- Owner onboarding for new organizations (`/onboarding/create-organization`).
+- Tenant health diagnostics (`/dashboard/settings`).
+- Website CTAs from TPW and NB repos now link to correct tenant portal URLs.
 
-Current tenant status:
-- Purple Wings is active and mapped.
-- Namaste Boston onboarding is supported and safe, but requires explicit owner creation in Clerk before local mapping.
-
-## First Working Product Loop
-
-1. Admin creates an event.
-2. Public user registers from the portal.
-3. Admin sees attendee registration in the dashboard.
-
-## Second-Tenant Hardening (Current)
+## Second-Tenant Hardening
 
 - Tenant switch path is enabled with a dashboard link to /select-organization.
 - Active tenant cookie is cache-only and validated against Clerk membership before use.
 - Public portal and registration isolation is validated by test scripts for two-tenant scenarios.
-- No website integration with ~/nb or ~/tpw yet.
-- Stripe remains deferred.
+
+## Intentionally Deferred
+
+- CRM
+- Stripe and payments
+- Donations and fundraising
+- Volunteering
+- Communications and automation
+- Analytics and reporting
 
 ## Local Start
 
@@ -80,7 +89,19 @@ npm run test:e2e:portal
 Run local redirect smoke checks (requires app running on localhost:3020):
 
 ```bash
-npm run smoke:redirects
+npm run smoke:local-redirects
+```
+
+Run tenant-scoped lead capture checks:
+
+```bash
+npm run test:lead:capture
+```
+
+Run full release gate (all gates in correct order):
+
+```bash
+npm run gate:release
 ```
 
 ## Tenant Operations
@@ -112,11 +133,10 @@ If Namaste Clerk org does not yet exist, complete explicit owner onboarding firs
 - Volunteering
 - Communications and automation
 - Analytics and reporting
-- NB/TPW integration
-- Deploy and push automation
 
 ## Handoff
 
 Primary handoff document: [docs/V3_PRIMARY_HANDOFF.md](docs/V3_PRIMARY_HANDOFF.md)
-
+Manual demo script: [docs/MANUAL_DEMO_SCRIPT.md](docs/MANUAL_DEMO_SCRIPT.md)
+Website link readiness: [docs/WEBSITE_LINK_READINESS.md](docs/WEBSITE_LINK_READINESS.md)
 Architecture and rebuild scope: [docs/REBUILD_PLAN.md](docs/REBUILD_PLAN.md)
