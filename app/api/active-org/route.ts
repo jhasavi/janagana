@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { getTenantByClerkOrgId } from "@/lib/tenant";
+import { getCurrentUser } from "@/lib/auth";
+import { resolveTenantForDashboard } from "@/lib/tenant";
 
 /**
  * GET /api/active-org
@@ -9,21 +9,18 @@ import { getTenantByClerkOrgId } from "@/lib/tenant";
  * The Clerk session is the source of truth — NOT any cookie.
  */
 export async function GET() {
-  const { userId, orgId } = await auth();
-
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  if (!orgId) {
-    return NextResponse.json({ error: "No active organization" }, { status: 400 });
+  const resolution = await resolveTenantForDashboard();
+  if (resolution.status === "ZERO_TENANTS") {
+    return NextResponse.json({ error: "No mapped tenant" }, { status: 404 });
+  }
+  if (resolution.status === "MULTI_TENANT") {
+    return NextResponse.json({ error: "Multiple tenants available; select one" }, { status: 409 });
   }
 
-  const tenant = await getTenantByClerkOrgId(orgId);
-
-  if (!tenant) {
-    return NextResponse.json({ error: "No tenant found for this organization" }, { status: 404 });
-  }
-
-  return NextResponse.json({ tenant });
+  return NextResponse.json({ tenant: resolution.tenant });
 }

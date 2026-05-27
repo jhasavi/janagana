@@ -1,10 +1,28 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { resolveTenantForDashboard } from "@/lib/tenant";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const resolution = await resolveTenantForDashboard();
+  if (resolution.status === "ZERO_TENANTS") {
+    redirect("/onboarding/create-organization");
+  }
+  if (resolution.status === "MULTI_TENANT") {
+    redirect("/select-organization");
+  }
+
+  const tenant = resolution.tenant;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200">
@@ -13,15 +31,21 @@ export default async function DashboardLayout({
             <div className="flex items-center gap-4">
               <span className="font-semibold text-gray-900">Janagana</span>
               <span className="text-gray-400">|</span>
-              <span className="text-sm text-gray-600">Foundation dashboard shell</span>
+              <span className="text-sm text-gray-600">{tenant.name}</span>
             </div>
             <div className="flex items-center gap-3">
               <Link
-                href="/portal/foundation"
+                href={`/portal/${tenant.slug}`}
                 className="text-xs text-blue-600 hover:underline"
               >
                 Public portal ↗
               </Link>
+              <span className="text-xs text-gray-500">{user.email ?? user.name ?? user.id}</span>
+              <form action="/api/sign-out" method="POST">
+                <button type="submit" className="text-xs text-gray-700 underline">
+                  Sign out
+                </button>
+              </form>
             </div>
           </div>
         </div>

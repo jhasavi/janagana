@@ -1,18 +1,29 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { resolveTenantForDashboard } from "@/lib/tenant";
 
-export default function HomePage() {
-  return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-3xl font-semibold">JanaGana v3 foundation</h1>
-      <p className="mt-2 text-sm text-gray-600">Placeholder home for the controlled rebuild milestone.</p>
-      <ul className="mt-6 space-y-2 text-sm">
-        <li>
-          <Link href="/dashboard" className="text-blue-700 underline">Open dashboard placeholder</Link>
-        </li>
-        <li>
-          <Link href="/portal/foundation" className="text-blue-700 underline">Open portal placeholder</Link>
-        </li>
-      </ul>
-    </main>
-  );
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    console.info("NO_AUTH_REDIRECT_SIGNIN");
+    redirect("/sign-in");
+  }
+
+  const resolution = await resolveTenantForDashboard();
+  if (resolution.staleCookieIgnored) {
+    console.info("STALE_TENANT_COOKIE_IGNORED");
+  }
+
+  if (resolution.status === "ZERO_TENANTS") {
+    console.info("ZERO_TENANTS_REDIRECT_CREATE_ORG");
+    redirect("/onboarding/create-organization");
+  }
+
+  if (resolution.status === "ONE_TENANT") {
+    console.info("ONE_TENANT_AUTO_SELECT");
+    redirect("/dashboard");
+  }
+
+  console.info("MULTI_TENANT_SELECT_ORG");
+  redirect("/select-organization");
 }

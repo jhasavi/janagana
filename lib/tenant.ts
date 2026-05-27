@@ -1,1 +1,10 @@
-export { getTenantBySlug, getTenantByClerkOrgId } from "./tenant/index";
+export {
+	getTenantBySlug,
+	getTenantByClerkOrgId,
+	findMappedTenantsForUser,
+	validateActiveTenantCookie,
+	resolveTenantForDashboard,
+	getActiveTenantCookie,
+	setActiveTenantCookie,
+	clearActiveTenantCookies,
+} from "./tenant/index";

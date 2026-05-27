@@ -7,9 +7,8 @@ test("health route responds", async ({ request }) => {
 });
 
 test("home page loads", async ({ page }) => {
-  const response = await page.goto("/");
-  expect(response?.status()).toBe(200);
-  await expect(page.getByText("JanaGana v3 foundation")).toBeVisible();
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/(sign-in|dashboard|select-organization|onboarding\/create-organization)/);
 });
 
 test("dashboard placeholder loads or redirects predictably", async ({ page }) => {

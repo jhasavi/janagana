@@ -25,3 +25,15 @@ export async function getTenantByClerkOrgId(clerkOrgId: string) {
     where: { clerkOrgId, status: "ACTIVE" },
   });
 }
+
+export {
+  findMappedTenantsForUser,
+  validateActiveTenantCookie,
+  resolveTenantForDashboard,
+} from "./tenant-resolver";
+
+export {
+  getActiveTenantCookie,
+  setActiveTenantCookie,
+  clearActiveTenantCookies,
+} from "./active-tenant-cookie";
