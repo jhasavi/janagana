@@ -30,6 +30,7 @@
     "test:e2e:foundation": "playwright test e2e/tests/00-foundation-smoke.spec.ts --reporter=list --retries=0",
     "test:e2e:env": "playwright test e2e/tests/01-env-contract.spec.ts --reporter=list --retries=0",
     "test:e2e:portal": "playwright test e2e/tests/03-portal-registration.spec.ts --reporter=list --retries=0",
+    "gate:release": "tsx scripts/run-release-gates.ts",
     "test": "playwright test",
     "test:real-clerk": "playwright test --config=playwright.real-clerk.config.ts"
   },
