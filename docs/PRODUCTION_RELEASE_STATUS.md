@@ -9,7 +9,10 @@
 
 | Project | Commit | Message |
 |---------|--------|---------|
-| janagana | `0d1ed92` | fix: run prisma generate before build (Prisma 6 no longer auto-generates on install) |
+| janagana | `e32313f` | fix(dashboard): clarify contacts vs formal memberships for pilot |
+| janagana (prior) | `0d1ed92` | fix: run prisma generate before build (Prisma 6 no longer auto-generates on install) |
+
+**2026-05-28 verification:** GitHub `main` at `e32313f`. Production GET smoke + Playwright lead capture passed on `janagana.namasteneedham.com`. Investment interest alias (`?interest=investment`) live on production. Dashboard semantics require manual admin sign-in to confirm UI labels.
 | nb       | `3982e8a` | fix: resolve all 4 ESLint errors (unescaped apostrophes, Math.random, setState-in-effect) |
 | tpw      | `628aa82` | fix: ESLint 9 flat config + replace broken next lint with eslint src/ |
 

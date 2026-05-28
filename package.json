@@ -20,6 +20,8 @@
     "setup:namaste": "tsx scripts/setup-namaste-boston.ts --confirm-local-setup",
     "smoke:redirects": "node scripts/smoke-local-redirects.mjs",
     "smoke:local-redirects": "node scripts/smoke-local-redirects.mjs",
+    "smoke:production": "tsx scripts/production-smoke-http.ts",
+    "smoke:production:submit": "tsx scripts/production-smoke-http.ts --submit && echo 'Use Playwright for reliable submits: npx playwright test --config=playwright.production-smoke.config.ts'",
     "check:clerk-orgs": "tsx scripts/check-known-clerk-orgs.ts",
     "seed:demo:local": "tsx scripts/seed-demo-tenants.ts",
     "seed:e2e": "tsx e2e/global-setup.ts",

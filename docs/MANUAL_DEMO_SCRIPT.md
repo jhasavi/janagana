@@ -1,7 +1,13 @@
 # Manual Demo Script — JanaGana v3
 
-Date: 2026-05-27
-Environment: local (http://localhost:3020)
+Date: 2026-05-28
+Environment: local (`http://localhost:3020`) or production (`https://janagana.namasteneedham.com`)
+
+For production read-only checks without auth:
+
+```bash
+npm run smoke:production
+```
 
 ## Preconditions
 

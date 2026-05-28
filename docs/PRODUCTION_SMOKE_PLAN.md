@@ -1,7 +1,31 @@
 # Production Smoke Plan
 
-Date: 2026-05-27
+Date: 2026-05-28 (updated)
 Target: https://janagana.namasteneedham.com
+
+## Latest automated smoke (2026-05-28)
+
+**GitHub `main`:** `e32313f` — fix(dashboard): clarify contacts vs formal memberships for pilot
+
+| Check | Result |
+|-------|--------|
+| GET `/api/health/ready` | 200 `{"ok":true}` |
+| GET `/portal/purple-wings` | 200, tenant name present |
+| GET `/portal/namaste-boston` | 200, tenant name present |
+| GET `/portal/purple-wings/contact?interest=newsletter` | 200 |
+| GET `/portal/namaste-boston/contact?interest=investment` | 200, Investment analysis label |
+| Playwright lead submit (PW newsletter, NB investment) | Pass |
+| TPW site CTA → JanaGana | Pass (`tpw-five.vercel.app`) |
+| NB site CTA → JanaGana | Pass (`nb-mu-ten.vercel.app`) |
+
+Commands:
+
+```bash
+npm run smoke:production
+PRODUCTION_SMOKE=true npx playwright test --config=playwright.production-smoke.config.ts
+```
+
+**Manual only (requires owner Clerk sign-in):** dashboard Contacts / Event registrations / Formal memberships cards; tenant switch isolation; event registration attendee list.
 
 ## Preconditions
 

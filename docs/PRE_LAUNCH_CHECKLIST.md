@@ -66,6 +66,22 @@ Run: `npm run test:dashboard:semantics`
 
 ---
 
+## Production smoke (2026-05-28)
+
+Automated (no secrets):
+
+- [x] `npm run smoke:production` — GET routes on `https://janagana.namasteneedham.com`
+- [x] Playwright production lead forms (newsletter + investment)
+- [x] TPW/NB deployed sites link to correct portal URLs
+
+Manual (owner sign-in required):
+
+- [ ] Dashboard shows **Contacts**, **Event registrations**, **Formal memberships** (not misleading “Members”)
+- [ ] Test leads from production smoke visible under correct tenant **Contacts**
+- [ ] Switch orgs — no cross-tenant contact leak
+
+---
+
 ## Before first real use
 
 - [ ] `npm run gate:release` passes on your machine
