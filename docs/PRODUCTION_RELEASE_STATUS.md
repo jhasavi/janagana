@@ -15,7 +15,9 @@
 
 Commit SHA not exposed in `vercel inspect` JSON on this account; deploy freshness inferred from deployment age vs git push.
 
-**2026-05-28 automated verification:** GET smoke + Playwright leads on custom domain passed. QA emails submitted: `qa-prod-vercel-pw-1779983847@example.com`, `qa-prod-vercel-nb-1779983847@example.com`. Admin dashboard still requires owner Clerk login.
+**2026-05-28 slug repair:** Production had duplicate tenants (clean slugs + Clerk long slugs). Merged QA/real data into Clerk-mapped rows, deleted empty duplicates, renamed to `purple-wings` / `namaste-boston`. Long slug URLs now 404.
+
+**2026-05-28 automated verification:** GET smoke + Playwright leads on custom domain passed. Post-repair QA: `qa-prod-vercel-pw-postrepair-1779985239@example.com`, `qa-prod-vercel-nb-postrepair-1779985239@example.com`. Admin dashboard still requires owner Clerk login.
 
 ---
 
