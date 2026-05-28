@@ -127,6 +127,11 @@ export async function listContacts() {
   const contacts = await prisma.contact.findMany({
     where: { tenantId: context.tenant.id },
     orderBy: [{ createdAt: "desc" }, { email: "asc" }],
+    include: {
+      _count: {
+        select: { registrations: true },
+      },
+    },
   });
 
   return { ok: true as const, data: contacts };

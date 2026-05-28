@@ -64,7 +64,7 @@ export default async function DashboardLayout({
             <nav className="space-y-1">
               {[
                 { href: "/dashboard", label: "Overview" },
-                { href: "/dashboard/members", label: "Members" },
+                { href: "/dashboard/members", label: "Contacts" },
                 { href: "/dashboard/tiers", label: "Membership Tiers" },
                 { href: "/dashboard/events", label: "Events" },
                 { href: "/dashboard/settings", label: "Settings" },

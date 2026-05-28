@@ -44,18 +44,26 @@ Environment: local (http://localhost:3020)
 - Open event and submit registration with test attendee details
 - Confirm success state (`registered`)
 
-5. Admin attendee view
+5. Dashboard counts (contacts vs memberships)
+- On `/dashboard`, confirm cards show:
+  - **Contacts** (not “Members”) — increases after registration or lead capture
+  - **Event registrations** — matches confirmed sign-ups
+  - **Formal memberships** — stays `0` until enrollment is built (expected)
+- Open `/dashboard/members` (sidebar: **Contacts**)
+- Confirm registrant and lead appear with correct category and registration count
+
+6. Admin attendee view
 - Back in dashboard for Namaste Boston
 - Open event registrations
 - Confirm attendee appears with status `CONFIRMED`
 
-6. Cancel/reconfirm registration
+7. Cancel/reconfirm registration
 - In attendee list, click `Cancel`
 - Confirm status changes to `CANCELED`
 - Click `Mark confirmed`
 - Confirm status returns to `CONFIRMED`
 
-7. Tenant switch isolation
+8. Tenant switch isolation
 - Open `http://localhost:3020/select-organization`
 - Switch to The Purple Wings
 - Confirm Namaste attendee/event does not appear in Purple Wings admin pages
@@ -63,18 +71,18 @@ Environment: local (http://localhost:3020)
 - Confirm Namaste event is not shown
 - Switch back to Namaste and verify data remains tenant-scoped
 
-8. Sign out / re-login
+9. Sign out / re-login
 - Sign out from header or `/api/sign-out`
 - Confirm redirect to `/sign-in`
 - Sign in again and verify no redirect loop
 - Confirm tenant selection/dashboard loads correctly
 
-9. Website CTA entry points
+10. Website CTA entry points
 - From TPW website, click JanaGana CTA to `.../portal/purple-wings`
 - From NB website, click JanaGana CTA to `.../portal/namaste-boston`
 - Confirm each CTA lands on the correct tenant page
 
-10. Public lead capture
+11. Public lead capture
 - Open `http://localhost:3020/portal/purple-wings/contact?interest=newsletter`
 - Submit lead with unique email and confirm success message
 - Open `http://localhost:3020/portal/namaste-boston/contact?interest=investment`

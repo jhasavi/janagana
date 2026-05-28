@@ -15,6 +15,7 @@ const fullGates = [
   "npm run test:portal:concurrency",
   "npm run test:registration:ops",
   "npm run test:second-tenant",
+  "npm run test:dashboard:semantics",
   // e2e tests start a dev server via playwright webServer; run before build
   // so the production .next artifact does not conflict with next dev startup.
   "npm run test:e2e:foundation",
@@ -40,6 +41,7 @@ const quickGates = [
   "npm run test:portal:concurrency",
   "npm run test:registration:ops",
   "npm run test:second-tenant",
+  "npm run test:dashboard:semantics",
   "npm run test:e2e:dual-portal",
   "npm run test:e2e:contact-interest",
 ];

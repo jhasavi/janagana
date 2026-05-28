@@ -51,6 +51,21 @@ Manual validation: `docs/MANUAL_DEMO_SCRIPT.md` and `npm run test:real-clerk`.
 
 ---
 
+## People captured (dashboard semantics)
+
+| Label | Meaning |
+|-------|---------|
+| **Contacts** | Everyone from portal registration, lead forms, or manual admin entry |
+| **Event registrations** | Confirmed (or total) sign-ups for events — see Events → Registrations |
+| **Formal memberships** | `Membership` enrollments — **0 is expected** until enrollment/payment is built |
+| **“Members” (old UI)** | Was misleading; dashboard now says **Contacts** |
+
+Creating an event alone does **not** increase contact count until someone registers (published event) or submits a contact form.
+
+Run: `npm run test:dashboard:semantics`
+
+---
+
 ## Before first real use
 
 - [ ] `npm run gate:release` passes on your machine

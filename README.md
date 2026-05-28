@@ -96,6 +96,7 @@ npm run test:e2e:dual-portal
 npm run test:e2e:contact-interest
 npm run test:registration:ops
 npm run test:second-tenant
+npm run test:dashboard:semantics
 npm run test:e2e:foundation
 npm run test:e2e:env
 npm run test:e2e:portal

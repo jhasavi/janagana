@@ -308,6 +308,14 @@ export async function capturePublicLead(input: unknown) {
   const message = parsed.data.message || null;
   const source = parsed.data.source || "portal_contact";
 
+  const existing = await prisma.contact.findUnique({
+    where: { tenantId_email: { tenantId: tenant.id, email } },
+    select: { type: true },
+  });
+
+  const preservedType =
+    existing?.type === "REGISTRANT" || existing?.type === "MEMBER" ? existing.type : "OTHER";
+
   const contact = await prisma.contact.upsert({
     where: {
       tenantId_email: {
@@ -319,7 +327,7 @@ export async function capturePublicLead(input: unknown) {
       firstName,
       lastName,
       phone,
-      type: "OTHER",
+      type: preservedType,
     },
     create: {
       tenantId: tenant.id,
