@@ -74,6 +74,15 @@ async function main() {
 
   const checks: CheckResult[] = [];
 
+  const embedRes = await fetch(`${BASE}/api/embed/events?tenantSlug=purple-wings&maxItems=1`);
+  const embedJson = await embedRes.json().catch(() => ({}));
+  checks.push({
+    path: "/api/embed/events?tenantSlug=purple-wings",
+    status: embedRes.status,
+    ok: embedRes.ok && (embedJson as { success?: boolean }).success === true,
+    note: embedRes.ok ? "embed JSON ok" : "embed API missing or error — deploy JanaGana",
+  });
+
   const healthRes = await fetch(`${BASE}/api/health/ready`);
   const healthJson = await healthRes.json().catch(() => ({}));
   checks.push({

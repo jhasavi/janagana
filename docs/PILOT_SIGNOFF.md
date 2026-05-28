@@ -3,7 +3,8 @@
 **Goal:** Confirm production is usable for The Purple Wings and Namaste Boston **before any new code**.
 
 **App:** https://janagana.namasteneedham.com  
-**Automated checks (agent):** Re-run before you start: `npm run smoke:production`
+**Automated checks (agent):** Re-run before you start: `npm run smoke:production`  
+**Public website paths:** See `docs/WEBSITE_JANAGANA_VISITOR_PATHS.md` (NB/TPW CTAs → JanaGana vs on-site forms).
 
 ---
 

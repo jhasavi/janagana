@@ -1,7 +1,7 @@
 # Website Link Readiness — v3
 
-Date: 2026-05-27
-Status: Website CTA integration + tenant-scoped lead capture ready
+Date: 2026-05-28
+Status: Website CTA integration + embed events API + visitor path clarity
 
 ## Approved Portal Links
 
@@ -18,7 +18,8 @@ Status: Website CTA integration + tenant-scoped lead capture ready
 
 - This milestone includes direct link integration from external websites to tenant portal and contact pages.
 - Tenant-scoped lead capture is enabled on portal contact routes.
-- No widget/embed/API sync is included in this milestone.
+- Read-only embed API for TPW event listings: `GET /api/embed/events` and `GET /api/embed/past-events` (tenant slug required).
+- Full visitor path matrix: `docs/WEBSITE_JANAGANA_VISITOR_PATHS.md`.
 - No CRM, Stripe, donation, volunteer, or communications automation is included.
 
 ## External Website Env Contract
