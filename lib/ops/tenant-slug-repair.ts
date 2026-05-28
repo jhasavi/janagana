@@ -271,30 +271,6 @@ export async function applyRepairPlan(
     }
   }
 
-  for (const action of plan.actions) {
-    if (action.type === "RENAME_SLUG") {
-      await prisma.tenant.update({
-        where: { id: action.tenantId },
-        data: { slug: action.to },
-      });
-      applied.push(`RENAME ${action.orgName}: ${action.from} → ${action.to}`);
-      await prisma.auditLog.create({
-        data: {
-          tenantId: action.tenantId,
-          actorUserId: options.actorUserId,
-          action: "UPDATE",
-          metadata: {
-            entity: "Tenant",
-            field: "slug",
-            from: action.from,
-            to: action.to,
-            source: "tenant-slug-repair",
-          },
-        },
-      });
-    }
-  }
-
   if (options.deleteEmptyDuplicates) {
     const mergeSources = plan.actions
       .filter((a): a is Extract<RepairAction, { type: "MERGE_INTO" }> => a.type === "MERGE_INTO")
@@ -331,6 +307,30 @@ export async function applyRepairPlan(
       }
       await prisma.tenant.delete({ where: { id: tenantId } });
       applied.push(`DELETE EMPTY tenant ${row.slug}`);
+    }
+  }
+
+  for (const action of plan.actions) {
+    if (action.type === "RENAME_SLUG") {
+      await prisma.tenant.update({
+        where: { id: action.tenantId },
+        data: { slug: action.to },
+      });
+      applied.push(`RENAME ${action.orgName}: ${action.from} → ${action.to}`);
+      await prisma.auditLog.create({
+        data: {
+          tenantId: action.tenantId,
+          actorUserId: options.actorUserId,
+          action: "UPDATE",
+          metadata: {
+            entity: "Tenant",
+            field: "slug",
+            from: action.from,
+            to: action.to,
+            source: "tenant-slug-repair",
+          },
+        },
+      });
     }
   }
 

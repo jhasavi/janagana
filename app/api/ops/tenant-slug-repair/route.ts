@@ -50,16 +50,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "blocked", conflicts: plan.conflicts }, { status: 409 });
   }
 
-  const result = await applyRepairPlan(prisma, plan, {
-    confirm,
-    actorUserId: "ops:tenant-slug-repair",
-    deleteEmptyDuplicates: deleteEmpty,
-  });
+  try {
+    const result = await applyRepairPlan(prisma, plan, {
+      confirm,
+      actorUserId: "ops:tenant-slug-repair",
+      deleteEmptyDuplicates: deleteEmpty,
+    });
 
-  return NextResponse.json({
-    mode: confirm ? "apply" : "dry-run",
-    applied: result.applied,
-    inventoryAfter: formatInventoryForLog(result.inventoryAfter),
-    actions: plan.actions,
-  });
+    return NextResponse.json({
+      mode: confirm ? "apply" : "dry-run",
+      applied: result.applied,
+      inventoryAfter: formatInventoryForLog(result.inventoryAfter),
+      actions: plan.actions,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: "repair_failed", message }, { status: 500 });
+  }
 }
