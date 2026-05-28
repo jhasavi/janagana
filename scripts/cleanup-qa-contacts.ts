@@ -11,8 +11,10 @@ import { config as loadEnv } from "dotenv";
 import { writeFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 
-loadEnv({ path: ".env" });
-loadEnv({ path: ".env.local", override: true });
+if (process.env.SKIP_DOTENV !== "1") {
+  loadEnv({ path: ".env" });
+  loadEnv({ path: ".env.local", override: true });
+}
 
 const QA_EMAIL_PATTERN = /^(qa-prod-|qa-prod-vercel-|qa-smoke-|test-production-)/i;
 

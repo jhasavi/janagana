@@ -9,10 +9,12 @@
 import { config as loadEnv } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 
-loadEnv({ path: ".env" });
-loadEnv({ path: ".env.local", override: true });
+if (process.env.SKIP_DOTENV !== "1") {
+  loadEnv({ path: ".env" });
+  loadEnv({ path: ".env.local", override: true });
+}
 
-const QA_EMAIL_PATTERN = /^(qa-prod-|qa-smoke-|test-production-)/i;
+const QA_EMAIL_PATTERN = /^(qa-prod-|qa-prod-vercel-|qa-smoke-|test-production-)/i;
 
 const TENANT_SLUGS = ["purple-wings", "namaste-boston"] as const;
 
