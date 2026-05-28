@@ -2,19 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { findMappedTenantsForUser } from "@/lib/tenant";
 import { clearActiveTenantCookies, setActiveTenantCookie } from "@/lib/tenant";
 import { createRequestId } from "@/lib/utils";
+import { isSameOriginMutationRequest } from "@/lib/security/same-origin";
 
 /**
- * GET /api/select-tenant?tenantId=<id>
+ * POST /api/select-tenant
  *
- * Validates the requested tenantId against the user's mapped tenants,
- * sets the active-tenant cookie (via next/headers — valid in Route Handlers),
- * and redirects to /dashboard.
- * Cookies cannot be mutated during server-component render in Next.js 15.
+ * Accepts tenantId from JSON body or form data, validates tenant access,
+ * then sets active-tenant cookie and redirects to /dashboard.
+ * State mutation is intentionally POST-only.
  */
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const requestId = createRequestId();
-  const { searchParams } = req.nextUrl;
-  const tenantId = searchParams.get("tenantId")?.trim() ?? "";
+  if (!isSameOriginMutationRequest(req)) {
+    console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_ORIGIN", requestId });
+    return NextResponse.redirect(new URL("/select-organization?error=invalid-request", req.url));
+  }
+
+  let tenantId = "";
+  const contentType = req.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    const body = (await req.json().catch(() => ({}))) as { tenantId?: unknown };
+    tenantId = String(body.tenantId ?? "").trim();
+  } else {
+    const form = await req.formData().catch(() => null);
+    tenantId = String(form?.get("tenantId") ?? "").trim();
+  }
 
   if (!tenantId) {
     console.info("DASHBOARD_TENANT_FAILED", { reason: "MISSING_SELECTED_TENANT", requestId });
@@ -34,4 +46,8 @@ export async function GET(req: NextRequest) {
   console.info("SET_ACTIVE_TENANT", { requestId, tenantId: selected.id, source: "api-select-tenant" });
 
   return NextResponse.redirect(new URL("/dashboard", req.url));
+}
+
+export async function GET(req: NextRequest) {
+  return NextResponse.redirect(new URL("/select-organization?error=use-post", req.url));
 }

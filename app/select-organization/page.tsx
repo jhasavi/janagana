@@ -5,8 +5,7 @@ import { clearActiveTenantCookies, findMappedTenantsForUser, setActiveTenantCook
 import { createRequestId } from "@/lib/utils";
 
 // NOTE: Cookies cannot be set during server-component render (Next.js 15).
-// Single-tenant auto-select delegates to /api/select-tenant (a Route Handler).
-// Multi-tenant selection uses chooseTenantAction (a Server Action) — both are valid cookie contexts.
+// Tenant selection uses chooseTenantAction (server action). POST /api/select-tenant is an alternate API path.
 
 export default async function SelectOrganizationPage({
   searchParams,

@@ -1,35 +1,34 @@
 # V3 Foundation Scope
 
-This document defines the first approved demo scope for JanaGana v3 in ~/janagana.
+This document defines the approved scope for JanaGana v3 in `~/janagana`.
 
-## In scope for first demo only
+## In scope (implemented)
 
-- Clerk login
-- Tenant mapped to Clerk organization
-- Select organization flow
-- Dashboard with real tenant-scoped counts
-- Members/contacts minimal CRUD (create + list)
-- Membership tiers minimal CRUD (create + list)
-- Events minimal CRUD (create + list)
-- Tenant isolation proof for contacts, tiers, and events
-- Explicit invariant: no accidental Clerk organization creation from public registration
+- Clerk login and sign-out
+- Tenant mapped to Clerk organization (1:1)
+- Onboarding: create organization + map existing Clerk org
+- Select organization flow (multi-tenant)
+- Dashboard with tenant-scoped counts
+- Members/contacts: create + list (+ update contact)
+- Membership tiers: create + list
+- Events: create + list + registration management (cancel / re-confirm)
+- Public portal per tenant slug: home, events, registration, contact, interest aliases
+- Tenant isolation (contacts, tiers, events, registrations)
+- Invariant: public registration never creates a Clerk organization
 
-## Deferred (not in this milestone)
+## Deferred (not in v3 foundation)
 
-- Public portal
-- Public event registration
 - Stripe and all payments/billing work
-- CRM and deals
-- Donations
-- Fundraising
-- Volunteering
-- Communications
-- Analytics
-- Plugins and external API platform
-- Advanced Stripe billing
-- White-label marketplace
-- Complex website integrations
+- Full CRM (deals, pipelines, activities)
+- Membership enrollment UI (`Membership` model exists; no admin enroll flow)
+- Donations, fundraising, volunteering
+- Communications and automation
+- Analytics and reporting
+- Plugins and external public API
+- Embeddable events widget (v3.1)
 
 ## Delivery rule
 
 If a feature is not listed in the in-scope section, it is deferred by default.
+
+See also: `docs/PRE_LAUNCH_CHECKLIST.md` for go-live readiness.

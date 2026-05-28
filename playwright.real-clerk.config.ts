@@ -12,9 +12,12 @@ if (fs.existsSync(envLocalPath)) {
   dotenv.config({ path: envLocalPath, override: true });
 }
 
-const missing = ["E2E_CLERK_EMAIL", "E2E_CLERK_PASSWORD"].filter(
-  (key) => !(process.env[key] && process.env[key]!.trim().length > 0)
-);
+const realClerkEmail = process.env.CLERK_E2E_USER_EMAIL ?? process.env.E2E_CLERK_EMAIL;
+const realClerkPassword = process.env.CLERK_E2E_USER_PASSWORD ?? process.env.E2E_CLERK_PASSWORD;
+const missing = [
+  !realClerkEmail || realClerkEmail.trim().length === 0 ? "CLERK_E2E_USER_EMAIL" : null,
+  !realClerkPassword || realClerkPassword.trim().length === 0 ? "CLERK_E2E_USER_PASSWORD" : null,
+].filter((key): key is string => key !== null);
 
 if (missing.length > 0) {
   throw new Error(`Missing required env for real Clerk smoke: ${missing.join(", ")}`);
@@ -26,6 +29,7 @@ if (missing.length > 0) {
  * These tests use REAL Clerk credentials. They require:
  *   CLERK_E2E_USER_EMAIL — a real test user email in Clerk
  *   CLERK_E2E_USER_PASSWORD — the user's password
+ * Legacy aliases E2E_CLERK_EMAIL / E2E_CLERK_PASSWORD are still supported.
  *
  * These credentials must NEVER be committed. Store in CI secrets or local .env.local only.
  *

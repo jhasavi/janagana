@@ -66,6 +66,17 @@ npm run db:push
 ./stop.sh
 ```
 
+## Pre-launch readiness
+
+See [docs/PRE_LAUNCH_CHECKLIST.md](docs/PRE_LAUNCH_CHECKLIST.md) for CRM timing, two-org integration, and go-live steps.
+
+Verify both production tenants exist in the database:
+
+```bash
+npm run verify:tenants
+npm run seed:e2e   # local/e2e only — upserts purple-wings + namaste-boston test rows
+```
+
 ## Test Gates
 
 Run the operational gate commands:
@@ -79,6 +90,10 @@ npm run check:env
 npm run check:db:test
 npm run test:actions
 npm run test:portal
+npm run test:portal:concurrency
+npm run verify:tenants
+npm run test:e2e:dual-portal
+npm run test:e2e:contact-interest
 npm run test:registration:ops
 npm run test:second-tenant
 npm run test:e2e:foundation

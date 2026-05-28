@@ -42,13 +42,13 @@ Add links from NB pages to the Janagana portal:
 Add links to the TPW portal:
 
 ```html
-<a href="https://janagana.example.com/portal/the-purple-wings/events">
+<a href="https://janagana.namasteneedham.com/portal/purple-wings/events">
   Events &amp; Registration
 </a>
 ```
 
-**Tenant requirement:** TPW must have a Tenant record in Janagana with slug `the-purple-wings`.
-Create via: Janagana admin dashboard → sign in as TPW admin → onboarding will create the tenant.
+**Tenant requirement:** TPW must have a Tenant record in Janagana with slug `purple-wings`.
+Create via: sign in as TPW owner → `/onboarding/create-organization` (slug `purple-wings`), or map an existing Clerk org on the same page.
 
 ---
 
@@ -101,8 +101,10 @@ API key authentication required (to be designed in v3.2).
 |---|---|---|
 | `/portal/namaste-boston` | Community Portal | — |
 | `/portal/namaste-boston/events` | Events & Classes | — |
-| `/portal/the-purple-wings` | — | Community Portal |
-| `/portal/the-purple-wings/events` | — | Events & Programs |
+| `/portal/purple-wings` | — | Community Portal |
+| `/portal/purple-wings/events` | — | Events & Programs |
+| `/portal/purple-wings/contact?interest=newsletter` | — | Newsletter signup |
+| `/portal/namaste-boston/interest/investment` | Investment interest | — |
 
 ---
 

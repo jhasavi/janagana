@@ -56,6 +56,39 @@ function summarizePrismaError(error: unknown): string {
   return `${code}; message=${message}`;
 }
 
+function classifyConnectionIssue(error: unknown) {
+  const summary = summarizePrismaError(error).toLowerCase();
+  const permissionDenied =
+    summary.includes("denied access on the database") ||
+    summary.includes("password authentication failed") ||
+    summary.includes("permission denied");
+  const databaseMissing =
+    summary.includes("database") && (summary.includes("does not exist") || summary.includes("unknown database"));
+  const connectionRefused =
+    summary.includes("connection refused") || summary.includes("can't reach database server");
+
+  return {
+    permissionDenied,
+    databaseMissing,
+    connectionRefused,
+  };
+}
+
+function printConnectionRemediation(parsed: ParsedDbUrl) {
+  console.error("- remediation:");
+  console.error("  1) Verify DATABASE_URL points to a non-production DB role you control.");
+  console.error(`  2) Current parsed target: user=${parsed.username} host=${parsed.host} db=${parsed.database}`);
+  console.error("  3) Ensure role can connect and has CRUD on public schema tables.");
+  console.error("  4) Local Postgres quick fix (adjust values as needed):");
+  console.error(`     psql -h ${parsed.host || "localhost"} -U postgres -d postgres -c "CREATE ROLE ${parsed.username} LOGIN PASSWORD 'CHANGE_ME';"`);
+  console.error(`     psql -h ${parsed.host || "localhost"} -U postgres -d postgres -c "CREATE DATABASE ${parsed.database} OWNER ${parsed.username};"`);
+  console.error(`     psql -h ${parsed.host || "localhost"} -U postgres -d ${parsed.database} -c "GRANT ALL PRIVILEGES ON SCHEMA public TO ${parsed.username};"`);
+  console.error("  5) Apply schema:");
+  console.error("     npm run db:push");
+  console.error("  6) Re-run readiness:");
+  console.error("     npm run check:db:test");
+}
+
 async function checkTablesExist() {
   const expected = ["Tenant", "Contact", "MembershipTier", "Event", "AuditLog"];
 
@@ -219,8 +252,12 @@ async function main() {
     await prisma.$queryRawUnsafe("SELECT 1");
     console.log("- connection: ok");
   } catch (error) {
+    const issue = classifyConnectionIssue(error);
     console.error("- connection: failed");
     console.error(`- details: ${summarizePrismaError(error)}`);
+    if (issue.permissionDenied || issue.databaseMissing || issue.connectionRefused) {
+      printConnectionRemediation(parsed);
+    }
     process.exitCode = 1;
     return;
   }

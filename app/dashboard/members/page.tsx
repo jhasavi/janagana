@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createContact, listContacts } from "@/lib/actions/contacts";
+import { createContact, listContacts, updateContact } from "@/lib/actions/contacts";
 
 export default async function MembersPage({
   searchParams,
@@ -27,6 +27,25 @@ export default async function MembersPage({
     redirect("/dashboard/members?success=1");
   }
 
+  async function updateContactAction(formData: FormData) {
+    "use server";
+
+    const result = await updateContact({
+      contactId: String(formData.get("contactId") ?? ""),
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      phone: String(formData.get("phone") ?? ""),
+      type: String(formData.get("type") ?? "MEMBER"),
+    });
+
+    if (!result.ok) {
+      const errorMessage = "error" in result && result.error ? result.error : "Failed to update contact";
+      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    redirect("/dashboard/members?success=updated");
+  }
+
   const contactsResult = await listContacts();
   const contacts = contactsResult.ok ? contactsResult.data : [];
 
@@ -36,7 +55,8 @@ export default async function MembersPage({
       <p className="mt-2 text-sm text-gray-600">Create and view tenant-scoped contacts.</p>
 
       {params.error && <p className="mt-4 text-sm text-red-700">{params.error}</p>}
-      {params.success && <p className="mt-4 text-sm text-green-700">Contact created.</p>}
+      {params.success === "1" && <p className="mt-4 text-sm text-green-700">Contact created.</p>}
+      {params.success === "updated" && <p className="mt-4 text-sm text-green-700">Contact updated.</p>}
 
       <form action={createContactAction} className="mt-6 grid gap-3 rounded-md border border-gray-200 bg-white p-4 md:grid-cols-2">
         <input name="firstName" required placeholder="First name" className="rounded border border-gray-300 px-3 py-2 text-sm" />
@@ -69,15 +89,35 @@ export default async function MembersPage({
                   <th className="py-2 pr-4">Email</th>
                   <th className="py-2 pr-4">Type</th>
                   <th className="py-2 pr-4">Phone</th>
+                  <th className="py-2 pr-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {contacts.map((contact) => (
-                  <tr key={contact.id} className="border-b border-gray-100">
+                  <tr key={contact.id} className="border-b border-gray-100 align-top">
                     <td className="py-2 pr-4">{contact.firstName} {contact.lastName}</td>
                     <td className="py-2 pr-4">{contact.email}</td>
                     <td className="py-2 pr-4">{contact.type}</td>
                     <td className="py-2 pr-4">{contact.phone ?? "-"}</td>
+                    <td className="py-2 pr-4">
+                      <details>
+                        <summary className="cursor-pointer text-blue-700 underline">Edit</summary>
+                        <form action={updateContactAction} className="mt-2 grid gap-2">
+                          <input type="hidden" name="contactId" value={contact.id} />
+                          <input name="firstName" defaultValue={contact.firstName} required className="rounded border border-gray-300 px-2 py-1 text-xs" />
+                          <input name="lastName" defaultValue={contact.lastName} required className="rounded border border-gray-300 px-2 py-1 text-xs" />
+                          <input name="phone" defaultValue={contact.phone ?? ""} className="rounded border border-gray-300 px-2 py-1 text-xs" />
+                          <select name="type" defaultValue={contact.type} className="rounded border border-gray-300 px-2 py-1 text-xs">
+                            <option value="MEMBER">MEMBER</option>
+                            <option value="REGISTRANT">REGISTRANT</option>
+                            <option value="VOLUNTEER">VOLUNTEER</option>
+                            <option value="DONOR">DONOR</option>
+                            <option value="OTHER">OTHER</option>
+                          </select>
+                          <button type="submit" className="rounded bg-gray-800 px-2 py-1 text-xs text-white">Save</button>
+                        </form>
+                      </details>
+                    </td>
                   </tr>
                 ))}
               </tbody>

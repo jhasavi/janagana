@@ -1,5 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const playwrightPort = Number(process.env.PLAYWRIGHT_PORT ?? 3022);
+const useExternalServer = process.env.PLAYWRIGHT_USE_EXTERNAL_SERVER === "true";
+const baseURL =
+  useExternalServer && process.env.PLAYWRIGHT_BASE_URL
+    ? process.env.PLAYWRIGHT_BASE_URL
+    : `http://127.0.0.1:${playwrightPort}`;
+
 /**
  * playwright.config.ts — Synthetic/integration tests
  *
@@ -10,6 +17,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Use playwright.real-clerk.config.ts for those.
  */
 export default defineConfig({
+  globalSetup: require.resolve("./e2e/global-setup"),
   testDir: "./e2e/tests",
   testMatch: ["**/*.spec.ts"],
   fullyParallel: false,
@@ -18,7 +26,7 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? "html" : "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3022",
+    baseURL,
     trace: "on-first-retry",
     navigationTimeout: 15000,
   },
@@ -28,12 +36,14 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: "npm run dev -- --port 3022",
-    url: "http://127.0.0.1:3022/api/health/ready",
-    reuseExistingServer: false,
-    timeout: 60000,
-    stdout: "pipe",
-    stderr: "pipe",
-  },
+  webServer: useExternalServer
+    ? undefined
+    : {
+        command: `npm run dev -- --port ${playwrightPort}`,
+        url: `${baseURL}/api/health/ready`,
+        reuseExistingServer: false,
+        timeout: 60000,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
 });

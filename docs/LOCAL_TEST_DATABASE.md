@@ -44,6 +44,17 @@ Notes:
 6. Run isolation test:
    - npm run test:actions
 
+If preflight reports permission denied / access denied:
+
+```bash
+# Example only: adapt user/password/db to your local setup.
+psql -h localhost -U postgres -d postgres -c "CREATE ROLE janagana LOGIN PASSWORD 'janagana';"
+psql -h localhost -U postgres -d postgres -c "CREATE DATABASE janagana_v3 OWNER janagana;"
+psql -h localhost -U postgres -d janagana_v3 -c "GRANT ALL PRIVILEGES ON SCHEMA public TO janagana;"
+npm run db:push
+npm run check:db:test
+```
+
 ## Safety flags in tenant isolation test
 
 - Refuses to run when NODE_ENV=production.

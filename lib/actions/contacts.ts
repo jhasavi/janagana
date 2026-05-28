@@ -13,6 +13,16 @@ export const ContactCreateSchema = z
   })
   .strict();
 
+export const ContactUpdateSchema = z
+  .object({
+    contactId: z.string().trim().min(1),
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
+    phone: z.string().trim().max(30).optional().or(z.literal("")),
+    type: z.enum(["MEMBER", "REGISTRANT", "VOLUNTEER", "DONOR", "OTHER"]),
+  })
+  .strict();
+
 async function requireActiveTenantContext() {
   const user = await getCurrentUser();
   if (!user) {
@@ -66,6 +76,46 @@ export async function createContact(input: unknown) {
     }
     return { ok: false as const, error: "Failed to create contact" };
   }
+}
+
+export async function updateContact(input: unknown) {
+  const context = await requireActiveTenantContext();
+  if ("error" in context) {
+    return { ok: false as const, error: context.error };
+  }
+
+  const parsed = ContactUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid contact input" };
+  }
+
+  const existing = await prisma.contact.findFirst({
+    where: { id: parsed.data.contactId, tenantId: context.tenant.id },
+  });
+  if (!existing) {
+    return { ok: false as const, error: "Contact not found" };
+  }
+
+  const contact = await prisma.contact.update({
+    where: { id: existing.id },
+    data: {
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+      phone: parsed.data.phone || null,
+      type: parsed.data.type,
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: context.tenant.id,
+      actorUserId: context.user.id,
+      action: "UPDATE",
+      metadata: { entity: "Contact", contactId: contact.id },
+    },
+  });
+
+  return { ok: true as const, data: contact };
 }
 
 export async function listContacts() {

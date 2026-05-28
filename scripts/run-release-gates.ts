@@ -8,9 +8,11 @@ const fullGates = [
   "npm run prisma:validate",
   "npm run check:env",
   "npm run check:db:test",
+  "npm run verify:tenants",
   "npm run test:actions",
   "npm run test:lead:capture",
   "npm run test:portal",
+  "npm run test:portal:concurrency",
   "npm run test:registration:ops",
   "npm run test:second-tenant",
   // e2e tests start a dev server via playwright webServer; run before build
@@ -18,6 +20,8 @@ const fullGates = [
   "npm run test:e2e:foundation",
   "npm run test:e2e:env",
   "npm run test:e2e:portal",
+  "npm run test:e2e:dual-portal",
+  "npm run test:e2e:contact-interest",
   "npm run smoke:local-redirects",
   // build last: confirms production artifact is clean after all other gates pass
   "npm run build",
@@ -29,11 +33,15 @@ const quickGates = [
   "npm run prisma:validate",
   "npm run check:env",
   "npm run check:db:test",
+  "npm run verify:tenants",
   "npm run test:actions",
   "npm run test:lead:capture",
   "npm run test:portal",
+  "npm run test:portal:concurrency",
   "npm run test:registration:ops",
   "npm run test:second-tenant",
+  "npm run test:e2e:dual-portal",
+  "npm run test:e2e:contact-interest",
 ];
 
 type GateResult = {

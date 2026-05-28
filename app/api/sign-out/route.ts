@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { clearActiveTenantCookies } from "@/lib/tenant";
+import { isSameOriginMutationRequest } from "@/lib/security/same-origin";
 
 /**
  * POST /api/sign-out
@@ -8,6 +9,10 @@ import { clearActiveTenantCookies } from "@/lib/tenant";
  * Signs the user out from Clerk and clears any app-level session cookies.
  */
 export async function POST(request: Request) {
+  if (!isSameOriginMutationRequest(request)) {
+    return NextResponse.redirect(new URL("/sign-in?error=invalid-request", request.url));
+  }
+
   const { userId, sessionId } = await auth();
   await clearActiveTenantCookies();
 

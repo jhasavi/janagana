@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { headers } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getTenantBySlug } from "@/lib/tenant";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -14,6 +15,23 @@ const PublicRegistrationSchema = z
     phone: z.string().trim().max(30).optional().or(z.literal("")),
   })
   .strict();
+
+function isRetryableTransactionError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2034";
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes("write conflict") ||
+      message.includes("deadlock") ||
+      message.includes("transaction failed to commit")
+    );
+  }
+
+  return false;
+}
 
 const PublicLeadCaptureSchema = z
   .object({
@@ -144,96 +162,128 @@ export async function registerPublicEvent(input: unknown) {
     };
   }
 
-  if (event.capacity !== null) {
-    const confirmedCount = await prisma.eventRegistration.count({
-      where: {
-        tenantId: tenant.id,
-        eventId: event.id,
-        status: "CONFIRMED",
-      },
-    });
+  const maxConcurrencyRetries = 6;
+  let attempt = 0;
+  while (attempt < maxConcurrencyRetries) {
+    try {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // Serialize capacity checks per event without Serializable isolation (less write churn).
+          await tx.$executeRaw`SELECT id FROM "Event" WHERE id = ${event.id} FOR UPDATE`;
 
-    if (confirmedCount >= event.capacity) {
-      return {
-        ok: false as const,
-        alreadyRegistered: false as const,
-        error: "This event is full.",
-      };
+          if (event.capacity !== null) {
+            const confirmedCount = await tx.eventRegistration.count({
+              where: {
+                tenantId: tenant.id,
+                eventId: event.id,
+                status: "CONFIRMED",
+              },
+            });
+
+            if (confirmedCount >= event.capacity) {
+              return {
+                ok: false as const,
+                alreadyRegistered: false as const,
+                error: "This event is full.",
+              };
+            }
+          }
+
+          const contact = await tx.contact.upsert({
+            where: {
+              tenantId_email: {
+                tenantId: tenant.id,
+                email,
+              },
+            },
+            update: {
+              firstName: parsed.data.firstName,
+              lastName: parsed.data.lastName,
+              phone: parsed.data.phone || null,
+              type: "REGISTRANT",
+            },
+            create: {
+              tenantId: tenant.id,
+              firstName: parsed.data.firstName,
+              lastName: parsed.data.lastName,
+              email,
+              phone: parsed.data.phone || null,
+              type: "REGISTRANT",
+            },
+          });
+
+          const contactRegistration = await tx.eventRegistration.findFirst({
+            where: {
+              tenantId: tenant.id,
+              eventId: event.id,
+              contactId: contact.id,
+            },
+          });
+
+          if (contactRegistration) {
+            return {
+              ok: true as const,
+              alreadyRegistered: true as const,
+              tenant,
+              event,
+              contact,
+              registration: contactRegistration,
+            };
+          }
+
+          const registration = await tx.eventRegistration.create({
+            data: {
+              tenantId: tenant.id,
+              eventId: event.id,
+              contactId: contact.id,
+              status: "CONFIRMED",
+            },
+          });
+
+          return {
+            ok: true as const,
+            alreadyRegistered: false as const,
+            tenant,
+            event,
+            contact,
+            registration,
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
+      );
+
+      if (!result.ok) {
+        return result;
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenant.id,
+          actorUserId: null,
+          action: "REGISTER",
+          metadata: {
+            entity: "EventRegistration",
+            source: "public_portal",
+            eventId: event.id,
+            contactId: result.contact.id,
+          },
+        },
+      });
+
+      return result;
+    } catch (error) {
+      if (isRetryableTransactionError(error)) {
+        attempt += 1;
+        await new Promise((resolve) => setTimeout(resolve, 25 * attempt));
+        continue;
+      }
+      throw error;
     }
   }
-
-  const contact = await prisma.contact.upsert({
-    where: {
-      tenantId_email: {
-        tenantId: tenant.id,
-        email,
-      },
-    },
-    update: {
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      phone: parsed.data.phone || null,
-      type: "REGISTRANT",
-    },
-    create: {
-      tenantId: tenant.id,
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email,
-      phone: parsed.data.phone || null,
-      type: "REGISTRANT",
-    },
-  });
-
-  const contactRegistration = await prisma.eventRegistration.findFirst({
-    where: {
-      tenantId: tenant.id,
-      eventId: event.id,
-      contactId: contact.id,
-    },
-  });
-
-  if (contactRegistration) {
-    return {
-      ok: true as const,
-      alreadyRegistered: true as const,
-      tenant,
-      event,
-      contact,
-      registration: contactRegistration,
-    };
-  }
-
-  const registration = await prisma.eventRegistration.create({
-    data: {
-      tenantId: tenant.id,
-      eventId: event.id,
-      contactId: contact.id,
-      status: "CONFIRMED",
-    },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: tenant.id,
-      actorUserId: null,
-      action: "REGISTER",
-      metadata: {
-        entity: "EventRegistration",
-        source: "public_portal",
-        eventId: event.id,
-        contactId: contact.id,
-      },
-    },
-  });
-
   return {
-    ok: true as const,
+    ok: false as const,
     alreadyRegistered: false as const,
-    tenant,
-    event,
-    contact,
-    registration,
+    error: "Registration is busy right now. Please try again.",
   };
 }
 

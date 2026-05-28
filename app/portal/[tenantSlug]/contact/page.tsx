@@ -10,8 +10,21 @@ const ALLOWED_INTERESTS = [
 
 type InterestType = (typeof ALLOWED_INTERESTS)[number];
 
+const INTEREST_ALIASES: Record<string, InterestType> = {
+  NEWSLETTER: "NEWSLETTER",
+  CLASS: "CLASS_INTEREST",
+  CLASS_INTEREST: "CLASS_INTEREST",
+  MEMBERSHIP: "MEMBERSHIP_INTEREST",
+  MEMBERSHIP_INTEREST: "MEMBERSHIP_INTEREST",
+  INVESTMENT: "INVESTMENT_ANALYSIS",
+  INVESTMENT_ANALYSIS: "INVESTMENT_ANALYSIS",
+};
+
 function normalizeInterest(raw: string | undefined): InterestType {
   const value = (raw ?? "").trim().toUpperCase().replace(/-/g, "_");
+  if (INTEREST_ALIASES[value]) {
+    return INTEREST_ALIASES[value];
+  }
   if (ALLOWED_INTERESTS.includes(value as InterestType)) {
     return value as InterestType;
   }
