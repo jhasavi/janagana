@@ -74,11 +74,16 @@ Automated (no secrets):
 - [x] Playwright production lead forms (newsletter + investment)
 - [x] TPW/NB deployed sites link to correct portal URLs
 
-Manual (owner sign-in required):
+Manual (owner sign-in required) — **use `docs/PILOT_SIGNOFF.md`**:
 
-- [ ] Dashboard shows **Contacts**, **Event registrations**, **Formal memberships** (not misleading “Members”)
-- [ ] Test leads from production smoke visible under correct tenant **Contacts** (search `qa-prod-vercel-pw-1779983847@example.com` / `qa-prod-vercel-nb-1779983847@example.com` — see `docs/ADMIN_PRODUCTION_SMOKE.md`)
-- [ ] Switch orgs — no cross-tenant contact leak
+- [ ] Part A: Admin smoke (both orgs)
+- [ ] Part B: One event registration loop per org
+- [ ] Part C: Sign-off line in `docs/PRODUCTION_RELEASE_STATUS.md`
+
+QA emails to search after latest automated run:
+
+- `qa-prod-vercel-pw-pilot-1779985765@example.com` (Purple Wings)
+- `qa-prod-vercel-nb-pilot-1779985765@example.com` (Namaste Boston)
 
 ---
 

@@ -8,9 +8,11 @@ Sign in with your **Clerk production** admin account.
 - **Contacts** = people from portal lead/registration forms or admin entry. **Formal memberships** staying at **0** is expected until enrollment exists.
 - **TPW site newsletter** (`tpw-five.vercel.app/newsletter/subscribe` and exit popup) writes to **TPW Supabase**, **not** JanaGana. For Purple Wings leads in admin, use the **JanaGana portal** URL (below).
 - QA Playwright submissions use emails like `qa-prod-*@example.com` on the **JanaGana** portal.
-- **Post slug-repair QA (2026-05-28):** search Contacts for  
-  `qa-prod-vercel-pw-postrepair-1779985239@example.com` (Purple Wings) and  
-  `qa-prod-vercel-nb-postrepair-1779985239@example.com` (Namaste Boston).
+- **Pilot sign-off QA (latest):**  
+  `qa-prod-vercel-pw-pilot-1779985765@example.com` (Purple Wings),  
+  `qa-prod-vercel-nb-pilot-1779985765@example.com` (Namaste Boston).  
+  Older repair run: `qa-prod-vercel-pw-postrepair-1779985239@example.com`, `qa-prod-vercel-nb-postrepair-1779985239@example.com`.
+- **Full checklist:** `docs/PILOT_SIGNOFF.md`
 - Dashboard **Public portal** link should show `/portal/purple-wings` and `/portal/namaste-boston` (not long Clerk slugs).
 
 ## Tenant map

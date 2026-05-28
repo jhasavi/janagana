@@ -17,7 +17,11 @@ Commit SHA not exposed in `vercel inspect` JSON on this account; deploy freshnes
 
 **2026-05-28 slug repair:** Production had duplicate tenants (clean slugs + Clerk long slugs). Merged QA/real data into Clerk-mapped rows, deleted empty duplicates, renamed to `purple-wings` / `namaste-boston`. Long slug URLs now 404.
 
-**2026-05-28 automated verification:** GET smoke + Playwright leads on custom domain passed. Post-repair QA: `qa-prod-vercel-pw-postrepair-1779985239@example.com`, `qa-prod-vercel-nb-postrepair-1779985239@example.com`. Admin dashboard still requires owner Clerk login.
+**2026-05-28 automated verification:** GET smoke + Playwright leads on custom domain passed. Post-repair QA: `qa-prod-vercel-pw-postrepair-1779985239@example.com`, `qa-prod-vercel-nb-postrepair-1779985239@example.com`.
+
+**Pilot sign-off (pending owner):** Follow `docs/PILOT_SIGNOFF.md`. Latest QA leads: `qa-prod-vercel-pw-pilot-1779985765@example.com`, `qa-prod-vercel-nb-pilot-1779985765@example.com`. Canonical portals 200; long slug URLs 404; ops repair route disabled (404).
+
+**Pilot sign-off:** _Not yet signed — owner to complete PILOT_SIGNOFF.md and add date/name here._
 
 ---
 
