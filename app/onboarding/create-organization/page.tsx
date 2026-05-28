@@ -294,6 +294,11 @@ export default async function CreateOrganizationPage({
                     <p className="text-sm font-medium text-gray-900">{org.name}</p>
                     <p className="text-xs text-gray-500">
                       {org.role} · {shortId(org.clerkOrgId)}
+                      {org.slug ? ` · Clerk slug: ${org.slug}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-amber-800">
+                      JanaGana public URL uses a clean slug from the organization name (for example{" "}
+                      <span className="font-mono">namaste-boston</span>), not Clerk&apos;s auto-generated slug.
                     </p>
                   </div>
                   <button type="submit" className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black">

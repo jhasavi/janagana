@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
+import { preferredPublicSlug } from "@/lib/ops/tenant-slug-repair";
 import { setActiveTenantCookie } from "@/lib/tenant";
 
 function shortId(value: string): string {
@@ -11,8 +11,8 @@ function shortId(value: string): string {
   return `${value.slice(0, 8)}...${value.slice(-4)}`;
 }
 
-async function makeUniqueTenantSlug(base: string): Promise<string> {
-  const baseSlug = slugify(base).slice(0, 60) || "organization";
+async function makeUniqueTenantSlug(candidate: string): Promise<string> {
+  const baseSlug = candidate.slice(0, 60) || "organization";
   const existing = await prisma.tenant.findUnique({ where: { slug: baseSlug }, select: { id: true } });
   if (existing) {
     throw new Error("SLUG_EXISTS");
@@ -60,7 +60,9 @@ export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
     redirect("/onboarding/create-organization?error=tenant-already-mapped");
   }
 
-  const tenantSlug = await makeUniqueTenantSlug(membership.slug ?? membership.name);
+  const tenantSlug = await makeUniqueTenantSlug(
+    preferredPublicSlug(membership.name, membership.slug),
+  );
 
   try {
     const tenant = await prisma.tenant.create({
