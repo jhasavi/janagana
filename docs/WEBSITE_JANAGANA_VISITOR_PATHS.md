@@ -80,3 +80,5 @@ PRODUCTION_DATABASE_URL="..." npx tsx scripts/cleanup-qa-contacts.ts --confirm -
 ```
 
 Matches: `qa-prod-*`, `qa-prod-vercel-*`, `qa-smoke-*`, `test-production-*` only.
+
+**2026-05-28 cleanup:** 8 QA contacts deleted (see `docs/qa-contacts-deleted-2026-05-28.json`). Production dry-run after delete: **0** matches.

@@ -22,6 +22,12 @@ PRODUCTION_DATABASE_URL="..." npx tsx scripts/cleanup-qa-contacts.ts --export-cs
 PRODUCTION_DATABASE_URL="..." npx tsx scripts/cleanup-qa-contacts.ts --confirm --allow-production-qa-cleanup --export-csv=qa-deleted.csv
 ```
 
+## Production verification (2026-05-28)
+
+- `npm run smoke:production` — all PASS including embed API.
+- Live: `https://janagana.namasteneedham.com`, `https://www.thepurplewings.org`, `https://www.namastebostonhomes.com`.
+- QA cleanup: 8 `qa-prod-*` contacts removed (`docs/qa-contacts-deleted-2026-05-28.json`).
+
 ## Rollback
 
 Remove `app/api/embed/*` routes; TPW `/events` shows empty upcoming + legacy past only. Portal pages unaffected.
