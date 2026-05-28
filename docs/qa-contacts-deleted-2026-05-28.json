@@ -1,0 +1,14 @@
+{
+    "mode": "deleted",
+    "count": 8,
+    "deleted": [
+        "qa-prod-vercel-nb-pilot-1779985765@example.com",
+        "qa-prod-vercel-pw-pilot-1779985765@example.com",
+        "qa-prod-vercel-nb-postrepair-1779985239@example.com",
+        "qa-prod-vercel-pw-postrepair-1779985239@example.com",
+        "qa-prod-vercel-nb-1779983847@example.com",
+        "qa-prod-vercel-pw-1779983847@example.com",
+        "qa-prod-pnjgg6-nb@example.com",
+        "qa-prod-pnjgg6-pw@example.com"
+    ]
+}
