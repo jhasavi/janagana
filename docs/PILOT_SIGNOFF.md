@@ -40,12 +40,47 @@ Also valid from earlier repair run:
 
 ## Part B — One real loop per org (~15 min each)
 
+### Incognito flow (yes — your interpretation is correct)
+
+1. Stay signed into JanaGana **admin** in your normal browser (Chrome/Safari profile you already use).
+2. In a **private/incognito** window, open only the **public portal** URLs (you are not testing admin there).
+3. Complete registration with a **real test email you control** (e.g. `you+pilot-pw-20260528@gmail.com`).
+4. Return to the **admin** browser, correct org selected, and verify below.
+
+You do **not** need to sign out of admin first. Incognito is only so the public form behaves like a visitor (no admin session on the portal).
+
+### How to get the exact register URL
+
+In **admin** → **Events**, use the **Slug** column for a **PUBLISHED** event (Namaste already has some; pick one per org).
+
+| Org | Events list (incognito) | Register form (incognito) |
+|-----|-------------------------|---------------------------|
+| Purple Wings | `https://janagana.namasteneedham.com/portal/purple-wings/events` | `https://janagana.namasteneedham.com/portal/purple-wings/register/{eventSlug}` |
+| Namaste Boston | `https://janagana.namasteneedham.com/portal/namaste-boston/events` | `https://janagana.namasteneedham.com/portal/namaste-boston/register/{eventSlug}` |
+
+Replace `{eventSlug}` with the slug from the admin table (e.g. if slug is `spring-meetup`, use `/register/spring-meetup`).
+
+**Easiest path:** incognito → events list → **View details** on a published event → **Register** button → submit form.  
+(Code: register lives at `app/portal/[tenantSlug]/register/[eventSlug]/page.tsx`.)
+
+After submit you should see **“Registration successful.”** (or “already registered” if you repeat the same email).
+
+### Where to verify in admin (both places)
+
+| Check | Where | What you should see |
+|-------|--------|---------------------|
+| B4a | **Contacts** | New row with your test email; type **Event registrant** (not only a lead) |
+| B4b | **Events** → **Registrations** link on that event’s row | Your name/email with **CONFIRMED** status |
+| B4c (optional) | **Overview** | **Event registrations** count increased by 1 |
+
+**Contacts alone is not enough** for a full Part B pass — confirm **Events → Registrations** for that specific event.
+
 | # | Step | PW | NB |
 |---|------|----|----|
-| B1 | **Events** → create or open a **Published** event | ☐ | ☐ |
-| B2 | Open public register URL (from event or portal events list) in incognito | ☐ | ☐ |
-| B3 | Register with a real test email you control | ☐ | ☐ |
-| B4 | **Contacts** shows new person; **Events → Registrations** shows row | ☐ | ☐ |
+| B1 | **Events** → at least one **PUBLISHED** event (create one if needed) | ☐ | ☐ |
+| B2 | Incognito: open events list or `/register/{eventSlug}` for that event | ☐ | ☐ |
+| B3 | Submit registration with unique test email | ☐ | ☐ |
+| B4 | Admin: **Contacts** + **Events → Registrations** for that event | ☐ | ☐ |
 
 ---
 
