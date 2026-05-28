@@ -5,24 +5,27 @@ Target: https://janagana.namasteneedham.com
 
 ## Latest automated smoke (2026-05-28)
 
-**GitHub `main`:** `e32313f` — fix(dashboard): clarify contacts vs formal memberships for pilot
+**GitHub `main`:** `577d720` (includes `e32313f` dashboard semantics)
 
 | Check | Result |
 |-------|--------|
 | GET `/api/health/ready` | 200 `{"ok":true}` |
-| GET `/portal/purple-wings` | 200, tenant name present |
-| GET `/portal/namaste-boston` | 200, tenant name present |
+| GET `/portal/purple-wings` | 200 |
+| GET `/portal/namaste-boston` | 200 |
 | GET `/portal/purple-wings/contact?interest=newsletter` | 200 |
-| GET `/portal/namaste-boston/contact?interest=investment` | 200, Investment analysis label |
-| Playwright lead submit (PW newsletter, NB investment) | Pass |
-| TPW site CTA → JanaGana | Pass (`tpw-five.vercel.app`) |
-| NB site CTA → JanaGana | Pass (`nb-mu-ten.vercel.app`) |
+| GET `/portal/namaste-boston/contact?interest=investment-analysis` | 200 |
+| Playwright `07-vercel-qa-leads` (browser server actions) | Pass |
+| TPW `NEXT_PUBLIC_JANAGANA_PORTAL_BASE_URL` | Present, correct domain |
+| NB `NEXT_PUBLIC_JANAGANA_PORTAL_BASE_URL` | Present, correct domain |
+| TPW/NB homepage HTML CTAs | Pass |
+
+QA emails (admin verification): `qa-prod-vercel-pw-1779983847@example.com`, `qa-prod-vercel-nb-1779983847@example.com`
 
 Commands:
 
 ```bash
-npm run smoke:production
-PRODUCTION_SMOKE=true npx playwright test --config=playwright.production-smoke.config.ts
+npx tsx scripts/production-smoke-http.ts
+npx playwright test 07-vercel-qa-leads --config=playwright.production-smoke.config.ts
 ```
 
 **Manual only (requires owner Clerk sign-in):** dashboard Contacts / Event registrations / Formal memberships cards; tenant switch isolation; event registration attendee list.

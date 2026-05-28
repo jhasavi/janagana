@@ -1,20 +1,21 @@
 # Production Release Status
 
-**Date:** 2026-05-27  
-**Release engineer:** jhasavi (Sanjeev's projects — sanjeevs-projects-e08bbbfb)
+**Date:** 2026-05-28 (Vercel CLI re-verification)  
+**Release engineer:** jhasavi (team: `sanjeevs-projects-e08bbbfb`)
 
 ---
 
 ## Deployed Commits
 
-| Project | Commit | Message |
-|---------|--------|---------|
-| janagana | `e32313f` | fix(dashboard): clarify contacts vs formal memberships for pilot |
-| janagana (prior) | `0d1ed92` | fix: run prisma generate before build (Prisma 6 no longer auto-generates on install) |
+| Project | GitHub `main` HEAD | Production deploy (Vercel CLI) | Notes |
+|---------|-------------------|-------------------------------|--------|
+| janagana | `577d720` | Ready ~7m ago; alias `janagana.namasteneedham.com` | Includes `e32313f` dashboard semantics + QA docs |
+| tpw | `5a77dec` | Ready ~7m ago; `tpw-five.vercel.app` | Exit-intent / wizard suppress fix |
+| nb | `3982e8a` | Ready ~17h ago; `nb-mu-ten.vercel.app` | Includes `b90e655` JanaGana portal CTAs; live HTML verified |
 
-**2026-05-28 verification:** GitHub `main` at `e32313f`. Production GET smoke + Playwright lead capture passed on `janagana.namasteneedham.com`. Investment interest alias (`?interest=investment`) live on production. Dashboard semantics require manual admin sign-in to confirm UI labels.
-| nb       | `3982e8a` | fix: resolve all 4 ESLint errors (unescaped apostrophes, Math.random, setState-in-effect) |
-| tpw      | `628aa82` | fix: ESLint 9 flat config + replace broken next lint with eslint src/ |
+Commit SHA not exposed in `vercel inspect` JSON on this account; deploy freshness inferred from deployment age vs git push.
+
+**2026-05-28 automated verification:** GET smoke + Playwright leads on custom domain passed. QA emails submitted: `qa-prod-vercel-pw-1779983847@example.com`, `qa-prod-vercel-nb-1779983847@example.com`. Admin dashboard still requires owner Clerk login.
 
 ---
 
@@ -67,7 +68,7 @@ Variables present in Vercel production environment (values not shown):
 - `TENANT_DEFAULT_LOCALE`, `TENANT_DEFAULT_TIMEZONE`
 - `TENANT_ONBOARDING_DEFAULT_*`, `ONBOARDING_DEFAULT_API_KEY_NAME`
 
-**Note:** `NEXT_PUBLIC_APP_URL` should be updated to `https://janagana.namasteneedham.com` — currently set 46d ago (may point to old project URL).
+**2026-05-28 env pull check (values not logged):** `NEXT_PUBLIC_APP_URL` matches `https://janagana.namasteneedham.com`. Clerk publishable key is **live** (`pk_live_*`). `DATABASE_URL` is present in Vercel production (encrypted; not included in CLI pull file). `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` present in Vercel (added ~18h ago).
 
 ---
 

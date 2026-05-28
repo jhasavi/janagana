@@ -8,6 +8,9 @@ Sign in with your **Clerk production** admin account.
 - **Contacts** = people from portal lead/registration forms or admin entry. **Formal memberships** staying at **0** is expected until enrollment exists.
 - **TPW site newsletter** (`tpw-five.vercel.app/newsletter/subscribe` and exit popup) writes to **TPW Supabase**, **not** JanaGana. For Purple Wings leads in admin, use the **JanaGana portal** URL (below).
 - QA Playwright submissions use emails like `qa-prod-*@example.com` on the **JanaGana** portal.
+- **Latest Vercel QA run (2026-05-28):** search Contacts for  
+  `qa-prod-vercel-pw-1779983847@example.com` (Purple Wings) and  
+  `qa-prod-vercel-nb-1779983847@example.com` (Namaste Boston).
 
 ## Tenant map
 

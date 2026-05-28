@@ -77,7 +77,7 @@ Automated (no secrets):
 Manual (owner sign-in required):
 
 - [ ] Dashboard shows **Contacts**, **Event registrations**, **Formal memberships** (not misleading “Members”)
-- [ ] Test leads from production smoke visible under correct tenant **Contacts**
+- [ ] Test leads from production smoke visible under correct tenant **Contacts** (search `qa-prod-vercel-pw-1779983847@example.com` / `qa-prod-vercel-nb-1779983847@example.com` — see `docs/ADMIN_PRODUCTION_SMOKE.md`)
 - [ ] Switch orgs — no cross-tenant contact leak
 
 ---
