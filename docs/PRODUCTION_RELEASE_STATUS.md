@@ -9,9 +9,9 @@
 
 | Project | GitHub `main` HEAD | Production deploy (Vercel CLI) | Notes |
 |---------|-------------------|-------------------------------|--------|
-| janagana | `577d720` | Ready ~7m ago; alias `janagana.namasteneedham.com` | Includes `e32313f` dashboard semantics + QA docs |
-| tpw | `5a77dec` | Ready ~7m ago; `tpw-five.vercel.app` | Exit-intent / wizard suppress fix |
-| nb | `3982e8a` | Ready ~17h ago; `nb-mu-ten.vercel.app` | Includes `b90e655` JanaGana portal CTAs; live HTML verified |
+| janagana | `0ec6a95`+ | Ready; `janagana.namasteneedham.com` | Website sync: embed API, visitor path docs, QA cleanup |
+| tpw | `a34bbb6` | Ready; `thepurplewings.org` | Dual newsletter clarity, events → JanaGana |
+| nb | `f6cd6bd` | Ready; `namastebostonhomes.com` | Action center + contact sidebar → JanaGana |
 
 Commit SHA not exposed in `vercel inspect` JSON on this account; deploy freshness inferred from deployment age vs git push.
 
@@ -19,9 +19,9 @@ Commit SHA not exposed in `vercel inspect` JSON on this account; deploy freshnes
 
 **2026-05-28 automated verification:** GET smoke + Playwright leads on custom domain passed. Post-repair QA: `qa-prod-vercel-pw-postrepair-1779985239@example.com`, `qa-prod-vercel-nb-postrepair-1779985239@example.com`.
 
-**Pilot sign-off (pending owner):** Follow `docs/PILOT_SIGNOFF.md`. Latest QA leads: `qa-prod-vercel-pw-pilot-1779985765@example.com`, `qa-prod-vercel-nb-pilot-1779985765@example.com`. Canonical portals 200; long slug URLs 404; ops repair route disabled (404).
+**Website → JanaGana sync (2026-05-28):** Milestone closed in production. See `docs/WEBSITE_JANAGANA_VISITOR_PATHS.md`. Smoke + live public-site curl checks passed. QA contacts cleaned (13 total across two passes); production dry-run now **0** matches.
 
-**Pilot sign-off:** _Not yet signed — owner to complete PILOT_SIGNOFF.md and add date/name here._
+**Pilot sign-off:** _Owner to complete Part A/B in `docs/PILOT_SIGNOFF.md` and add date/name here._
 
 ---
 

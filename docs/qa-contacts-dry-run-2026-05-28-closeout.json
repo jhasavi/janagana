@@ -1,0 +1,41 @@
+{
+    "mode": "dry-run",
+    "count": 5,
+    "contacts": [
+        {
+            "id": "cmppt3g2a0009l4043iir0e8h",
+            "email": "qa-prod-closeout-20260528-pw-event@example.com",
+            "tenantSlug": "purple-wings",
+            "tenantName": "The Purple Wings",
+            "createdAt": "2026-05-28T18:08:12.562Z"
+        },
+        {
+            "id": "cmppt26a90005jv0400a0j8ut",
+            "email": "qa-prod-vercel-nb-1779991631442@example.com",
+            "tenantSlug": "namaste-boston",
+            "tenantName": "Namaste Boston",
+            "createdAt": "2026-05-28T18:07:13.233Z"
+        },
+        {
+            "id": "cmppt25i20005l40499k8fktf",
+            "email": "qa-prod-vercel-pw-1779991631442@example.com",
+            "tenantSlug": "purple-wings",
+            "tenantName": "The Purple Wings",
+            "createdAt": "2026-05-28T18:07:12.218Z"
+        },
+        {
+            "id": "cmppt24jo0001jv04vh5w3tw3",
+            "email": "qa-prod-pt21qv-nb@example.com",
+            "tenantSlug": "namaste-boston",
+            "tenantName": "Namaste Boston",
+            "createdAt": "2026-05-28T18:07:10.981Z"
+        },
+        {
+            "id": "cmppt234a0001l404fw8k5xxa",
+            "email": "qa-prod-pt21qv-pw@example.com",
+            "tenantSlug": "purple-wings",
+            "tenantName": "The Purple Wings",
+            "createdAt": "2026-05-28T18:07:09.130Z"
+        }
+    ]
+}

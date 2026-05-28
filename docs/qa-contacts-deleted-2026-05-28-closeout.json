@@ -1,0 +1,11 @@
+{
+    "mode": "deleted",
+    "count": 5,
+    "deleted": [
+        "qa-prod-closeout-20260528-pw-event@example.com",
+        "qa-prod-vercel-nb-1779991631442@example.com",
+        "qa-prod-vercel-pw-1779991631442@example.com",
+        "qa-prod-pt21qv-nb@example.com",
+        "qa-prod-pt21qv-pw@example.com"
+    ]
+}

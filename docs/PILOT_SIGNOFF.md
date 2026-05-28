@@ -110,8 +110,17 @@ Report: which step (A1–B4), which org, screenshot of dashboard header + Contac
 
 ---
 
+## Website → JanaGana sync (2026-05-28 closeout)
+
+- Public paths documented: `docs/WEBSITE_JANAGANA_VISITOR_PATHS.md`
+- Production smoke: `npm run smoke:production` (embed API included)
+- Live sites verified: `thepurplewings.org`, `namastebostonhomes.com` → canonical JanaGana URLs
+- QA cleanup: 8 contacts (initial) + 5 contacts (closeout retest) removed — see `docs/qa-contacts-deleted-2026-05-28*.json`
+
+**Your sign-off:** Part A/B admin checks still required if not already done.
+
+---
+
 ## Deferred (not part of this milestone)
 
 - CRM, Stripe, membership enrollment UI, email automation
-- TPW/NB website changes
-- QA contact cleanup (`scripts/cleanup-qa-contacts.ts`) unless you explicitly approve
