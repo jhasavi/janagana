@@ -14,12 +14,29 @@ export async function getUserClerkOrganizations(): Promise<ClerkOrganizationSumm
   }
 
   const client = await clerkClient();
-  const memberships = await client.users.getOrganizationMembershipList({
-    userId,
-    limit: 100,
-  });
+  const pageSize = 100;
+  let offset = 0;
+  let allMemberships: Array<{
+    organization: { id: string; name: string; slug?: string | null };
+    role: string;
+  }> = [];
 
-  return memberships.data.map((membership) => ({
+  while (true) {
+    const page = await client.users.getOrganizationMembershipList({
+      userId,
+      limit: pageSize,
+      offset,
+    });
+
+    allMemberships = allMemberships.concat(page.data);
+    if (page.data.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  return allMemberships.map((membership) => ({
     clerkOrgId: membership.organization.id,
     name: membership.organization.name,
     slug: membership.organization.slug ?? null,

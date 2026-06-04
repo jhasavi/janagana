@@ -26,6 +26,19 @@ export default async function SelectOrganizationPage({
   const params = await searchParams;
   const hasSingleTenant = tenants.length === 1;
 
+  function tenantSelectionErrorMessage(error?: string) {
+    switch (error) {
+      case "missing-tenant":
+        return "Please choose an organization to continue.";
+      case "invalid-tenant":
+        return "The selected organization is not valid. Choose an organization from the list.";
+      case "invalid-request":
+        return "Invalid request. Please select an organization from the list.";
+      default:
+        return "Unable to select that organization. Please try again.";
+    }
+  }
+
   async function chooseTenantAction(formData: FormData) {
     "use server";
     const requestId = createRequestId();
@@ -53,7 +66,7 @@ export default async function SelectOrganizationPage({
       </p>
 
       {params.error && (
-        <p className="mt-4 text-sm text-red-700">Unable to select that organization. Please try again.</p>
+        <p className="mt-4 text-sm text-red-700">{tenantSelectionErrorMessage(params.error)}</p>
       )}
 
       {hasSingleTenant && (

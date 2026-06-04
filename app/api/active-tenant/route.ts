@@ -3,9 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveTenantForDashboard } from "@/lib/tenant";
 
 /**
- * GET /api/active-org
+ * GET /api/active-tenant
  *
- * Legacy alias for /api/active-tenant.
  * Returns the JanaGana tenant selected for the current Clerk-authenticated user.
  * Clerk organization memberships are the access source of truth; the tenant
  * cookie is only a selected-tenant preference and is re-validated on every read.
@@ -28,8 +27,6 @@ export async function GET() {
     {
       tenant: resolution.tenant,
       source: resolution.staleCookieIgnored ? "validated-membership" : "validated-selection",
-      deprecatedEndpoint: "/api/active-org",
-      replacementEndpoint: "/api/active-tenant",
     },
     { headers: { "Cache-Control": "no-store" } },
   );

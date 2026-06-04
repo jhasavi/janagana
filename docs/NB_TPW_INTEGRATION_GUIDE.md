@@ -52,26 +52,26 @@ Create via: sign in as TPW owner → `/onboarding/create-organization` (slug `pu
 
 ---
 
-## Phase 2 — Embeddable Event List Widget (After Phase 1 is stable)
+## Phase 2 — Embeddable Event List Widget
 
 A lightweight JavaScript snippet that NB/TPW can embed to show upcoming events inline.
 
-**Janagana v3 API endpoint (to be built in v3.1):**
+**Janagana v3 API endpoints:**
 
 ```
-GET /api/public/tenants/[tenantSlug]/events
-→ JSON: { events: [ { title, slug, startsAt, location, priceCents } ] }
+GET /api/embed/events?tenantSlug=namaste-boston&maxItems=12
+GET /api/embed/past-events?tenantSlug=namaste-boston&maxItems=24
 ```
 
 **Embed snippet (example):**
 ```html
 <div id="jg-events"></div>
 <script>
-  fetch('https://janagana.namasteneedham.com/api/public/tenants/namaste-boston/events')
+  fetch('https://janagana.namasteneedham.com/api/embed/events?tenantSlug=namaste-boston')
     .then(r => r.json())
-    .then(({ events }) => {
-      document.getElementById('jg-events').innerHTML = events.map(e =>
-        `<div><a href="https://janagana.namasteneedham.com/portal/namaste-boston/events/${e.slug}">${e.title}</a></div>`
+    .then(({ data }) => {
+      document.getElementById('jg-events').innerHTML = data.map(e =>
+        `<div><a href="${e.registrationUrl}">${e.title}</a></div>`
       ).join('');
     });
 </script>
@@ -91,7 +91,7 @@ GET /api/public/tenants/[tenantSlug]/events
 
 Direct API calls for tighter integration: membership status checks, event availability, etc.
 
-API key authentication required (to be designed in v3.2).
+API key authentication is not available in JanaGana v3. Do not configure `JANAGANA_API_KEY` in partner sites until the API-key feature is built.
 
 ---
 
@@ -134,4 +134,4 @@ For any phase:
 3. Janagana portal pages remain unchanged — they are additive only
 4. No DB rollback is required for Phase 1/2
 
-For Phase 3 (API keys), revoke the API key if integration causes issues.
+For Phase 3 (API keys), remove the integration environment variables or revoke the key after API-key support exists.

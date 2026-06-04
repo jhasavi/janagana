@@ -65,7 +65,7 @@ patched incrementally:
 | `clerkMiddleware` with test-auth fallthrough | Causes trust collapse |
 | Accidental `createOrganization()` calls in public registration | Pollutes Clerk admin space |
 | `logAuthOrgRedirectDecision()` debug logging at runtime | Noise in production |
-| `JG_ACTIVE_ORG` cookie as truth source | Must always be validated against Clerk membership |
+| Tenant cookie as auth source | Selected tenant cookies must always be validated against Clerk membership |
 | 50+ schema models before first workflow | Schema should follow proven workflows |
 | Dashboard CTAs for unimplemented features | Never show a button that doesn't work |
 | `E2E_TEST_MODE` / `PLAYWRIGHT_TEST` env flags | Test mode must be structurally separated |
@@ -120,7 +120,7 @@ Test Auth:
 
 1. A `Tenant` record exists if and only if a `ClerkOrganization` exists — created in explicit onboarding only.
 2. A `Contact` is a public person. It is NOT a Clerk user. It NEVER has `clerkOrgId`.
-3. The `JG_ACTIVE_ORG` cookie is a performance cache only. It is always re-validated against Clerk membership before any write.
+3. The `JG_ACTIVE_TENANT_ID` cookie is a selected-tenant preference only. It is always re-validated against Clerk membership before any write.
 4. Test auth is a completely separate code path, activated by a separate Playwright config — never by a runtime env flag shared with the production middleware.
 
 ---
@@ -275,7 +275,8 @@ createdAt    DateTime @default(now())
 ### API Routes
 | Route | Purpose |
 |---|---|
-| `/api/active-org` | GET/SET active org cookie (validated against Clerk) |
+| `/api/active-tenant` | GET active JanaGana tenant selection, validated against Clerk membership |
+| `/api/active-org` | Legacy alias for `/api/active-tenant` |
 | `/api/sign-out` | POST: clear app cookies + Clerk session |
 | `/api/webhooks/clerk` | Clerk org events → DB sync |
 | `/api/webhooks/stripe` | Stripe payment events |
@@ -332,7 +333,7 @@ Every test file must have a header comment:
 - [ ] Implement `/select-organization`
 - [ ] Implement `/onboarding/create-organization` (creates Clerk org + Tenant)
 - [ ] Implement `/dashboard` (stub: show tenant name + user)
-- [ ] Implement `/api/active-org`
+- [ ] Implement `/api/active-tenant`
 - [ ] Implement `/api/sign-out`
 
 ### Day 3

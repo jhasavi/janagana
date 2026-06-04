@@ -13,11 +13,52 @@ function shortId(value: string): string {
 
 async function makeUniqueTenantSlug(candidate: string): Promise<string> {
   const baseSlug = candidate.slice(0, 60) || "organization";
-  const existing = await prisma.tenant.findUnique({ where: { slug: baseSlug }, select: { id: true } });
-  if (existing) {
-    throw new Error("SLUG_EXISTS");
+  let slug = baseSlug;
+  let suffix = 0;
+
+  while (true) {
+    const existing = await prisma.tenant.findUnique({ where: { slug }, select: { id: true } });
+    if (!existing) {
+      return slug;
+    }
+
+    suffix += 1;
+    const suffixText = `-${suffix}`;
+    const maxBaseLength = 60 - suffixText.length;
+    slug = `${baseSlug.slice(0, maxBaseLength)}${suffixText}`;
   }
-  return baseSlug;
+}
+
+function isClaimablePlaceholderClerkOrgId(clerkOrgId: string): boolean {
+  return clerkOrgId.startsWith("e2e_") || clerkOrgId.startsWith("local_demo_");
+}
+
+export async function findClaimablePlaceholderTenant(slug: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      clerkOrgId: true,
+      status: true,
+      _count: {
+        select: {
+          tenantAdmins: true,
+        },
+      },
+    },
+  });
+
+  if (
+    tenant &&
+    tenant.status === "ACTIVE" &&
+    tenant._count.tenantAdmins === 0 &&
+    isClaimablePlaceholderClerkOrgId(tenant.clerkOrgId)
+  ) {
+    return tenant;
+  }
+
+  return null;
 }
 
 export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
@@ -60,24 +101,38 @@ export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
     redirect("/onboarding/create-organization?error=tenant-already-mapped");
   }
 
-  const tenantSlug = await makeUniqueTenantSlug(
-    preferredPublicSlug(membership.name, membership.slug),
-  );
+  const preferredSlug = preferredPublicSlug(membership.name, membership.slug);
+  const claimableTenant = await findClaimablePlaceholderTenant(preferredSlug);
+  const tenantSlug = claimableTenant ? claimableTenant.slug : await makeUniqueTenantSlug(preferredSlug);
 
   try {
-    const tenant = await prisma.tenant.create({
-      data: {
-        name: membership.name,
-        slug: tenantSlug,
-        clerkOrgId: requestedClerkOrgId,
-        tenantAdmins: {
-          create: {
-            clerkUserId: current.id,
-            role: "owner",
+    const tenant = claimableTenant
+      ? await prisma.tenant.update({
+          where: { id: claimableTenant.id },
+          data: {
+            name: membership.name,
+            clerkOrgId: requestedClerkOrgId,
+            tenantAdmins: {
+              create: {
+                clerkUserId: current.id,
+                role: "owner",
+              },
+            },
           },
-        },
-      },
-    });
+        })
+      : await prisma.tenant.create({
+          data: {
+            name: membership.name,
+            slug: tenantSlug,
+            clerkOrgId: requestedClerkOrgId,
+            tenantAdmins: {
+              create: {
+                clerkUserId: current.id,
+                role: "owner",
+              },
+            },
+          },
+        });
 
     await prisma.auditLog.create({
       data: {
@@ -94,11 +149,12 @@ export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
       clerkOrgId: shortId(requestedClerkOrgId),
       tenantId: tenant.id,
       tenantSlug: tenant.slug,
+      claimedPlaceholder: Boolean(claimableTenant),
     });
 
     await setActiveTenantCookie(tenant.id);
     console.info("SET_ACTIVE_TENANT", { reason: "SET_ACTIVE_TENANT", tenantId: tenant.id, source: "setup-existing-clerk-org" });
-    redirect("/dashboard");
+    redirect(`/onboarding/complete?tenantId=${encodeURIComponent(tenant.id)}&source=existing`);
   } catch (error: any) {
     if (String(error?.message ?? "") === "SLUG_EXISTS") {
       console.info("DASHBOARD_TENANT_FAILED", {

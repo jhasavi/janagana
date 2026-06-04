@@ -14,7 +14,9 @@ const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/select-organization(.*)",
   "/onboarding/create-organization(.*)",
+  "/onboarding/complete(.*)",
   "/api/active-org(.*)",
+  "/api/active-tenant(.*)",
   "/api/sign-out(.*)",
 ]);
 

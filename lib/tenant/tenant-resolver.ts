@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUserClerkOrganizations } from "@/lib/auth/clerk-orgs";
 import {
+  clearActiveTenantCookies,
   getActiveTenantCookie,
 } from "@/lib/tenant/active-tenant-cookie";
 
@@ -50,9 +51,10 @@ export async function validateActiveTenantCookie(
 
   const tenant = mappedTenants.find((item) => item.id === cookieTenantId) ?? null;
   if (!tenant) {
+    await clearActiveTenantCookies();
     console.info("STALE_COOKIE_CLEARED", {
       reason: "cookie-not-in-mapped-tenants",
-      strategy: "ignored-in-server-component",
+      strategy: "cleared-on-server",
     });
     return { tenant: null, staleCookieIgnored: true };
   }

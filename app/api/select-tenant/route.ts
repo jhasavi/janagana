@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
   const selected = mappedTenants.find((t) => t.id === tenantId);
 
   if (!selected) {
+    await clearActiveTenantCookies();
     console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_SELECTED_TENANT", requestId, tenantId });
     return NextResponse.redirect(new URL("/select-organization?error=invalid-tenant", req.url));
   }

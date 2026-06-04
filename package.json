@@ -17,6 +17,7 @@
     "check:env": "tsx scripts/check-env.ts",
     "check:db:test": "tsx scripts/check-db-test-readiness.ts",
     "inventory:tenants": "tsx scripts/inventory-tenants.ts",
+    "import:nb-crm": "tsx scripts/import-nb-crm.ts",
     "setup:namaste": "tsx scripts/setup-namaste-boston.ts --confirm-local-setup",
     "smoke:redirects": "node scripts/smoke-local-redirects.mjs",
     "smoke:local-redirects": "node scripts/smoke-local-redirects.mjs",

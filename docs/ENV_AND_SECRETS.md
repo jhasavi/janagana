@@ -40,6 +40,17 @@
 | `STRIPE_PUBLISHABLE_KEY` | Stripe frontend key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 
+### Ops (optional)
+
+| Variable | Description |
+|---|---|
+| `ENABLE_CLERK_TENANT_RECONCILIATION` | Set to `true` only when running the Clerk/JanaGana reconciliation endpoint. |
+| `CLERK_TENANT_RECONCILIATION_TOKEN` | Bearer token for `/api/ops/clerk-tenant-reconciliation`. |
+
+### JanaGana API keys
+
+JanaGana v3 does not generate API keys. Partner sites should use portal links and the read-only embed endpoints until the API-key feature is built.
+
 ---
 
 ## Dev/Prod Key Mapping
@@ -90,8 +101,8 @@ if (process.env.PLAYWRIGHT_TEST === 'true') { ... }
 if (process.env.NODE_ENV === 'test') { ... }
 
 // FORBIDDEN: reading cookies as auth source of truth
-const orgId = request.cookies.get('JG_ACTIVE_ORG')?.value;
-// ^ This must always be re-validated against Clerk session
+const tenantId = request.cookies.get('JG_ACTIVE_TENANT_ID')?.value;
+// ^ This must always be re-validated against Clerk memberships
 
 // FORBIDDEN: creating Clerk orgs in public registration
 await clerkClient.organizations.createOrganization({ ... }); // in public path

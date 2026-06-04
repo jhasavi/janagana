@@ -1,7 +1,7 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
-import { setupExistingClerkOrgAsTenant } from "@/lib/actions/onboarding";
+import { findClaimablePlaceholderTenant, setupExistingClerkOrgAsTenant } from "@/lib/actions/onboarding";
 import { prisma } from "@/lib/prisma";
 import { findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
 import { createRequestId } from "@/lib/utils";
@@ -52,12 +52,18 @@ export default async function CreateOrganizationPage({
     redirect("/sign-in");
   }
 
+  const params = await searchParams;
   const mappedTenants = await findMappedTenantsForUser();
   const clerkOrganizations = await getUserClerkOrganizations();
   const mappedOrgIds = new Set(mappedTenants.map((tenant) => tenant.clerkOrgId));
   const unmappedClerkOrgs = clerkOrganizations.filter((org) => !mappedOrgIds.has(org.clerkOrgId));
 
-  if (mappedTenants.length > 1) {
+  const shouldRedirectToSelectOrganization =
+    mappedTenants.length > 1 &&
+    unmappedClerkOrgs.length === 0 &&
+    params.error !== "db-create-recovery-required";
+
+  if (shouldRedirectToSelectOrganization) {
     redirect("/select-organization");
   }
 
@@ -94,12 +100,14 @@ export default async function CreateOrganizationPage({
     }
 
     const existingSlug = await prisma.tenant.findUnique({ where: { slug: orgSlug } });
+    const claimableTenant = existingSlug ? await findClaimablePlaceholderTenant(orgSlug) : null;
     console.info("CREATE_ORG_DB_SLUG_CHECK", {
       requestId,
       submittedOrgSlug: orgSlug,
       tenantSlugExists: Boolean(existingSlug),
+      claimablePlaceholderTenant: Boolean(claimableTenant),
     });
-    if (existingSlug) {
+    if (existingSlug && !claimableTenant) {
       redirect("/onboarding/create-organization?error=slug-exists");
     }
 
@@ -144,19 +152,33 @@ export default async function CreateOrganizationPage({
 
       let tenantIdForRollback: string | null = null;
       try {
-        const tenant = await prisma.tenant.create({
-          data: {
-            name: orgName,
-            slug: orgSlug,
-            clerkOrgId: organization.id,
-            tenantAdmins: {
-              create: {
-                clerkUserId: current.id,
-                role: "owner",
+        const tenant = claimableTenant
+          ? await prisma.tenant.update({
+              where: { id: claimableTenant.id },
+              data: {
+                name: orgName,
+                clerkOrgId: organization.id,
+                tenantAdmins: {
+                  create: {
+                    clerkUserId: current.id,
+                    role: "owner",
+                  },
+                },
               },
-            },
-          },
-        });
+            })
+          : await prisma.tenant.create({
+              data: {
+                name: orgName,
+                slug: orgSlug,
+                clerkOrgId: organization.id,
+                tenantAdmins: {
+                  create: {
+                    clerkUserId: current.id,
+                    role: "owner",
+                  },
+                },
+              },
+            });
         tenantIdForRollback = tenant.id;
         console.info("CREATED_TENANT", {
           requestId,
@@ -175,7 +197,7 @@ export default async function CreateOrganizationPage({
 
         await setActiveTenantCookie(tenant.id);
         console.info("SET_ACTIVE_TENANT", { tenantId: tenant.id, source: "onboarding-create-org" });
-        redirect("/dashboard");
+        redirect(`/onboarding/complete?tenantId=${encodeURIComponent(tenant.id)}&source=create`);
       } catch (error: any) {
         if (String(error?.message ?? "").includes("NEXT_REDIRECT")) {
           throw error;
@@ -248,7 +270,6 @@ export default async function CreateOrganizationPage({
     await setupExistingClerkOrgAsTenant(clerkOrgId);
   }
 
-  const params = await searchParams;
   const safeError = toSafeErrorMessage(params.error);
 
   return (
