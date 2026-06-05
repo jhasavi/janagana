@@ -72,30 +72,24 @@ export function TenantIdentityCard({
             href="/dashboard/settings"
             className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50"
           >
-            Mapping & diagnostics
+            Website links & setup
           </Link>
         </div>
       </div>
 
-      <dl className="mt-4 grid gap-2 border-t border-gray-200 pt-4 text-xs text-gray-600 sm:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <dt className="font-medium text-gray-500">Clerk org ID</dt>
-          <dd className="mt-0.5 break-all font-mono text-gray-800">{tenant.clerkOrgId}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-gray-500">Tenant ID</dt>
-          <dd className="mt-0.5 break-all font-mono text-gray-800">{tenant.id}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-gray-500">Mapping</dt>
-          <dd className="mt-0.5 text-gray-800">
-            {tenantMappingStatusLabel({
-              tenantStatus: tenant.status,
-              hasClerkMembership,
-            })}
-          </dd>
-        </div>
-      </dl>
+      <details className="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-600">
+        <summary className="cursor-pointer font-medium text-gray-700">Technical IDs (support)</summary>
+        <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+          <div>
+            <dt className="font-medium text-gray-500">Clerk org ID</dt>
+            <dd className="mt-0.5 break-all font-mono text-gray-800">{tenant.clerkOrgId}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-gray-500">Tenant ID</dt>
+            <dd className="mt-0.5 break-all font-mono text-gray-800">{tenant.id}</dd>
+          </div>
+        </dl>
+      </details>
     </section>
   );
 }

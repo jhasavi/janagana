@@ -117,12 +117,12 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
       actionLabel: "Copy portal URL",
       actionHref: "#tenant-portal-url",
     });
-  } else if (contactsLast7Days === 0) {
+  } else if (contactsLast7Days === 0 && summary.contactsTotal < 5) {
     operationalWarnings.push({
       id: "no-recent-contacts",
       severity: "info",
-      message: `No new portal contacts in the last ${RECENT_WINDOW_DAYS} days (${summary.contactsTotal} total on record).`,
-      actionLabel: "View all contacts",
+      message: `No new portal contacts in the last ${RECENT_WINDOW_DAYS} days (${summary.contactsTotal} on record).`,
+      actionLabel: "View contacts",
       actionHref: "/dashboard/members",
     });
   }
@@ -135,13 +135,13 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
       actionLabel: "Manage events",
       actionHref: "/dashboard/events",
     });
-  } else if (draftEvents > 0) {
+  } else if (draftEvents > 0 && publishedEvents === 0) {
     operationalWarnings.push({
       id: "draft-events",
-      severity: "info",
-      message: `${draftEvents} draft event${draftEvents === 1 ? "" : "s"} hidden from visitors.`,
+      severity: "attention",
+      message: `${draftEvents} draft event${draftEvents === 1 ? "" : "s"} — none published yet, so visitors cannot register.`,
       actionHref: "/dashboard/events",
-      actionLabel: "Review drafts",
+      actionLabel: "Publish an event",
     });
   }
 
@@ -152,14 +152,6 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
       message: "Published events are live but no confirmed registrations yet. Share an event registration link.",
       actionLabel: "View events",
       actionHref: "/dashboard/events",
-    });
-  } else if (registrationsLast7Days === 0 && summary.eventRegistrationsConfirmed > 0) {
-    operationalWarnings.push({
-      id: "no-recent-registrations",
-      severity: "info",
-      message: `No new registrations in the last ${RECENT_WINDOW_DAYS} days.`,
-      actionHref: "/dashboard/events",
-      actionLabel: "View events",
     });
   }
 

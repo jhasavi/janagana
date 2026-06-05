@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
+import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { clerkOrgRoleLabel } from "@/lib/auth/clerk-roles";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
@@ -51,7 +52,9 @@ export default async function SettingsPage() {
   })();
 
   return (
-    <section>
+    <section className="space-y-4">
+      {activeTenant && <TenantScopeBanner slug={activeTenant.slug} name={activeTenant.name} />}
+
       <h1 className="text-2xl font-semibold">Portal & setup</h1>
       <p className="mt-2 max-w-2xl text-sm text-gray-600">
         Operator setup for{" "}

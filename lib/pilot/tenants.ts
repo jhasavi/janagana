@@ -62,6 +62,10 @@ const EXTRA_LINKS: Record<PilotTenantSlug, PortalLink[]> = {
 };
 
 /** Public URLs operators copy onto NB/TPW websites. */
+export function publicRegisterUrl(tenantSlug: string, eventSlug: string): string {
+  return `${portalBase(tenantSlug)}/register/${eventSlug}`;
+}
+
 export function portalLinksForTenant(slug: string): PortalLink[] {
   const root = portalBase(slug);
   if (isPilotTenantSlug(slug)) {

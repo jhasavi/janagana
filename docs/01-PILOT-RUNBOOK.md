@@ -10,6 +10,25 @@
 
 ---
 
+## Weekly operator routine (~10 min)
+
+Use this after sign-in when you already have the correct community selected (header shows **Namaste Boston** or **The Purple Wings**).
+
+| Step | Where | What to do |
+|------|--------|------------|
+| 1 | **Overview** | Scan last 7 days: new contacts, registrations; open **Attention** items if any |
+| 2 | **Contacts & leads** | Filter **Last 7 days**; confirm website/portal submissions landed |
+| 3 | **Events** | Confirm at least one **Published** event; **Copy register link** for outreach |
+| 4 | **Events → Registrations** | Open the event you promoted; verify new sign-ups (also in Contacts) |
+| 5 | **Portal & setup** | Copy portal URL or website CTA links when updating NB/TPW sites |
+| 6 | Switch community | Sidebar **Switch community** only when needed — read the amber warning on the picker |
+
+**Register URLs:** On **Events**, published rows include **Copy register link** (`/portal/{slug}/register/{eventSlug}`). Same link appears on **Registrations** for that event.
+
+**Tenant safety:** Every operational page shows a **Working in** banner (community name + slug). If it looks wrong, switch before editing contacts or events.
+
+---
+
 ## Part A — Admin smoke (~15 min, requires your Clerk login)
 
 Record pass/fail per org below.
@@ -17,7 +36,7 @@ Record pass/fail per org below.
 | # | Check | PW | NB |
 |---|--------|----|----|
 | A1 | Sign in → `/dashboard` loads | ☐ | ☐ |
-| A2 | **Organizations** → select tenant; header shows correct org name | ☐ | ☐ |
+| A2 | **Switch community** (if multi-tenant) → header + **Working in** banner show correct community | ☐ | ☐ |
 | A3 | **Public portal ↗** link is `/portal/purple-wings` or `/portal/namaste-boston` (not long Clerk slug) | ☐ | ☐ |
 | A4 | **Overview:** Contacts ≥ 1; **Formal memberships** = 0 | ☐ | ☐ |
 | A5 | **Contacts:** find latest QA email (see below) | ☐ | ☐ |
@@ -54,14 +73,14 @@ You do **not** need to sign out of admin first. Incognito is only so the public 
 
 ### How to get the exact register URL
 
-In **admin** → **Events**, use the **Slug** column for a **PUBLISHED** event (Namaste already has some; pick one per org).
+In **admin** → **Events**, on a **Published** row use **Copy register link** (or open **Registrations** for that event — link is shown at the top).
 
 | Org | Events list (incognito) | Register form (incognito) |
 |-----|-------------------------|---------------------------|
 | Purple Wings | `https://janagana.namasteneedham.com/portal/purple-wings/events` | `https://janagana.namasteneedham.com/portal/purple-wings/register/{eventSlug}` |
 | Namaste Boston | `https://janagana.namasteneedham.com/portal/namaste-boston/events` | `https://janagana.namasteneedham.com/portal/namaste-boston/register/{eventSlug}` |
 
-Replace `{eventSlug}` with the slug from the admin table (e.g. if slug is `spring-meetup`, use `/register/spring-meetup`).
+Replace `{eventSlug}` with the event slug from the admin table if building URLs manually.
 
 **Easiest path:** incognito → events list → **View details** on a published event → **Register** button → submit form.  
 (Code: register lives at `app/portal/[tenantSlug]/register/[eventSlug]/page.tsx`.)

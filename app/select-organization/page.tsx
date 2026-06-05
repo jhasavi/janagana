@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { getCurrentUser } from "@/lib/auth";
-import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
+import { communityLabel } from "@/lib/pilot/portal-links";
 import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { clearActiveTenantCookies, findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
 import { publicPortalUrl } from "@/lib/environment";
@@ -68,10 +69,13 @@ export default async function SelectOrganizationPage({
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Select community</h1>
+      <h1 className="text-2xl font-semibold">Switch community</h1>
       <p className="mt-2 text-sm text-gray-600">
-        You belong to more than one JanaGana community. Choose which tenant (database record) to operate.
-        Signed in as {user.email ?? user.name ?? user.id}
+        You have access to more than one community. Choose which one to open — contacts, events, and portal data are
+        separate. Signed in as {user.email ?? user.name ?? user.id}
+      </p>
+      <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+        Double-check the community name before continuing. Wrong selection shows another org&apos;s leads and registrations.
       </p>
 
       {params.error && (
@@ -81,28 +85,22 @@ export default async function SelectOrganizationPage({
       <div className="mt-6 space-y-3">
         {tenants.map((tenant) => {
           const portalUrl = publicPortalUrl(tenant.slug);
-          const mappingStatus = tenantMappingStatusLabel({
-            tenantStatus: tenant.status,
-            hasClerkMembership: true,
-          });
           return (
             <form key={tenant.id} action={chooseTenantAction} className="rounded-md border border-gray-200 p-4 bg-white">
               <input type="hidden" name="tenantId" value={tenant.id} />
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-medium text-gray-900">{tenant.name}</h2>
-                  <p className="text-sm text-gray-500">Tenant slug: <span className="font-mono">{tenant.slug}</span></p>
-                  <p className="text-sm text-gray-500">Portal: <span className="font-mono break-all">{portalUrl}</span></p>
-                  <p className="text-sm text-gray-500">
-                    Tenant status: {tenantStatusLabel(tenant.status)} · {mappingStatus}
-                  </p>
-                  <p className="text-sm text-gray-500">Clerk org ID: <span className="font-mono break-all">{tenant.clerkOrgId}</span></p>
+                  <h2 className="text-lg font-semibold text-gray-900">{communityLabel(tenant.slug)}</h2>
+                  <p className="text-sm text-gray-600">{tenant.name}</p>
+                  <p className="mt-1 font-mono text-xs text-gray-500">{tenant.slug}</p>
+                  <p className="mt-2 break-all font-mono text-xs text-blue-800">{portalUrl}</p>
+                  <CopyTextButton text={portalUrl} label="Copy portal" className="mt-2" />
                 </div>
                 <button
                   type="submit"
-                  className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
+                  className="shrink-0 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
                 >
-                  Open dashboard
+                  Open {communityLabel(tenant.slug)}
                 </button>
               </div>
             </form>

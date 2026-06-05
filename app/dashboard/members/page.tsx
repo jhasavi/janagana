@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
+import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsTable } from "@/components/dashboard/contacts-table";
 import { createContact, listContacts, updateContact } from "@/lib/actions/contacts";
 import { publicPortalUrl } from "@/lib/environment";
-import { communityLabel } from "@/lib/pilot/portal-links";
 import {
   contactInterestLabel,
   contactSourceLabel,
@@ -88,20 +88,10 @@ export default async function ContactsPage({
   const basePath = "/dashboard/members";
 
   return (
-    <section>
-      {tenant && (
-        <div className="rounded-md border border-gray-200 bg-white px-4 py-3 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Tenant scope</p>
-          <p className="mt-1 font-medium text-gray-900">
-            {communityLabel(tenant.slug)} · <span className="font-mono text-gray-700">{tenant.slug}</span>
-          </p>
-          <p className="mt-0.5 text-xs text-gray-600">
-            Every person below belongs to this tenant only. They are not Clerk users and not shared across communities.
-          </p>
-        </div>
-      )}
+    <section className="space-y-4">
+      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
 
-      <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Contacts & leads</h1>
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
