@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
+import { ACTIVE_TENANT_COOKIE_NAME } from "@/lib/tenant/contract";
 
-const ACTIVE_TENANT_COOKIE = "JG_ACTIVE_TENANT_ID";
+const ACTIVE_TENANT_COOKIE = ACTIVE_TENANT_COOKIE_NAME;
 const LEGACY_COOKIES = ["JG_ACTIVE_ORG", "JG_ACTIVE_ORG_ID"];
 
 export async function getActiveTenantCookie(): Promise<string | null> {

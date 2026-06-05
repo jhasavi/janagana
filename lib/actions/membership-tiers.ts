@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { requireActiveTenantForActions } from "@/lib/tenant";
 
 export const MembershipTierCreateSchema = z
   .object({
@@ -12,25 +11,12 @@ export const MembershipTierCreateSchema = z
   })
   .strict();
 
-async function requireActiveTenantContext() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { error: "Not authenticated" as const };
-  }
-
-  const resolution = await resolveTenantForDashboard();
-  if (resolution.status !== "ONE_TENANT") {
-    return { error: "No active tenant context" as const };
-  }
-
-  return { user, tenant: resolution.tenant };
-}
-
 export async function createMembershipTier(input: unknown) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
   }
+  const context = auth.context;
 
   const parsed = MembershipTierCreateSchema.safeParse(input);
   if (!parsed.success) {
@@ -64,10 +50,11 @@ export async function createMembershipTier(input: unknown) {
 }
 
 export async function listMembershipTiers() {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error, data: [] as any[] };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error, data: [] as any[] };
   }
+  const context = auth.context;
 
   const tiers = await prisma.membershipTier.findMany({
     where: { tenantId: context.tenant.id },

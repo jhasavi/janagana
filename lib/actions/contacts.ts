@@ -1,7 +1,21 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { requireActiveTenantForActions } from "@/lib/tenant";
+
+function parseTags(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((tag) => String(tag).trim()).filter(Boolean).slice(0, 12);
+  }
+
+  if (typeof value !== "string") return [];
+
+  return value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
 
 export const ContactCreateSchema = z
   .object({
@@ -9,7 +23,9 @@ export const ContactCreateSchema = z
     lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
-    type: z.enum(["MEMBER", "REGISTRANT", "VOLUNTEER", "DONOR", "OTHER"]).default("MEMBER"),
+    type: z.enum(["MEMBER", "REGISTRANT", "VOLUNTEER", "DONOR", "OTHER"]).default("OTHER"),
+    notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    tags: z.unknown().optional(),
   })
   .strict();
 
@@ -20,28 +36,25 @@ export const ContactUpdateSchema = z
     lastName: z.string().trim().min(1).max(100),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
     type: z.enum(["MEMBER", "REGISTRANT", "VOLUNTEER", "DONOR", "OTHER"]),
+    notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    tags: z.unknown().optional(),
   })
   .strict();
 
-async function requireActiveTenantContext() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { error: "Not authenticated" as const };
-  }
-
-  const resolution = await resolveTenantForDashboard();
-  if (resolution.status !== "ONE_TENANT") {
-    return { error: "No active tenant context" as const };
-  }
-
-  return { user, tenant: resolution.tenant };
-}
+export const ContactListSchema = z
+  .object({
+    q: z.string().trim().max(120).optional().or(z.literal("")),
+    source: z.string().trim().max(80).optional().or(z.literal("")),
+    interestType: z.string().trim().max(80).optional().or(z.literal("")),
+  })
+  .strict();
 
 export async function createContact(input: unknown) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
   }
+  const context = auth.context;
 
   const parsed = ContactCreateSchema.safeParse(input);
   if (!parsed.success) {
@@ -57,6 +70,14 @@ export async function createContact(input: unknown) {
         email: parsed.data.email.toLowerCase(),
         phone: parsed.data.phone || null,
         type: parsed.data.type,
+        source: "manual_admin",
+        interestType: parsed.data.type === "REGISTRANT" ? "EVENT_REGISTRATION" : "MANUAL",
+        lastActivityAt: new Date(),
+        lastActivitySummary: "Manual entry by admin",
+        notes: parsed.data.notes || null,
+        tags: parseTags(parsed.data.tags).length
+          ? parseTags(parsed.data.tags)
+          : ["manual-entry"],
       },
     });
 
@@ -79,10 +100,11 @@ export async function createContact(input: unknown) {
 }
 
 export async function updateContact(input: unknown) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
   }
+  const context = auth.context;
 
   const parsed = ContactUpdateSchema.safeParse(input);
   if (!parsed.success) {
@@ -103,6 +125,8 @@ export async function updateContact(input: unknown) {
       lastName: parsed.data.lastName,
       phone: parsed.data.phone || null,
       type: parsed.data.type,
+      notes: parsed.data.notes || null,
+      tags: parseTags(parsed.data.tags),
     },
   });
 
@@ -118,21 +142,93 @@ export async function updateContact(input: unknown) {
   return { ok: true as const, data: contact };
 }
 
-export async function listContacts() {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error, data: [] as any[] };
+export async function listContacts(input: unknown = {}) {
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return {
+      ok: false as const,
+      error: auth.error,
+      tenant: null,
+      data: [] as any[],
+      sourceOptions: [] as string[],
+      interestOptions: [] as string[],
+    };
+  }
+
+  const context = auth.context;
+  const parsed = ContactListSchema.safeParse(input);
+  const filters = parsed.success ? parsed.data : {};
+  const where: Prisma.ContactWhereInput = { tenantId: context.tenant.id };
+
+  if (filters.q) {
+    where.OR = [
+      { firstName: { contains: filters.q, mode: "insensitive" } },
+      { lastName: { contains: filters.q, mode: "insensitive" } },
+      { email: { contains: filters.q, mode: "insensitive" } },
+      { phone: { contains: filters.q, mode: "insensitive" } },
+      { notes: { contains: filters.q, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters.source) {
+    where.source = filters.source;
+  }
+
+  if (filters.interestType) {
+    where.interestType = filters.interestType;
   }
 
   const contacts = await prisma.contact.findMany({
-    where: { tenantId: context.tenant.id },
-    orderBy: [{ createdAt: "desc" }, { email: "asc" }],
+    where,
+    orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }, { email: "asc" }],
     include: {
+      tenant: {
+        select: { id: true, name: true, slug: true, clerkOrgId: true },
+      },
+      registrations: {
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          event: {
+            select: {
+              title: true,
+              slug: true,
+              startsAt: true,
+            },
+          },
+        },
+      },
       _count: {
         select: { registrations: true },
       },
     },
   });
 
-  return { ok: true as const, data: contacts };
+  const [sourceRows, interestRows] = await Promise.all([
+    prisma.contact.findMany({
+      where: { tenantId: context.tenant.id, source: { not: null } },
+      distinct: ["source"],
+      select: { source: true },
+      orderBy: { source: "asc" },
+    }),
+    prisma.contact.findMany({
+      where: { tenantId: context.tenant.id, interestType: { not: null } },
+      distinct: ["interestType"],
+      select: { interestType: true },
+      orderBy: { interestType: "asc" },
+    }),
+  ]);
+
+  return {
+    ok: true as const,
+    tenant: context.tenant,
+    data: contacts,
+    sourceOptions: sourceRows.map((row) => row.source).filter((source): source is string => Boolean(source)),
+    interestOptions: interestRows
+      .map((row) => row.interestType)
+      .filter((interestType): interestType is string => Boolean(interestType)),
+  };
 }

@@ -1,12 +1,11 @@
+/**
+ * Tenant module — public portal vs admin dashboard.
+ * @see lib/tenant/contract.ts
+ */
+
 import { prisma } from "@/lib/prisma";
 
-/**
- * Resolve a Tenant by its URL slug.
- *
- * Used ONLY by the public portal.
- * Does NOT use any Clerk session or cookie.
- * Does NOT create any Clerk Organization.
- */
+/** Public portal only — URL slug, no Clerk session. */
 export async function getTenantBySlug(slug: string) {
   return prisma.tenant.findFirst({
     where: { slug, status: "ACTIVE" },
@@ -14,22 +13,13 @@ export async function getTenantBySlug(slug: string) {
   });
 }
 
-/**
- * Get the active Tenant for a Clerk organization ID.
- *
- * Used by the admin dashboard.
- * The clerkOrgId comes from the validated Clerk session — NOT a cookie.
- */
-export async function getTenantByClerkOrgId(clerkOrgId: string) {
-  return prisma.tenant.findFirst({
-    where: { clerkOrgId, status: "ACTIVE" },
-  });
-}
-
 export {
   findMappedTenantsForUser,
   validateActiveTenantCookie,
   resolveTenantForDashboard,
+  type MappedTenant,
+  type TenantResolutionResult,
+  type TenantResolutionSource,
 } from "./tenant-resolver";
 
 export {
@@ -37,3 +27,9 @@ export {
   setActiveTenantCookie,
   clearActiveTenantCookies,
 } from "./active-tenant-cookie";
+
+export { requireActiveTenantForActions } from "./active-tenant-context";
+
+export type { ActiveTenantActionContext, ActiveTenantActionResult } from "./active-tenant-context";
+
+export { ACTIVE_TENANT_COOKIE_NAME } from "./contract";

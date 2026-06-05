@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatCents, formatDate } from "@/lib/utils";
 import { createEvent, listEvents } from "@/lib/actions/events";
+import { resolveTenantForDashboard } from "@/lib/tenant";
+import { publicPortalUrl } from "@/lib/environment";
+import { communityLabel } from "@/lib/pilot/portal-links";
+import { formatCents, formatDate } from "@/lib/utils";
 
 export default async function EventsPage({
   searchParams,
@@ -43,11 +46,27 @@ export default async function EventsPage({
 
   const eventsResult = await listEvents();
   const events = eventsResult.ok ? eventsResult.data : [];
+  const resolution = await resolveTenantForDashboard();
+  const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
+  const portalUrl = tenant ? publicPortalUrl(tenant.slug) : null;
 
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Events</h1>
-      <p className="mt-2 text-sm text-gray-600">Create and view tenant-scoped events.</p>
+      {tenant && (
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{communityLabel(tenant.slug)}</p>
+      )}
+      <h1 className="mt-1 text-2xl font-semibold">Events</h1>
+      <p className="mt-2 text-sm text-gray-600">
+        Published events appear on{" "}
+        {portalUrl ? (
+          <a href={`${portalUrl}/events`} className="text-blue-700 underline break-all">
+            {portalUrl}/events
+          </a>
+        ) : (
+          "your public portal"
+        )}
+        . Registrations confirm the event loop is working.
+      </p>
 
       {params.error && <p className="mt-4 text-sm text-red-700">{params.error}</p>}
       {params.success && <p className="mt-4 text-sm text-green-700">Event created.</p>}

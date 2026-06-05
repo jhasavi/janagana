@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
-import { getCurrentUser } from "@/lib/auth";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { requireActiveTenantForActions } from "@/lib/tenant";
 
 export const EventCreateSchema = z
   .object({
@@ -17,25 +16,12 @@ export const EventCreateSchema = z
   })
   .strict();
 
-async function requireActiveTenantContext() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { error: "Not authenticated" as const };
-  }
-
-  const resolution = await resolveTenantForDashboard();
-  if (resolution.status !== "ONE_TENANT") {
-    return { error: "No active tenant context" as const };
-  }
-
-  return { user, tenant: resolution.tenant };
-}
-
 export async function createEvent(input: unknown) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
   }
+  const context = auth.context;
 
   const parsed = EventCreateSchema.safeParse(input);
   if (!parsed.success) {
@@ -91,10 +77,11 @@ export async function createEvent(input: unknown) {
 }
 
 export async function listEvents() {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error, data: [] as any[] };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error, data: [] as any[] };
   }
+  const context = auth.context;
 
   const events = await prisma.event.findMany({
     where: { tenantId: context.tenant.id },
@@ -126,10 +113,11 @@ export async function listEvents() {
 }
 
 export async function listEventRegistrations(eventId: string) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error, data: [] as any[], event: null as any };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error, data: [] as any[], event: null as any };
   }
+  const context = auth.context;
 
   const event = await prisma.event.findFirst({
     where: { id: eventId, tenantId: context.tenant.id },
@@ -241,10 +229,11 @@ export async function updateRegistrationStatusForTenant(input: {
 }
 
 export async function cancelEventRegistration(input: { eventId: string; registrationId: string }) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
   }
+  const context = auth.context;
 
   return updateRegistrationStatusForTenant({
     tenantId: context.tenant.id,
@@ -256,10 +245,11 @@ export async function cancelEventRegistration(input: { eventId: string; registra
 }
 
 export async function confirmEventRegistration(input: { eventId: string; registrationId: string }) {
-  const context = await requireActiveTenantContext();
-  if ("error" in context) {
-    return { ok: false as const, error: context.error };
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
   }
+  const context = auth.context;
 
   return updateRegistrationStatusForTenant({
     tenantId: context.tenant.id,

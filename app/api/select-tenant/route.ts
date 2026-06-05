@@ -50,5 +50,27 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const reason = req.nextUrl.searchParams.get("reason");
+
+  if (reason === "stale-cookie") {
+    await clearActiveTenantCookies();
+    console.info("STALE_TENANT_COOKIE_CLEARED", { source: "api-select-tenant" });
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  if (reason === "auto-single") {
+    const mappedTenants = await findMappedTenantsForUser();
+    if (mappedTenants.length === 1) {
+      await clearActiveTenantCookies();
+      await setActiveTenantCookie(mappedTenants[0].id);
+      console.info("SET_ACTIVE_TENANT", {
+        tenantId: mappedTenants[0].id,
+        source: "api-select-tenant-auto-single",
+      });
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    return NextResponse.redirect(new URL("/select-organization", req.url));
+  }
+
   return NextResponse.redirect(new URL("/select-organization?error=use-post", req.url));
 }

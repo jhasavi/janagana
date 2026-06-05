@@ -103,15 +103,25 @@ model TenantAdmin {
 /// INVARIANT: Contacts are NEVER Clerk users.
 ///            Creating a Contact MUST NEVER create a Clerk Organization.
 model Contact {
-  id        String      @id @default(cuid())
-  tenantId  String
-  firstName String
-  lastName  String
-  email     String
-  phone     String?
-  type      ContactType @default(REGISTRANT)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id                  String      @id @default(cuid())
+  tenantId            String
+  firstName           String
+  lastName            String
+  email               String
+  phone               String?
+  type                ContactType @default(REGISTRANT)
+  source              String?
+  interestType        String?
+  lastActivityAt      DateTime?
+  lastActivitySummary String?
+  notes               String?
+  tags                String[]    @default([])
+  externalSource      String?
+  externalId          String?
+  importedAt          DateTime?
+  originalMetadata    Json?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   memberships   Membership[]
@@ -119,6 +129,9 @@ model Contact {
 
   @@unique([tenantId, email])
   @@index([tenantId])
+  @@index([tenantId, source])
+  @@index([tenantId, interestType])
+  @@index([tenantId, lastActivityAt])
 }
 
 /// A membership plan offered by a tenant.

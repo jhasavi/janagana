@@ -32,6 +32,7 @@
     "test:registration:ops": "tsx scripts/test-registration-operations.ts",
     "test:second-tenant": "tsx scripts/test-second-tenant-hardening.ts",
     "test:dashboard:semantics": "tsx scripts/test-dashboard-semantics.ts",
+    "test:tenant:contract": "tsx scripts/test-tenant-resolution-contract.ts",
     "test:portal": "tsx scripts/test-public-registration.ts",
     "test:portal:concurrency": "tsx scripts/test-public-registration-concurrency.ts",
     "test:e2e": "playwright test",

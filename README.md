@@ -1,5 +1,7 @@
 # JanaGana v3
 
+**Documentation:** [docs/README.md](./docs/README.md) (10 canonical pilot docs)
+
 GitHub: https://github.com/jhasavi/janagana (main)
 Production target: https://janagana.namasteneedham.com
 Local dev URL: http://localhost:3020
@@ -152,7 +154,4 @@ If Namaste Clerk org does not yet exist, complete explicit owner onboarding firs
 
 ## Handoff
 
-Primary handoff document: [docs/V3_PRIMARY_HANDOFF.md](docs/V3_PRIMARY_HANDOFF.md)
-Manual demo script: [docs/MANUAL_DEMO_SCRIPT.md](docs/MANUAL_DEMO_SCRIPT.md)
-Website link readiness: [docs/WEBSITE_LINK_READINESS.md](docs/WEBSITE_LINK_READINESS.md)
-Architecture and rebuild scope: [docs/REBUILD_PLAN.md](docs/REBUILD_PLAN.md)
+See [docs/README.md](./docs/README.md) for the canonical doc set (pilot runbook, auth/tenant, NB/TPW websites, production, architecture).

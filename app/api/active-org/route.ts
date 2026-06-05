@@ -1,36 +1,14 @@
-import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { activeTenantJsonResponse } from "@/lib/api/active-tenant-response";
 
 /**
- * GET /api/active-org
- *
- * Legacy alias for /api/active-tenant.
- * Returns the JanaGana tenant selected for the current Clerk-authenticated user.
- * Clerk organization memberships are the access source of truth; the tenant
- * cookie is only a selected-tenant preference and is re-validated on every read.
+ * @deprecated Use GET /api/active-tenant — "org" meant Clerk org; response is a Tenant.
  */
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const resolution = await resolveTenantForDashboard();
-  if (resolution.status === "ZERO_TENANTS") {
-    return NextResponse.json({ error: "No mapped tenant" }, { status: 404 });
-  }
-  if (resolution.status === "MULTI_TENANT") {
-    return NextResponse.json({ error: "Multiple tenants available; select one" }, { status: 409 });
-  }
-
-  return NextResponse.json(
-    {
-      tenant: resolution.tenant,
-      source: resolution.staleCookieIgnored ? "validated-membership" : "validated-selection",
-      deprecatedEndpoint: "/api/active-org",
-      replacementEndpoint: "/api/active-tenant",
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  const response = await activeTenantJsonResponse({
+    deprecated: true,
+    useInstead: "/api/active-tenant",
+  });
+  response.headers.set("Deprecation", "true");
+  response.headers.set("Link", '</api/active-tenant>; rel="successor-version"');
+  return response;
 }

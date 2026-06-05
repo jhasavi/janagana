@@ -2,9 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
+import { isClerkOrgAdminRole } from "@/lib/auth/clerk-roles";
 import { prisma } from "@/lib/prisma";
 import { preferredPublicSlug } from "@/lib/ops/tenant-slug-repair";
 import { setActiveTenantCookie } from "@/lib/tenant";
+
+// Feature flag to keep existing org mapping disabled by default in production
+// and enable it only for controlled troubleshooting.
+const existingOrgSetupEnabled = process.env.ENABLE_EXISTING_ORG_SETUP === "true";
 
 function shortId(value: string): string {
   if (value.length <= 12) return value;
@@ -73,6 +78,14 @@ export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
     redirect("/onboarding/create-organization?error=invalid-clerk-org");
   }
 
+  if (!existingOrgSetupEnabled) {
+    console.info("SETUP_EXISTING_ORG_DISABLED", {
+      userId: shortId(current.id),
+      requestedClerkOrgId: shortId(requestedClerkOrgId),
+    });
+    throw new Response("Existing organization setup is temporarily disabled", { status: 403 });
+  }
+
   const memberships = await getUserClerkOrganizations();
   console.info("SETUP_EXISTING_ORG_SUBMIT", {
     userId: shortId(current.id),
@@ -87,6 +100,15 @@ export async function setupExistingClerkOrgAsTenant(clerkOrgId: string) {
       requestedClerkOrgId: shortId(requestedClerkOrgId),
     });
     redirect("/onboarding/create-organization?error=not-a-member");
+  }
+
+  if (!isClerkOrgAdminRole(membership.role)) {
+    console.info("DASHBOARD_TENANT_FAILED", {
+      reason: "INSUFFICIENT_ORG_ROLE",
+      requestedClerkOrgId: shortId(requestedClerkOrgId),
+      clerkRole: membership.role,
+    });
+    redirect("/onboarding/create-organization?error=insufficient-permission");
   }
 
   const existingTenant = await prisma.tenant.findUnique({

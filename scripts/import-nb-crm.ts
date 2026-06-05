@@ -237,6 +237,7 @@ async function main() {
     const fullName = String(row.full_name ?? `${row.first_name ?? ""} ${row.last_name ?? ""}`).trim();
     const { firstName, lastName } = splitName(fullName, email);
     const phone = normalizePhone(row[phoneField] ?? row.phone);
+    const sourceMetadata = metadataFromRow(row, config) as Prisma.JsonObject;
     const existing = await prisma.contact.findUnique({
       where: { tenantId_email: { tenantId: tenant.id, email } },
       select: { id: true },
@@ -254,6 +255,14 @@ async function main() {
         firstName,
         lastName,
         phone,
+        source: "nb_crm_import",
+        interestType: "IMPORTED_CONTACT",
+        externalSource: "namaste_boston_crm",
+        externalId: row.id ? String(row.id) : null,
+        importedAt: new Date(),
+        originalMetadata: sourceMetadata,
+        lastActivityAt: new Date(),
+        lastActivitySummary: existing ? "Updated from Namaste Boston CRM import" : "Imported from Namaste Boston CRM",
       },
       create: {
         tenantId: tenant.id,
@@ -262,6 +271,15 @@ async function main() {
         email,
         phone,
         type: "OTHER",
+        source: "nb_crm_import",
+        interestType: "IMPORTED_CONTACT",
+        externalSource: "namaste_boston_crm",
+        externalId: row.id ? String(row.id) : null,
+        importedAt: new Date(),
+        originalMetadata: sourceMetadata,
+        lastActivityAt: new Date(),
+        lastActivitySummary: "Imported from Namaste Boston CRM",
+        tags: ["imported", "namaste-boston"],
       },
     });
 
@@ -275,7 +293,7 @@ async function main() {
           source: "nb_crm_import",
           nbContactId: row.id ?? null,
           contactId: contact.id,
-          nbMetadata: metadataFromRow(row, config) as Prisma.JsonObject,
+          nbMetadata: sourceMetadata,
         },
       },
     });

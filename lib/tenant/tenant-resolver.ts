@@ -1,7 +1,7 @@
+import type { TenantStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getUserClerkOrganizations } from "@/lib/auth/clerk-orgs";
 import {
-  clearActiveTenantCookies,
   getActiveTenantCookie,
 } from "@/lib/tenant/active-tenant-cookie";
 
@@ -10,11 +10,19 @@ export type MappedTenant = {
   name: string;
   slug: string;
   clerkOrgId: string;
+  status: TenantStatus;
 };
+
+export type TenantResolutionSource = "active-cookie" | "single-tenant";
 
 export type TenantResolutionResult =
   | { status: "ZERO_TENANTS"; staleCookieIgnored: boolean }
-  | { status: "ONE_TENANT"; tenant: MappedTenant; staleCookieIgnored: boolean }
+  | {
+      status: "ONE_TENANT";
+      tenant: MappedTenant;
+      staleCookieIgnored: boolean;
+      source: TenantResolutionSource;
+    }
   | { status: "MULTI_TENANT"; tenants: MappedTenant[]; staleCookieIgnored: boolean };
 
 export async function findMappedTenantsForUser(): Promise<MappedTenant[]> {
@@ -34,6 +42,7 @@ export async function findMappedTenantsForUser(): Promise<MappedTenant[]> {
       name: true,
       slug: true,
       clerkOrgId: true,
+      status: true,
     },
     orderBy: { name: "asc" },
   });
@@ -51,10 +60,9 @@ export async function validateActiveTenantCookie(
 
   const tenant = mappedTenants.find((item) => item.id === cookieTenantId) ?? null;
   if (!tenant) {
-    await clearActiveTenantCookies();
-    console.info("STALE_COOKIE_CLEARED", {
+    console.info("STALE_TENANT_COOKIE_IGNORED", {
       reason: "cookie-not-in-mapped-tenants",
-      strategy: "cleared-on-server",
+      strategy: "ignored-until-route-clear",
     });
     return { tenant: null, staleCookieIgnored: true };
   }
@@ -80,6 +88,7 @@ export async function resolveTenantForDashboard(): Promise<TenantResolutionResul
       status: "ONE_TENANT",
       tenant: cookieCheck.tenant,
       staleCookieIgnored: cookieCheck.staleCookieIgnored,
+      source: "active-cookie",
     };
   }
 
@@ -92,6 +101,7 @@ export async function resolveTenantForDashboard(): Promise<TenantResolutionResul
       status: "ONE_TENANT",
       tenant: mappedTenants[0],
       staleCookieIgnored: cookieCheck.staleCookieIgnored,
+      source: "single-tenant",
     };
   }
 

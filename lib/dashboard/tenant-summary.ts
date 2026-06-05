@@ -19,7 +19,7 @@ export type TenantDashboardSummary = {
  * - Contacts = everyone captured (portal forms, registrations, manual admin entry).
  * - Leads/inquiries = Contact.type OTHER (newsletter, investment, class interest via portal).
  * - Registrants = people with at least one event registration (see eventRegistrations*).
- * - Formal members = Membership enrollment rows (zero until enrollment UI exists).
+ * - formalMemberships / membershipTiers: schema only — not shown in pilot operator UI.
  */
 export async function getTenantDashboardSummary(tenantId: string): Promise<TenantDashboardSummary> {
   const [

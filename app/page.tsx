@@ -11,7 +11,7 @@ export default async function HomePage() {
 
   const resolution = await resolveTenantForDashboard();
   if (resolution.staleCookieIgnored) {
-    console.info("STALE_TENANT_COOKIE_IGNORED");
+    redirect("/api/select-tenant?reason=stale-cookie");
   }
 
   if (resolution.status === "ZERO_TENANTS") {
@@ -20,6 +20,9 @@ export default async function HomePage() {
   }
 
   if (resolution.status === "ONE_TENANT") {
+    if (resolution.source === "single-tenant") {
+      redirect("/api/select-tenant?reason=auto-single");
+    }
     console.info("ONE_TENANT_AUTO_SELECT");
     redirect("/dashboard");
   }

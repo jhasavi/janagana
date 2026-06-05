@@ -31,6 +31,25 @@ export function formatCents(cents: number): string {
 /**
  * Format a date for display.
  */
+export function formatRelativeTime(date: Date | string): string {
+  const then = new Date(date).getTime();
+  const diffMs = Date.now() - then;
+  if (diffMs < 60_000) return "Just now";
+  if (diffMs < 3_600_000) {
+    const mins = Math.floor(diffMs / 60_000);
+    return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  }
+  if (diffMs < 86_400_000) {
+    const hours = Math.floor(diffMs / 3_600_000);
+    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  }
+  if (diffMs < 604_800_000) {
+    const days = Math.floor(diffMs / 86_400_000);
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  }
+  return formatDate(date);
+}
+
 export function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString("en-US", {
     weekday: "short",

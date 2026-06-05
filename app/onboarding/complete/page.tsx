@@ -2,8 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
+import { clerkOrgRoleLabel } from "@/lib/auth/clerk-roles";
+import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
 import { currentClerkMode, publicPortalUrl } from "@/lib/environment";
 import { prisma } from "@/lib/prisma";
+import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
 import { findMappedTenantsForUser } from "@/lib/tenant";
 
 function shortId(value: string): string {
@@ -12,9 +15,9 @@ function shortId(value: string): string {
 }
 
 function sourceLabel(source: string | undefined): string {
-  if (source === "existing") return "Existing Clerk organization mapped";
-  if (source === "create") return "New owner organization created";
-  return "Organization ready";
+  if (source === "existing") return "Existing Clerk org mapped to tenant";
+  if (source === "create") return "New Clerk org and tenant created";
+  return "Tenant ready";
 }
 
 export default async function OnboardingCompletePage({
@@ -69,21 +72,36 @@ export default async function OnboardingCompletePage({
   }
 
   const clerkOrg = clerkOrgs.find((org) => org.clerkOrgId === tenant.clerkOrgId) ?? null;
+  const summary = await getTenantDashboardSummary(tenant.id);
   const portalUrl = publicPortalUrl(tenant.slug);
   const clerkMode = currentClerkMode();
+  const mappingStatus = tenantMappingStatusLabel({
+    tenantStatus: tenant.status,
+    hasClerkMembership: Boolean(clerkOrg),
+  });
+  const importStatus =
+    summary.contactsTotal > 0
+      ? `${summary.contactsTotal} contact${summary.contactsTotal === 1 ? "" : "s"} visible`
+      : "No contacts imported or captured yet";
+  const eventStatus =
+    summary.eventsTotal > 0
+      ? `${summary.eventsTotal} event${summary.eventsTotal === 1 ? "" : "s"} created`
+      : "No events created yet";
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <p className="text-sm font-medium text-emerald-700">{sourceLabel(params.source)}</p>
       <h1 className="mt-1 text-2xl font-semibold text-gray-900">{tenant.name}</h1>
       <p className="mt-2 text-sm text-gray-600">
-        These are the JanaGana and Clerk values for this organization.
+        This receipt confirms your tenant record, public portal URL, and Clerk org mapping for the NB/TPW pilot.
       </p>
 
       <section className="mt-6 rounded-md border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Public portal</h2>
+        <h2 className="text-sm font-semibold text-gray-900">Tenant and public portal</h2>
         <dl className="mt-3 grid grid-cols-1 gap-3 text-sm text-gray-700 sm:grid-cols-[11rem_1fr]">
-          <dt className="font-medium text-gray-600">Portal URL</dt>
+          <dt className="font-medium text-gray-600">Tenant name</dt>
+          <dd>{tenant.name}</dd>
+          <dt className="font-medium text-gray-600">Public portal URL</dt>
           <dd>
             <a href={portalUrl} target="_blank" rel="noreferrer" className="break-all text-blue-700 underline">
               {portalUrl}
@@ -93,8 +111,10 @@ export default async function OnboardingCompletePage({
           <dd className="font-mono text-gray-900">{tenant.slug}</dd>
           <dt className="font-medium text-gray-600">Tenant ID</dt>
           <dd className="font-mono text-gray-900">{tenant.id}</dd>
-          <dt className="font-medium text-gray-600">Status</dt>
-          <dd>{tenant.status}</dd>
+          <dt className="font-medium text-gray-600">Tenant status</dt>
+          <dd>{tenantStatusLabel(tenant.status)}</dd>
+          <dt className="font-medium text-gray-600">Mapping status</dt>
+          <dd>{mappingStatus}</dd>
         </dl>
       </section>
 
@@ -105,13 +125,40 @@ export default async function OnboardingCompletePage({
           <dd>{clerkMode}</dd>
           <dt className="font-medium text-gray-600">Clerk org ID</dt>
           <dd className="font-mono text-gray-900">{tenant.clerkOrgId}</dd>
-          <dt className="font-medium text-gray-600">Clerk slug</dt>
+          <dt className="font-medium text-gray-600">Clerk org slug</dt>
           <dd className="font-mono text-gray-900">{clerkOrg?.slug ?? "(none)"}</dd>
           <dt className="font-medium text-gray-600">Clerk role</dt>
-          <dd>{clerkOrg?.role ?? "member"}</dd>
+          <dd>{clerkOrgRoleLabel(clerkOrg?.role)}</dd>
           <dt className="font-medium text-gray-600">Short ID</dt>
           <dd className="font-mono text-gray-900">{shortId(tenant.clerkOrgId)}</dd>
         </dl>
+      </section>
+
+      <section className="mt-4 rounded-md border border-gray-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Pilot activity snapshot</h2>
+        <dl className="mt-3 grid grid-cols-1 gap-3 text-sm text-gray-700 sm:grid-cols-[11rem_1fr]">
+          <dt className="font-medium text-gray-600">Dashboard</dt>
+          <dd>Ready</dd>
+          <dt className="font-medium text-gray-600">Public portal</dt>
+          <dd>{tenant.status === "ACTIVE" ? "Live" : "Suspended"}</dd>
+          <dt className="font-medium text-gray-600">Contacts captured</dt>
+          <dd>{importStatus}</dd>
+          <dt className="font-medium text-gray-600">Events</dt>
+          <dd>{eventStatus}</dd>
+          <dt className="font-medium text-gray-600">Registrations</dt>
+          <dd>{summary.eventRegistrationsConfirmed} confirmed</dd>
+        </dl>
+      </section>
+
+      <section className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
+        <h2 className="font-semibold">Next steps</h2>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>Open the dashboard and confirm the tenant name and slug match your community.</li>
+          <li>Publish or review events, then copy the public event links to the website.</li>
+          <li>Use Portal & setup in the dashboard if you need mapping diagnostics.</li>
+          <li>Use the portal URL above as the public entry point for NB and TPW v1.</li>
+        </ol>
+        <p className="mt-3">This pilot does not require JanaGana API keys.</p>
       </section>
 
       <section className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
@@ -120,9 +167,7 @@ export default async function OnboardingCompletePage({
           NB and TPW should use portal links today. Configure partner sites with{" "}
           <span className="font-mono">NEXT_PUBLIC_JANAGANA_PORTAL_BASE_URL</span> and link to the portal URL above.
         </p>
-        <p className="mt-2">
-          JanaGana API keys and direct CRM sync are not available in v3; those are deferred until the API-key feature is built.
-        </p>
+        <p className="mt-2">Paid membership, CRM import, and API sync are not part of this pilot.</p>
       </section>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">

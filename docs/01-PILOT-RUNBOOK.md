@@ -4,13 +4,15 @@
 
 **App:** https://janagana.namasteneedham.com  
 **Automated checks (agent):** Re-run before you start: `npm run smoke:production`  
-**Public website paths:** See `docs/WEBSITE_JANAGANA_VISITOR_PATHS.md` (NB/TPW CTAs → JanaGana vs on-site forms).
+**Website CTAs:** [03-NB-TPW-WEBSITES.md](./03-NB-TPW-WEBSITES.md)  
+**Operator UI:** Overview, Contacts & leads, Events, Portal & setup (no tiers/CRM).  
+**Auth contract:** [02-AUTH-TENANT.md](./02-AUTH-TENANT.md)
 
 ---
 
 ## Part A — Admin smoke (~15 min, requires your Clerk login)
 
-Use the same steps as `docs/ADMIN_PRODUCTION_SMOKE.md`. Record pass/fail.
+Record pass/fail per org below.
 
 | # | Check | PW | NB |
 |---|--------|----|----|
@@ -90,7 +92,7 @@ After submit you should see **“Registration successful.”** (or “already re
 When all boxes in A and B are checked for **both** orgs:
 
 1. Check the manual items in `docs/PRE_LAUNCH_CHECKLIST.md` (Production smoke → Manual section).
-2. Add one line to `docs/PRODUCTION_RELEASE_STATUS.md`:  
+2. Add one line to [04-PRODUCTION.md](./04-PRODUCTION.md):  
    `Pilot sign-off: <date> by <name> — admin + dual-tenant validated.`
 
 **Pilot-ready means:** you can run events + public registration + lead capture for both orgs without engineering changes.
@@ -112,7 +114,7 @@ Report: which step (A1–B4), which org, screenshot of dashboard header + Contac
 
 ## Website → JanaGana sync (2026-05-28 closeout)
 
-- Public paths documented: `docs/WEBSITE_JANAGANA_VISITOR_PATHS.md`
+- Public paths documented: [03-NB-TPW-WEBSITES.md](./03-NB-TPW-WEBSITES.md)
 - Production smoke: `npm run smoke:production` (embed API included)
 - Live sites verified: `thepurplewings.org`, `namastebostonhomes.com` → canonical JanaGana URLs
 - QA cleanup: 8 contacts (initial) + 5 contacts (closeout retest) removed — see `docs/qa-contacts-deleted-2026-05-28*.json`

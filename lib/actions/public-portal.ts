@@ -201,6 +201,10 @@ export async function registerPublicEvent(input: unknown) {
               lastName: parsed.data.lastName,
               phone: parsed.data.phone || null,
               type: "REGISTRANT",
+              source: "event_registration",
+              interestType: "EVENT_REGISTRATION",
+              lastActivityAt: new Date(),
+              lastActivitySummary: `Registered for ${event.title}`,
             },
             create: {
               tenantId: tenant.id,
@@ -209,6 +213,11 @@ export async function registerPublicEvent(input: unknown) {
               email,
               phone: parsed.data.phone || null,
               type: "REGISTRANT",
+              source: "event_registration",
+              interestType: "EVENT_REGISTRATION",
+              lastActivityAt: new Date(),
+              lastActivitySummary: `Registered for ${event.title}`,
+              tags: ["event"],
             },
           });
 
@@ -328,6 +337,10 @@ export async function capturePublicLead(input: unknown) {
       lastName,
       phone,
       type: preservedType,
+      source,
+      interestType: parsed.data.interestType,
+      lastActivityAt: new Date(),
+      lastActivitySummary: `Submitted ${parsed.data.interestType.toLowerCase().replace(/_/g, " ")} form`,
     },
     create: {
       tenantId: tenant.id,
@@ -336,6 +349,11 @@ export async function capturePublicLead(input: unknown) {
       email,
       phone,
       type: "OTHER",
+      source,
+      interestType: parsed.data.interestType,
+      lastActivityAt: new Date(),
+      lastActivitySummary: `Submitted ${parsed.data.interestType.toLowerCase().replace(/_/g, " ")} form`,
+      tags: [parsed.data.interestType.toLowerCase().replace(/_/g, "-")],
     },
   });
 
