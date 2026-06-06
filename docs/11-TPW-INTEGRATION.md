@@ -60,12 +60,15 @@ NEXT_PUBLIC_JANAGANA_TENANT_SLUG=purple-wings
 
 ## Class roster import
 
-CSV default path: `~/tpw/class1.csv`
+CSV paths: `data/tpw-class1.csv` (in repo) or `~/tpw/class1.csv` (local).
+
+Production import ran on deploy `e314e67` (11 contacts updated). Re-run manually:
 
 ```bash
 cd ~/janagana
 npm run import:tpw-class -- --dry-run
-npm run import:tpw-class -- --class=class1
+# With production DB URL (Vercel omits DATABASE_URL from env pull):
+PRODUCTION_DATABASE_URL='postgresql://…' npm run import:tpw-class -- --class=class1
 ```
 
 Imported contacts get:

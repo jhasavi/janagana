@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx prisma db push && npx prisma generate && npx tsx scripts/import-tpw-class-contacts.ts --class=class1 && npm run build",
+  "buildCommand": "npx prisma db push && npx prisma generate && npm run build",
   "installCommand": "npm install",
   "framework": "nextjs"
 }
