@@ -33,6 +33,12 @@ export default async function PortalHomePage({ params }: Props) {
           >
             Join newsletter
           </Link>
+          <Link
+            href={`/portal/${result.tenant.slug}/join`}
+            className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          >
+            Membership
+          </Link>
           <span className="text-xs uppercase tracking-[0.25em] text-slate-500">Slug: {result.tenant.slug}</span>
         </div>
       </div>

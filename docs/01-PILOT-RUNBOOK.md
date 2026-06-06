@@ -144,4 +144,4 @@ Report: which step (A1–B4), which org, screenshot of dashboard header + Contac
 
 ## Deferred (not part of this milestone)
 
-- CRM, Stripe, membership enrollment UI, email automation
+- CRM pipeline UI, donation checkout, online event checkout, refund operations, email automation

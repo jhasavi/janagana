@@ -73,6 +73,16 @@ if (pkMode === "test" && !appUrl.includes("localhost") && !appUrl.includes("127.
   warnings.push("Test Clerk keys with non-local URL");
 }
 
+const stripeSecret = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? "";
+if (stripeSecret || stripeWebhookSecret) {
+  const stripeMode = keyModeFromPrefix(stripeSecret);
+  console.log(`- STRIPE_SECRET_KEY: ${stripeSecret ? `present (mode=${stripeMode}, fp=${fingerprint(stripeSecret)})` : "missing"}`);
+  console.log(`- STRIPE_WEBHOOK_SECRET: ${stripeWebhookSecret ? `present (fp=${fingerprint(stripeWebhookSecret)})` : "missing"}`);
+  if (!stripeSecret) warnings.push("Stripe webhook secret is configured but STRIPE_SECRET_KEY is missing");
+  if (!stripeWebhookSecret) warnings.push("Stripe checkout key is configured but STRIPE_WEBHOOK_SECRET is missing");
+}
+
 const examplePath = path.resolve(process.cwd(), ".env.example");
 if (fs.existsSync(examplePath)) {
   const example = fs.readFileSync(examplePath, "utf8");

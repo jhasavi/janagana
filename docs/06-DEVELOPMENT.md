@@ -30,7 +30,7 @@ npm run db:push
 
 **In scope:** contacts/leads, events, public registration, tenant isolation, operator dashboard.
 
-**Deferred:** CRM, Stripe, formal membership enrollment UI, email automation.
+**Deferred:** CRM pipeline UI, donation checkout, online event checkout, refund operations, email automation.
 
 ## Release gate
 

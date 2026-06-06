@@ -2,6 +2,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { requireActiveTenantForActions } from "@/lib/tenant";
+import { issueReceiptForPayment } from "@/lib/payments/receipts";
+import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 
 export const EventCreateSchema = z
   .object({
@@ -12,9 +14,12 @@ export const EventCreateSchema = z
     location: z.string().trim().max(200).optional().or(z.literal("")),
     status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT"),
     priceCents: z.number().int().min(0).default(0),
+    memberPriceCents: z.number().int().min(0).optional(),
     capacity: z.number().int().min(1).optional(),
   })
   .strict();
+
+const ACTIVE_REGISTRATION_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "ATTENDED"] as const;
 
 export async function createEvent(input: unknown) {
   const auth = await requireActiveTenantForActions();
@@ -47,18 +52,35 @@ export async function createEvent(input: unknown) {
   }
 
   try {
-    const event = await prisma.event.create({
-      data: {
-        tenantId: context.tenant.id,
-        title: parsed.data.title,
-        slug,
-        description: parsed.data.description || null,
-        startsAt: parsed.data.startsAt,
-        location: parsed.data.location || null,
-        status: parsed.data.status,
-        priceCents: parsed.data.priceCents,
-        capacity: parsed.data.capacity ?? null,
-      },
+    const event = await prisma.$transaction(async (tx) => {
+      const created = await tx.event.create({
+        data: {
+          tenantId: context.tenant.id,
+          title: parsed.data.title,
+          slug,
+          description: parsed.data.description || null,
+          startsAt: parsed.data.startsAt,
+          location: parsed.data.location || null,
+          status: parsed.data.status,
+          priceCents: parsed.data.priceCents,
+          capacity: parsed.data.capacity ?? null,
+        },
+      });
+
+      await tx.eventTicketType.create({
+        data: {
+          tenantId: context.tenant.id,
+          eventId: created.id,
+          name: "General admission",
+          priceCents: parsed.data.priceCents,
+          memberPriceCents: parsed.data.memberPriceCents ?? null,
+          capacity: parsed.data.capacity ?? null,
+          active: true,
+          sortOrder: 0,
+        },
+      });
+
+      return created;
     });
 
     await prisma.auditLog.create({
@@ -90,7 +112,10 @@ export async function listEvents() {
         select: { registrations: true },
       },
       registrations: {
-        select: { status: true },
+        select: { status: true, quantity: true },
+      },
+      ticketTypes: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       },
     },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
@@ -98,12 +123,18 @@ export async function listEvents() {
 
   const data = events.map((event) => {
     const total = event._count.registrations;
-    const confirmed = event.registrations.filter((reg) => reg.status === "CONFIRMED").length;
+    const confirmed = event.registrations
+      .filter((reg) => reg.status === "CONFIRMED" || reg.status === "ATTENDED")
+      .reduce((sum, reg) => sum + reg.quantity, 0);
+    const active = event.registrations
+      .filter((reg) => ACTIVE_REGISTRATION_STATUSES.includes(reg.status as any))
+      .reduce((sum, reg) => sum + reg.quantity, 0);
 
     return {
       ...event,
       registrationSummary: {
         confirmed,
+        active,
         total,
       },
     };
@@ -121,7 +152,11 @@ export async function listEventRegistrations(eventId: string) {
 
   const event = await prisma.event.findFirst({
     where: { id: eventId, tenantId: context.tenant.id },
-    select: { id: true, title: true, slug: true, startsAt: true, status: true },
+    include: {
+      ticketTypes: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
+    },
   });
 
   if (!event) {
@@ -134,6 +169,14 @@ export async function listEventRegistrations(eventId: string) {
       contact: {
         select: { id: true, firstName: true, lastName: true, email: true, phone: true },
       },
+      ticketType: {
+        select: { id: true, name: true, priceCents: true, memberPriceCents: true },
+      },
+      payments: {
+        where: { purpose: "EVENT" },
+        orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+        take: 3,
+      },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -141,7 +184,7 @@ export async function listEventRegistrations(eventId: string) {
   return { ok: true as const, data: registrations, event };
 }
 
-type RegistrationStatusUpdate = "CONFIRMED" | "CANCELED";
+type RegistrationStatusUpdate = "PENDING_PAYMENT" | "CONFIRMED" | "CANCELED" | "ATTENDED" | "NO_SHOW";
 
 export async function updateRegistrationStatusForTenant(input: {
   tenantId: string;
@@ -177,6 +220,7 @@ export async function updateRegistrationStatusForTenant(input: {
       status: true,
       eventId: true,
       contactId: true,
+      quantity: true,
     },
   });
 
@@ -188,17 +232,19 @@ export async function updateRegistrationStatusForTenant(input: {
     return { ok: true as const, data: registration };
   }
 
-  if (input.nextStatus === "CONFIRMED" && event.capacity !== null) {
-    const confirmedCount = await prisma.eventRegistration.count({
+  if (ACTIVE_REGISTRATION_STATUSES.includes(input.nextStatus as any) && event.capacity !== null) {
+    const activeRows = await prisma.eventRegistration.findMany({
       where: {
         tenantId: input.tenantId,
         eventId: event.id,
-        status: "CONFIRMED",
+        status: { in: [...ACTIVE_REGISTRATION_STATUSES] },
         id: { not: registration.id },
       },
+      select: { quantity: true },
     });
+    const activeCount = activeRows.reduce((sum, row) => sum + row.quantity, 0);
 
-    if (confirmedCount >= event.capacity) {
+    if (activeCount + registration.quantity > event.capacity) {
       return { ok: false as const, error: "This event is full." };
     }
   }
@@ -207,6 +253,7 @@ export async function updateRegistrationStatusForTenant(input: {
     where: { id: registration.id },
     data: {
       status: input.nextStatus,
+      checkedInAt: input.nextStatus === "ATTENDED" ? new Date() : input.nextStatus === "CONFIRMED" ? null : undefined,
     },
   });
 
@@ -224,6 +271,37 @@ export async function updateRegistrationStatusForTenant(input: {
       },
     },
   });
+
+  if (registration.status === "PENDING_PAYMENT" && input.nextStatus === "CONFIRMED") {
+    const payments = await prisma.paymentRecord.findMany({
+      where: {
+        tenantId: input.tenantId,
+        registrationId: registration.id,
+        purpose: "EVENT",
+        status: "PENDING",
+      },
+      select: { id: true },
+    });
+
+    await prisma.paymentRecord.updateMany({
+      where: {
+        id: { in: payments.map((payment) => payment.id) },
+      },
+      data: {
+        status: "PAID",
+        paidAt: new Date(),
+        notes: "Marked paid when registration was confirmed by admin",
+      },
+    });
+
+    for (const payment of payments) {
+      await issueReceiptForPayment(payment.id);
+    }
+  }
+
+  if (input.nextStatus === "CONFIRMED" && registration.status !== "CONFIRMED") {
+    await queueEventRegistrationCommunication(registration.id);
+  }
 
   return { ok: true as const, data: updated };
 }
@@ -256,6 +334,38 @@ export async function confirmEventRegistration(input: { eventId: string; registr
     eventId: input.eventId,
     registrationId: input.registrationId,
     nextStatus: "CONFIRMED",
+    actorUserId: context.user.id,
+  });
+}
+
+export async function checkInEventRegistration(input: { eventId: string; registrationId: string }) {
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
+  }
+  const context = auth.context;
+
+  return updateRegistrationStatusForTenant({
+    tenantId: context.tenant.id,
+    eventId: input.eventId,
+    registrationId: input.registrationId,
+    nextStatus: "ATTENDED",
+    actorUserId: context.user.id,
+  });
+}
+
+export async function markEventRegistrationNoShow(input: { eventId: string; registrationId: string }) {
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
+  }
+  const context = auth.context;
+
+  return updateRegistrationStatusForTenant({
+    tenantId: context.tenant.id,
+    eventId: input.eventId,
+    registrationId: input.registrationId,
+    nextStatus: "NO_SHOW",
     actorUserId: context.user.id,
   });
 }

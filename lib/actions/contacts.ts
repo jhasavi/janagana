@@ -232,3 +232,96 @@ export async function listContacts(input: unknown = {}) {
       .filter((interestType): interestType is string => Boolean(interestType)),
   };
 }
+
+export async function getContactProfile(contactId: string) {
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error, data: null as any };
+  }
+  const context = auth.context;
+
+  const contact = await prisma.contact.findFirst({
+    where: {
+      id: contactId,
+      tenantId: context.tenant.id,
+    },
+    include: {
+      memberships: {
+        include: {
+          tier: true,
+          payments: {
+            orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+            include: {
+              receipt: {
+                select: {
+                  receiptNumber: true,
+                  issuedAt: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ status: "asc" }, { expiresAt: "asc" }, { createdAt: "desc" }],
+      },
+      registrations: {
+        include: {
+          event: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              startsAt: true,
+              location: true,
+            },
+          },
+          ticketType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          payments: {
+            where: { purpose: "EVENT" },
+            orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+            include: {
+              receipt: {
+                select: {
+                  receiptNumber: true,
+                  issuedAt: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ createdAt: "desc" }],
+      },
+      payments: {
+        orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+        include: {
+          receipt: {
+            select: {
+              receiptNumber: true,
+              issuedAt: true,
+            },
+          },
+        },
+      },
+      receipts: {
+        orderBy: [{ issuedAt: "desc" }],
+      },
+      communications: {
+        orderBy: [{ createdAt: "desc" }],
+        take: 25,
+      },
+      tenant: {
+        select: { id: true, name: true, slug: true },
+      },
+    },
+  });
+
+  if (!contact) {
+    return { ok: false as const, error: "Contact not found", data: null as any };
+  }
+
+  return { ok: true as const, data: contact };
+}

@@ -24,6 +24,7 @@ enum ContactType {
 }
 
 enum MembershipStatus {
+  PENDING
   ACTIVE
   INACTIVE
   EXPIRED
@@ -36,6 +37,46 @@ enum MembershipInterval {
   ONE_TIME
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  WAIVED
+}
+
+enum PaymentMethod {
+  OFFLINE
+  CASH
+  CHECK
+  CARD
+  BANK_TRANSFER
+  STRIPE
+  OTHER
+}
+
+enum PaymentPurpose {
+  MEMBERSHIP
+  EVENT
+  DONATION
+  OTHER
+}
+
+enum CommunicationStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum CommunicationPurpose {
+  PAYMENT_RECEIPT
+  EVENT_CONFIRMATION
+  EVENT_REMINDER
+  RENEWAL_REMINDER
+  GENERAL
+}
+
 enum EventStatus {
   DRAFT
   PUBLISHED
@@ -44,6 +85,7 @@ enum EventStatus {
 }
 
 enum RegistrationStatus {
+  PENDING_PAYMENT
   CONFIRMED
   CANCELED
   ATTENDED
@@ -78,6 +120,11 @@ model Tenant {
   contacts      Contact[]
   tiers         MembershipTier[]
   memberships   Membership[]
+  eventTicketTypes EventTicketType[]
+  payments      PaymentRecord[]
+  receipts      PaymentReceipt[]
+  stripeEvents  StripeWebhookEvent[]
+  communications CommunicationMessage[]
   events        Event[]
   registrations EventRegistration[]
   auditLogs     AuditLog[]
@@ -126,6 +173,9 @@ model Contact {
   tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   memberships   Membership[]
   registrations EventRegistration[]
+  payments      PaymentRecord[]
+  receipts      PaymentReceipt[]
+  communications CommunicationMessage[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -139,6 +189,7 @@ model MembershipTier {
   id            String             @id @default(cuid())
   tenantId      String
   name          String
+  description   String?
   amountCents   Int
   interval      MembershipInterval
   stripePriceId String?
@@ -161,15 +212,104 @@ model Membership {
   status    MembershipStatus @default(ACTIVE)
   startsAt  DateTime         @default(now())
   expiresAt DateTime?
+  autoRenew Boolean          @default(false)
+  source    String           @default("admin")
+  notes     String?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
   tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
   tier    MembershipTier @relation(fields: [tierId], references: [id])
+  payments PaymentRecord[]
+  receipts PaymentReceipt[]
+  communications CommunicationMessage[]
 
   @@index([tenantId])
   @@index([contactId])
+  @@index([tenantId, status])
+  @@index([tenantId, expiresAt])
+}
+
+/// Tenant-scoped money ledger. Stripe/offline/donation/event payments all land here.
+model PaymentRecord {
+  id             String         @id @default(cuid())
+  tenantId       String
+  contactId      String?
+  membershipId   String?
+  eventId        String?
+  registrationId String?
+  amountCents    Int
+  currency       String         @default("USD")
+  status         PaymentStatus  @default(PAID)
+  method         PaymentMethod  @default(OFFLINE)
+  purpose        PaymentPurpose @default(MEMBERSHIP)
+  provider       String?
+  providerRef    String?
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact    Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  event      Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  registration EventRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  receipt    PaymentReceipt?
+
+  @@index([tenantId])
+  @@index([tenantId, purpose])
+  @@index([tenantId, status])
+  @@index([contactId])
+  @@index([membershipId])
+  @@index([eventId])
+  @@index([registrationId])
+  @@index([paidAt])
+  @@unique([provider, providerRef])
+}
+
+/// Issued proof of payment for a completed transaction.
+model PaymentReceipt {
+  id             String   @id @default(cuid())
+  tenantId       String
+  paymentId      String   @unique
+  contactId      String?
+  membershipId   String?
+  receiptNumber  String   @unique
+  recipientEmail String
+  recipientName  String?
+  amountCents    Int
+  currency       String   @default("USD")
+  description    String
+  issuedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payment    PaymentRecord @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  contact    Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  membership Membership?   @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  communications CommunicationMessage[]
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([membershipId])
+  @@index([issuedAt])
+}
+
+/// Idempotency marker for Stripe webhooks already processed.
+model StripeWebhookEvent {
+  id            String   @id @default(cuid())
+  tenantId      String?
+  stripeEventId String   @unique
+  eventType     String
+  processedAt   DateTime @default(now())
+  metadata      Json?
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([processedAt])
 }
 
 /// An event created by a tenant admin.
@@ -188,10 +328,36 @@ model Event {
   updatedAt   DateTime    @updatedAt
 
   tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketTypes   EventTicketType[]
   registrations EventRegistration[]
+  payments      PaymentRecord[]
+  communications CommunicationMessage[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
+}
+
+/// A purchasable or free ticket option for a tenant event.
+model EventTicketType {
+  id               String   @id @default(cuid())
+  tenantId         String
+  eventId          String
+  name             String
+  description      String?
+  priceCents       Int      @default(0)
+  memberPriceCents Int?
+  capacity         Int?
+  active           Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registrations EventRegistration[]
+
+  @@index([tenantId])
+  @@index([eventId])
 }
 
 /// A public visitor's registration for an event.
@@ -201,17 +367,65 @@ model EventRegistration {
   tenantId  String
   eventId   String
   contactId String
+  ticketTypeId String?
+  quantity  Int                @default(1)
+  amountCents Int              @default(0)
   status    RegistrationStatus @default(CONFIRMED)
+  checkedInAt DateTime?
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  ticketType EventTicketType? @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
+  payments PaymentRecord[]
+  communications CommunicationMessage[]
 
   @@unique([eventId, contactId])
   @@index([tenantId])
   @@index([eventId])
+  @@index([ticketTypeId])
+}
+
+/// Transactional communication outbox. Provider delivery can process queued rows.
+model CommunicationMessage {
+  id             String               @id @default(cuid())
+  tenantId       String
+  contactId      String?
+  membershipId   String?
+  eventId        String?
+  registrationId String?
+  receiptId      String?
+  purpose        CommunicationPurpose
+  status         CommunicationStatus  @default(QUEUED)
+  recipientEmail String
+  recipientName  String?
+  subject        String
+  body           String
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  provider       String?
+  providerRef    String?
+  error          String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact      Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  membership   Membership?        @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  event        Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  registration EventRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  receipt      PaymentReceipt?    @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([membershipId])
+  @@index([eventId])
+  @@index([registrationId])
+  @@index([receiptId])
+  @@index([tenantId, status])
+  @@index([scheduledFor])
 }
 
 /// Immutable audit trail for all tenant operations.

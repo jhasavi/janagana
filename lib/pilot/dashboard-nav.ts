@@ -4,6 +4,7 @@ import { PILOT_TENANT_SLUGS, type PilotTenantSlug } from "@/lib/pilot/tenants";
 export const PILOT_DASHBOARD_NAV = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/members", label: "Contacts & leads" },
+  { href: "/dashboard/tiers", label: "Memberships" },
   { href: "/dashboard/events", label: "Events" },
   { href: "/dashboard/settings", label: "Portal & setup" },
 ] as const;

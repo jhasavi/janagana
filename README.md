@@ -9,9 +9,14 @@ Old project archive: ~/janagana-old (local reference only, not the live GitHub r
 
 ## What Works
 
-- Admin event management and attendee operations (cancel, re-confirm).
+- Admin event management, ticket quantities, pending-payment tracking, check-in/no-show operations, and attendee operations.
+- Admin membership tiers, member enrollment, renewal dates, statuses, and membership payment ledger.
+- Admin contact profiles with memberships, event history, payments, receipts, notes, tags, and activity context.
+- Transactional communication outbox for payment receipts and event registration confirmations.
+- Public membership join flow with Stripe Checkout handoff, webhook activation, and receipt records.
+- Explicit zero JanaGana platform fee policy for online membership checkout; card processor fees remain separate.
 - Public portal for The Purple Wings (`/portal/purple-wings`) and Namaste Boston (`/portal/namaste-boston`).
-- Public event registration with capacity enforcement and duplicate protection.
+- Public event registration with ticket selection, quantity-aware capacity enforcement, pending event payment ledger rows, and duplicate protection.
 - Tenant-scoped public lead capture at `/portal/[tenantSlug]/contact`.
 - Interest alias routing at `/portal/[tenantSlug]/interest/[interestType]`.
 - Two-tenant isolation: data is fully scoped by tenantId across events, contacts, and registrations.
@@ -28,11 +33,10 @@ Old project archive: ~/janagana-old (local reference only, not the live GitHub r
 
 ## Intentionally Deferred
 
-- CRM
-- Stripe and payments
+- CRM pipeline automation and duplicate merge workflows
 - Donations and fundraising
 - Volunteering
-- Communications and automation
+- Email provider delivery, scheduled reminders, and campaign automation
 - Analytics and reporting
 
 ## Local Start
@@ -145,11 +149,10 @@ If Namaste Clerk org does not yet exist, complete explicit owner onboarding firs
 
 ## Intentionally Deferred
 
-- CRM
-- Stripe and payments
+- CRM pipeline automation and duplicate merge workflows
 - Donations and fundraising
 - Volunteering
-- Communications and automation
+- Email provider delivery, scheduled reminders, and campaign automation
 - Analytics and reporting
 
 ## Handoff

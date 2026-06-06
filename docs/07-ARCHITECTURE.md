@@ -15,9 +15,11 @@ Do not pass dashboard cookies into public portal resolution.
 - **Tenant** — 1:1 with Clerk org (`clerkOrgId`).
 - **TenantAdmin** — cache only; Clerk membership is access source of truth.
 
-## Deferred platform surfaces
+## Platform surfaces
 
-Membership tiers, Stripe, donations, CRM pipelines, communications — schema may exist; operator UI does not expose them in pilot.
+Admin-managed membership tiers, formal enrollments, renewal dates, statuses, public membership checkout, Stripe webhook activation, event ticket types, quantity-aware event registration, check-in/no-show status, receipts, transactional communication outbox, and the shared payment ledger are exposed. Donations, CRM pipelines, online event checkout, refunds, payout reporting, provider email delivery, scheduled reminders, and campaigns remain deferred.
+
+Payment policy: JanaGana platform fee is currently 0 bps. Stripe/card processor fees are not hidden; a Zeffy-style payer contribution or verified nonprofit subsidy model would be a later business-model layer, not a silent checkout assumption.
 
 ## Product workflow principles
 

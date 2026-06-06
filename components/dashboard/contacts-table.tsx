@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   contactInterestLabel,
   contactSourceLabel,
@@ -60,7 +61,9 @@ export function ContactsTable({
             <tr key={contact.id} className="border-b border-gray-100 align-top hover:bg-gray-50/50">
               <td className="py-3 pr-4">
                 <p className="font-medium text-gray-900">
-                  {contact.firstName} {contact.lastName}
+                  <Link href={`/dashboard/members/${contact.id}`} className="text-blue-800 hover:underline">
+                    {contact.firstName} {contact.lastName}
+                  </Link>
                 </p>
                 <p className="text-gray-600">{contact.email}</p>
                 <p className="text-xs text-gray-500">{contact.phone ?? "No phone"}</p>

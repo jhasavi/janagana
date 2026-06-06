@@ -33,6 +33,12 @@ export default async function EventsPage({
 
     const priceDollars = Number(String(formData.get("priceDollars") ?? "0"));
     const priceCents = Number.isFinite(priceDollars) ? Math.round(priceDollars * 100) : NaN;
+    const memberPriceRaw = String(formData.get("memberPriceDollars") ?? "").trim();
+    const memberPriceDollars = memberPriceRaw ? Number(memberPriceRaw) : undefined;
+    const memberPriceCents =
+      memberPriceDollars === undefined || !Number.isFinite(memberPriceDollars)
+        ? undefined
+        : Math.round(memberPriceDollars * 100);
 
     const capacityRaw = String(formData.get("capacity") ?? "").trim();
     const capacity = capacityRaw.length > 0 ? Number(capacityRaw) : undefined;
@@ -45,6 +51,7 @@ export default async function EventsPage({
       location: String(formData.get("location") ?? ""),
       status: String(formData.get("status") ?? "DRAFT"),
       priceCents,
+      memberPriceCents,
       capacity,
     });
 
@@ -101,6 +108,7 @@ export default async function EventsPage({
             <option value="DRAFT">Draft — hidden from visitors</option>
           </select>
           <input name="priceDollars" type="number" min="0" step="0.01" defaultValue="0" placeholder="Price (USD)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
+          <input name="memberPriceDollars" type="number" min="0" step="0.01" placeholder="Member price (optional)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
           <input name="capacity" type="number" min="1" placeholder="Capacity (optional)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
           <div className="md:col-span-2">
             <button type="submit" className="rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black">
@@ -153,7 +161,8 @@ function EventTable({
     startsAt: Date;
     status: string;
     priceCents: number;
-    registrationSummary: { confirmed: number; total: number };
+    ticketTypes: Array<{ name: string; priceCents: number; memberPriceCents: number | null; active: boolean }>;
+    registrationSummary: { confirmed: number; active: number; total: number };
   }>;
   tenantSlug: string;
   showRegisterLink: boolean;
@@ -180,6 +189,18 @@ function EventTable({
                   <td className="py-3 pr-4">
                     <p className="font-medium text-gray-900">{event.title}</p>
                     <p className="font-mono text-xs text-gray-500">{event.slug}</p>
+                    {event.ticketTypes.length > 0 && (
+                      <p className="mt-1 text-xs text-gray-600">
+                        {event.ticketTypes
+                          .filter((ticket) => ticket.active)
+                          .map((ticket) =>
+                            ticket.memberPriceCents !== null
+                              ? `${ticket.name}: ${formatCents(ticket.priceCents)} / member ${formatCents(ticket.memberPriceCents)}`
+                              : `${ticket.name}: ${formatCents(ticket.priceCents)}`,
+                          )
+                          .join(" · ")}
+                      </p>
+                    )}
                   </td>
                   <td className="py-3 pr-4 text-gray-700">{formatDate(event.startsAt)}</td>
                   <td className="py-3 pr-4">
@@ -196,7 +217,7 @@ function EventTable({
                       {event.registrationSummary.confirmed} confirmed
                     </Link>
                     {event.registrationSummary.total !== event.registrationSummary.confirmed && (
-                      <span className="text-gray-500"> / {event.registrationSummary.total} total</span>
+                      <span className="text-gray-500"> / {event.registrationSummary.active} active / {event.registrationSummary.total} total</span>
                     )}
                   </td>
                   {showRegisterLink && (

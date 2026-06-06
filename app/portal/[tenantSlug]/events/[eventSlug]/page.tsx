@@ -41,6 +41,30 @@ export default async function EventDetailPage({
           </div>
         </dl>
 
+        {result.data.ticketTypes.length > 0 && (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <h2 className="text-sm font-semibold text-slate-900">Tickets</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              {result.data.ticketTypes.map((ticket) => (
+                <li key={ticket.id} className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-slate-900">{ticket.name}</p>
+                    {ticket.description && <p className="text-slate-600">{ticket.description}</p>}
+                  </div>
+                  <p className="shrink-0 text-right font-medium text-slate-900">
+                    {formatCents(ticket.priceCents)}
+                    {ticket.memberPriceCents !== null && (
+                      <span className="block text-xs font-normal text-slate-500">
+                        member {formatCents(ticket.memberPriceCents)}
+                      </span>
+                    )}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-6">
           <Link
             href={`/portal/${result.tenant.slug}/register/${result.data.slug}`}

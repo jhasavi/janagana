@@ -9,6 +9,7 @@
 |----------------|-------------|-----------|
 | Investment analysis | `/portal/namaste-boston/contact?interest=investment-analysis` | Yes |
 | Events | `/portal/namaste-boston/events` | Yes |
+| Membership join | `/portal/namaste-boston/join` | Yes |
 | Newsletter | `/portal/namaste-boston/contact?interest=newsletter` | Yes |
 | General realtor inquiry | NB on-site `/contact` → Supabase | No (intentional) |
 
@@ -17,6 +18,7 @@
 | Visitor action | Destination | JanaGana? |
 |----------------|-------------|-----------|
 | Classes / events | `/portal/purple-wings/events` | Yes |
+| Membership join | `/portal/purple-wings/join` | Yes |
 | Newsletter | `/portal/purple-wings/contact?interest=newsletter` | Yes |
 | Membership interest | `/portal/purple-wings/contact?interest=membership-interest` | Yes |
 | TPW weekly tips newsletter | TPW `/api/newsletter/subscribe` | No (intentional) |

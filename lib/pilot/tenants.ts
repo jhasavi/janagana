@@ -36,6 +36,7 @@ function portalBase(slug: string): string {
 const COMMON_LINKS = (root: string): PortalLink[] => [
   { label: "Portal home", href: root, hint: "Classes, events, and community entry" },
   { label: "Events listing", href: `${root}/events` },
+  { label: "Membership join", href: `${root}/join` },
   { label: "Newsletter / community updates", href: `${root}/contact?interest=newsletter` },
 ];
 
@@ -51,7 +52,7 @@ const EXTRA_LINKS: Record<PilotTenantSlug, PortalLink[]> = {
     {
       label: "Membership interest",
       href: `${portalBase("purple-wings")}/contact?interest=membership-interest`,
-      hint: "TPW homepage JanaGana block",
+      hint: "Lead capture; use Membership join for paid checkout",
     },
     {
       label: "Class interest",

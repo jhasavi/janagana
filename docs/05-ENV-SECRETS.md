@@ -32,13 +32,12 @@
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Post-sign-up redirect | `/onboarding/create-organization` |
 | `CLERK_WEBHOOK_SECRET` | Svix webhook signing secret from Clerk dashboard | `whsec_...` |
 
-### Stripe (deferred to v3.1)
+### Stripe (optional for paid public membership checkout)
 
 | Variable | Description |
 |---|---|
-| `STRIPE_SECRET_KEY` | Stripe backend key |
-| `STRIPE_PUBLISHABLE_KEY` | Stripe frontend key |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_SECRET_KEY` | Stripe backend key used to create Checkout Sessions |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret used by `/api/webhooks/stripe` |
 
 ### Ops (optional)
 

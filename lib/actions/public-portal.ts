@@ -4,17 +4,22 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getTenantBySlug } from "@/lib/tenant";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 
 const PublicRegistrationSchema = z
   .object({
     tenantSlug: z.string().trim().min(1),
     eventSlug: z.string().trim().min(1),
+    ticketTypeId: z.string().trim().optional().or(z.literal("")),
+    quantity: z.coerce.number().int().min(1).max(10).default(1),
     firstName: z.string().trim().min(1).max(100),
     lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
   })
   .strict();
+
+const ACTIVE_REGISTRATION_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "ATTENDED"] as const;
 
 function isRetryableTransactionError(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -57,6 +62,12 @@ export async function listPublishedPortalEvents(tenantSlug: string) {
       tenantId: tenant.id,
       status: "PUBLISHED",
     },
+    include: {
+      ticketTypes: {
+        where: { active: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
+    },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
 
@@ -74,6 +85,12 @@ export async function getPublishedPortalEvent(tenantSlug: string, eventSlug: str
       tenantId: tenant.id,
       slug: eventSlug,
       status: "PUBLISHED",
+    },
+    include: {
+      ticketTypes: {
+        where: { active: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
     },
   });
 
@@ -101,12 +118,29 @@ export async function registerPublicEvent(input: unknown) {
       slug: parsed.data.eventSlug,
       status: "PUBLISHED",
     },
+    include: {
+      ticketTypes: {
+        where: { active: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
+    },
   });
   if (!event) {
     return { ok: false as const, alreadyRegistered: false, error: "Event not found" };
   }
 
   const email = parsed.data.email.toLowerCase();
+  const requestedTicketTypeId = parsed.data.ticketTypeId || null;
+  const selectedTicketType =
+    (requestedTicketTypeId
+      ? event.ticketTypes.find((ticket) => ticket.id === requestedTicketTypeId)
+      : event.ticketTypes[0]) ?? null;
+
+  if (requestedTicketTypeId && !selectedTicketType) {
+    return { ok: false as const, alreadyRegistered: false, error: "Ticket type not found" };
+  }
+
+  const quantity = parsed.data.quantity;
 
   // Lightweight anti-abuse guard for repeated submit attempts.
   // Falls back to non-request scope when called outside HTTP request context.
@@ -171,20 +205,43 @@ export async function registerPublicEvent(input: unknown) {
           // Serialize capacity checks per event without Serializable isolation (less write churn).
           await tx.$executeRaw`SELECT id FROM "Event" WHERE id = ${event.id} FOR UPDATE`;
 
-          if (event.capacity !== null) {
-            const confirmedCount = await tx.eventRegistration.count({
-              where: {
-                tenantId: tenant.id,
-                eventId: event.id,
-                status: "CONFIRMED",
-              },
-            });
+          const activeRows = await tx.eventRegistration.findMany({
+            where: {
+              tenantId: tenant.id,
+              eventId: event.id,
+              status: { in: [...ACTIVE_REGISTRATION_STATUSES] },
+            },
+            select: { quantity: true },
+          });
+          const activeCount = activeRows.reduce((sum, row) => sum + row.quantity, 0);
 
-            if (confirmedCount >= event.capacity) {
+          if (event.capacity !== null) {
+            if (activeCount + quantity > event.capacity) {
               return {
                 ok: false as const,
                 alreadyRegistered: false as const,
                 error: "This event is full.",
+              };
+            }
+          }
+
+          if (selectedTicketType?.capacity !== null && selectedTicketType?.capacity !== undefined) {
+            const ticketRows = await tx.eventRegistration.findMany({
+              where: {
+                tenantId: tenant.id,
+                eventId: event.id,
+                ticketTypeId: selectedTicketType.id,
+                status: { in: [...ACTIVE_REGISTRATION_STATUSES] },
+              },
+              select: { quantity: true },
+            });
+            const ticketCount = ticketRows.reduce((sum, row) => sum + row.quantity, 0);
+
+            if (ticketCount + quantity > selectedTicketType.capacity) {
+              return {
+                ok: false as const,
+                alreadyRegistered: false as const,
+                error: "This ticket type is full.",
               };
             }
           }
@@ -240,14 +297,48 @@ export async function registerPublicEvent(input: unknown) {
             };
           }
 
+          const activeMembership = await tx.membership.findFirst({
+            where: {
+              tenantId: tenant.id,
+              contactId: contact.id,
+              status: "ACTIVE",
+              OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
+            },
+            select: { id: true },
+          });
+          const unitPrice =
+            activeMembership && selectedTicketType?.memberPriceCents !== null && selectedTicketType?.memberPriceCents !== undefined
+              ? selectedTicketType.memberPriceCents
+              : selectedTicketType?.priceCents ?? event.priceCents;
+          const amountCents = unitPrice * quantity;
           const registration = await tx.eventRegistration.create({
             data: {
               tenantId: tenant.id,
               eventId: event.id,
               contactId: contact.id,
-              status: "CONFIRMED",
+              ticketTypeId: selectedTicketType?.id ?? null,
+              quantity,
+              amountCents,
+              status: amountCents > 0 ? "PENDING_PAYMENT" : "CONFIRMED",
             },
           });
+
+          const payment =
+            amountCents > 0
+              ? await tx.paymentRecord.create({
+                  data: {
+                    tenantId: tenant.id,
+                    contactId: contact.id,
+                    eventId: event.id,
+                    registrationId: registration.id,
+                    amountCents,
+                    status: "PENDING",
+                    method: "OFFLINE",
+                    purpose: "EVENT",
+                    notes: "Event ticket payment due",
+                  },
+                })
+              : null;
 
           return {
             ok: true as const,
@@ -256,6 +347,7 @@ export async function registerPublicEvent(input: unknown) {
             event,
             contact,
             registration,
+            payment,
           };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
@@ -275,9 +367,13 @@ export async function registerPublicEvent(input: unknown) {
             source: "public_portal",
             eventId: event.id,
             contactId: result.contact.id,
+            registrationId: result.registration.id,
+            paymentId: result.payment?.id ?? null,
           },
         },
       });
+
+      await queueEventRegistrationCommunication(result.registration.id);
 
       return result;
     } catch (error) {

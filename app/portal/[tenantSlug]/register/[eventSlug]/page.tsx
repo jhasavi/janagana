@@ -22,6 +22,8 @@ export default async function EventRegistrationPage({
     const result = await registerPublicEvent({
       tenantSlug,
       eventSlug,
+      ticketTypeId: String(formData.get("ticketTypeId") ?? ""),
+      quantity: Number(String(formData.get("quantity") ?? "1")),
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
       email: String(formData.get("email") ?? ""),
@@ -32,12 +34,19 @@ export default async function EventRegistrationPage({
       redirect(`/portal/${tenantSlug}/register/${eventSlug}?error=${encodeURIComponent(result.error)}`);
     }
 
-    redirect(`/portal/${tenantSlug}/register/${eventSlug}?status=${result.alreadyRegistered ? "already-registered" : "registered"}`);
+    const status = result.alreadyRegistered
+      ? "already-registered"
+      : result.registration?.status === "PENDING_PAYMENT"
+        ? "pending-payment"
+        : "registered";
+    redirect(`/portal/${tenantSlug}/register/${eventSlug}?status=${status}`);
   }
 
   const message =
     query.status === "registered"
       ? "Registration successful."
+      : query.status === "pending-payment"
+        ? "Registration saved. Payment is due before confirmation."
       : query.status === "already-registered"
         ? "You are already registered."
         : query.error
@@ -53,6 +62,31 @@ export default async function EventRegistrationPage({
       {message && <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-800">{message}</p>}
 
       <form action={registerAction} className="mt-6 space-y-4">
+        {eventResult.data.ticketTypes.length > 0 && (
+          <label className="block text-sm font-medium text-slate-700">
+            Ticket
+            <select name="ticketTypeId" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              {eventResult.data.ticketTypes.map((ticket) => (
+                <option key={ticket.id} value={ticket.id}>
+                  {ticket.name} - {ticket.priceCents === 0 ? "Free" : `$${(ticket.priceCents / 100).toFixed(2)}`}
+                  {ticket.memberPriceCents !== null ? ` / member $${(ticket.memberPriceCents / 100).toFixed(2)}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="block text-sm font-medium text-slate-700">
+          Quantity
+          <input
+            name="quantity"
+            type="number"
+            min="1"
+            max="10"
+            defaultValue="1"
+            required
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+        </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-700">
             First name

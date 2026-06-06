@@ -2,10 +2,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
-import { cancelEventRegistration, confirmEventRegistration, listEventRegistrations } from "@/lib/actions/events";
+import {
+  cancelEventRegistration,
+  checkInEventRegistration,
+  confirmEventRegistration,
+  listEventRegistrations,
+  markEventRegistrationNoShow,
+} from "@/lib/actions/events";
 import { publicRegisterUrl } from "@/lib/pilot/tenants";
 import { resolveTenantForDashboard } from "@/lib/tenant";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 
 export default async function EventRegistrationsPage({
   params,
@@ -57,8 +63,44 @@ export default async function EventRegistrationsPage({
     redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration confirmed")}`);
   }
 
-  const confirmedCount = result.data.filter((reg) => reg.status === "CONFIRMED").length;
-  const totalCount = result.data.length;
+  async function checkInRegistrationAction(formData: FormData) {
+    "use server";
+
+    const registrationId = String(formData.get("registrationId") ?? "").trim();
+    const actionResult = await checkInEventRegistration({ eventId, registrationId });
+
+    if (!actionResult.ok) {
+      const errorMessage = actionResult.error ?? "Failed to check in attendee";
+      redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Attendee checked in")}`);
+  }
+
+  async function noShowRegistrationAction(formData: FormData) {
+    "use server";
+
+    const registrationId = String(formData.get("registrationId") ?? "").trim();
+    const actionResult = await markEventRegistrationNoShow({ eventId, registrationId });
+
+    if (!actionResult.ok) {
+      const errorMessage = actionResult.error ?? "Failed to mark no-show";
+      redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration marked no-show")}`);
+  }
+
+  const confirmedCount = result.data
+    .filter((reg) => reg.status === "CONFIRMED" || reg.status === "ATTENDED")
+    .reduce((sum, reg) => sum + reg.quantity, 0);
+  const pendingPaymentCount = result.data
+    .filter((reg) => reg.status === "PENDING_PAYMENT")
+    .reduce((sum, reg) => sum + reg.quantity, 0);
+  const attendedCount = result.data
+    .filter((reg) => reg.status === "ATTENDED")
+    .reduce((sum, reg) => sum + reg.quantity, 0);
+  const totalCount = result.data.reduce((sum, reg) => sum + reg.quantity, 0);
 
   return (
     <section className="space-y-4">
@@ -83,6 +125,8 @@ export default async function EventRegistrationsPage({
           <span className="ml-2 text-gray-600">
             {confirmedCount} confirmed
             {totalCount !== confirmedCount ? ` (${totalCount} total)` : ""}
+            {pendingPaymentCount > 0 ? ` · ${pendingPaymentCount} pending payment` : ""}
+            {attendedCount > 0 ? ` · ${attendedCount} checked in` : ""}
           </span>
         </p>
         {registerUrl && (
@@ -134,7 +178,9 @@ export default async function EventRegistrationsPage({
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
                   <th className="py-2 pr-4">Registrant</th>
+                  <th className="py-2 pr-4">Ticket</th>
                   <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4">Payment</th>
                   <th className="py-2 pr-4">Registered</th>
                   <th className="py-2 pr-4">Actions</th>
                 </tr>
@@ -150,29 +196,72 @@ export default async function EventRegistrationsPage({
                       <p className="text-xs text-gray-500">{reg.contact.phone ?? "No phone"}</p>
                     </td>
                     <td className="py-3 pr-4">
+                      <p className="font-medium text-gray-900">{reg.ticketType?.name ?? "General admission"}</p>
+                      <p className="text-xs text-gray-500">
+                        Qty {reg.quantity} · {formatCents(reg.amountCents)}
+                      </p>
+                    </td>
+                    <td className="py-3 pr-4">
                       <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium">{reg.status}</span>
+                      {reg.checkedInAt && (
+                        <p className="mt-1 text-xs text-gray-500">Checked in {formatRelativeTime(reg.checkedInAt)}</p>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {reg.payments.length === 0 ? (
+                        <span className="text-xs text-gray-500">{reg.amountCents > 0 ? "No payment record" : "Free"}</span>
+                      ) : (
+                        <ul className="space-y-1">
+                          {reg.payments.map((payment) => (
+                            <li key={payment.id} className="text-xs text-gray-700">
+                              <span className="font-medium">{formatCents(payment.amountCents)}</span>
+                              {" · "}
+                              {payment.status}
+                              {" · "}
+                              {payment.method.replace(/_/g, " ")}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-gray-600" title={formatDate(reg.createdAt)}>
                       {formatRelativeTime(reg.createdAt)}
                     </td>
                     <td className="py-3 pr-4">
-                      {reg.status === "CONFIRMED" ? (
-                        <form action={cancelRegistrationAction}>
-                          <input type="hidden" name="registrationId" value={reg.id} />
-                          <button type="submit" className="text-xs text-red-700 hover:underline">
-                            Cancel registration
-                          </button>
-                        </form>
-                      ) : reg.status === "CANCELED" ? (
-                        <form action={confirmRegistrationAction}>
-                          <input type="hidden" name="registrationId" value={reg.id} />
-                          <button type="submit" className="text-xs text-blue-700 hover:underline">
-                            Mark confirmed
-                          </button>
-                        </form>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
+                      <div className="flex flex-col items-start gap-1">
+                        {(reg.status === "PENDING_PAYMENT" || reg.status === "CANCELED" || reg.status === "NO_SHOW") && (
+                          <form action={confirmRegistrationAction}>
+                            <input type="hidden" name="registrationId" value={reg.id} />
+                            <button type="submit" className="text-xs text-blue-700 hover:underline">
+                              Mark confirmed
+                            </button>
+                          </form>
+                        )}
+                        {reg.status === "CONFIRMED" && (
+                          <form action={checkInRegistrationAction}>
+                            <input type="hidden" name="registrationId" value={reg.id} />
+                            <button type="submit" className="text-xs text-emerald-700 hover:underline">
+                              Check in
+                            </button>
+                          </form>
+                        )}
+                        {(reg.status === "CONFIRMED" || reg.status === "PENDING_PAYMENT") && (
+                          <form action={noShowRegistrationAction}>
+                            <input type="hidden" name="registrationId" value={reg.id} />
+                            <button type="submit" className="text-xs text-amber-700 hover:underline">
+                              Mark no-show
+                            </button>
+                          </form>
+                        )}
+                        {reg.status !== "CANCELED" && (
+                          <form action={cancelRegistrationAction}>
+                            <input type="hidden" name="registrationId" value={reg.id} />
+                            <button type="submit" className="text-xs text-red-700 hover:underline">
+                              Cancel registration
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

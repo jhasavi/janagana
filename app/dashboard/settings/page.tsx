@@ -7,6 +7,7 @@ import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { clerkOrgRoleLabel } from "@/lib/auth/clerk-roles";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
 import { configuredAppUrl, currentClerkMode, keyModeFromPrefix, publicPortalUrl } from "@/lib/environment";
+import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import { communityLabel, portalLinksForTenant } from "@/lib/pilot/portal-links";
 import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
@@ -39,8 +40,11 @@ export default async function SettingsPage() {
     existingOrgSetup: process.env.ENABLE_EXISTING_ORG_SETUP === "true",
     databaseUrlConfigured: Boolean(process.env.DATABASE_URL?.trim()),
     clerkWebhookSecretConfigured: Boolean(process.env.CLERK_WEBHOOK_SECRET?.trim()),
+    stripeSecretConfigured: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
+    stripeWebhookSecretConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim()),
   };
   const clerkSecretMode = keyModeFromPrefix(process.env.CLERK_SECRET_KEY);
+  const stripeSecretMode = keyModeFromPrefix(process.env.STRIPE_SECRET_KEY);
   const appEnvironment = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown";
   const dbHealth = await (async () => {
     try {
@@ -124,9 +128,13 @@ export default async function SettingsPage() {
       <div id="pilot-scope" className="mt-6 rounded-md border border-gray-200 bg-gray-50 p-4">
         <h2 className="text-sm font-semibold text-gray-900">Pilot scope</h2>
         <p className="mt-2 text-sm text-gray-600">
-          This release is <strong>contacts, portal leads, events, and registrations</strong> for Namaste Boston and The
-          Purple Wings. Not included: paid membership tiers, Stripe billing, donations, CRM import, email automation, or
-          formal member enrollment.
+          This release is{" "}
+          <strong>
+            contacts, portal leads, event tickets, registrations, check-in, memberships, public membership checkout, and
+            receipts
+          </strong>{" "}
+          for Namaste Boston and The Purple Wings. Not included yet: donations, online event checkout, refund
+          operations, CRM import UI, or email automation.
         </p>
       </div>
 
@@ -173,6 +181,13 @@ export default async function SettingsPage() {
           <Row label="Clerk webhook secret">
             {engineeringFlags.clerkWebhookSecretConfigured ? "configured" : "missing"}
           </Row>
+          <Row label="Stripe checkout">
+            {engineeringFlags.stripeSecretConfigured ? `${stripeSecretMode} key configured` : "not configured"}
+          </Row>
+          <Row label="Stripe webhook secret">
+            {engineeringFlags.stripeWebhookSecretConfigured ? "configured" : "missing"}
+          </Row>
+          <Row label="Payment fee policy">{paymentFeeDisclosure()}</Row>
           <Row label="Existing-org mapping flag">
             {engineeringFlags.existingOrgSetup ? "enabled (non-pilot)" : "disabled"}
           </Row>
