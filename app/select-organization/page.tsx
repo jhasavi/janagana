@@ -4,17 +4,15 @@ import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { getCurrentUser } from "@/lib/auth";
 import { communityLabel } from "@/lib/pilot/portal-links";
 import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
-import { clearActiveTenantCookies, findMappedTenantsForUser, setActiveTenantCookie } from "@/lib/tenant";
+import { findMappedTenantsForUser } from "@/lib/tenant";
 import { publicPortalUrl } from "@/lib/environment";
-import { createRequestId } from "@/lib/utils";
 
-// NOTE: Cookies cannot be set during server-component render (Next.js 15).
-// Tenant selection uses chooseTenantAction (server action). POST /api/select-tenant is an alternate API path.
+// Tenant selection uses POST /api/select-tenant (reliable cookie write). GET prepare-switch clears cookie first.
 
 export default async function SelectOrganizationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; switch?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -28,8 +26,9 @@ export default async function SelectOrganizationPage({
   }
 
   const params = await searchParams;
+  const explicitSwitch = params.switch === "1";
 
-  if (tenants.length === 1 && !params.error) {
+  if (tenants.length === 1 && !params.error && !explicitSwitch) {
     redirect("/api/select-tenant?reason=auto-single");
   }
 
@@ -48,35 +47,24 @@ export default async function SelectOrganizationPage({
     }
   }
 
-  async function chooseTenantAction(formData: FormData) {
-    "use server";
-    const requestId = createRequestId();
-
-    const tenantId = String(formData.get("tenantId") ?? "").trim();
-    const mappedTenants = await findMappedTenantsForUser();
-    const selected = mappedTenants.find((tenant) => tenant.id === tenantId);
-
-    if (!selected) {
-      console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_SELECTED_TENANT", requestId, tenantId });
-      redirect("/select-organization?error=invalid-tenant");
-    }
-
-    await clearActiveTenantCookies();
-    await setActiveTenantCookie(selected.id);
-    console.info("SET_ACTIVE_TENANT", { requestId, tenantId: selected.id, source: "select-organization" });
-    redirect("/dashboard");
-  }
-
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="text-2xl font-semibold">Switch community</h1>
       <p className="mt-2 text-sm text-gray-600">
-        You have access to more than one community. Choose which one to open — contacts, events, and portal data are
-        separate. Signed in as {user.email ?? user.name ?? user.id}
+        You have access to {tenants.length} communit{tenants.length === 1 ? "y" : "ies"}. Choose which one to open —
+        contacts, events, and portal data are separate. Signed in as {user.email ?? user.name ?? user.id}
       </p>
       <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-        Double-check the community name before continuing. Wrong selection shows another org&apos;s leads and registrations.
+        Double-check the community name before continuing. Wrong selection shows another org&apos;s leads and
+        registrations.
       </p>
+
+      {tenants.length === 1 && (
+        <p className="mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-950">
+          Your Clerk account is mapped to one community only ({communityLabel(tenants[0].slug)}). To operate both Namaste
+          Boston and The Purple Wings, an admin must add you to both Clerk organizations.
+        </p>
+      )}
 
       {params.error && (
         <p className="mt-4 text-sm text-red-700">{tenantSelectionErrorMessage(params.error)}</p>
@@ -86,7 +74,12 @@ export default async function SelectOrganizationPage({
         {tenants.map((tenant) => {
           const portalUrl = publicPortalUrl(tenant.slug);
           return (
-            <form key={tenant.id} action={chooseTenantAction} className="rounded-md border border-gray-200 p-4 bg-white">
+            <form
+              key={tenant.id}
+              action="/api/select-tenant"
+              method="POST"
+              className="rounded-md border border-gray-200 bg-white p-4"
+            >
               <input type="hidden" name="tenantId" value={tenant.id} />
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -118,6 +111,9 @@ export default async function SelectOrganizationPage({
             New community setup is disabled for the pilot. Contact your administrator for access.
           </p>
         )}
+        <Link href="/dashboard" className="text-sm text-gray-700 underline">
+          Back to dashboard
+        </Link>
         <form action="/api/sign-out" method="POST">
           <button type="submit" className="text-sm text-gray-700 underline">
             Sign out

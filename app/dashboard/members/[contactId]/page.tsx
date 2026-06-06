@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
-import { getContactProfile } from "@/lib/actions/contacts";
+import { DeleteContactButton } from "@/components/dashboard/delete-contact-button";
+import { deleteContact, getContactProfile } from "@/lib/actions/contacts";
 import { contactSourceLabel, contactTypeLabel, formatContactTags } from "@/lib/pilot/contact-labels";
 import { resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
@@ -32,6 +33,19 @@ export default async function ContactProfilePage({
   }
 
   const contact = result.data;
+
+  async function deleteContactAction(formData: FormData) {
+    "use server";
+
+    const id = String(formData.get("contactId") ?? "").trim();
+    const deleteResult = await deleteContact(id);
+    if (!deleteResult.ok) {
+      const errorMessage = "error" in deleteResult && deleteResult.error ? deleteResult.error : "Failed to delete";
+      redirect(`/dashboard/members/${id}?error=${encodeURIComponent(errorMessage)}`);
+    }
+    redirect("/dashboard/members?success=deleted");
+  }
+
   const activeMemberships = contact.memberships.filter((membership) => membership.status === "ACTIVE");
   const paidTotal = contact.payments
     .filter((payment) => payment.status === "PAID" || payment.status === "WAIVED")
@@ -80,6 +94,13 @@ export default async function ContactProfilePage({
             <p className="mt-1 whitespace-pre-wrap">{contact.notes}</p>
           </div>
         )}
+        <form action={deleteContactAction} className="mt-4 border-t border-gray-100 pt-4">
+          <DeleteContactButton
+            contactId={contact.id}
+            displayName={`${contact.firstName} ${contact.lastName}`}
+            label="Delete this contact"
+          />
+        </form>
       </header>
 
       <section className="grid gap-4 xl:grid-cols-2">

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsTable } from "@/components/dashboard/contacts-table";
-import { createContact, listContacts, updateContact } from "@/lib/actions/contacts";
+import { createContact, deleteContact, listContacts, updateContact } from "@/lib/actions/contacts";
 import { publicPortalUrl } from "@/lib/environment";
 import {
   contactInterestLabel,
@@ -79,6 +79,20 @@ export default async function ContactsPage({
     redirect("/dashboard/members?success=updated");
   }
 
+  async function deleteContactAction(formData: FormData) {
+    "use server";
+
+    const contactId = String(formData.get("contactId") ?? "").trim();
+    const result = await deleteContact(contactId);
+
+    if (!result.ok) {
+      const errorMessage = "error" in result && result.error ? result.error : "Failed to delete contact";
+      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    redirect("/dashboard/members?success=deleted");
+  }
+
   const contactsResult = await listContacts(filters);
   const contacts = contactsResult.ok ? contactsResult.data : [];
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
@@ -96,7 +110,8 @@ export default async function ContactsPage({
           <h1 className="text-2xl font-semibold">Contacts & leads</h1>
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
             See who reached you, how (newsletter, investment analysis, event registration, import, or manual entry), what
-            they did last, and whether they registered for events.
+            they did last, and whether they registered for events. Expand <strong>Edit contact</strong> on any row to
+            update details or delete spam/test entries.
           </p>
         </div>
         {tenant && portalUrl && (
@@ -134,6 +149,7 @@ export default async function ContactsPage({
       {params.error && <p className="mt-4 text-sm text-red-700">{params.error}</p>}
       {params.success === "1" && <p className="mt-4 text-sm text-green-700">Contact added manually.</p>}
       {params.success === "updated" && <p className="mt-4 text-sm text-green-700">Contact updated.</p>}
+      {params.success === "deleted" && <p className="mt-4 text-sm text-green-700">Contact removed.</p>}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="text-xs font-medium text-gray-500 py-1">Quick filters:</span>
@@ -268,6 +284,7 @@ export default async function ContactsPage({
             contacts={contacts}
             tenantSlug={tenant?.slug ?? "—"}
             updateContactAction={updateContactAction}
+            deleteContactAction={deleteContactAction}
           />
         )}
       </div>

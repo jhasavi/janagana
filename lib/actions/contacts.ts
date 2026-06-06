@@ -142,6 +142,42 @@ export async function updateContact(input: unknown) {
   return { ok: true as const, data: contact };
 }
 
+export async function deleteContact(contactId: string) {
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
+  }
+  const context = auth.context;
+
+  const id = contactId.trim();
+  if (!id) {
+    return { ok: false as const, error: "Contact id required" };
+  }
+
+  const existing = await prisma.contact.findFirst({
+    where: { id, tenantId: context.tenant.id },
+    select: { id: true, email: true },
+  });
+  if (!existing) {
+    return { ok: false as const, error: "Contact not found" };
+  }
+
+  await prisma.eventRegistration.deleteMany({ where: { contactId: existing.id, tenantId: context.tenant.id } });
+  await prisma.membership.deleteMany({ where: { contactId: existing.id, tenantId: context.tenant.id } });
+  await prisma.contact.delete({ where: { id: existing.id } });
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: context.tenant.id,
+      actorUserId: context.user.id,
+      action: "DELETE",
+      metadata: { entity: "Contact", contactId: existing.id, email: existing.email },
+    },
+  });
+
+  return { ok: true as const };
+}
+
 export async function listContacts(input: unknown = {}) {
   const auth = await requireActiveTenantForActions();
   if (!auth.ok) {

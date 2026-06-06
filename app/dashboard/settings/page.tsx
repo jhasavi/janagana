@@ -100,7 +100,7 @@ export default async function SettingsPage() {
             <Link href="/dashboard" className="text-sm text-blue-700 underline">
               Back to overview
             </Link>
-            <Link href="/select-organization" className="text-sm text-blue-700 underline">
+            <Link href="/api/select-tenant?reason=prepare-switch" className="text-sm text-blue-700 underline">
               Switch community
             </Link>
           </div>

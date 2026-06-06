@@ -58,6 +58,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
+  if (reason === "prepare-switch") {
+    await clearActiveTenantCookies();
+    console.info("ACTIVE_TENANT_COOKIE_CLEARED", { source: "prepare-switch" });
+    return NextResponse.redirect(new URL("/select-organization?switch=1", req.url));
+  }
+
   if (reason === "auto-single") {
     const mappedTenants = await findMappedTenantsForUser();
     if (mappedTenants.length === 1) {

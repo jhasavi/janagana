@@ -57,7 +57,10 @@ export default async function DashboardLayout({
               >
                 Portal ↗
               </a>
-              <Link href="/select-organization" className="text-xs font-medium text-blue-700 hover:underline">
+              <Link
+                href="/api/select-tenant?reason=prepare-switch"
+                className="text-xs font-medium text-blue-700 hover:underline"
+              >
                 Switch community
               </Link>
               <form action="/api/sign-out" method="POST">

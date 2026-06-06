@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { configuredAppUrl } from "@/lib/environment";
 import { ACTIVE_TENANT_COOKIE_NAME } from "@/lib/tenant/contract";
 
 const ACTIVE_TENANT_COOKIE = ACTIVE_TENANT_COOKIE_NAME;
@@ -11,10 +12,11 @@ export async function getActiveTenantCookie(): Promise<string | null> {
 
 export async function setActiveTenantCookie(tenantId: string): Promise<void> {
   const store = await cookies();
+  const secure = configuredAppUrl().startsWith("https://");
   store.set(ACTIVE_TENANT_COOKIE, tenantId, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure,
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });

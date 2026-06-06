@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { DeleteContactButton } from "@/components/dashboard/delete-contact-button";
 import {
+  CONTACT_TYPE_OPTIONS,
   contactInterestLabel,
   contactSourceLabel,
   formatContactTags,
@@ -39,10 +41,12 @@ export function ContactsTable({
   contacts,
   tenantSlug,
   updateContactAction,
+  deleteContactAction,
 }: {
   contacts: ContactRow[];
   tenantSlug: string;
   updateContactAction: (formData: FormData) => Promise<void>;
+  deleteContactAction: (formData: FormData) => Promise<void>;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -137,8 +141,8 @@ export function ContactsTable({
                 ) : (
                   <p className="mb-2 text-xs text-gray-400">No admin notes</p>
                 )}
-                <details>
-                  <summary className="cursor-pointer text-xs font-medium text-blue-700 underline">Edit notes & details</summary>
+                <details className="mt-1">
+                  <summary className="cursor-pointer text-xs font-medium text-blue-700 underline">Edit contact</summary>
                   <form action={updateContactAction} className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-2">
                     <input type="hidden" name="contactId" value={contact.id} />
                     <input
@@ -159,10 +163,17 @@ export function ContactsTable({
                       placeholder="Phone"
                       className="rounded border border-gray-300 px-2 py-1 text-xs"
                     />
+                    <select name="type" defaultValue={contact.type} className="rounded border border-gray-300 px-2 py-1 text-xs">
+                      {CONTACT_TYPE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       name="tags"
                       defaultValue={formatContactTags(contact.tags)}
-                      placeholder="Tags (comma-separated)"
+                      placeholder="Tags: staff, vendor, guest, director…"
                       className="rounded border border-gray-300 px-2 py-1 text-xs"
                     />
                     <textarea
@@ -172,10 +183,15 @@ export function ContactsTable({
                       placeholder="Admin notes"
                       className="rounded border border-gray-300 px-2 py-1 text-xs"
                     />
-                    <input type="hidden" name="type" value={contact.type} />
                     <button type="submit" className="rounded bg-gray-800 px-2 py-1 text-xs text-white">
-                      Save
+                      Save changes
                     </button>
+                  </form>
+                  <form action={deleteContactAction} className="mt-2">
+                    <DeleteContactButton
+                      contactId={contact.id}
+                      displayName={`${contact.firstName} ${contact.lastName}`}
+                    />
                   </form>
                 </details>
               </td>

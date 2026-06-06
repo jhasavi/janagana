@@ -31,13 +31,15 @@ export const PILOT_INTEREST_FILTERS = [
 
 export function contactTypeLabel(type: string): string {
   switch (type) {
+    case "MEMBER":
+      return "Member (contact)";
     case "REGISTRANT":
       return "Event registrant";
-    case "OTHER":
-      return "Lead / inquiry";
-    case "MEMBER":
     case "VOLUNTEER":
+      return "Volunteer";
     case "DONOR":
+      return "Donor";
+    case "OTHER":
       return "Lead / inquiry";
     default:
       return "Lead / inquiry";
@@ -101,8 +103,14 @@ export function importProvenanceLabel(contact: {
   return "Import";
 }
 
-/** Options for manual contact add — pilot scope only. */
-export const MANUAL_CONTACT_TYPE_OPTIONS = [
+/** Operator labels for Contact.type — not formal membership enrollment. */
+export const CONTACT_TYPE_OPTIONS = [
   { value: "OTHER", label: "Lead / inquiry" },
   { value: "REGISTRANT", label: "Event registrant" },
+  { value: "MEMBER", label: "Member (label only)" },
+  { value: "VOLUNTEER", label: "Volunteer" },
+  { value: "DONOR", label: "Donor" },
 ] as const;
+
+/** @deprecated use CONTACT_TYPE_OPTIONS */
+export const MANUAL_CONTACT_TYPE_OPTIONS = CONTACT_TYPE_OPTIONS;
