@@ -14,6 +14,7 @@ Canonical docs for the NB/TPW pilot. Older filenames were merged here to reduce 
 | 8 | [08-OPS-SCRIPTS.md](./08-OPS-SCRIPTS.md) | CLI/scripts and existing ops HTTP routes |
 | 9 | [09-REFERENCE.md](./09-REFERENCE.md) | Legacy project map, inventories |
 | 10 | [10-CODE-LAYOUT.md](./10-CODE-LAYOUT.md) | Where tenant/auth/pilot logic lives in code |
+| 11 | [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md) | TPW full integration success criteria (do TPW before NB) |
 
 **Code contract:** `lib/tenant/contract.ts`  
 **Pilot tenants:** `lib/pilot/tenants.ts` (`namaste-boston`, `purple-wings`)

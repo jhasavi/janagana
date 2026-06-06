@@ -1,7 +1,8 @@
 # NB & TPW website integration
 
 **Production JanaGana:** https://janagana.namasteneedham.com  
-**Canonical slugs:** `namaste-boston`, `purple-wings` (see `lib/pilot/tenants.ts`)
+**Canonical slugs:** `namaste-boston`, `purple-wings` (see `lib/pilot/tenants.ts`)  
+**TPW full integration checklist:** [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md) (complete TPW before NB)
 
 ## Namaste Boston
 

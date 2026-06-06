@@ -6,6 +6,7 @@ const SOURCE_LABELS: Record<string, string> = {
   event_registration: "Event registration flow",
   manual_admin: "Manual entry",
   nb_crm_import: "CRM import",
+  tpw_class_import: "TPW class roster",
 };
 
 const INTEREST_LABELS: Record<string, string> = {
@@ -93,7 +94,9 @@ export function importProvenanceLabel(contact: {
   source?: string | null;
 }): string {
   if (contact.externalSource === "namaste_boston_crm") return "Namaste Boston CRM";
+  if (contact.externalSource === "tpw_class_csv") return "TPW class roster";
   if (contact.source === "nb_crm_import") return "CRM import";
+  if (contact.source === "tpw_class_import") return "TPW class roster";
   if (contact.externalSource) return tokenLabel(contact.externalSource);
   return "Import";
 }

@@ -62,12 +62,6 @@ export async function listPublishedPortalEvents(tenantSlug: string) {
       tenantId: tenant.id,
       status: "PUBLISHED",
     },
-    include: {
-      ticketTypes: {
-        where: { active: true },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-    },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
 

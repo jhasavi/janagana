@@ -8,6 +8,8 @@
 |--------|---------|
 | `npm run smoke:production` | HTTP smoke against production |
 | `npm run import:nb-crm` | NB CRM CSV import (sets import provenance on contacts) |
+| `npm run import:tpw-class` | TPW class roster CSV → `purple-wings` contacts (`~/tpw/class1.csv`) |
+| `npm run verify:tpw` | TPW integration readiness (tenant, URLs, embed API) |
 | `tsx scripts/repair-production-tenant-slugs.ts` | Slug repair dry-run / confirm |
 | `tsx scripts/inventory-tenants.ts` | Tenant inventory |
 | `npm run verify:tenants` | Integration verification |
