@@ -35,6 +35,7 @@ export default async function SettingsPage() {
   const portalUrl = activeTenant ? publicPortalUrl(activeTenant.slug) : null;
   const summary = activeTenant ? await getTenantDashboardSummary(activeTenant.id) : null;
   const tenantLinks = activeTenant ? portalLinksForTenant(activeTenant.slug) : [];
+  const canSwitchCommunity = mappedTenants.length > 1;
 
   const engineeringFlags = {
     existingOrgSetup: process.env.ENABLE_EXISTING_ORG_SETUP === "true",
@@ -100,9 +101,11 @@ export default async function SettingsPage() {
             <Link href="/dashboard" className="text-sm text-blue-700 underline">
               Back to overview
             </Link>
-            <Link href="/api/select-tenant?reason=prepare-switch" className="text-sm text-blue-700 underline">
-              Switch community
-            </Link>
+            {canSwitchCommunity && (
+              <Link href="/api/select-tenant?reason=prepare-switch" className="text-sm text-blue-700 underline">
+                Switch community
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -110,7 +113,10 @@ export default async function SettingsPage() {
       {tenantLinks.length > 0 && (
         <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4">
           <h2 className="text-sm font-semibold text-blue-950">Website links to copy</h2>
-          <p className="mt-1 text-xs text-blue-900">Point NB/TPW CTAs here. Visitors do not sign in with Clerk.</p>
+          <p className="mt-1 text-xs text-blue-900">
+            Point your website CTAs here for {activeTenant ? communityLabel(activeTenant.slug) : "this community"}.
+            Visitors do not sign in with Clerk.
+          </p>
           <ul className="mt-3 space-y-3 text-sm text-blue-950">
             {tenantLinks.map((link) => (
               <li key={link.href}>
@@ -133,7 +139,7 @@ export default async function SettingsPage() {
             contacts, portal leads, event tickets, registrations, check-in, memberships, public membership checkout, and
             receipts
           </strong>{" "}
-          for Namaste Boston and The Purple Wings. Not included yet: donations, online event checkout, refund
+          for this community. Not included yet: donations, online event checkout, refund
           operations, CRM import UI, or email automation.
         </p>
       </div>

@@ -59,6 +59,10 @@ export async function GET(req: NextRequest) {
   }
 
   if (reason === "prepare-switch") {
+    const mappedTenants = await findMappedTenantsForUser();
+    if (mappedTenants.length <= 1) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
     await clearActiveTenantCookies();
     console.info("ACTIVE_TENANT_COOKIE_CLEARED", { source: "prepare-switch" });
     return NextResponse.redirect(new URL("/select-organization?switch=1", req.url));

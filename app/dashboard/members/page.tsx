@@ -111,7 +111,7 @@ export default async function ContactsPage({
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
             See who reached you, how (newsletter, investment analysis, event registration, import, or manual entry), what
             they did last, and whether they registered for events. Expand <strong>Edit contact</strong> on any row to
-            update details or delete spam/test entries.
+            update notes/tags or delete spam/test entries.
           </p>
         </div>
         {tenant && portalUrl && (

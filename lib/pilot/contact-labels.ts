@@ -103,14 +103,10 @@ export function importProvenanceLabel(contact: {
   return "Import";
 }
 
-/** Operator labels for Contact.type — not formal membership enrollment. */
+/** Pilot contact types only — see docs/PARKING-LOT.md for staff/vendor/guest roles later. */
 export const CONTACT_TYPE_OPTIONS = [
   { value: "OTHER", label: "Lead / inquiry" },
   { value: "REGISTRANT", label: "Event registrant" },
-  { value: "MEMBER", label: "Member (label only)" },
-  { value: "VOLUNTEER", label: "Volunteer" },
-  { value: "DONOR", label: "Donor" },
 ] as const;
 
-/** @deprecated use CONTACT_TYPE_OPTIONS */
 export const MANUAL_CONTACT_TYPE_OPTIONS = CONTACT_TYPE_OPTIONS;

@@ -5,7 +5,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { getCurrentUser } from "@/lib/auth";
 import { publicPortalUrl } from "@/lib/environment";
 import { communityLabel } from "@/lib/pilot/portal-links";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
 
 export default async function DashboardLayout({
   children,
@@ -17,7 +17,12 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
-  const resolution = await resolveTenantForDashboard();
+  const [resolution, mappedTenants] = await Promise.all([
+    resolveTenantForDashboard(),
+    findMappedTenantsForUser(),
+  ]);
+  const canSwitchCommunity = mappedTenants.length > 1;
+
   if (resolution.staleCookieIgnored) {
     redirect("/api/select-tenant?reason=stale-cookie");
   }
@@ -57,12 +62,14 @@ export default async function DashboardLayout({
               >
                 Portal ↗
               </a>
-              <Link
-                href="/api/select-tenant?reason=prepare-switch"
-                className="text-xs font-medium text-blue-700 hover:underline"
-              >
-                Switch community
-              </Link>
+              {canSwitchCommunity && (
+                <Link
+                  href="/api/select-tenant?reason=prepare-switch"
+                  className="text-xs font-medium text-blue-700 hover:underline"
+                >
+                  Switch community
+                </Link>
+              )}
               <form action="/api/sign-out" method="POST">
                 <button type="submit" className="text-xs text-gray-600 hover:underline">
                   Sign out

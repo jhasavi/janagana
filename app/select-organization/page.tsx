@@ -7,8 +7,6 @@ import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { findMappedTenantsForUser } from "@/lib/tenant";
 import { publicPortalUrl } from "@/lib/environment";
 
-// Tenant selection uses POST /api/select-tenant (reliable cookie write). GET prepare-switch clears cookie first.
-
 export default async function SelectOrganizationPage({
   searchParams,
 }: {
@@ -26,10 +24,9 @@ export default async function SelectOrganizationPage({
   }
 
   const params = await searchParams;
-  const explicitSwitch = params.switch === "1";
 
-  if (tenants.length === 1 && !params.error && !explicitSwitch) {
-    redirect("/api/select-tenant?reason=auto-single");
+  if (tenants.length === 1) {
+    redirect("/dashboard");
   }
 
   const selfServeEnabled = selfServeOnboardingEnabled();
@@ -37,34 +34,26 @@ export default async function SelectOrganizationPage({
   function tenantSelectionErrorMessage(error?: string) {
     switch (error) {
       case "missing-tenant":
-        return "Please choose an organization to continue.";
+        return "Please choose a community to continue.";
       case "invalid-tenant":
-        return "The selected organization is not valid. Choose an organization from the list.";
+        return "That community is not available. Choose from the list below.";
       case "invalid-request":
-        return "Invalid request. Please select an organization from the list.";
+        return "Invalid request. Please select a community from the list.";
       default:
-        return "Unable to select that organization. Please try again.";
+        return "Unable to open that community. Please try again.";
     }
   }
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Switch community</h1>
+      <h1 className="text-2xl font-semibold">Choose community</h1>
       <p className="mt-2 text-sm text-gray-600">
-        You have access to {tenants.length} communit{tenants.length === 1 ? "y" : "ies"}. Choose which one to open —
-        contacts, events, and portal data are separate. Signed in as {user.email ?? user.name ?? user.id}
+        You have access to {tenants.length} communities. Pick one to open — contacts and events stay separate. Signed in
+        as {user.email ?? user.name ?? user.id}
       </p>
       <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-        Double-check the community name before continuing. Wrong selection shows another org&apos;s leads and
-        registrations.
+        Confirm the name before continuing. Data shown is only for the community you select.
       </p>
-
-      {tenants.length === 1 && (
-        <p className="mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-950">
-          Your Clerk account is mapped to one community only ({communityLabel(tenants[0].slug)}). To operate both Namaste
-          Boston and The Purple Wings, an admin must add you to both Clerk organizations.
-        </p>
-      )}
 
       {params.error && (
         <p className="mt-4 text-sm text-red-700">{tenantSelectionErrorMessage(params.error)}</p>
@@ -85,7 +74,6 @@ export default async function SelectOrganizationPage({
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">{communityLabel(tenant.slug)}</h2>
                   <p className="text-sm text-gray-600">{tenant.name}</p>
-                  <p className="mt-1 font-mono text-xs text-gray-500">{tenant.slug}</p>
                   <p className="mt-2 break-all font-mono text-xs text-blue-800">{portalUrl}</p>
                   <CopyTextButton text={portalUrl} label="Copy portal" className="mt-2" />
                 </div>
@@ -106,11 +94,7 @@ export default async function SelectOrganizationPage({
           <Link href="/onboarding/create-organization" className="text-sm text-blue-700 underline">
             New community setup (admin only)
           </Link>
-        ) : (
-          <p className="text-sm text-gray-600">
-            New community setup is disabled for the pilot. Contact your administrator for access.
-          </p>
-        )}
+        ) : null}
         <Link href="/dashboard" className="text-sm text-gray-700 underline">
           Back to dashboard
         </Link>

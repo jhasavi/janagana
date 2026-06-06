@@ -10,6 +10,7 @@
 | `npm run import:nb-crm` | NB CRM CSV import (sets import provenance on contacts) |
 | `npm run import:tpw-class` | TPW class roster CSV → `purple-wings` contacts (`~/tpw/class1.csv`) |
 | `npm run verify:tpw` | TPW integration readiness (tenant, URLs, embed API) |
+| `npm run pilot:reset -- --tenant=purple-wings --dry-run` | Preview pilot data wipe (see [12-PILOT-RESET.md](./12-PILOT-RESET.md)) |
 | `tsx scripts/repair-production-tenant-slugs.ts` | Slug repair dry-run / confirm |
 | `tsx scripts/inventory-tenants.ts` | Tenant inventory |
 | `npm run verify:tenants` | Integration verification |

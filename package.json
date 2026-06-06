@@ -21,6 +21,7 @@
     "import:nb-crm": "tsx scripts/import-nb-crm.ts",
     "import:tpw-class": "tsx scripts/import-tpw-class-contacts.ts",
     "verify:tpw": "tsx scripts/verify-tpw-integration.ts",
+    "pilot:reset": "tsx scripts/pilot-data-reset.ts",
     "setup:namaste": "tsx scripts/setup-namaste-boston.ts --confirm-local-setup",
     "smoke:redirects": "node scripts/smoke-local-redirects.mjs",
     "smoke:local-redirects": "node scripts/smoke-local-redirects.mjs",
