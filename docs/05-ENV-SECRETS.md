@@ -3,8 +3,10 @@
 ## Rules
 
 1. **`.env.example`** — committed to git — contains only placeholder values, never real secrets.
-2. **`.env.local`** — NOT committed — contains real local dev secrets. Overrides `.env`.
-3. **`.env`** — NOT committed if it contains real secrets. Only use for non-secret defaults.
+2. **`.env.local`** — NOT committed — **development** Clerk test keys + dev `DATABASE_URL`.
+3. **`.env.pilot.prod.local`** — NOT committed — production maintenance only: `PRODUCTION_DATABASE_URL` + live Clerk keys for `pilot:preflight --production`.
+4. **`.env.legacy.archive`** — optional archive if you migrated from an old monolith `.env`; not loaded by pilot scripts.
+5. **Do not use a bloated root `.env`** for JanaGana v3 — run `npm run env:setup -- --apply` to consolidate.
 4. **No secrets in git** — enforced by `.gitignore` and pre-commit check.
 5. **Clerk dev keys ≠ Clerk prod keys** — dev keys map to dev DB tenants, prod keys map to prod DB tenants. They must never be swapped.
 6. **No test-auth flags in real Clerk smoke** — `E2E_TEST_MODE`, `PLAYWRIGHT_TEST`, `NODE_ENV=test` are not permitted in the production middleware code path.
@@ -45,6 +47,11 @@
 |---|---|
 | `ENABLE_CLERK_TENANT_RECONCILIATION` | Set to `true` only when running the Clerk/JanaGana reconciliation endpoint. |
 | `CLERK_TENANT_RECONCILIATION_TOKEN` | Bearer token for `/api/ops/clerk-tenant-reconciliation`. |
+| `PRODUCTION_DATABASE_URL` | Local-only override when running pilot scripts against prod Neon (not exposed by `vercel env run`). |
+| `PILOT_TPW_CLERK_ORG_ID` | Clerk org ID for `npm run pilot:seed` (purple-wings). |
+| `PILOT_NB_CLERK_ORG_ID` | Clerk org ID for `npm run pilot:seed` (namaste-boston). |
+| `ENABLE_SELF_SERVE_ONBOARDING` | Default off. When `true`, UI allows creating new Clerk orgs (not for production pilot). |
+| `ENABLE_EXISTING_ORG_SETUP` | Default off. When `true`, UI allows mapping an existing Clerk org to a tenant. |
 
 ### JanaGana API keys
 

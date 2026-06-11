@@ -107,7 +107,15 @@ export default async function ContactsPage({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Contacts & leads</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold">Contacts & leads</h1>
+            <a
+              href="/api/export/contacts"
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+            >
+              Export CSV
+            </a>
+          </div>
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
             See who reached you, how (newsletter, investment analysis, event registration, import, or manual entry), what
             they did last, and whether they registered for events. Expand <strong>Edit contact</strong> on any row to

@@ -111,7 +111,15 @@ export default async function EventRegistrationsPage({
       </Link>
 
       <div>
-        <h1 className="text-2xl font-semibold">Event registrations</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold">Event registrations</h1>
+          <a
+            href={`/api/export/events/${eventId}/registrations`}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+          >
+            Export CSV
+          </a>
+        </div>
         <p className="mt-1 text-lg text-gray-900">{result.event.title}</p>
         <p className="mt-1 text-sm text-gray-600">{formatDate(result.event.startsAt)}</p>
         <p className="mt-2 text-sm">

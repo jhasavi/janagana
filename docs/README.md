@@ -15,7 +15,7 @@ Canonical docs for the NB/TPW pilot. Older filenames were merged here to reduce 
 | 9 | [09-REFERENCE.md](./09-REFERENCE.md) | Legacy project map, inventories |
 | 10 | [10-CODE-LAYOUT.md](./10-CODE-LAYOUT.md) | Where tenant/auth/pilot logic lives in code |
 | 11 | [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md) | TPW full integration success criteria (do TPW before NB) |
-| 12 | [12-PILOT-RESET.md](./12-PILOT-RESET.md) | Clean-slate reset for end-to-end onboarding tests |
+| 12 | [12-PILOT-RESET.md](./12-PILOT-RESET.md) | Three-mode pilot testing: operational reset, reseed, bootstrap |
 | — | [PARKING-LOT.md](./PARKING-LOT.md) | Deferred features (contact roles, etc.) |
 
 **Code contract:** `lib/tenant/contract.ts`  

@@ -1,57 +1,38 @@
 #!/usr/bin/env tsx
 /**
- * Reset operational data for pilot tenant(s). Does not call Clerk.
+ * Mode 1 — Clean operational data only (default).
+ *
+ * Deletes tenant activity: contacts, events, registrations, memberships, payments,
+ * receipts, communications, audit logs, Stripe webhook markers.
+ *
+ * Preserves by default: Tenant row, clerkOrgId mapping, slug, TenantAdmin cache,
+ * membership tiers (plans).
  *
  *   npm run pilot:reset -- --tenant=purple-wings --dry-run
  *   PRODUCTION_DATABASE_URL='…' npm run pilot:reset -- --tenant=purple-wings --confirm-pilot-reset
- *   PRODUCTION_DATABASE_URL='…' npm run pilot:reset -- --all-pilot --confirm-pilot-reset --drop-tenant
+ *
+ * Optional:
+ *   --wipe-tiers          also delete membership tier definitions
+ *   --drop-tenant         delete the Tenant row after data wipe (full re-onboarding)
+ *   --allow-any-tenant    allow slugs outside approved pilot list (use with care)
  */
-import { config as loadEnv } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PILOT_TENANT_SLUGS } from "@/lib/pilot/tenants";
-
-loadEnv({ path: ".env" });
-loadEnv({ path: ".env.local", override: true });
-
-if (process.env.PRODUCTION_DATABASE_URL?.trim()) {
-  process.env.DATABASE_URL = process.env.PRODUCTION_DATABASE_URL.trim();
-}
+import {
+  isProductionLike,
+  loadPilotEnvFiles,
+  parseArgs,
+  parseDatabaseUrl,
+  printDatabaseTarget,
+  requireDatabaseUrl,
+} from "./lib/pilot-script-utils";
 
 const prisma = new PrismaClient();
 
-function parseArgs(argv: string[]) {
-  const out: Record<string, string | boolean> = {};
-  for (const arg of argv) {
-    if (!arg.startsWith("--")) continue;
-    const [key, value] = arg.slice(2).split("=");
-    out[key] = value === undefined ? true : value;
-  }
-  return out;
-}
-
-function parseDatabaseUrl(raw: string | undefined) {
-  if (!raw) return { host: "unknown", database: "unknown" };
-  try {
-    const u = new URL(raw);
-    return {
-      host: (u.hostname || "unknown").toLowerCase(),
-      database: (u.pathname || "/").replace(/^\//, "").toLowerCase() || "unknown",
-    };
-  } catch {
-    return { host: "unknown", database: "unknown" };
-  }
-}
-
-function isProductionLike(host: string, database: string) {
-  const signal = `${host} ${database}`;
-  const prodTokens = ["prod", "production", "live", "neon.tech"];
-  const safeTokens = ["localhost", "127.0.0.1", "local", "dev", "test"];
-  const hasProd = prodTokens.some((t) => signal.includes(t));
-  const hasSafe = safeTokens.some((t) => signal.includes(t));
-  return hasProd || (!hasSafe && host !== "unknown");
-}
-
-async function wipeTenantData(tenantId: string, dryRun: boolean) {
+async function wipeTenantOperationalData(
+  tenantId: string,
+  options: { dryRun: boolean; wipeTiers: boolean },
+) {
   const counts = {
     communications: await prisma.communicationMessage.count({ where: { tenantId } }),
     receipts: await prisma.paymentReceipt.count({ where: { tenantId } }),
@@ -63,12 +44,18 @@ async function wipeTenantData(tenantId: string, dryRun: boolean) {
     tiers: await prisma.membershipTier.count({ where: { tenantId } }),
     contacts: await prisma.contact.count({ where: { tenantId } }),
     auditLogs: await prisma.auditLog.count({ where: { tenantId } }),
+    stripeWebhookEvents: await prisma.stripeWebhookEvent.count({ where: { tenantId } }),
     tenantAdmins: await prisma.tenantAdmin.count({ where: { tenantId } }),
   };
 
   console.log("  counts:", counts);
+  console.log(
+    options.wipeTiers
+      ? "  preserving: Tenant row, clerkOrgId, slug, TenantAdmin"
+      : "  preserving: Tenant row, clerkOrgId, slug, TenantAdmin, membership tiers",
+  );
 
-  if (dryRun) return;
+  if (options.dryRun) return;
 
   await prisma.communicationMessage.deleteMany({ where: { tenantId } });
   await prisma.paymentReceipt.deleteMany({ where: { tenantId } });
@@ -77,47 +64,58 @@ async function wipeTenantData(tenantId: string, dryRun: boolean) {
   await prisma.eventTicketType.deleteMany({ where: { tenantId } });
   await prisma.event.deleteMany({ where: { tenantId } });
   await prisma.membership.deleteMany({ where: { tenantId } });
-  await prisma.membershipTier.deleteMany({ where: { tenantId } });
+  if (options.wipeTiers) {
+    await prisma.membershipTier.deleteMany({ where: { tenantId } });
+  }
   await prisma.contact.deleteMany({ where: { tenantId } });
   await prisma.auditLog.deleteMany({ where: { tenantId } });
-  await prisma.tenantAdmin.deleteMany({ where: { tenantId } });
+  await prisma.stripeWebhookEvent.deleteMany({ where: { tenantId } });
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  loadPilotEnvFiles(Boolean(args.production) ? "production" : "default");
   const dryRun = Boolean(args["dry-run"]);
   const confirm = Boolean(args["confirm-pilot-reset"]);
   const dropTenant = Boolean(args["drop-tenant"]);
+  const wipeTiers = Boolean(args["wipe-tiers"]);
   const allPilot = Boolean(args["all-pilot"]);
+  const allowAnyTenant = Boolean(args["allow-any-tenant"]);
   const tenantSlug = String(args.tenant ?? "").trim();
 
-  if (!process.env.DATABASE_URL?.trim()) {
-    throw new Error("Set PRODUCTION_DATABASE_URL or DATABASE_URL");
-  }
-
+  requireDatabaseUrl();
   const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+
   if (!dryRun && !confirm) {
     throw new Error("Refusing to run without --confirm-pilot-reset (use --dry-run to preview)");
   }
 
-  if (!dryRun && !isProductionLike(parsed.host, parsed.database)) {
-    console.warn(`WARN: target does not look like production (host=${parsed.host}). Proceeding because --confirm-pilot-reset was set.`);
+  if (!dryRun && isProductionLike(parsed.host, parsed.database)) {
+    console.log("");
+    console.log("*** PRODUCTION DATABASE TARGET ***");
+    console.log("This deletes operational data for the selected tenant(s).");
+    console.log("Tenant rows and Clerk mappings are preserved unless --drop-tenant is set.");
+    console.log("");
   }
 
-  const slugs = allPilot
-    ? [...PILOT_TENANT_SLUGS]
-    : tenantSlug
-      ? [tenantSlug]
-      : [];
+  const slugs = allPilot ? [...PILOT_TENANT_SLUGS] : tenantSlug ? [tenantSlug] : [];
 
   if (slugs.length === 0) {
     throw new Error("Pass --tenant=purple-wings or --all-pilot");
   }
 
-  console.log(`Pilot data reset ${dryRun ? "(dry-run)" : "(APPLY)"}`);
-  console.log(`Database: ${parsed.host} / ${parsed.database}`);
+  for (const slug of slugs) {
+    if (!allowAnyTenant && !(PILOT_TENANT_SLUGS as readonly string[]).includes(slug)) {
+      throw new Error(
+        `${slug} is not an approved pilot slug. Use --allow-any-tenant only when you intend to wipe a bootstrapped tenant.`,
+      );
+    }
+  }
+
+  printDatabaseTarget(`Pilot operational reset ${dryRun ? "(dry-run)" : "(APPLY)"}`);
   console.log(`Tenants: ${slugs.join(", ")}`);
-  if (dropTenant) console.log("Will DROP tenant rows after data wipe");
+  if (dropTenant) console.log("Will DROP tenant rows after operational wipe");
+  if (wipeTiers) console.log("Will also delete membership tier definitions");
 
   for (const slug of slugs) {
     const tenant = await prisma.tenant.findUnique({
@@ -126,20 +124,21 @@ async function main() {
     });
 
     if (!tenant) {
-      console.log(`- SKIP ${slug}: no tenant row`);
+      console.log(`- SKIP ${slug}: no tenant row (run pilot:seed or pilot:bootstrap first)`);
       continue;
     }
 
     console.log(`- ${slug} (${tenant.name}) clerkOrgId=${tenant.clerkOrgId}`);
-    await wipeTenantData(tenant.id, dryRun);
+    await wipeTenantOperationalData(tenant.id, { dryRun, wipeTiers });
 
     if (dropTenant && !dryRun) {
+      await prisma.tenantAdmin.deleteMany({ where: { tenantId: tenant.id } });
       await prisma.tenant.delete({ where: { id: tenant.id } });
-      console.log(`  dropped tenant row`);
+      console.log("  dropped tenant row and TenantAdmin cache");
     }
   }
 
-  console.log(dryRun ? "Dry-run complete — no rows deleted" : "Pilot reset complete");
+  console.log(dryRun ? "Dry-run complete — no rows deleted" : "Pilot operational reset complete");
   console.log("Clerk orgs/users were NOT modified. See docs/12-PILOT-RESET.md");
 }
 

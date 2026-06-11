@@ -9,7 +9,15 @@ import { prisma } from "@/lib/prisma";
 export async function getTenantBySlug(slug: string) {
   return prisma.tenant.findFirst({
     where: { slug, status: "ACTIVE" },
-    select: { id: true, name: true, slug: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      publicTagline: true,
+      publicContactEmail: true,
+      publicContactPhone: true,
+      logoUrl: true,
+    },
   });
 }
 

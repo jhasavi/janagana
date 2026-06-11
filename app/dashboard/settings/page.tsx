@@ -12,6 +12,7 @@ import { communityLabel, portalLinksForTenant } from "@/lib/pilot/portal-links";
 import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
 import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
+import { getTenantBranding, updateTenantBranding } from "@/lib/actions/tenant-branding";
 import { prisma } from "@/lib/prisma";
 
 export default async function SettingsPage() {
@@ -34,8 +35,23 @@ export default async function SettingsPage() {
     : null;
   const portalUrl = activeTenant ? publicPortalUrl(activeTenant.slug) : null;
   const summary = activeTenant ? await getTenantDashboardSummary(activeTenant.id) : null;
+  const branding = activeTenant ? await getTenantBranding(activeTenant.id) : null;
   const tenantLinks = activeTenant ? portalLinksForTenant(activeTenant.slug) : [];
   const canSwitchCommunity = mappedTenants.length > 1;
+
+  async function updateBrandingAction(formData: FormData) {
+    "use server";
+    const result = await updateTenantBranding({
+      publicTagline: String(formData.get("publicTagline") ?? ""),
+      publicContactEmail: String(formData.get("publicContactEmail") ?? ""),
+      publicContactPhone: String(formData.get("publicContactPhone") ?? ""),
+      logoUrl: String(formData.get("logoUrl") ?? ""),
+    });
+    if (!result.ok) {
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+    }
+    redirect("/dashboard/settings?success=branding");
+  }
 
   const engineeringFlags = {
     existingOrgSetup: process.env.ENABLE_EXISTING_ORG_SETUP === "true",
@@ -67,6 +83,55 @@ export default async function SettingsPage() {
         whether your Clerk login maps to this tenant. Access is enforced by{" "}
         <strong>Clerk org membership</strong>, not a separate admin table.
       </p>
+
+      {activeTenant && (
+        <div className="mt-6 rounded-md border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">Public portal branding</h2>
+          <p className="mt-1 text-sm text-gray-600">Shown on your public portal header.</p>
+          <form action={updateBrandingAction} className="mt-4 grid gap-3 md:grid-cols-2">
+            <label className="block text-sm md:col-span-2">
+              Tagline
+              <input
+                name="publicTagline"
+                defaultValue={branding?.publicTagline ?? ""}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block text-sm">
+              Contact email
+              <input
+                name="publicContactEmail"
+                type="email"
+                defaultValue={branding?.publicContactEmail ?? ""}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block text-sm">
+              Contact phone
+              <input
+                name="publicContactPhone"
+                defaultValue={branding?.publicContactPhone ?? ""}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block text-sm md:col-span-2">
+              Logo URL
+              <input
+                name="logoUrl"
+                type="url"
+                defaultValue={branding?.logoUrl ?? ""}
+                placeholder="https://..."
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <div className="md:col-span-2">
+              <button type="submit" className="rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black">
+                Save branding
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {activeTenant && portalUrl && (
         <div className="mt-6 rounded-md border border-gray-200 bg-white p-4">

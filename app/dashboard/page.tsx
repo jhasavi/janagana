@@ -3,6 +3,7 @@ import { NextStepsPanel } from "@/components/dashboard/next-steps-panel";
 import { OperatorWarningsPanel } from "@/components/dashboard/operator-warnings-panel";
 import { TenantIdentityCard } from "@/components/dashboard/tenant-identity-card";
 import { getUserClerkOrganizations } from "@/lib/auth";
+import { getTenantFinancialSummary } from "@/lib/dashboard/financial-summary";
 import { getOperatorDashboard } from "@/lib/dashboard/operator-dashboard";
 import { buildMappingWarnings, mergeOperatorWarnings } from "@/lib/dashboard/operator-warnings";
 import { publicPortalUrl } from "@/lib/environment";
@@ -14,7 +15,7 @@ import {
 import { portalLinksForTenant } from "@/lib/pilot/portal-links";
 import { tenantMappingStatusLabel } from "@/lib/tenant/mapping-labels";
 import { resolveTenantForDashboard } from "@/lib/tenant";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const resolution = await resolveTenantForDashboard();
@@ -25,9 +26,10 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const [dashboard, clerkOrgs] = await Promise.all([
+  const [dashboard, clerkOrgs, financial] = await Promise.all([
     getOperatorDashboard(tenant.id, tenant.slug),
     getUserClerkOrganizations(),
+    getTenantFinancialSummary(tenant.id),
   ]);
 
   const portalUrl = publicPortalUrl(tenant.slug);
@@ -101,6 +103,37 @@ export default async function DashboardPage() {
             </div>
           </dl>
         </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Total revenue"
+          value={formatCents(financial.totalRevenueCents)}
+          detail={`${financial.pendingOrFailedCount} pending/failed`}
+          href="/dashboard/tiers"
+          highlight={financial.totalRevenueCents > 0}
+        />
+        <MetricCard
+          label="Membership revenue"
+          value={formatCents(financial.membershipRevenueCents)}
+          detail={`${financial.membershipPaymentCount} payments`}
+          href="/dashboard/tiers"
+          highlight={financial.membershipRevenueCents > 0}
+        />
+        <MetricCard
+          label="Event revenue"
+          value={formatCents(financial.eventRevenueCents)}
+          detail={`${financial.eventPaymentCount} payments`}
+          href="/dashboard/events"
+          highlight={financial.eventRevenueCents > 0}
+        />
+        <MetricCard
+          label="Donations"
+          value={formatCents(financial.donationRevenueCents)}
+          detail={`${financial.donationPaymentCount} payments`}
+          href="/dashboard/tiers"
+          highlight={financial.donationRevenueCents > 0}
+        />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -323,7 +356,7 @@ function MetricCard({
   highlight,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   detail: string;
   href: string;
   highlight: boolean;
