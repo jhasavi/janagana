@@ -1,5 +1,12 @@
 import { redirect } from "next/navigation";
 import { capturePublicLead, listPublishedPortalEvents } from "@/lib/actions/public-portal";
+import {
+  defaultVisitorReturnUrl,
+  readSafeReturnUrl,
+  visitorReturnUrlWithStatus,
+} from "@/lib/portal/safe-return-url";
+
+const RETURN_TO_FIELD = "returnTo";
 
 const ALLOWED_INTERESTS = [
   "NEWSLETTER",
@@ -49,10 +56,11 @@ export default async function PublicContactCapturePage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ interest?: string; status?: string; error?: string }>;
+  searchParams: Promise<{ interest?: string; status?: string; error?: string; returnTo?: string }>;
 }) {
   const { tenantSlug } = await params;
   const query = await searchParams;
+  const safeReturnTo = readSafeReturnUrl(query.returnTo);
   const portal = await listPublishedPortalEvents(tenantSlug);
 
   if (!portal.ok || !portal.tenant) {
@@ -66,6 +74,8 @@ export default async function PublicContactCapturePage({
 
     const interest = normalizeInterest(String(formData.get("interestType") ?? "NEWSLETTER"));
 
+    const returnTo = readSafeReturnUrl(String(formData.get(RETURN_TO_FIELD) ?? ""));
+
     const result = await capturePublicLead({
       tenantSlug,
       interestType: interest,
@@ -78,13 +88,24 @@ export default async function PublicContactCapturePage({
     });
 
     if (!result.ok) {
-      redirect(`/portal/${tenantSlug}/contact?interest=${interest.toLowerCase()}&error=${encodeURIComponent(result.error)}`);
+      const errorParams = new URLSearchParams({
+        interest: interest.toLowerCase(),
+        error: result.error,
+      });
+      if (returnTo) errorParams.set("returnTo", returnTo);
+      redirect(`/portal/${tenantSlug}/contact?${errorParams.toString()}`);
+    }
+
+    const returnBase = returnTo ?? defaultVisitorReturnUrl(tenantSlug);
+    if (returnBase) {
+      redirect(visitorReturnUrlWithStatus(returnBase, "lead", "success"));
     }
 
     redirect(`/portal/${tenantSlug}/contact?interest=${interest.toLowerCase()}&status=success`);
   }
 
   const message = query.status === "success" ? "Thanks. We received your details and will follow up soon." : query.error ?? null;
+  const backUrl = safeReturnTo ?? defaultVisitorReturnUrl(tenantSlug);
 
   return (
     <main className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -94,8 +115,18 @@ export default async function PublicContactCapturePage({
 
       {message && <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-800">{message}</p>}
 
+      {backUrl && query.status === "success" && (
+        <p className="mt-3">
+          <a href={backUrl} className="text-sm font-medium text-blue-700 hover:underline">
+            ← Return to community website
+          </a>
+        </p>
+      )}
+
+      {query.status !== "success" && (
       <form action={captureAction} className="mt-6 space-y-4">
         <input type="hidden" name="interestType" value={initialInterest} />
+        {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-700">
@@ -126,7 +157,13 @@ export default async function PublicContactCapturePage({
         <button type="submit" className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
           Submit
         </button>
+        {backUrl && (
+          <a href={backUrl} className="ml-3 text-sm text-slate-600 hover:text-slate-900 hover:underline">
+            Cancel
+          </a>
+        )}
       </form>
+      )}
     </main>
   );
 }

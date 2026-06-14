@@ -131,6 +131,16 @@ function pickField(row: CsvRow, keys: string[]): string {
   return "";
 }
 
+async function assertContactSchemaReady() {
+  try {
+    await prisma.$queryRaw`SELECT "tags", "source", "interestType" FROM "Contact" LIMIT 0`;
+  } catch {
+    throw new Error(
+      "CRM-lite Contact columns are missing on this database. Run: npx prisma db push (local dev) or npx prisma migrate deploy (production)."
+    );
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dryRun = Boolean(args["dry-run"]);
@@ -142,6 +152,8 @@ async function main() {
   if (!fs.existsSync(filePath)) {
     throw new Error(`CSV not found: ${filePath}`);
   }
+
+  await assertContactSchemaReady();
 
   const tenant = await prisma.tenant.findUnique({
     where: { slug: TENANT_SLUG },
