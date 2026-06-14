@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { DeleteContactButton } from "@/components/dashboard/delete-contact-button";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { deleteContact, getContactProfile } from "@/lib/actions/contacts";
 import { contactSourceLabel, contactTypeLabel, formatContactTags } from "@/lib/pilot/contact-labels";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 
 function statusClass(status: string) {
@@ -38,10 +39,17 @@ export default async function ContactProfilePage({
     "use server";
 
     const id = String(formData.get("contactId") ?? "").trim();
-    const deleteResult = await deleteContact(id);
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const deleteResult = await deleteContact(id, { tenantIdHint: tenantHint });
     if (!deleteResult.ok) {
       const errorMessage = "error" in deleteResult && deleteResult.error ? deleteResult.error : "Failed to delete";
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/members/${id}?error=${encodeURIComponent(errorMessage)}`);
+      }
       redirect(`/dashboard/members/${id}?error=${encodeURIComponent(errorMessage)}`);
+    }
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, "/dashboard/members?success=deleted");
     }
     redirect("/dashboard/members?success=deleted");
   }
@@ -95,6 +103,7 @@ export default async function ContactProfilePage({
           </div>
         )}
         <form action={deleteContactAction} className="mt-4 border-t border-gray-100 pt-4">
+          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
           <DeleteContactButton
             contactId={contact.id}
             displayName={`${contact.firstName} ${contact.lastName}`}

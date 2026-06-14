@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireActiveTenantForActions } from "@/lib/tenant";
+import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
 
 function parseTags(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -49,8 +49,8 @@ export const ContactListSchema = z
   })
   .strict();
 
-export async function createContact(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function createContact(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -99,8 +99,8 @@ export async function createContact(input: unknown) {
   }
 }
 
-export async function updateContact(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function updateContact(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -142,8 +142,8 @@ export async function updateContact(input: unknown) {
   return { ok: true as const, data: contact };
 }
 
-export async function deleteContact(contactId: string) {
-  const auth = await requireActiveTenantForActions();
+export async function deleteContact(contactId: string, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

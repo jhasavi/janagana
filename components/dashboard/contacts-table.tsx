@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DeleteContactButton } from "@/components/dashboard/delete-contact-button";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import {
   CONTACT_TYPE_OPTIONS,
   contactInterestLabel,
@@ -39,11 +40,13 @@ export type ContactRow = {
 
 export function ContactsTable({
   contacts,
+  tenantId,
   tenantSlug,
   updateContactAction,
   deleteContactAction,
 }: {
   contacts: ContactRow[];
+  tenantId: string;
   tenantSlug: string;
   updateContactAction: (formData: FormData) => Promise<void>;
   deleteContactAction: (formData: FormData) => Promise<void>;
@@ -144,6 +147,7 @@ export function ContactsTable({
                 <details className="mt-1">
                   <summary className="cursor-pointer text-xs font-medium text-blue-700 underline">Edit contact</summary>
                   <form action={updateContactAction} className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-2">
+                    {tenantId ? <TenantScopeHiddenFields tenantId={tenantId} /> : null}
                     <input type="hidden" name="contactId" value={contact.id} />
                     <input
                       name="firstName"
@@ -188,6 +192,7 @@ export function ContactsTable({
                     </button>
                   </form>
                   <form action={deleteContactAction} className="mt-2">
+                    {tenantId ? <TenantScopeHiddenFields tenantId={tenantId} /> : null}
                     <DeleteContactButton
                       contactId={contact.id}
                       displayName={`${contact.firstName} ${contact.lastName}`}

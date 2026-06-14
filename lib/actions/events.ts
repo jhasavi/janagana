@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
-import { requireActiveTenantForActions } from "@/lib/tenant";
+import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 
@@ -21,8 +21,8 @@ export const EventCreateSchema = z
 
 const ACTIVE_REGISTRATION_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "ATTENDED"] as const;
 
-export async function createEvent(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function createEvent(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -306,8 +306,11 @@ export async function updateRegistrationStatusForTenant(input: {
   return { ok: true as const, data: updated };
 }
 
-export async function cancelEventRegistration(input: { eventId: string; registrationId: string }) {
-  const auth = await requireActiveTenantForActions();
+export async function cancelEventRegistration(
+  input: { eventId: string; registrationId: string },
+  options?: TenantActionOptions
+) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -322,8 +325,11 @@ export async function cancelEventRegistration(input: { eventId: string; registra
   });
 }
 
-export async function confirmEventRegistration(input: { eventId: string; registrationId: string }) {
-  const auth = await requireActiveTenantForActions();
+export async function confirmEventRegistration(
+  input: { eventId: string; registrationId: string },
+  options?: TenantActionOptions
+) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -338,8 +344,11 @@ export async function confirmEventRegistration(input: { eventId: string; registr
   });
 }
 
-export async function checkInEventRegistration(input: { eventId: string; registrationId: string }) {
-  const auth = await requireActiveTenantForActions();
+export async function checkInEventRegistration(
+  input: { eventId: string; registrationId: string },
+  options?: TenantActionOptions
+) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -354,8 +363,11 @@ export async function checkInEventRegistration(input: { eventId: string; registr
   });
 }
 
-export async function markEventRegistrationNoShow(input: { eventId: string; registrationId: string }) {
-  const auth = await requireActiveTenantForActions();
+export async function markEventRegistrationNoShow(
+  input: { eventId: string; registrationId: string },
+  options?: TenantActionOptions
+) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsTable } from "@/components/dashboard/contacts-table";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { createContact, deleteContact, listContacts, updateContact } from "@/lib/actions/contacts";
 import { publicPortalUrl } from "@/lib/environment";
 import {
@@ -10,7 +11,7 @@ import {
   contactSourceLabel,
   PILOT_INTEREST_FILTERS,
 } from "@/lib/pilot/contact-labels";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard, tenantIdFromMutation } from "@/lib/tenant";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
 
 function filterHref(base: string, params: Record<string, string>) {
@@ -40,56 +41,80 @@ export default async function ContactsPage({
   async function createContactAction(formData: FormData) {
     "use server";
 
-    const result = await createContact({
-      firstName: String(formData.get("firstName") ?? ""),
-      lastName: String(formData.get("lastName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      type: "OTHER",
-      notes: String(formData.get("notes") ?? ""),
-      tags: String(formData.get("tags") ?? ""),
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await createContact(
+      {
+        firstName: String(formData.get("firstName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+        email: String(formData.get("email") ?? ""),
+        phone: String(formData.get("phone") ?? ""),
+        type: "OTHER",
+        notes: String(formData.get("notes") ?? ""),
+        tags: String(formData.get("tags") ?? ""),
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
       const errorMessage = "error" in result && result.error ? result.error : "Failed to create contact";
+      const tenantId = tenantIdFromMutation(tenantHint);
+      if (tenantId) {
+        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+      }
       redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
     }
 
-    redirect("/dashboard/members?success=1");
+    redirectWithActiveTenant(result.data.tenantId, "/dashboard/members?success=1");
   }
 
   async function updateContactAction(formData: FormData) {
     "use server";
 
-    const result = await updateContact({
-      contactId: String(formData.get("contactId") ?? ""),
-      firstName: String(formData.get("firstName") ?? ""),
-      lastName: String(formData.get("lastName") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      type: String(formData.get("type") ?? "OTHER"),
-      notes: String(formData.get("notes") ?? ""),
-      tags: String(formData.get("tags") ?? ""),
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await updateContact(
+      {
+        contactId: String(formData.get("contactId") ?? ""),
+        firstName: String(formData.get("firstName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+        phone: String(formData.get("phone") ?? ""),
+        type: String(formData.get("type") ?? "OTHER"),
+        notes: String(formData.get("notes") ?? ""),
+        tags: String(formData.get("tags") ?? ""),
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
       const errorMessage = "error" in result && result.error ? result.error : "Failed to update contact";
+      const tenantId = tenantIdFromMutation(tenantHint);
+      if (tenantId) {
+        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+      }
       redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
     }
 
-    redirect("/dashboard/members?success=updated");
+    redirectWithActiveTenant(result.data.tenantId, "/dashboard/members?success=updated");
   }
 
   async function deleteContactAction(formData: FormData) {
     "use server";
 
+    const tenantHint = readTenantIdHintFromForm(formData);
     const contactId = String(formData.get("contactId") ?? "").trim();
-    const result = await deleteContact(contactId);
+    const result = await deleteContact(contactId, { tenantIdHint: tenantHint });
 
     if (!result.ok) {
       const errorMessage = "error" in result && result.error ? result.error : "Failed to delete contact";
+      const tenantId = tenantIdFromMutation(tenantHint);
+      if (tenantId) {
+        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+      }
       redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, "/dashboard/members?success=deleted");
+    }
     redirect("/dashboard/members?success=deleted");
   }
 
@@ -221,6 +246,7 @@ export default async function ContactsPage({
         <summary className="cursor-pointer text-sm font-medium text-gray-900">Add manual entry</summary>
         <p className="mt-2 text-xs text-gray-600">For walk-ins or phone calls — not from the public portal.</p>
         <form action={createContactAction} className="mt-4 grid gap-3 md:grid-cols-2">
+          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
           <input name="firstName" required placeholder="First name" className="rounded border border-gray-300 px-3 py-2 text-sm" />
           <input name="lastName" required placeholder="Last name" className="rounded border border-gray-300 px-3 py-2 text-sm" />
           <input
@@ -290,6 +316,7 @@ export default async function ContactsPage({
         ) : (
           <ContactsTable
             contacts={contacts}
+            tenantId={tenant?.id ?? ""}
             tenantSlug={tenant?.slug ?? "—"}
             updateContactAction={updateContactAction}
             deleteContactAction={deleteContactAction}

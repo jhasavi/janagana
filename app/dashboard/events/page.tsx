@@ -2,10 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { createEvent, listEvents } from "@/lib/actions/events";
 import { publicPortalUrl } from "@/lib/environment";
 import { communityLabel, publicRegisterUrl } from "@/lib/pilot/tenants";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate } from "@/lib/utils";
 
 function eventStatusLabel(status: string): string {
@@ -28,6 +29,7 @@ export default async function EventsPage({
   async function createEventAction(formData: FormData) {
     "use server";
 
+    const tenantHint = readTenantIdHintFromForm(formData);
     const startsAtRaw = String(formData.get("startsAt") ?? "").trim();
     const startsAt = startsAtRaw.length > 0 ? new Date(startsAtRaw) : new Date(NaN);
 
@@ -43,24 +45,30 @@ export default async function EventsPage({
     const capacityRaw = String(formData.get("capacity") ?? "").trim();
     const capacity = capacityRaw.length > 0 ? Number(capacityRaw) : undefined;
 
-    const result = await createEvent({
-      title: String(formData.get("title") ?? ""),
-      slug: String(formData.get("slug") ?? ""),
-      description: String(formData.get("description") ?? ""),
-      startsAt,
-      location: String(formData.get("location") ?? ""),
-      status: String(formData.get("status") ?? "DRAFT"),
-      priceCents,
-      memberPriceCents,
-      capacity,
-    });
+    const result = await createEvent(
+      {
+        title: String(formData.get("title") ?? ""),
+        slug: String(formData.get("slug") ?? ""),
+        description: String(formData.get("description") ?? ""),
+        startsAt,
+        location: String(formData.get("location") ?? ""),
+        status: String(formData.get("status") ?? "DRAFT"),
+        priceCents,
+        memberPriceCents,
+        capacity,
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
       const errorMessage = "error" in result && result.error ? result.error : "Failed to create event";
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/events?error=${encodeURIComponent(errorMessage)}`);
+      }
       redirect(`/dashboard/events?error=${encodeURIComponent(errorMessage)}`);
     }
 
-    redirect("/dashboard/events?success=created");
+    redirectWithActiveTenant(result.data.tenantId, "/dashboard/events?success=created");
   }
 
   const eventsResult = await listEvents();
@@ -98,6 +106,7 @@ export default async function EventsPage({
       <details className="rounded-md border border-gray-200 bg-white p-4">
         <summary className="cursor-pointer text-sm font-medium text-gray-900">Create a new event</summary>
         <form action={createEventAction} className="mt-4 grid gap-3 md:grid-cols-2">
+          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
           <input name="title" required placeholder="Event title" className="rounded border border-gray-300 px-3 py-2 text-sm md:col-span-2" />
           <input name="slug" placeholder="URL slug (e.g. spring-meetup)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
           <input name="location" placeholder="Location" className="rounded border border-gray-300 px-3 py-2 text-sm" />

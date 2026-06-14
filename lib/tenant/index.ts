@@ -34,10 +34,24 @@ export {
   getActiveTenantCookie,
   setActiveTenantCookie,
   clearActiveTenantCookies,
+  applyActiveTenantCookieToResponse,
+  activeTenantCookieOptions,
 } from "./active-tenant-cookie";
 
 export { requireActiveTenantForActions } from "./active-tenant-context";
 
-export type { ActiveTenantActionContext, ActiveTenantActionResult } from "./active-tenant-context";
+export type {
+  ActiveTenantActionContext,
+  ActiveTenantActionResult,
+  TenantActionOptions,
+} from "./active-tenant-context";
+
+export { readTenantIdHintFromForm, ACTIVE_TENANT_FORM_FIELD } from "./active-tenant-form";
+export { pickActiveTenant } from "./pick-active-tenant";
+export {
+  redirectWithActiveTenant,
+  tenantIdFromMutation,
+  isSafeDashboardReturnPath,
+} from "./redirect-with-tenant";
 
 export { ACTIVE_TENANT_COOKIE_NAME } from "./contract";

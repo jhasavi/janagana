@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import {
   createMembershipTier,
   enrollMembership,
@@ -7,7 +8,7 @@ import {
   recordMembershipPayment,
   updateMembershipStatus,
 } from "@/lib/actions/membership-tiers";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 
 const MEMBERSHIP_STATUSES = ["PENDING", "ACTIVE", "INACTIVE", "EXPIRED", "CANCELED"] as const;
@@ -47,78 +48,112 @@ export default async function MembershipsPage({
   async function createTierAction(formData: FormData) {
     "use server";
 
-    const result = await createMembershipTier({
-      name: String(formData.get("name") ?? ""),
-      description: String(formData.get("description") ?? ""),
-      amountCents: centsFromDollars(formData.get("amountDollars")),
-      interval: String(formData.get("interval") ?? "ANNUAL"),
-      active: formData.get("active") === "on",
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await createMembershipTier(
+      {
+        name: String(formData.get("name") ?? ""),
+        description: String(formData.get("description") ?? ""),
+        amountCents: centsFromDollars(formData.get("amountDollars")),
+        interval: String(formData.get("interval") ?? "ANNUAL"),
+        active: formData.get("active") === "on",
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
+      }
       redirect(`/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
     }
 
-    redirect("/dashboard/tiers?success=tier");
+    redirectWithActiveTenant(result.data.tenantId, "/dashboard/tiers?success=tier");
   }
 
   async function enrollMembershipAction(formData: FormData) {
     "use server";
 
-    const result = await enrollMembership({
-      contactId: String(formData.get("contactId") ?? ""),
-      tierId: String(formData.get("tierId") ?? ""),
-      status: String(formData.get("status") ?? "ACTIVE"),
-      startsAt: dateFromForm(formData.get("startsAt")) ?? new Date(),
-      expiresAt: dateFromForm(formData.get("expiresAt")),
-      autoRenew: formData.get("autoRenew") === "on",
-      notes: String(formData.get("notes") ?? ""),
-      initialPaymentAmountCents: centsFromDollars(formData.get("initialPaymentDollars")),
-      initialPaymentMethod: String(formData.get("initialPaymentMethod") ?? "OFFLINE"),
-      initialPaymentStatus: String(formData.get("initialPaymentStatus") ?? "PAID"),
-      initialPaymentPaidAt: dateFromForm(formData.get("initialPaymentPaidAt")),
-      initialPaymentNotes: String(formData.get("initialPaymentNotes") ?? ""),
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await enrollMembership(
+      {
+        contactId: String(formData.get("contactId") ?? ""),
+        tierId: String(formData.get("tierId") ?? ""),
+        status: String(formData.get("status") ?? "ACTIVE"),
+        startsAt: dateFromForm(formData.get("startsAt")) ?? new Date(),
+        expiresAt: dateFromForm(formData.get("expiresAt")),
+        autoRenew: formData.get("autoRenew") === "on",
+        notes: String(formData.get("notes") ?? ""),
+        initialPaymentAmountCents: centsFromDollars(formData.get("initialPaymentDollars")),
+        initialPaymentMethod: String(formData.get("initialPaymentMethod") ?? "OFFLINE"),
+        initialPaymentStatus: String(formData.get("initialPaymentStatus") ?? "PAID"),
+        initialPaymentPaidAt: dateFromForm(formData.get("initialPaymentPaidAt")),
+        initialPaymentNotes: String(formData.get("initialPaymentNotes") ?? ""),
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
+      }
       redirect(`/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
     }
 
-    redirect("/dashboard/tiers?success=enrolled");
+    redirectWithActiveTenant(result.data.tenantId, "/dashboard/tiers?success=enrolled");
   }
 
   async function recordPaymentAction(formData: FormData) {
     "use server";
 
-    const result = await recordMembershipPayment({
-      membershipId: String(formData.get("membershipId") ?? ""),
-      amountCents: centsFromDollars(formData.get("amountDollars")),
-      method: String(formData.get("method") ?? "OFFLINE"),
-      status: String(formData.get("status") ?? "PAID"),
-      paidAt: dateFromForm(formData.get("paidAt")),
-      providerRef: String(formData.get("providerRef") ?? ""),
-      notes: String(formData.get("notes") ?? ""),
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await recordMembershipPayment(
+      {
+        membershipId: String(formData.get("membershipId") ?? ""),
+        amountCents: centsFromDollars(formData.get("amountDollars")),
+        method: String(formData.get("method") ?? "OFFLINE"),
+        status: String(formData.get("status") ?? "PAID"),
+        paidAt: dateFromForm(formData.get("paidAt")),
+        providerRef: String(formData.get("providerRef") ?? ""),
+        notes: String(formData.get("notes") ?? ""),
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
+      }
       redirect(`/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, "/dashboard/tiers?success=payment");
+    }
     redirect("/dashboard/tiers?success=payment");
   }
 
   async function updateStatusAction(formData: FormData) {
     "use server";
 
-    const result = await updateMembershipStatus({
-      membershipId: String(formData.get("membershipId") ?? ""),
-      status: String(formData.get("status") ?? "ACTIVE"),
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await updateMembershipStatus(
+      {
+        membershipId: String(formData.get("membershipId") ?? ""),
+        status: String(formData.get("status") ?? "ACTIVE"),
+      },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
+      }
       redirect(`/dashboard/tiers?error=${encodeURIComponent(result.error)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, "/dashboard/tiers?success=status");
+    }
     redirect("/dashboard/tiers?success=status");
   }
 
@@ -155,6 +190,7 @@ export default async function MembershipsPage({
             <div className="rounded-md border border-gray-200 bg-white p-4">
               <h2 className="text-base font-semibold text-gray-900">Create a tier</h2>
               <form action={createTierAction} className="mt-4 grid gap-3">
+                {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                 <input
                   name="name"
                   required
@@ -196,6 +232,7 @@ export default async function MembershipsPage({
             <div className="rounded-md border border-gray-200 bg-white p-4">
               <h2 className="text-base font-semibold text-gray-900">Enroll a member</h2>
               <form action={enrollMembershipAction} className="mt-4 grid gap-3">
+                {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                 <div className="grid gap-3 md:grid-cols-2">
                   <select name="contactId" required className="rounded border border-gray-300 px-3 py-2 text-sm">
                     <option value="">Choose contact</option>
@@ -364,6 +401,7 @@ export default async function MembershipsPage({
                             {membership.status}
                           </span>
                           <form action={updateStatusAction} className="mt-2 grid gap-1">
+                            {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                             <input type="hidden" name="membershipId" value={membership.id} />
                             <select name="status" defaultValue={membership.status} className="rounded border border-gray-300 px-2 py-1 text-xs">
                               {MEMBERSHIP_STATUSES.map((status) => (
@@ -404,6 +442,7 @@ export default async function MembershipsPage({
                           <details>
                             <summary className="cursor-pointer text-xs font-medium text-blue-700 underline">Add payment</summary>
                             <form action={recordPaymentAction} className="mt-2 grid gap-2 rounded border border-gray-200 bg-gray-50 p-2">
+                              {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                               <input type="hidden" name="membershipId" value={membership.id} />
                               <input
                                 name="amountDollars"

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findMappedTenantsForUser } from "@/lib/tenant";
-import { clearActiveTenantCookies, setActiveTenantCookie } from "@/lib/tenant";
+import {
+  applyActiveTenantCookieToResponse,
+  clearActiveTenantCookies,
+} from "@/lib/tenant/active-tenant-cookie";
 import { createRequestId } from "@/lib/utils";
 import { isSameOriginMutationRequest } from "@/lib/security/same-origin";
 
@@ -43,10 +46,10 @@ export async function POST(req: NextRequest) {
   }
 
   await clearActiveTenantCookies();
-  await setActiveTenantCookie(selected.id);
   console.info("SET_ACTIVE_TENANT", { requestId, tenantId: selected.id, source: "api-select-tenant" });
 
-  return NextResponse.redirect(new URL("/dashboard", req.url));
+  const response = NextResponse.redirect(new URL("/dashboard", req.url));
+  return applyActiveTenantCookieToResponse(response, selected.id);
 }
 
 export async function GET(req: NextRequest) {
@@ -63,8 +66,7 @@ export async function GET(req: NextRequest) {
     if (mappedTenants.length <= 1) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
-    await clearActiveTenantCookies();
-    console.info("ACTIVE_TENANT_COOKIE_CLEARED", { source: "prepare-switch" });
+    console.info("TENANT_SWITCH_PICKER_OPENED", { source: "prepare-switch" });
     return NextResponse.redirect(new URL("/select-organization?switch=1", req.url));
   }
 
@@ -72,14 +74,40 @@ export async function GET(req: NextRequest) {
     const mappedTenants = await findMappedTenantsForUser();
     if (mappedTenants.length === 1) {
       await clearActiveTenantCookies();
-      await setActiveTenantCookie(mappedTenants[0].id);
       console.info("SET_ACTIVE_TENANT", {
         tenantId: mappedTenants[0].id,
         source: "api-select-tenant-auto-single",
       });
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      const response = NextResponse.redirect(new URL("/dashboard", req.url));
+      return applyActiveTenantCookieToResponse(response, mappedTenants[0].id);
     }
     return NextResponse.redirect(new URL("/select-organization", req.url));
+  }
+
+  if (reason === "persist") {
+    const tenantId = req.nextUrl.searchParams.get("tenantId")?.trim() ?? "";
+    const returnTo = req.nextUrl.searchParams.get("returnTo")?.trim() || "/dashboard";
+    const safeReturnTo =
+      returnTo.startsWith("/") && !returnTo.startsWith("//") && returnTo.startsWith("/dashboard")
+        ? returnTo
+        : "/dashboard";
+
+    if (!tenantId) {
+      return NextResponse.redirect(new URL("/select-organization?error=missing-tenant", req.url));
+    }
+
+    const mappedTenants = await findMappedTenantsForUser();
+    const selected = mappedTenants.find((t) => t.id === tenantId);
+
+    if (!selected) {
+      await clearActiveTenantCookies();
+      console.info("DASHBOARD_TENANT_FAILED", { reason: "INVALID_PERSIST_TENANT", tenantId });
+      return NextResponse.redirect(new URL("/select-organization?error=invalid-tenant", req.url));
+    }
+
+    console.info("SET_ACTIVE_TENANT", { tenantId: selected.id, source: "api-select-tenant-persist" });
+    const response = NextResponse.redirect(new URL(safeReturnTo, req.url));
+    return applyActiveTenantCookieToResponse(response, selected.id);
   }
 
   return NextResponse.redirect(new URL("/select-organization?error=use-post", req.url));

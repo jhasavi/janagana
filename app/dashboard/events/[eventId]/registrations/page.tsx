@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import {
   cancelEventRegistration,
   checkInEventRegistration,
@@ -10,7 +11,7 @@ import {
   markEventRegistrationNoShow,
 } from "@/lib/actions/events";
 import { publicRegisterUrl } from "@/lib/pilot/tenants";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 
 export default async function EventRegistrationsPage({
@@ -38,56 +39,120 @@ export default async function EventRegistrationsPage({
   async function cancelRegistrationAction(formData: FormData) {
     "use server";
 
+    const tenantHint = readTenantIdHintFromForm(formData);
     const registrationId = String(formData.get("registrationId") ?? "").trim();
-    const actionResult = await cancelEventRegistration({ eventId, registrationId });
+    const actionResult = await cancelEventRegistration(
+      { eventId, registrationId },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!actionResult.ok) {
       const errorMessage = actionResult.error ?? "Failed to cancel registration";
+      if (tenantHint) {
+        redirectWithActiveTenant(
+          tenantHint,
+          `/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`
+        );
+      }
       redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(
+        tenantHint,
+        `/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration canceled")}`
+      );
+    }
     redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration canceled")}`);
   }
 
   async function confirmRegistrationAction(formData: FormData) {
     "use server";
 
+    const tenantHint = readTenantIdHintFromForm(formData);
     const registrationId = String(formData.get("registrationId") ?? "").trim();
-    const actionResult = await confirmEventRegistration({ eventId, registrationId });
+    const actionResult = await confirmEventRegistration(
+      { eventId, registrationId },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!actionResult.ok) {
       const errorMessage = actionResult.error ?? "Failed to confirm registration";
+      if (tenantHint) {
+        redirectWithActiveTenant(
+          tenantHint,
+          `/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`
+        );
+      }
       redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(
+        tenantHint,
+        `/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration confirmed")}`
+      );
+    }
     redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration confirmed")}`);
   }
 
   async function checkInRegistrationAction(formData: FormData) {
     "use server";
 
+    const tenantHint = readTenantIdHintFromForm(formData);
     const registrationId = String(formData.get("registrationId") ?? "").trim();
-    const actionResult = await checkInEventRegistration({ eventId, registrationId });
+    const actionResult = await checkInEventRegistration(
+      { eventId, registrationId },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!actionResult.ok) {
       const errorMessage = actionResult.error ?? "Failed to check in attendee";
+      if (tenantHint) {
+        redirectWithActiveTenant(
+          tenantHint,
+          `/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`
+        );
+      }
       redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(
+        tenantHint,
+        `/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Attendee checked in")}`
+      );
+    }
     redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Attendee checked in")}`);
   }
 
   async function noShowRegistrationAction(formData: FormData) {
     "use server";
 
+    const tenantHint = readTenantIdHintFromForm(formData);
     const registrationId = String(formData.get("registrationId") ?? "").trim();
-    const actionResult = await markEventRegistrationNoShow({ eventId, registrationId });
+    const actionResult = await markEventRegistrationNoShow(
+      { eventId, registrationId },
+      { tenantIdHint: tenantHint }
+    );
 
     if (!actionResult.ok) {
       const errorMessage = actionResult.error ?? "Failed to mark no-show";
+      if (tenantHint) {
+        redirectWithActiveTenant(
+          tenantHint,
+          `/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`
+        );
+      }
       redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
     }
 
+    if (tenantHint) {
+      redirectWithActiveTenant(
+        tenantHint,
+        `/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration marked no-show")}`
+      );
+    }
     redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Registration marked no-show")}`);
   }
 
@@ -239,6 +304,7 @@ export default async function EventRegistrationsPage({
                       <div className="flex flex-col items-start gap-1">
                         {(reg.status === "PENDING_PAYMENT" || reg.status === "CANCELED" || reg.status === "NO_SHOW") && (
                           <form action={confirmRegistrationAction}>
+                            {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                             <input type="hidden" name="registrationId" value={reg.id} />
                             <button type="submit" className="text-xs text-blue-700 hover:underline">
                               Mark confirmed
@@ -247,6 +313,7 @@ export default async function EventRegistrationsPage({
                         )}
                         {reg.status === "CONFIRMED" && (
                           <form action={checkInRegistrationAction}>
+                            {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                             <input type="hidden" name="registrationId" value={reg.id} />
                             <button type="submit" className="text-xs text-emerald-700 hover:underline">
                               Check in
@@ -255,6 +322,7 @@ export default async function EventRegistrationsPage({
                         )}
                         {(reg.status === "CONFIRMED" || reg.status === "PENDING_PAYMENT") && (
                           <form action={noShowRegistrationAction}>
+                            {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                             <input type="hidden" name="registrationId" value={reg.id} />
                             <button type="submit" className="text-xs text-amber-700 hover:underline">
                               Mark no-show
@@ -263,6 +331,7 @@ export default async function EventRegistrationsPage({
                         )}
                         {reg.status !== "CANCELED" && (
                           <form action={cancelRegistrationAction}>
+                            {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                             <input type="hidden" name="registrationId" value={reg.id} />
                             <button type="submit" className="text-xs text-red-700 hover:underline">
                               Cancel registration

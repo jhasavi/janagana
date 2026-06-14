@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireActiveTenantForActions } from "@/lib/tenant";
+import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
 
 const TenantBrandingSchema = z
   .object({
@@ -13,8 +13,8 @@ const TenantBrandingSchema = z
   })
   .strict();
 
-export async function updateTenantBranding(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function updateTenantBranding(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

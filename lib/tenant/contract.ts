@@ -11,7 +11,8 @@
  * - Single mapped tenant → auto-persist via GET /api/select-tenant?reason=auto-single.
  *
  * SERVER ACTIONS
- * - requireActiveTenantForActions() — must resolve to ONE_TENANT.
+ * - requireActiveTenantForActions({ tenantIdHint? }) — cookie, then hidden jgTenantId, then single-tenant auto.
+ * - Dashboard mutation forms include hidden jgTenantId so multi-tenant POSTs stay scoped.
  *
  * APIs
  * - GET /api/active-tenant (canonical)

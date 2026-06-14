@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { clerkOrgRoleLabel } from "@/lib/auth/clerk-roles";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
@@ -11,7 +12,7 @@ import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import { communityLabel, portalLinksForTenant } from "@/lib/pilot/portal-links";
 import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
-import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
+import { findMappedTenantsForUser, readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { getTenantBranding, updateTenantBranding } from "@/lib/actions/tenant-branding";
 import { prisma } from "@/lib/prisma";
 
@@ -41,16 +42,23 @@ export default async function SettingsPage() {
 
   async function updateBrandingAction(formData: FormData) {
     "use server";
-    const result = await updateTenantBranding({
-      publicTagline: String(formData.get("publicTagline") ?? ""),
-      publicContactEmail: String(formData.get("publicContactEmail") ?? ""),
-      publicContactPhone: String(formData.get("publicContactPhone") ?? ""),
-      logoUrl: String(formData.get("logoUrl") ?? ""),
-    });
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await updateTenantBranding(
+      {
+        publicTagline: String(formData.get("publicTagline") ?? ""),
+        publicContactEmail: String(formData.get("publicContactEmail") ?? ""),
+        publicContactPhone: String(formData.get("publicContactPhone") ?? ""),
+        logoUrl: String(formData.get("logoUrl") ?? ""),
+      },
+      { tenantIdHint: tenantHint }
+    );
     if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      }
       redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
     }
-    redirect("/dashboard/settings?success=branding");
+    redirectWithActiveTenant(result.data.id, "/dashboard/settings?success=branding");
   }
 
   const engineeringFlags = {
@@ -89,6 +97,7 @@ export default async function SettingsPage() {
           <h2 className="text-sm font-semibold text-gray-900">Public portal branding</h2>
           <p className="mt-1 text-sm text-gray-600">Shown on your public portal header.</p>
           <form action={updateBrandingAction} className="mt-4 grid gap-3 md:grid-cols-2">
+            <TenantScopeHiddenFields tenantId={activeTenant.id} />
             <label className="block text-sm md:col-span-2">
               Tagline
               <input

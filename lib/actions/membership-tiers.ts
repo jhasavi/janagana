@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireActiveTenantForActions } from "@/lib/tenant";
+import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
 
 const MembershipStatusSchema = z.enum(["PENDING", "ACTIVE", "INACTIVE", "EXPIRED", "CANCELED"]);
@@ -17,8 +17,8 @@ export const MembershipTierCreateSchema = z
   })
   .strict();
 
-export async function createMembershipTier(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function createMembershipTier(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -214,8 +214,8 @@ export async function listMembershipAdminData() {
   };
 }
 
-export async function enrollMembership(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function enrollMembership(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -313,8 +313,8 @@ export async function enrollMembership(input: unknown) {
   }
 }
 
-export async function recordMembershipPayment(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function recordMembershipPayment(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -372,8 +372,8 @@ export async function recordMembershipPayment(input: unknown) {
   }
 }
 
-export async function updateMembershipStatus(input: unknown) {
-  const auth = await requireActiveTenantForActions();
+export async function updateMembershipStatus(input: unknown, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
