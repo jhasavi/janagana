@@ -14,6 +14,7 @@ const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/select-organization(.*)",
   "/onboarding/create-organization(.*)",
+  "/onboarding/no-access(.*)",
   "/onboarding/complete(.*)",
   "/api/active-org(.*)", // legacy alias → prefer /api/active-tenant
   "/api/active-tenant(.*)",

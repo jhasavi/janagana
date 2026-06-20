@@ -31,7 +31,7 @@
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in route | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up route | `/sign-up` |
 | `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Post-sign-in redirect | `/dashboard` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Post-sign-up redirect | `/onboarding/create-organization` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Post-sign-up redirect | `/dashboard` |
 | `CLERK_WEBHOOK_SECRET` | Svix webhook signing secret from Clerk dashboard | `whsec_...` |
 
 ### Stripe (optional for paid public membership checkout)

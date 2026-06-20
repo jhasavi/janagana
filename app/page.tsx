@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveTenantForDashboard } from "@/lib/tenant";
+import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -16,7 +17,7 @@ export default async function HomePage() {
 
   if (resolution.status === "ZERO_TENANTS") {
     console.info("ZERO_TENANTS_ONBOARDING");
-    redirect("/onboarding/create-organization");
+    return redirectForZeroTenantAccess();
   }
 
   if (resolution.status === "ONE_TENANT") {

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ArrowLeft, Send, Sparkles } from "lucide-react";
 import { capturePublicLead, listPublishedPortalEvents } from "@/lib/actions/public-portal";
 import {
   defaultVisitorReturnUrl,
@@ -108,17 +109,34 @@ export default async function PublicContactCapturePage({
   const backUrl = safeReturnTo ?? defaultVisitorReturnUrl(tenantSlug);
 
   return (
-    <main className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">Public contact</p>
-      <h1 className="mt-2 text-3xl font-semibold">{portal.tenant.name}</h1>
-      <p className="mt-2 text-sm text-slate-600">{interestLabel(initialInterest)}</p>
+    <main className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+      <section className="rounded-lg border border-stone-200 bg-teal-950 p-6 text-white shadow-sm sm:p-8">
+        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-teal-50">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-teal-100">Stay connected</p>
+        <h1 className="mt-2 text-3xl font-semibold">{portal.tenant.name}</h1>
+        <p className="mt-3 text-sm leading-6 text-teal-50">{interestLabel(initialInterest)}</p>
+        <p className="mt-6 text-sm leading-6 text-teal-100">
+          Share your details and the organizing team can follow up with the right updates, classes, membership options, or event information.
+        </p>
 
-      {message && <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-800">{message}</p>}
+        {backUrl && (
+          <a href={backUrl} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-teal-100">
+            <ArrowLeft className="h-4 w-4" />
+            Community website
+          </a>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+      {message && <p className="rounded-md bg-teal-50 px-4 py-3 text-sm text-teal-950">{message}</p>}
 
       {backUrl && query.status === "success" && (
         <p className="mt-3">
-          <a href={backUrl} className="text-sm font-medium text-blue-700 hover:underline">
-            ← Return to community website
+          <a href={backUrl} className="inline-flex items-center gap-2 text-sm font-semibold text-teal-900 hover:text-slate-950">
+            <ArrowLeft className="h-4 w-4" />
+            Return to community website
           </a>
         </p>
       )}
@@ -131,39 +149,41 @@ export default async function PublicContactCapturePage({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-700">
             First name
-            <input name="firstName" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <input name="firstName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
           </label>
           <label className="block text-sm font-medium text-slate-700">
             Last name
-            <input name="lastName" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <input name="lastName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
           </label>
         </div>
 
         <label className="block text-sm font-medium text-slate-700">
           Email
-          <input type="email" name="email" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <input type="email" name="email" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
         </label>
 
         <label className="block text-sm font-medium text-slate-700">
           Phone
-          <input name="phone" type="tel" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <input name="phone" type="tel" className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
         </label>
 
         <label className="block text-sm font-medium text-slate-700">
           Message (optional)
-          <textarea name="message" rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <textarea name="message" rows={4} className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
         </label>
 
-        <button type="submit" className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+        <button type="submit" className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900">
           Submit
+          <Send className="h-4 w-4" />
         </button>
         {backUrl && (
-          <a href={backUrl} className="ml-3 text-sm text-slate-600 hover:text-slate-900 hover:underline">
+          <a href={backUrl} className="ml-3 text-sm font-medium text-slate-600 hover:text-slate-950">
             Cancel
           </a>
         )}
       </form>
       )}
+      </section>
     </main>
   );
 }

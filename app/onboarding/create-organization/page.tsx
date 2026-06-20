@@ -83,6 +83,16 @@ export default async function CreateOrganizationPage({
     unmappedClerkOrgs.length === 0 &&
     params.error !== "db-create-recovery-required";
 
+  if (
+    mappedTenants.length === 0 &&
+    unmappedClerkOrgs.length > 0 &&
+    !selfServeEnabled &&
+    !existingOrgSetupEnabled &&
+    !params.error
+  ) {
+    redirect("/onboarding/no-access");
+  }
+
   if (shouldRedirectToSelectOrganization) {
     redirect("/select-organization");
   }

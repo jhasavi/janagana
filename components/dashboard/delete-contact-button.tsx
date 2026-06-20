@@ -14,7 +14,7 @@ export function DeleteContactButton({
       type="submit"
       name="contactId"
       value={contactId}
-      className="text-xs text-red-700 underline"
+      className="text-xs font-semibold text-red-700 hover:text-red-900"
       onClick={(event) => {
         if (!confirm(`Remove ${displayName} from this community? This cannot be undone.`)) {
           event.preventDefault();

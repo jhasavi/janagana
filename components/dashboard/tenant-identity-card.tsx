@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExternalLink, Link2, Settings } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { communityLabel } from "@/lib/pilot/portal-links";
 import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
@@ -20,15 +21,15 @@ export function TenantIdentityCard({
   return (
     <section
       id="tenant-portal-url"
-      className="rounded-lg border border-gray-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm"
+      className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">You are managing</p>
-          <h1 className="mt-1 text-2xl font-semibold text-gray-900">{communityLabel(tenant.slug)}</h1>
-          <p className="mt-1 text-sm text-gray-600">
+      <div className="grid gap-0 lg:grid-cols-[1fr_22rem]">
+        <div className="min-w-0 p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Now managing</p>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-950">{communityLabel(tenant.slug)}</h1>
+          <p className="mt-1 text-sm text-slate-600">
             Tenant <span className="font-mono text-gray-800">{tenant.slug}</span>
-            <span className="mx-2 text-gray-300">·</span>
+            <span className="mx-2 text-stone-300">/</span>
             {tenant.name}
           </p>
 
@@ -42,51 +43,56 @@ export function TenantIdentityCard({
             </span>
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                mappingOk ? "bg-blue-100 text-blue-900" : "bg-red-100 text-red-900"
+                mappingOk ? "bg-teal-100 text-teal-950" : "bg-red-100 text-red-900"
               }`}
             >
               {mappingStatus}
             </span>
           </div>
 
-          <div className="mt-4 rounded-md border border-blue-100 bg-blue-50/80 p-3">
-            <p className="text-xs font-medium text-blue-900">Live public portal</p>
-            <p className="mt-1 break-all font-mono text-sm text-blue-950">{portalUrl}</p>
-            <p className="mt-1 text-xs text-blue-800">
-              Website visitors use this URL — not your Clerk sign-in. Leads and registrations land under this tenant only.
-            </p>
-          </div>
+          <p className="mt-5 max-w-2xl text-sm leading-6 text-slate-600">
+            Leads, memberships, and event registrations shown here are scoped to this community only.
+          </p>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
+        <div className="border-t border-stone-200 bg-stone-50 p-5 sm:p-6 lg:border-l lg:border-t-0">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+            <Link2 className="h-4 w-4" />
+            Live portal
+          </p>
+          <p className="mt-3 break-all font-mono text-sm text-slate-800">{portalUrl}</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
           <CopyTextButton text={portalUrl} label="Copy portal URL" className="w-full sm:w-auto" />
           <a
             href={portalUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900"
           >
-            Open portal ↗
+            Open portal
+            <ExternalLink className="h-4 w-4" />
           </a>
           <Link
             href="/dashboard/settings"
-            className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-50"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-stone-50"
           >
-            Website links & setup
+            <Settings className="h-4 w-4" />
+            Setup
           </Link>
+          </div>
         </div>
       </div>
 
-      <details className="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-600">
-        <summary className="cursor-pointer font-medium text-gray-700">Technical IDs (support)</summary>
-        <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+      <details className="border-t border-stone-200 px-5 py-3 text-xs text-slate-600 sm:px-6">
+        <summary className="cursor-pointer font-medium text-slate-700">Technical IDs for support</summary>
+        <dl className="mt-3 grid gap-2 sm:grid-cols-2">
           <div>
-            <dt className="font-medium text-gray-500">Clerk org ID</dt>
-            <dd className="mt-0.5 break-all font-mono text-gray-800">{tenant.clerkOrgId}</dd>
+            <dt className="font-medium text-slate-500">Clerk org ID</dt>
+            <dd className="mt-0.5 break-all font-mono text-slate-800">{tenant.clerkOrgId}</dd>
           </div>
           <div>
-            <dt className="font-medium text-gray-500">Tenant ID</dt>
-            <dd className="mt-0.5 break-all font-mono text-gray-800">{tenant.id}</dd>
+            <dt className="font-medium text-slate-500">Tenant ID</dt>
+            <dd className="mt-0.5 break-all font-mono text-slate-800">{tenant.id}</dd>
           </div>
         </dl>
       </details>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ArrowRight, CheckCircle2, CreditCard, HeartHandshake } from "lucide-react";
 import { createPublicMembershipCheckout, listPublicMembershipTiers } from "@/lib/actions/public-memberships";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import { formatCents } from "@/lib/utils";
@@ -49,31 +50,40 @@ export default async function PublicMembershipJoinPage({
   const defaultTierId = result.data[0]?.id ?? "";
 
   return (
-    <main className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-medium text-slate-500">Membership</p>
-        <h1 className="mt-2 text-3xl font-semibold">Join {result.tenant.name}</h1>
-        <p className="mt-3 max-w-2xl text-sm text-slate-600">
+    <main className="space-y-7">
+      <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-teal-50 text-teal-900">
+          <HeartHandshake className="h-5 w-5" />
+        </div>
+        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-teal-800">Membership</p>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-950">Join {result.tenant.name}</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
           Choose a membership and enter your details. Paid memberships continue to secure checkout.
         </p>
-        <p className="mt-2 text-sm font-medium text-slate-700">{paymentFeeDisclosure()}</p>
-        {message && <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-800">{message}</p>}
+        <p className="mt-3 inline-flex items-center gap-2 rounded-md bg-stone-100 px-3 py-2 text-sm font-medium text-slate-700">
+          <CreditCard className="h-4 w-4 text-teal-900" />
+          {paymentFeeDisclosure()}
+        </p>
+        {message && <p className="mt-4 rounded-md bg-teal-50 px-4 py-3 text-sm text-teal-950">{message}</p>}
       </section>
 
       {result.data.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
+        <div className="rounded-lg border border-dashed border-stone-300 bg-white p-6 text-sm text-slate-600">
           Memberships are not open online yet. Please check back soon.
         </div>
       ) : (
         <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Available memberships</h2>
+            <h2 className="text-lg font-semibold text-slate-950">Available memberships</h2>
             {result.data.map((tier) => (
-              <article key={tier.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <article key={tier.id} className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-base font-semibold text-slate-950">{tier.name}</h3>
-                    {tier.description && <p className="mt-2 text-sm text-slate-600">{tier.description}</p>}
+                    <h3 className="flex items-center gap-2 text-base font-semibold text-slate-950">
+                      <CheckCircle2 className="h-4 w-4 text-teal-800" />
+                      {tier.name}
+                    </h3>
+                    {tier.description && <p className="mt-2 text-sm leading-6 text-slate-600">{tier.description}</p>}
                   </div>
                   <p className="shrink-0 text-sm font-semibold text-slate-950">
                     {formatCents(tier.amountCents)}
@@ -86,8 +96,8 @@ export default async function PublicMembershipJoinPage({
             ))}
           </div>
 
-          <form action={checkoutAction} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold">Member details</h2>
+          <form action={checkoutAction} className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-950">Member details</h2>
             <div className="mt-5 space-y-4">
               <label className="block text-sm font-medium text-slate-700">
                 Membership
@@ -95,7 +105,7 @@ export default async function PublicMembershipJoinPage({
                   name="tierId"
                   required
                   defaultValue={defaultTierId}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm"
                 >
                   {result.data.map((tier) => (
                     <option key={tier.id} value={tier.id}>
@@ -107,28 +117,29 @@ export default async function PublicMembershipJoinPage({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm font-medium text-slate-700">
-                  First name
-                  <input name="firstName" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                First name
+                  <input name="firstName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
                 </label>
                 <label className="block text-sm font-medium text-slate-700">
                   Last name
-                  <input name="lastName" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <input name="lastName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
                 </label>
               </div>
 
               <label className="block text-sm font-medium text-slate-700">
                 Email
-                <input type="email" name="email" required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input type="email" name="email" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
               </label>
 
               <label className="block text-sm font-medium text-slate-700">
                 Phone
-                <input name="phone" type="tel" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <input name="phone" type="tel" className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
               </label>
             </div>
 
-            <button type="submit" className="mt-6 inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            <button type="submit" className="mt-6 inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900">
               Continue
+              <ArrowRight className="h-4 w-4" />
             </button>
           </form>
         </section>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckCircle2, Circle, ExternalLink } from "lucide-react";
 
 export function NextStepsPanel({
   tenantSlug,
@@ -30,7 +31,7 @@ export function NextStepsPanel({
     },
     {
       done: hasRegistrations,
-      label: "Confirm an event registration shows under Events → Registrations",
+      label: "Confirm an event registration appears in Events",
       href: "/dashboard/events",
     },
     {
@@ -43,17 +44,18 @@ export function NextStepsPanel({
   const next = steps.find((s) => !s.done);
 
   return (
-    <section className="rounded-md border border-gray-200 bg-white p-5">
-      <h2 className="text-base font-semibold text-gray-900">What to do next</h2>
+    <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+      <h2 className="text-base font-semibold text-slate-950">What to do next</h2>
       {next ? (
-        <p className="mt-2 text-sm text-gray-700">
-          <span className="font-medium text-gray-900">Next: </span>
+        <p className="mt-2 text-sm leading-6 text-slate-700">
+          <span className="font-semibold text-slate-950">Next: </span>
           {next.externalHref ? (
-            <a href={next.externalHref} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+            <a href={next.externalHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-teal-900 hover:text-slate-950">
               {next.label}
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           ) : next.href ? (
-            <Link href={next.href} className="text-blue-700 underline">
+            <Link href={next.href} className="font-semibold text-teal-900 hover:text-slate-950">
               {next.label}
             </Link>
           ) : (
@@ -61,21 +63,24 @@ export function NextStepsPanel({
           )}
         </p>
       ) : (
-        <p className="mt-2 text-sm text-emerald-800">Pilot loop looks healthy — keep monitoring recent contacts and registrations below.</p>
+        <p className="mt-2 text-sm text-emerald-800">Pilot loop looks healthy. Keep monitoring recent contacts and registrations below.</p>
       )}
-      <ol className="mt-4 space-y-2 text-sm text-gray-600">
+      <ol className="mt-4 space-y-2 text-sm text-slate-600">
         {steps.map((step, index) => (
           <li key={index} className="flex gap-2">
-            <span className={step.done ? "text-emerald-600" : "text-gray-400"} aria-hidden>
-              {step.done ? "✓" : "○"}
-            </span>
-            <span className={step.done ? "text-gray-500 line-through" : "text-gray-800"}>
+            {step.done ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+            ) : (
+              <Circle className="mt-0.5 h-4 w-4 shrink-0 text-stone-400" aria-hidden />
+            )}
+            <span className={step.done ? "text-slate-500 line-through" : "text-slate-800"}>
               {step.externalHref && !step.done ? (
-                <a href={step.externalHref} target="_blank" rel="noreferrer" className="text-blue-700 underline">
+                <a href={step.externalHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-teal-900 hover:text-slate-950">
                   {step.label}
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               ) : step.href && !step.done ? (
-                <Link href={step.href} className="text-blue-700 underline">
+                <Link href={step.href} className="font-semibold text-teal-900 hover:text-slate-950">
                   {step.label}
                 </Link>
               ) : (
