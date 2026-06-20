@@ -33,11 +33,20 @@ function portalBase(slug: string): string {
   return `${configuredAppUrl().replace(/\/$/, "")}/portal/${slug}`;
 }
 
-const COMMON_LINKS = (root: string): PortalLink[] => [
-  { label: "Portal home", href: root, hint: "Classes, events, and community entry" },
-  { label: "Events listing", href: `${root}/events` },
+const COMMON_LINKS = (root: string, slug: string): PortalLink[] => [
+  { label: "Portal home", href: root, hint: "Link from your website — visitors open JanaGana portal (no Clerk sign-in)" },
+  { label: "Events listing", href: `${root}/events`, hint: "Or render events on your site via embed API (see Portal & setup)" },
   { label: "Membership join", href: `${root}/join` },
-  { label: "Newsletter / community updates", href: `${root}/contact?interest=newsletter` },
+  {
+    label: "Newsletter / community updates",
+    href: `${root}/contact?interest=newsletter`,
+    hint: "Add ?embed=1 for iframe on your site; use returnTo so visitors come back after submit",
+  },
+  {
+    label: "Embed events API (JSON)",
+    href: `${configuredAppUrl().replace(/\/$/, "")}/api/embed/events?tenantSlug=${slug}`,
+    hint: "Your website fetches events and renders its own cards (TPW /events pattern)",
+  },
 ];
 
 const EXTRA_LINKS: Record<PilotTenantSlug, PortalLink[]> = {
@@ -70,7 +79,7 @@ export function publicRegisterUrl(tenantSlug: string, eventSlug: string): string
 export function portalLinksForTenant(slug: string): PortalLink[] {
   const root = portalBase(slug);
   if (isPilotTenantSlug(slug)) {
-    return [...COMMON_LINKS(root), ...EXTRA_LINKS[slug]];
+    return [...COMMON_LINKS(root, slug), ...EXTRA_LINKS[slug]];
   }
-  return [...COMMON_LINKS(root), { label: "Contact form", href: `${root}/contact` }];
+  return [...COMMON_LINKS(root, slug), { label: "Contact form", href: `${root}/contact` }];
 }

@@ -9,6 +9,8 @@ Admin operator → Clerk → mapped tenants → cookie preference → dashboard
 
 Do not pass dashboard cookies into public portal resolution.
 
+**Tenant websites** link or embed portal URLs (and optionally `GET /api/embed/events`); operators never put the dashboard on a tenant domain. See [13-TENANT-WEBSITE-INTEGRATION.md](./13-TENANT-WEBSITE-INTEGRATION.md).
+
 ## Data ownership
 
 - **Contact** — visitor/registrant; never a Clerk user.

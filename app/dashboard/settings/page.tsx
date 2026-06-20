@@ -10,6 +10,7 @@ import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
 import { configuredAppUrl, currentClerkMode, keyModeFromPrefix, publicPortalUrl } from "@/lib/environment";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import { communityLabel, portalLinksForTenant } from "@/lib/pilot/portal-links";
+import { portalEmbedUrl } from "@/lib/pilot/tenant-integration";
 import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
 import { findMappedTenantsForUser, readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
@@ -180,6 +181,43 @@ export default async function SettingsPage() {
                 Switch community
               </Link>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTenant && portalUrl && (
+        <div className="mt-4 rounded-md border border-teal-100 bg-teal-50/80 p-4">
+          <h2 className="text-sm font-semibold text-teal-950">How your website connects</h2>
+          <p className="mt-2 text-sm text-teal-900">
+            <strong>You (operator)</strong> use this dashboard at{" "}
+            <span className="font-mono text-xs">{configuredAppUrl()}</span> with Clerk sign-in.
+            <strong className="ml-1">Website visitors</strong> never sign in here — they use the public portal URLs below
+            (linked or embedded from your community website).
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-teal-900">
+            <li>
+              <strong>Link-out:</strong> buttons on your site open portal pages; add <code className="font-mono">returnTo</code>{" "}
+              so visitors return to your site after registration.
+            </li>
+            <li>
+              <strong>Embed API:</strong> your site calls the events JSON endpoint and renders its own event cards.
+            </li>
+            <li>
+              <strong>Embed iframe:</strong> append <code className="font-mono">?embed=1</code> to a portal URL for a
+              minimal form inside your page.
+            </li>
+          </ul>
+          <p className="mt-3 text-xs text-teal-800">
+            Full deployment checklist:{" "}
+            <code className="rounded bg-white/60 px-1 font-mono">docs/13-TENANT-WEBSITE-INTEGRATION.md</code> in the repo.
+          </p>
+          <div className="mt-3 rounded border border-teal-200/80 bg-white/70 p-3">
+            <p className="text-xs font-medium text-teal-950">Example iframe (newsletter form)</p>
+            <CopyTextButton
+              text={portalEmbedUrl(`/portal/${activeTenant.slug}/contact?interest=newsletter`)}
+              label="Copy embed URL"
+            />
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[10px] text-teal-900">{`<iframe title="Stay updated" src="${portalEmbedUrl(`/portal/${activeTenant.slug}/contact?interest=newsletter`)}" class="w-full min-h-[520px] border-0 rounded-xl" />`}</pre>
           </div>
         </div>
       )}
