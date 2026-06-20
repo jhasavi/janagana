@@ -7,6 +7,8 @@ const SOURCE_LABELS: Record<string, string> = {
   manual_admin: "Manual entry",
   nb_crm_import: "CRM import",
   tpw_class_import: "TPW class roster",
+  dashboard_csv_import: "Spreadsheet import",
+  dashboard_raklet_import: "Raklet import",
 };
 
 const INTEREST_LABELS: Record<string, string> = {

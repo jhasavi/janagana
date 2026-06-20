@@ -47,6 +47,7 @@
     "test:tenant:contract": "tsx scripts/test-tenant-resolution-contract.ts",
     "test:multi-tenant": "tsx scripts/test-multi-tenant-active-tenant.ts",
     "test:portal-return": "tsx scripts/test-portal-return-url.ts",
+    "test:contact-import": "tsx scripts/test-contact-import-parser.ts",
     "test:portal": "tsx scripts/test-public-registration.ts",
     "test:portal:concurrency": "tsx scripts/test-public-registration-concurrency.ts",
     "test:e2e": "playwright test",
@@ -83,6 +84,7 @@
     "svix": "^1.40.0",
     "tailwind-merge": "^2.5.0",
     "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.0"
   },
   "devDependencies": {

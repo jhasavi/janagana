@@ -17,7 +17,7 @@ All boxes below checked — no new platform scope required.
 | # | Check | Command / where |
 |---|--------|-----------------|
 | A1 | Tenant `purple-wings` active, correct Clerk org | Dashboard → Portal & setup |
-| A2 | Class roster imported (`class1.csv`, 11 contacts) | `npm run import:tpw-class` then Contacts → filter **Class interest** / tag `class1` |
+| A2 | Class roster imported (`class1.csv`, 11 contacts) | Dashboard → Contacts → **Import spreadsheet**, or `npm run import:tpw-class` |
 | A3 | At least one **Published** class/event | Dashboard → Events |
 | A4 | Register link copies and works (incognito test) | Events → Copy register link |
 | A5 | Portal submissions land in Contacts only for Purple Wings | Incognito portal contact form |

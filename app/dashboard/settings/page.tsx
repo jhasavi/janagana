@@ -252,7 +252,7 @@ export default async function SettingsPage() {
             receipts
           </strong>{" "}
           for this community. Not included yet: donations, online event checkout, refund
-          operations, CRM import UI, or email automation.
+          operations, automated email campaigns, or Raklet-style website builder.
         </p>
       </div>
 

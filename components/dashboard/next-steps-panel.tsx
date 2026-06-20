@@ -21,8 +21,8 @@ export function NextStepsPanel({
     },
     {
       done: hasContacts,
-      label: "Verify a website lead or portal form submission appears in Contacts",
-      href: "/dashboard/members",
+      label: "Import your member list or verify a portal lead in Contacts",
+      href: "/dashboard/members#import-spreadsheet",
     },
     {
       done: hasPublishedEvents,

@@ -5,6 +5,7 @@ import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsTable } from "@/components/dashboard/contacts-table";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { createContact, deleteContact, listContacts, updateContact } from "@/lib/actions/contacts";
+import { importContactsFromSpreadsheet } from "@/lib/actions/contact-import";
 import { publicPortalUrl } from "@/lib/environment";
 import {
   contactInterestLabel,
@@ -26,7 +27,17 @@ function filterHref(base: string, params: Record<string, string>) {
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string; q?: string; source?: string; interestType?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    success?: string;
+    importCreated?: string;
+    importUpdated?: string;
+    importSkipped?: string;
+    importPreview?: string;
+    q?: string;
+    source?: string;
+    interestType?: string;
+  }>;
 }) {
   const params = await searchParams;
   const resolution = await resolveTenantForDashboard();
@@ -118,6 +129,52 @@ export default async function ContactsPage({
     redirect("/dashboard/members?success=deleted");
   }
 
+  async function importContactsAction(formData: FormData) {
+    "use server";
+
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const file = formData.get("file");
+    const mode = String(formData.get("mode") ?? "import");
+    const preset = String(formData.get("preset") ?? "generic");
+    const importTag = String(formData.get("importTag") ?? "");
+
+    if (!(file instanceof File) || file.size === 0) {
+      const tenantId = tenantIdFromMutation(tenantHint);
+      const msg = "Choose a CSV or Excel file.";
+      if (tenantId) redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(msg)}`);
+      redirect(`/dashboard/members?error=${encodeURIComponent(msg)}`);
+    }
+
+    const validPreset = ["generic", "class_roster", "raklet"].includes(preset)
+      ? (preset as "generic" | "class_roster" | "raklet")
+      : "generic";
+
+    const result = await importContactsFromSpreadsheet(
+      {
+        file,
+        preset: validPreset,
+        importTag,
+        dryRun: mode === "preview",
+      },
+      { tenantIdHint: tenantHint },
+    );
+
+    if (!result.ok) {
+      const errorMessage = result.error;
+      const tenantId = tenantIdFromMutation(tenantHint);
+      if (tenantId) {
+        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+      }
+      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    const { tenantId, created, updated, skipped, dryRun } = result.data;
+    const base = dryRun
+      ? `/dashboard/members?importPreview=1&importCreated=${created}&importUpdated=${updated}&importSkipped=${skipped}`
+      : `/dashboard/members?success=import&importCreated=${created}&importUpdated=${updated}&importSkipped=${skipped}`;
+    redirectWithActiveTenant(tenantId, base);
+  }
+
   const contactsResult = await listContacts(filters);
   const contacts = contactsResult.ok ? contactsResult.data : [];
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
@@ -140,11 +197,17 @@ export default async function ContactsPage({
             >
               Export CSV
             </a>
+            <a
+              href="#import-spreadsheet"
+              className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100"
+            >
+              Import spreadsheet
+            </a>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
             See who reached you, how (newsletter, investment analysis, event registration, import, or manual entry), what
-            they did last, and whether they registered for events. Expand <strong>Edit contact</strong> on any row to
-            update notes/tags or delete spam/test entries.
+            they did last, and whether they registered for events. Bring Raklet or Excel exports via{" "}
+            <strong>Import spreadsheet</strong> below.
           </p>
         </div>
         {tenant && portalUrl && (
@@ -183,6 +246,18 @@ export default async function ContactsPage({
       {params.success === "1" && <p className="mt-4 text-sm text-green-700">Contact added manually.</p>}
       {params.success === "updated" && <p className="mt-4 text-sm text-green-700">Contact updated.</p>}
       {params.success === "deleted" && <p className="mt-4 text-sm text-green-700">Contact removed.</p>}
+      {params.success === "import" && (
+        <p className="mt-4 text-sm text-green-700">
+          Import complete — {params.importCreated ?? "0"} created, {params.importUpdated ?? "0"} updated,{" "}
+          {params.importSkipped ?? "0"} skipped (no email). Filter by <strong>Imported</strong> to review.
+        </p>
+      )}
+      {params.importPreview === "1" && (
+        <p className="mt-4 text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+          Preview only — {params.importCreated ?? "0"} would be created, {params.importUpdated ?? "0"} would be updated,{" "}
+          {params.importSkipped ?? "0"} skipped. Click <strong>Import now</strong> to apply.
+        </p>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="text-xs font-medium text-gray-500 py-1">Quick filters:</span>
@@ -241,6 +316,70 @@ export default async function ContactsPage({
           Search
         </button>
       </form>
+
+      <details id="import-spreadsheet" className="mt-4 rounded-md border border-teal-200 bg-teal-50/50 p-4 open:border-teal-300">
+        <summary className="cursor-pointer text-sm font-semibold text-teal-950">Import spreadsheet (CSV or Excel)</summary>
+        <p className="mt-2 text-xs text-teal-900">
+          Export from Raklet, Excel, or Google Sheets (.csv / .xlsx). Required column: <strong>Email</strong> (or{" "}
+          <strong>Email Address</strong>). Name columns are optional. Re-import is safe — we upsert by email per
+          community.
+        </p>
+        <p className="mt-2 text-xs text-teal-800">
+          <a href="/templates/contact-import-template.csv" className="underline">
+            Download template CSV
+          </a>
+          {" · "}
+          Namaste Boston live CRM sync still uses <code className="font-mono">npm run import:nb-crm</code> when connected
+          to Supabase.
+        </p>
+        <form action={importContactsAction} className="mt-4 grid gap-3 md:grid-cols-2">
+          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
+          <label className="block text-sm md:col-span-2">
+            File
+            <input
+              name="file"
+              type="file"
+              required
+              accept=".csv,.txt,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="mt-1 block w-full text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            Import type
+            <select name="preset" defaultValue="generic" className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm">
+              <option value="generic">General spreadsheet</option>
+              <option value="raklet">Raklet export</option>
+              <option value="class_roster">Class roster (TPW-style)</option>
+            </select>
+          </label>
+          <label className="block text-sm">
+            Tag (optional)
+            <input
+              name="importTag"
+              placeholder="e.g. class1, raklet-2026"
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2 md:col-span-2">
+            <button
+              type="submit"
+              name="mode"
+              value="preview"
+              className="rounded border border-teal-700 bg-white px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-50"
+            >
+              Preview
+            </button>
+            <button
+              type="submit"
+              name="mode"
+              value="import"
+              className="rounded bg-teal-900 px-4 py-2 text-sm font-medium text-white hover:bg-teal-950"
+            >
+              Import now
+            </button>
+          </div>
+        </form>
+      </details>
 
       <details className="mt-4 rounded-md border border-gray-200 bg-white p-4">
         <summary className="cursor-pointer text-sm font-medium text-gray-900">Add manual entry</summary>
