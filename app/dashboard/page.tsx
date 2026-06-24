@@ -66,6 +66,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <header className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Community OS</p>
+        <h1 className="text-2xl font-semibold text-slate-950">Dashboard</h1>
+        <p className="text-sm text-slate-600">What does your organization need attention on today?</p>
+      </header>
+
       <TenantIdentityCard
         tenant={tenant}
         portalUrl={portalUrl}
@@ -107,6 +113,57 @@ export default async function DashboardPage() {
 
       <section className="space-y-3">
         <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">At a glance</p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">Your community today</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <MetricCard
+            label="Total contacts"
+            value={dashboard.summary.contactsTotal}
+            detail={`${activity.contactsLast7Days} new in ${activity.windowDays}d`}
+            href="/dashboard/members"
+            highlight={dashboard.summary.contactsTotal > 0}
+          />
+          <MetricCard
+            label="Active members"
+            value={dashboard.summary.activeMemberships}
+            detail={`${dashboard.summary.membershipTiers} membership plan${dashboard.summary.membershipTiers === 1 ? "" : "s"}`}
+            href="/dashboard/tiers"
+            highlight={dashboard.summary.activeMemberships > 0}
+          />
+          <MetricCard
+            label="Upcoming events"
+            value={dashboard.upcomingEventsCount}
+            detail={`${dashboard.publishedEvents} published · ${dashboard.draftEvents} draft`}
+            href="/dashboard/events"
+            highlight={dashboard.upcomingEventsCount > 0}
+          />
+          <MetricCard
+            label="Recent payments"
+            value={financial.membershipPaymentCount + financial.eventPaymentCount + financial.donationPaymentCount}
+            detail={formatCents(financial.totalRevenueCents) + " total received"}
+            href="/dashboard/payments"
+            highlight={financial.totalRevenueCents > 0}
+          />
+          <MetricCard
+            label="Volunteer contacts"
+            value={dashboard.summary.contactsVolunteerType}
+            detail="Shift sign-up coming soon"
+            href="/dashboard/volunteers"
+            highlight={dashboard.summary.contactsVolunteerType > 0}
+          />
+          <MetricCard
+            label="Donations received"
+            value={financial.donationPaymentCount}
+            detail={formatCents(financial.donationRevenueCents)}
+            href="/dashboard/donations"
+            highlight={financial.donationPaymentCount > 0}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Money</p>
           <h2 className="mt-1 text-lg font-semibold text-slate-950">Revenue snapshot</h2>
         </div>
@@ -136,7 +193,7 @@ export default async function DashboardPage() {
           label="Donations"
           value={formatCents(financial.donationRevenueCents)}
           detail={`${financial.donationPaymentCount} payments`}
-          href="/dashboard/tiers"
+          href="/dashboard/donations"
           highlight={financial.donationRevenueCents > 0}
         />
         </div>
@@ -161,6 +218,13 @@ export default async function DashboardPage() {
           detail="Newsletter, contact form, interest CTAs"
           href="/dashboard/members"
           highlight={dashboard.summary.contactsLeads > 0}
+        />
+        <MetricCard
+          label="Active memberships"
+          value={dashboard.summary.activeMemberships}
+          detail={`${dashboard.summary.formalMemberships} total enrollments`}
+          href="/dashboard/tiers"
+          highlight={dashboard.summary.activeMemberships > 0}
         />
         <MetricCard
           label="Confirmed registrations"
@@ -335,6 +399,57 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+
+      {financial.recentPayments.length > 0 && (
+        <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4 border-b border-stone-100 pb-3">
+            <div>
+              <h2 className="text-base font-semibold text-slate-950">Recent payments</h2>
+              <p className="mt-0.5 text-sm text-slate-600">Membership, event, and donation transactions.</p>
+            </div>
+            <Link href="/dashboard/payments" className="shrink-0 text-sm font-semibold text-teal-900 hover:text-slate-950">
+              All payments
+            </Link>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="py-2 pr-4">When</th>
+                  <th className="py-2 pr-4">Person</th>
+                  <th className="py-2 pr-4">Purpose</th>
+                  <th className="py-2 pr-4">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {financial.recentPayments.map((payment) => (
+                  <tr key={payment.id} className="border-b border-stone-100">
+                    <td className="py-3 pr-4 whitespace-nowrap text-slate-600">
+                      <span title={formatDate(payment.paidAt ?? payment.createdAt)}>
+                        {formatRelativeTime(payment.paidAt ?? payment.createdAt)}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      {payment.contact ? (
+                        <>
+                          <p className="font-medium text-slate-950">
+                            {payment.contact.firstName} {payment.contact.lastName}
+                          </p>
+                          <p className="text-slate-600">{payment.contact.email}</p>
+                        </>
+                      ) : (
+                        <span className="text-slate-500">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-700">{payment.purpose}</td>
+                    <td className="py-3 pr-4 font-medium text-slate-950">{formatCents(payment.amountCents)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {dashboard.upcomingEvents.length > 0 && (
         <details className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">

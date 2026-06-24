@@ -18,6 +18,8 @@ Canonical docs for the NB/TPW pilot. Older filenames were merged here to reduce 
 | 12 | [12-PILOT-RESET.md](./12-PILOT-RESET.md) | Three-mode pilot testing: operational reset, reseed, bootstrap |
 | 13 | [13-TENANT-WEBSITE-INTEGRATION.md](./13-TENANT-WEBSITE-INTEGRATION.md) | Operator vs visitor planes; tenant deployment checklist; embed levels |
 | 14 | [14-PRODUCT-SHOWCASE.md](./14-PRODUCT-SHOWCASE.md) | GTM, Raklet replacement pitch, demo script, showcase readiness |
+| — | [JANAGANA_LITE_PRODUCT_PLAN.md](./JANAGANA_LITE_PRODUCT_PLAN.md) | Community OS positioning, MVP modules, scope |
+| — | [JANAGANA_LITE_MVP_ROADMAP.md](./JANAGANA_LITE_MVP_ROADMAP.md) | Phased build plan and next slices |
 | — | [PARKING-LOT.md](./PARKING-LOT.md) | Deferred features (contact roles, etc.) |
 
 **Code contract:** `lib/tenant/contract.ts`  

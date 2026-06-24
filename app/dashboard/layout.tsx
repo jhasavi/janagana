@@ -46,7 +46,7 @@ export default async function DashboardLayout({
           <div className="flex min-h-16 flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <Link href="/dashboard" className="shrink-0 text-lg font-semibold text-slate-950 hover:text-teal-900">
-                JanaGana
+                JanaGana <span className="font-normal text-slate-500">Lite</span>
               </Link>
               <span className="hidden h-6 w-px bg-stone-200 sm:block" />
               <div className="min-w-0">

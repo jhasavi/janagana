@@ -5,9 +5,11 @@ export type TenantDashboardSummary = {
   contactsLeads: number;
   contactsRegistrantType: number;
   contactsFormalType: number;
+  contactsVolunteerType: number;
   eventRegistrationsTotal: number;
   eventRegistrationsConfirmed: number;
   formalMemberships: number;
+  activeMemberships: number;
   eventsTotal: number;
   membershipTiers: number;
 };
@@ -27,9 +29,11 @@ export async function getTenantDashboardSummary(tenantId: string): Promise<Tenan
     contactsLeads,
     contactsRegistrantType,
     contactsFormalType,
+    contactsVolunteerType,
     eventRegistrationsTotal,
     eventRegistrationsConfirmed,
     formalMemberships,
+    activeMemberships,
     eventsTotal,
     membershipTiers,
   ] = await Promise.all([
@@ -37,9 +41,11 @@ export async function getTenantDashboardSummary(tenantId: string): Promise<Tenan
     prisma.contact.count({ where: { tenantId, type: "OTHER" } }),
     prisma.contact.count({ where: { tenantId, type: "REGISTRANT" } }),
     prisma.contact.count({ where: { tenantId, type: "MEMBER" } }),
+    prisma.contact.count({ where: { tenantId, type: "VOLUNTEER" } }),
     prisma.eventRegistration.count({ where: { tenantId } }),
     prisma.eventRegistration.count({ where: { tenantId, status: "CONFIRMED" } }),
     prisma.membership.count({ where: { tenantId } }),
+    prisma.membership.count({ where: { tenantId, status: "ACTIVE" } }),
     prisma.event.count({ where: { tenantId } }),
     prisma.membershipTier.count({ where: { tenantId } }),
   ]);
@@ -49,9 +55,11 @@ export async function getTenantDashboardSummary(tenantId: string): Promise<Tenan
     contactsLeads,
     contactsRegistrantType,
     contactsFormalType,
+    contactsVolunteerType,
     eventRegistrationsTotal,
     eventRegistrationsConfirmed,
     formalMemberships,
+    activeMemberships,
     eventsTotal,
     membershipTiers,
   };

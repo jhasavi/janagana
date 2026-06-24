@@ -13,6 +13,7 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     summary,
     publishedEvents,
     draftEvents,
+    upcomingEventsCount,
     upcomingEvents,
     recentContacts,
     recentRegistrations,
@@ -20,10 +21,18 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     registrationsLast7Days,
     lastContact,
     lastRegistration,
+    recentDonations,
   ] = await Promise.all([
     getTenantDashboardSummary(tenantId),
     prisma.event.count({ where: { tenantId, status: "PUBLISHED" } }),
     prisma.event.count({ where: { tenantId, status: "DRAFT" } }),
+    prisma.event.count({
+      where: {
+        tenantId,
+        status: "PUBLISHED",
+        startsAt: { gte: now },
+      },
+    }),
     prisma.event.findMany({
       where: {
         tenantId,
@@ -105,6 +114,18 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
     }),
+    prisma.paymentRecord.findMany({
+      where: { tenantId, purpose: "DONATION", status: "PAID" },
+      orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+      take: 5,
+      select: {
+        id: true,
+        amountCents: true,
+        paidAt: true,
+        createdAt: true,
+        contact: { select: { firstName: true, lastName: true, email: true } },
+      },
+    }),
   ]);
 
   const operationalWarnings: OperatorWarning[] = [];
@@ -166,9 +187,11 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     summary,
     publishedEvents,
     draftEvents,
+    upcomingEventsCount,
     upcomingEvents,
     recentContacts,
     recentRegistrations,
+    recentDonations,
     operationalWarnings,
     activity: {
       contactsLast7Days,

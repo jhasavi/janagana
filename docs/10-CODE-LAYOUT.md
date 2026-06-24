@@ -17,16 +17,18 @@ Import from `@/lib/tenant` (barrel: `lib/tenant.ts`).
 | File | Role |
 |------|------|
 | `tenants.ts` | **Canonical** slugs, names, portal CTA links |
-| `dashboard-nav.ts` | Operator sidebar + re-exports from `tenants.ts` |
+| `dashboard-nav.ts` | Community OS sidebar groups + re-exports from `tenants.ts` |
 | `portal-links.ts` | Deprecated re-export → use `tenants.ts` |
 | `contact-labels.ts` | Operator-facing contact/source/intent labels |
 
 ## Admin UI
 
 - Layout: `app/dashboard/layout.tsx` — resolves tenant, redirects stale cookie
+- Community OS dashboard: `app/dashboard/page.tsx`
 - Product setup: `app/dashboard/settings/page.tsx`
-- Contacts: `app/dashboard/members/page.tsx`
-- Overview: `app/dashboard/page.tsx`
+- Contacts: `app/dashboard/members/page.tsx` (alias `/dashboard/contacts`)
+- Placeholder modules: `families`, `donations`, `sponsors`, `volunteers`, `communications`
+- Payments ledger: `app/dashboard/payments/page.tsx`
 
 ## Public portal (do not couple to Clerk)
 
