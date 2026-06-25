@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
+    // Clerk middleware buffers POST bodies — default truncates uploads → FormData parse 500.
+    middlewareClientMaxBodySize: "6mb",
     serverActions: {
       bodySizeLimit: "6mb",
       allowedOrigins: [

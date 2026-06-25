@@ -97,8 +97,33 @@ async function main() {
     await fetchCheck("/portal/namaste-boston", ["Namaste Boston", "Public portal"]),
     await fetchCheck("/portal/purple-wings/contact?interest=newsletter", ["Newsletter"]),
     await fetchCheck("/portal/namaste-boston/contact?interest=investment", ["Investment analysis"]),
+    await fetchCheck("/portal/namaste-boston/donate", ["Donate to", "No login required"]),
     await fetchCheck("/sign-in"),
   );
+
+  const stripeWebhookRes = await fetch(`${BASE}/api/webhooks/stripe`);
+  const stripeWebhookJson = await stripeWebhookRes.json().catch(() => ({}));
+  checks.push({
+    path: "/api/webhooks/stripe",
+    status: stripeWebhookRes.status,
+    ok:
+      stripeWebhookRes.status === 200 &&
+      (stripeWebhookJson as { ok?: boolean }).ok === true &&
+      (stripeWebhookJson as { configured?: boolean }).configured === true,
+    note: JSON.stringify(stripeWebhookJson).slice(0, 100),
+  });
+
+  const donatePostRes = await fetch(`${BASE}/api/public/donate`, {
+    method: "POST",
+    body: new URLSearchParams({ tenantSlug: "namaste-boston" }),
+    redirect: "manual",
+  });
+  checks.push({
+    path: "POST /api/public/donate (minimal body)",
+    status: donatePostRes.status,
+    ok: donatePostRes.status >= 300 && donatePostRes.status < 400,
+    note: donatePostRes.headers.get("location")?.slice(0, 80) ?? "no redirect",
+  });
 
   for (const c of checks) {
     console.log(`${c.ok ? "PASS" : "FAIL"} ${c.status} ${c.path} — ${c.note}`);

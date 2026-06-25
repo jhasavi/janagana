@@ -1,17 +1,6 @@
-import {
-  assertImportFileSize,
-  importContactsFromRows,
-  rowsFromSpreadsheetBuffer,
-  type ContactImportPreset,
-} from "@/lib/import/contact-roster";
+import type { ContactImportPreset } from "@/lib/import/contact-roster";
+import { runContactImportFromFile } from "@/lib/import/run-contact-import";
 import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
-
-const ALLOWED_EXTENSIONS = [".csv", ".txt", ".xlsx", ".xls"];
-
-function extensionOf(filename: string): string {
-  const dot = filename.lastIndexOf(".");
-  return dot >= 0 ? filename.slice(dot).toLowerCase() : "";
-}
 
 export async function importContactsFromSpreadsheet(
   input: {
@@ -26,56 +15,13 @@ export async function importContactsFromSpreadsheet(
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
-  const context = auth.context;
 
-  const { file, preset, importTag, dryRun = false } = input;
-  if (!file || file.size === 0) {
-    return { ok: false as const, error: "Choose a CSV or Excel file to import." };
-  }
-
-  const sizeError = assertImportFileSize(file.size);
-  if (sizeError) {
-    return { ok: false as const, error: sizeError };
-  }
-
-  const ext = extensionOf(file.name);
-  if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    return {
-      ok: false as const,
-      error: "Unsupported file type. Use .csv, .xlsx, or .xls (export from Excel or Raklet).",
-    };
-  }
-
-  try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const rows = rowsFromSpreadsheetBuffer(buffer, file.name);
-    if (rows.length === 0) {
-      return { ok: false as const, error: "No data rows found. Check that the first row has column headers." };
-    }
-
-    const result = await importContactsFromRows({
-      tenantId: context.tenant.id,
-      actorUserId: context.user.id,
-      rows,
-      preset,
-      importTag,
-      fileLabel: file.name,
-      dryRun,
-    });
-
-    return {
-      ok: true as const,
-      data: {
-        ...result,
-        tenantId: context.tenant.id,
-        dryRun,
-      },
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown import error";
-    return {
-      ok: false as const,
-      error: `Failed to read spreadsheet: ${message}. Try saving as CSV and import again.`,
-    };
-  }
+  return runContactImportFromFile({
+    tenantId: auth.context.tenant.id,
+    actorUserId: auth.context.user.id,
+    file: input.file,
+    preset: input.preset,
+    importTag: input.importTag,
+    dryRun: input.dryRun,
+  });
 }
