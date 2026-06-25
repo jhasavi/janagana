@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  CalendarClock,
   CalendarDays,
   CreditCard,
   HandHeart,
@@ -23,6 +24,7 @@ const navIcons: Record<string, typeof LayoutDashboard> = {
   "/dashboard/families": Home,
   "/dashboard/volunteers": HandHeart,
   "/dashboard/tiers": CreditCard,
+  "/dashboard/memberships/renewals": CalendarClock,
   "/dashboard/events": CalendarDays,
   "/dashboard/donations": HeartHandshake,
   "/dashboard/sponsors": Building2,

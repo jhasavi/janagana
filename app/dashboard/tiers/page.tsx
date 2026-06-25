@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
@@ -161,12 +162,20 @@ export default async function MembershipsPage({
     <section className="space-y-5">
       {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
 
-      <div>
-        <h1 className="text-2xl font-semibold">Memberships</h1>
-        <p className="mt-2 max-w-3xl text-sm text-gray-600">
-          Manage membership tiers, enroll contacts as formal members, and record membership payments before public
-          checkout is opened.
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Memberships</h1>
+          <p className="mt-2 max-w-3xl text-sm text-gray-600">
+            Manage membership tiers, enroll contacts as formal members, and record membership payments before public
+            checkout is opened.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/memberships/renewals"
+          className="shrink-0 rounded-md bg-teal-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-950"
+        >
+          Open renewals desk →
+        </Link>
       </div>
 
       {!adminData.ok && <p className="text-sm text-red-700">{adminData.error}</p>}

@@ -9,6 +9,7 @@ const requiredLabels = [
   "Contacts",
   "Families",
   "Memberships",
+  "Renewals",
   "Events",
   "Donations",
   "Sponsors",

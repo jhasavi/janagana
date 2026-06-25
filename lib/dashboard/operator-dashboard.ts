@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
 import type { OperatorWarning } from "@/lib/dashboard/operator-warnings";
+import { getMembershipRenewalsSummaryForDashboard } from "@/lib/memberships/renewals";
 
 export type OperatorDashboard = Awaited<ReturnType<typeof getOperatorDashboard>>;
 
@@ -22,6 +23,7 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     lastContact,
     lastRegistration,
     recentDonations,
+    membershipRenewals,
   ] = await Promise.all([
     getTenantDashboardSummary(tenantId),
     prisma.event.count({ where: { tenantId, status: "PUBLISHED" } }),
@@ -126,6 +128,7 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
         contact: { select: { firstName: true, lastName: true, email: true } },
       },
     }),
+    getMembershipRenewalsSummaryForDashboard(tenantId),
   ]);
 
   const operationalWarnings: OperatorWarning[] = [];
@@ -176,6 +179,24 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     });
   }
 
+  if (membershipRenewals.expiringThisMonth > 0) {
+    operationalWarnings.push({
+      id: "members-expiring-month",
+      severity: "attention",
+      message: `${membershipRenewals.expiringThisMonth} member${membershipRenewals.expiringThisMonth === 1 ? "" : "s"} expiring this month.`,
+      actionLabel: "Renewals desk",
+      actionHref: "/dashboard/memberships/renewals?filter=expiring_30",
+    });
+  } else if (membershipRenewals.expiredMembers > 0) {
+    operationalWarnings.push({
+      id: "members-expired",
+      severity: "info",
+      message: `${membershipRenewals.expiredMembers} expired membership${membershipRenewals.expiredMembers === 1 ? "" : "s"} on file.`,
+      actionLabel: "Renewals desk",
+      actionHref: "/dashboard/memberships/renewals?filter=expired",
+    });
+  }
+
   const signal: "healthy" | "watch" | "setup" =
     summary.contactsTotal > 0 && (contactsLast7Days > 0 || registrationsLast7Days > 0)
       ? "healthy"
@@ -192,6 +213,7 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     recentContacts,
     recentRegistrations,
     recentDonations,
+    membershipRenewals,
     operationalWarnings,
     activity: {
       contactsLast7Days,

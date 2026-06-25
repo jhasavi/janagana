@@ -37,19 +37,35 @@ Pilot infrastructure that must not break:
 
 ---
 
-## Phase 2 — Membership operations (recommended next)
+## Phase 2 — Membership operations
 
 **Goal:** Replace Raklet dues workflow for ICON-style orgs.
 
-| Task | Value |
-|------|-------|
-| Renewal dashboard (expiring in 30/60/90 days) | High |
-| Public membership checkout polish | High |
-| Renewal reminder via communications outbox | Medium |
-| Member directory filter (active vs lapsed) | Medium |
-| CSV export of members | Medium |
+### Slice A — Membership renewals desk ✅ (June 2026)
 
-**Schema:** Uses existing `Membership`, `MembershipTier`, `PaymentRecord`.
+**Implemented:**
+
+- `/dashboard/memberships/renewals` — renewals desk with summary cards, filters, and table
+- Expiration buckets: active, 30/60/90-day windows, expired, recently paid, needs reminder, no email
+- Queue `RENEWAL_REMINDER` to communications outbox (no auto-send; delivery requires Resend)
+- 7-day duplicate reminder cooldown per membership
+- Dashboard cards: “Expiring this month”, “Expired members”, links to renewals desk
+- Nav item: Renewals under Programs; CTA from `/dashboard/tiers`
+- Test: `npm run test:membership-renewals`
+
+**Expiration assumption:** Uses `Membership.expiresAt` when set at enrollment. `ONE_TIME` tiers may have `null` expiresAt → shown as “No expiration date” (not counted in expiring windows).
+
+**Remains for Phase 2:**
+
+| Task | Status |
+|------|--------|
+| Public membership checkout polish | Open |
+| Communications outbox admin UI (view queued reminders) | Open |
+| Member directory filter (active vs lapsed) on contacts | Open |
+| CSV export of members | Open |
+| Bulk renewal reminder actions | Open |
+
+**Schema:** No migration — uses existing `Membership`, `MembershipTier`, `PaymentRecord`, `CommunicationMessage`.
 
 ---
 
@@ -96,16 +112,7 @@ Pilot infrastructure that must not break:
 
 ## Recommended next 3 build slices
 
-### Slice A — Membership renewals desk (2–3 weeks)
-
-1. "Who needs to renew" table on Memberships
-2. Bulk status + expiry filters
-3. Queue `RENEWAL_REMINDER` communications
-4. Dashboard card: "Members expiring this month"
-
-**Why first:** ICON/NB pilot pain is dues + renewals; data model exists.
-
-### Slice B — Donations portal page (1–2 weeks)
+### Slice B — Donations portal page (1–2 weeks) ← **recommended next**
 
 1. `/portal/{slug}/donate` with amount + Stripe
 2. Admin donations page (replace placeholder)
@@ -131,6 +138,7 @@ Run before merging each slice:
 npm run lint
 npm run typecheck
 npm run prisma:validate
+npm run test:membership-renewals
 npm run test:dashboard:semantics
 npm run gate:quick   # when DB available
 ```

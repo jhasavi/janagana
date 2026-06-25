@@ -132,6 +132,24 @@ export default async function DashboardPage() {
             highlight={dashboard.summary.activeMemberships > 0}
           />
           <MetricCard
+            label="Expiring this month"
+            value={dashboard.membershipRenewals.expiringThisMonth}
+            detail={`${dashboard.membershipRenewals.expiringIn30Days} in next 30 days`}
+            href="/dashboard/memberships/renewals?filter=expiring_30"
+            highlight={dashboard.membershipRenewals.expiringThisMonth > 0}
+          />
+          <MetricCard
+            label="Expired members"
+            value={dashboard.membershipRenewals.expiredMembers}
+            detail={
+              dashboard.membershipRenewals.needsReminderCount > 0
+                ? `${dashboard.membershipRenewals.needsReminderCount} may need reminder`
+                : "Open renewals desk"
+            }
+            href="/dashboard/memberships/renewals?filter=expired"
+            highlight={dashboard.membershipRenewals.expiredMembers > 0}
+          />
+          <MetricCard
             label="Upcoming events"
             value={dashboard.upcomingEventsCount}
             detail={`${dashboard.publishedEvents} published · ${dashboard.draftEvents} draft`}

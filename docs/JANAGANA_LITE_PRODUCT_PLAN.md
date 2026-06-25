@@ -55,7 +55,7 @@ It is **not** another generic event-ticketing app. It is **not** a CiviCRM clone
 | 2 | Contacts | **Live** | `/dashboard/members`; import, filters, CRM notes |
 | 3 | Households / families | **Planned** | Schema TBD; placeholder nav |
 | 4 | Membership plans | **Live** | Tiers on `/dashboard/tiers` |
-| 5 | Membership purchases / renewals | **Partial** | Admin enroll + offline/Stripe ledger |
+| 5 | Membership purchases / renewals | **Partial** | Renewals desk + reminder queue; checkout polish remains |
 | 6 | Events | **Live** | Publish, register, check-in statuses |
 | 7 | Ticket types & registration | **Live** | `EventTicketType`, quantity-aware |
 | 8 | Donations | **Planned** | `PaymentPurpose.DONATION` in ledger only |
