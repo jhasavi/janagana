@@ -15,7 +15,10 @@ export type ContactImportResult = {
 };
 
 const MAX_IMPORT_ROWS = 2500;
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
+/** Multipart boundary overhead allowed on Content-Length pre-check */
+export const MAX_IMPORT_REQUEST_BYTES = MAX_IMPORT_FILE_BYTES + 64 * 1024;
+const MAX_FILE_BYTES = MAX_IMPORT_FILE_BYTES;
 
 const EMAIL_KEYS = ["Email Address", "email", "Email", "E-mail", "E-Mail", "email address"];
 const NAME_KEYS = ["Name", "name", "Full Name", "full name", "Member Name"];

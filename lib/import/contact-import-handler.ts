@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runContactImportFromFile } from "@/lib/import/run-contact-import";
+import {
+  MAX_IMPORT_FILE_BYTES,
+  MAX_IMPORT_REQUEST_BYTES,
+} from "@/lib/import/contact-roster";
 import { isSafeDashboardReturnPath } from "@/lib/tenant/redirect-with-tenant";
 import { readTenantIdHintFromForm } from "@/lib/tenant/active-tenant-form";
 import { applyActiveTenantCookieToResponse } from "@/lib/tenant/active-tenant-cookie";
 import { isSameOriginMutationRequest } from "@/lib/security/same-origin";
 import {
   requireActiveTenantForActions,
+  type ActiveTenantActionContext,
   type ActiveTenantActionResult,
 } from "@/lib/tenant/active-tenant-context";
 
@@ -41,49 +46,64 @@ function redirectMembers(
   return response;
 }
 
-/**
- * Core POST handler for dashboard spreadsheet import.
- * Extracted for regression tests (injectable auth).
- */
-export async function handleContactImportPost(
-  req: NextRequest,
-  resolveAuth: ContactImportAuth = requireActiveTenantForActions,
-) {
-  if (!isSameOriginMutationRequest(req)) {
-    return redirectMembers(req, null, {
-      openImport: true,
-      error: "Invalid request origin. Refresh the page and try again.",
-    });
+/** Reject oversized uploads before buffering multipart body (when Content-Length is sent). */
+export function rejectOversizedImportRequest(req: NextRequest): string | null {
+  const raw = req.headers.get("content-length");
+  if (!raw) {
+    return null;
   }
+  const length = Number.parseInt(raw, 10);
+  if (!Number.isFinite(length) || length < 0) {
+    return null;
+  }
+  if (length > MAX_IMPORT_REQUEST_BYTES) {
+    return `File is too large (max ${MAX_IMPORT_FILE_BYTES / 1024 / 1024} MB).`;
+  }
+  return null;
+}
 
-  let form: FormData;
+async function parseImportForm(req: NextRequest) {
   try {
-    form = await req.formData();
+    return { ok: true as const, form: await req.formData() };
   } catch (error) {
     console.error("IMPORT_CONTACTS_FORM_PARSE_FAILED", error);
-    return redirectMembers(req, null, {
-      openImport: true,
+    return {
+      ok: false as const,
       error:
         "Could not read the uploaded file. Save as CSV and try again, or use a smaller file.",
-    });
+    };
   }
+}
 
-  const tenantHint = readTenantIdHintFromForm(form);
-  const auth = await resolveAuth(tenantHint ? { tenantIdHint: tenantHint } : undefined);
-  if (!auth.ok) {
-    const message =
-      auth.error === "Not authenticated"
-        ? null
-        : auth.error === "No active tenant context"
-          ? "No active tenant. Select your community and try again."
-          : auth.error;
-    if (message) {
-      return redirectMembers(req, tenantHint ?? null, { openImport: true, error: message });
-    }
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
+async function resolveImportAuth(
+  resolveAuth: ContactImportAuth,
+  tenantHint?: string,
+): Promise<ActiveTenantActionResult> {
+  return resolveAuth(tenantHint ? { tenantIdHint: tenantHint } : undefined);
+}
 
-  const tenantId = auth.context.tenant.id;
+function unauthenticatedRedirect(req: NextRequest) {
+  return NextResponse.redirect(new URL("/sign-in", req.url));
+}
+
+function authFailureRedirect(
+  req: NextRequest,
+  auth: ActiveTenantActionResult & { ok: false },
+  tenantHint?: string,
+) {
+  const message =
+    auth.error === "No active tenant context"
+      ? "No active tenant. Select your community and try again."
+      : auth.error;
+  return redirectMembers(req, tenantHint ?? null, { openImport: true, error: message });
+}
+
+async function processImportForm(
+  req: NextRequest,
+  form: FormData,
+  context: ActiveTenantActionContext,
+) {
+  const tenantId = context.tenant.id;
   const file = uploadFromForm(form);
   const mode = String(form.get("mode") ?? "import");
   const preset = String(form.get("preset") ?? "generic");
@@ -102,7 +122,7 @@ export async function handleContactImportPost(
 
   const result = await runContactImportFromFile({
     tenantId,
-    actorUserId: auth.context.user.id,
+    actorUserId: context.user.id,
     file,
     preset: validPreset,
     importTag,
@@ -133,6 +153,62 @@ export async function handleContactImportPost(
   }
 
   return redirectMembers(req, tenantId, query);
+}
+
+/**
+ * Core POST handler for dashboard spreadsheet import.
+ * Extracted for regression tests (injectable auth).
+ *
+ * Order: same-origin → Content-Length guard → auth → formData (never before auth).
+ */
+export async function handleContactImportPost(
+  req: NextRequest,
+  resolveAuth: ContactImportAuth = requireActiveTenantForActions,
+) {
+  if (!isSameOriginMutationRequest(req)) {
+    return redirectMembers(req, null, {
+      openImport: true,
+      error: "Invalid request origin. Refresh the page and try again.",
+    });
+  }
+
+  const oversizeError = rejectOversizedImportRequest(req);
+  if (oversizeError) {
+    return redirectMembers(req, null, { openImport: true, error: oversizeError });
+  }
+
+  const initialAuth = await resolveImportAuth(resolveAuth);
+  if (!initialAuth.ok) {
+    if (initialAuth.error === "Not authenticated") {
+      return unauthenticatedRedirect(req);
+    }
+
+    const parsed = await parseImportForm(req);
+    if (!parsed.ok) {
+      return redirectMembers(req, null, { openImport: true, error: parsed.error });
+    }
+
+    const tenantHint = readTenantIdHintFromForm(parsed.form);
+    const hintedAuth = await resolveImportAuth(resolveAuth, tenantHint);
+    if (!hintedAuth.ok) {
+      if (hintedAuth.error === "Not authenticated") {
+        return unauthenticatedRedirect(req);
+      }
+      return authFailureRedirect(req, hintedAuth, tenantHint);
+    }
+
+    return processImportForm(req, parsed.form, hintedAuth.context);
+  }
+
+  const parsed = await parseImportForm(req);
+  if (!parsed.ok) {
+    return redirectMembers(req, initialAuth.context.tenant.id, {
+      openImport: true,
+      error: parsed.error,
+    });
+  }
+
+  return processImportForm(req, parsed.form, initialAuth.context);
 }
 
 export function contactImportMethodNotAllowed() {

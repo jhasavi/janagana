@@ -17,8 +17,10 @@ import { NextRequest } from "next/server";
 import { GET, PUT } from "@/app/api/import/contacts/route";
 import {
   handleContactImportPost,
+  rejectOversizedImportRequest,
   type ContactImportAuth,
 } from "@/lib/import/contact-import-handler";
+import { MAX_IMPORT_REQUEST_BYTES } from "@/lib/import/contact-roster";
 import { runContactImportFromFile } from "@/lib/import/run-contact-import";
 import type { ActiveTenantActionResult } from "@/lib/tenant/active-tenant-context";
 
@@ -81,7 +83,7 @@ async function upsertTenant(suffix: "a" | "b") {
 }
 
 function mockAuth(tenantId: string, userId = "import-test-user"): ContactImportAuth {
-  return async (): Promise<ActiveTenantActionResult> => ({
+  return async (_options?) => ({
     ok: true,
     context: {
       tenant: {
@@ -234,7 +236,83 @@ async function testPostRouteWrapperNever500() {
   });
   const res = await handleContactImportPost(req, async () => ({ ok: false, error: "Not authenticated" }));
   assert(res.status !== 500, `Handler must not return 500, got ${res.status}`);
-  console.log("PASS POST handler — unauthenticated redirect, no 500");
+  const location = res.headers.get("location") ?? "";
+  assert(location.includes("/sign-in"), `Unauthenticated should redirect to sign-in: ${location}`);
+  console.log("PASS POST handler — unauthenticated redirect before body processing");
+}
+
+async function testOversizedContentLengthRejected() {
+  let authCalls = 0;
+  const res = await handleContactImportPost(
+    new NextRequest("http://localhost:3020/api/import/contacts", {
+      method: "POST",
+      headers: {
+        Origin: "http://localhost:3020",
+        Referer: "http://localhost:3020/dashboard/members",
+        "Content-Length": String(MAX_IMPORT_REQUEST_BYTES + 1),
+      },
+      body: "too-large",
+    }),
+    async () => {
+      authCalls += 1;
+      throw new Error("auth must not run when Content-Length exceeds limit");
+    },
+  );
+  assert(authCalls === 0, "Auth must not run for oversized Content-Length");
+  assert(res.status >= 300 && res.status < 400, "Oversized upload should redirect");
+  const location = decodeURIComponent(res.headers.get("location") ?? "");
+  assert(location.includes("too+large") || location.includes("too large"), location);
+  console.log("PASS Content-Length guard — rejects before auth");
+}
+
+async function testAuthBeforeFormDataWithTenantHint() {
+  const tenantId = "tenant-hint-only";
+  let authPass = 0;
+  const auth: ContactImportAuth = async (options?) => {
+    authPass += 1;
+    if (authPass === 1) {
+      assert(!options?.tenantIdHint, "First auth call must not use tenant hint");
+      return { ok: false, error: "No active tenant context" };
+    }
+    assert(options?.tenantIdHint === tenantId, "Second auth call must use form tenant hint");
+    return {
+      ok: true,
+      context: {
+        tenant: {
+          id: tenantId,
+          name: "Hint Tenant",
+          slug: "hint",
+          clerkOrgId: "hint_org",
+          status: "ACTIVE",
+        },
+        user: { id: "user-1", email: "u@test.local", name: "User" },
+      },
+    };
+  };
+
+  const csv = readFileSync(FIXTURE_PATH);
+  const file = new File([csv], "regression.csv", { type: "text/csv" });
+  const res = await handleContactImportPost(
+    buildImportRequest(file, { mode: "preview", jgTenantId: tenantId }),
+    auth,
+  );
+  assert(authPass === 2, `Expected 2 auth passes (cookie fail, hint succeed), got ${authPass}`);
+  assert(res.status >= 300 && res.status < 400, `Expected redirect, got ${res.status}`);
+  console.log("PASS auth before formData — tenant hint only after authenticated cookie miss");
+}
+
+function testContentLengthHelper() {
+  const okReq = new NextRequest("http://localhost/api/import/contacts", {
+    headers: { "Content-Length": "1024" },
+  });
+  assert(rejectOversizedImportRequest(okReq) === null, "Small Content-Length should pass");
+
+  const badReq = new NextRequest("http://localhost/api/import/contacts", {
+    headers: { "Content-Length": String(MAX_IMPORT_REQUEST_BYTES + 100) },
+  });
+  const badMessage = rejectOversizedImportRequest(badReq);
+  assert(Boolean(badMessage?.includes("too large")), "Large Content-Length should fail");
+  console.log("PASS Content-Length helper");
 }
 
 async function main() {
@@ -243,6 +321,7 @@ async function main() {
 
   await testUiFormContract();
   await testRouteMethods();
+  testContentLengthHelper();
 
   await cleanup();
   const tenantA = await upsertTenant("a");
@@ -254,6 +333,8 @@ async function main() {
     await testFixtureDbImport(tenantA.id, tenantB.id);
     await testHandlerBadInput(tenantA.id);
     await testPostRouteWrapperNever500();
+    await testOversizedContentLengthRejected();
+    await testAuthBeforeFormDataWithTenantHint();
   } finally {
     await cleanup();
     await prisma.$disconnect();
