@@ -2,6 +2,8 @@ import {
   assertImportFileSize,
   importContactsFromRows,
   rowsFromSpreadsheetBuffer,
+  spreadsheetHeaderNames,
+  validateImportSpreadsheet,
   type ContactImportPreset,
 } from "@/lib/import/contact-roster";
 
@@ -50,6 +52,15 @@ export async function runContactImportFromFile(input: {
       return { ok: false as const, error: "No data rows found. Check that the first row has column headers." };
     }
 
+    const validationError = validateImportSpreadsheet(rows);
+    if (validationError) {
+      return {
+        ok: false as const,
+        error: validationError,
+        headers: spreadsheetHeaderNames(rows),
+      };
+    }
+
     const result = await importContactsFromRows({
       tenantId,
       actorUserId,
@@ -66,6 +77,7 @@ export async function runContactImportFromFile(input: {
         ...result,
         tenantId,
         dryRun,
+        headers: spreadsheetHeaderNames(rows),
       },
     };
   } catch (error) {

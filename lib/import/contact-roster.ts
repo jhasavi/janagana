@@ -20,12 +20,55 @@ export const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
 export const MAX_IMPORT_REQUEST_BYTES = MAX_IMPORT_FILE_BYTES + 64 * 1024;
 const MAX_FILE_BYTES = MAX_IMPORT_FILE_BYTES;
 
-const EMAIL_KEYS = ["Email Address", "email", "Email", "E-mail", "E-Mail", "email address"];
+const EMAIL_PRIMARY_KEYS = [
+  "Email 1",
+  "Email Address",
+  "email",
+  "Email",
+  "E-mail",
+  "E-Mail",
+  "email address",
+];
+const EMAIL_SECONDARY_KEYS = ["Email 2", "email 2", "secondary email"];
 const NAME_KEYS = ["Name", "name", "Full Name", "full name", "Member Name"];
 const FIRST_KEYS = ["First Name", "first_name", "FirstName", "first name", "Given Name"];
 const LAST_KEYS = ["Last Name", "last_name", "LastName", "last name", "Family Name", "Surname"];
-const PHONE_KEYS = ["Phone Numbers", "phone", "Phone", "Mobile", "Cell", "Phone Number", "phone number"];
+const PHONE_PRIMARY_KEYS = [
+  "Phone 1",
+  "Phone Numbers",
+  "phone",
+  "Phone",
+  "Mobile",
+  "Cell",
+  "Phone Number",
+  "phone number",
+];
+const PHONE_SECONDARY_KEYS = ["Phone 2", "phone 2"];
 const NUMBER_KEYS = ["#", "number", "No", "ID", "Member ID", "member id"];
+
+const METADATA_SKIP_KEYS = new Set([
+  "email 1",
+  "email 2",
+  "email address",
+  "email",
+  "e-mail",
+  "name",
+  "full name",
+  "first name",
+  "last name",
+  "phone 1",
+  "phone 2",
+  "phone numbers",
+  "phone",
+  "mobile",
+  "cell",
+  "phone number",
+  "#",
+  "number",
+  "no",
+  "id",
+  "member id",
+]);
 
 /** Minimal RFC-style CSV parser (handles quoted fields and embedded newlines). */
 export function parseCsv(text: string): string[][] {
@@ -71,9 +114,15 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+function normalizeHeader(header: string): string {
+  return String(header ?? "")
+    .replace(/^\ufeff/, "")
+    .trim();
+}
+
 function matrixToRows(matrix: string[][]): CsvRow[] {
   if (matrix.length < 2) return [];
-  const headers = matrix[0].map((h) => String(h ?? "").trim());
+  const headers = matrix[0].map((h) => normalizeHeader(String(h ?? "")));
   return matrix.slice(1).map((cells) => {
     const row: CsvRow = {};
     headers.forEach((header, index) => {
@@ -85,7 +134,8 @@ function matrixToRows(matrix: string[][]): CsvRow[] {
 }
 
 export function rowsFromCsvText(text: string): CsvRow[] {
-  return matrixToRows(parseCsv(text));
+  const cleaned = text.replace(/^\ufeff/, "");
+  return matrixToRows(parseCsv(cleaned));
 }
 
 export function rowsFromSpreadsheetBuffer(buffer: Buffer, filename: string): CsvRow[] {
@@ -108,13 +158,63 @@ export function rowsFromSpreadsheetBuffer(buffer: Buffer, filename: string): Csv
   return matrixToRows(normalized);
 }
 
+export function normalizeImportEmail(raw: string): string {
+  return raw
+    .trim()
+    .replace(/;+\s*$/g, "")
+    .replace(/^mailto:/i, "")
+    .toLowerCase();
+}
+
+export function isValidImportEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function resolveImportEmail(row: CsvRow): string {
+  const primary = normalizeImportEmail(pickField(row, EMAIL_PRIMARY_KEYS));
+  if (primary) return primary;
+  return normalizeImportEmail(pickField(row, EMAIL_SECONDARY_KEYS));
+}
+
+export function resolveImportPhone(row: CsvRow): string | null {
+  const primary = pickField(row, PHONE_PRIMARY_KEYS);
+  const secondary = pickField(row, PHONE_SECONDARY_KEYS);
+  return normalizePhone(primary || secondary);
+}
+
+export function spreadsheetHeaderNames(rows: CsvRow[]): string[] {
+  if (rows.length === 0) return [];
+  return Object.keys(rows[0]).map((h) => normalizeHeader(h));
+}
+
+/** Returns a user-facing error when the sheet has no recognizable email column/data. */
+export function validateImportSpreadsheet(rows: CsvRow[]): string | null {
+  if (rows.length === 0) {
+    return "No data rows found. Check that the first row has column headers.";
+  }
+
+  const headers = spreadsheetHeaderNames(rows);
+  const sample = rows.slice(0, Math.min(25, rows.length));
+  const hasEmail = sample.some((row) => {
+    const email = resolveImportEmail(row);
+    return email.length > 0;
+  });
+
+  if (!hasEmail) {
+    const preview = headers.slice(0, 8).join(", ") || "(none)";
+    return `No email column found. Use Email, Email Address, or Email 1. Headers found: ${preview}`;
+  }
+
+  return null;
+}
+
 export function pickField(row: CsvRow, keys: string[]): string {
   for (const key of keys) {
     const value = row[key];
     if (value?.trim()) return value.trim();
   }
   const lowerMap = Object.fromEntries(
-    Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]),
+    Object.entries(row).map(([k, v]) => [normalizeHeader(k).toLowerCase(), v]),
   );
   for (const key of keys) {
     const value = lowerMap[key.trim().toLowerCase()];
@@ -186,26 +286,27 @@ function presetConfig(preset: ContactImportPreset, importTag: string) {
 }
 
 function rowToContactFields(row: CsvRow) {
-  const email = pickField(row, EMAIL_KEYS).toLowerCase();
+  const email = resolveImportEmail(row);
   const fullName = pickField(row, NAME_KEYS);
   const firstName = pickField(row, FIRST_KEYS);
   const lastName = pickField(row, LAST_KEYS);
   const { firstName: fn, lastName: ln } = splitRosterName(fullName, email, firstName, lastName);
-  const phone = normalizePhone(pickField(row, PHONE_KEYS));
+  const phone = resolveImportPhone(row);
   const rosterNumber = pickField(row, NUMBER_KEYS);
 
   const originalMetadata: Prisma.JsonObject = {};
   for (const [key, value] of Object.entries(row)) {
     if (!value.trim()) continue;
-    const normalizedKey = key.trim().toLowerCase();
-    if (
-      ["email", "e-mail", "name", "full name", "first name", "last name", "phone", "phone numbers", "mobile", "cell", "#", "number"].includes(
-        normalizedKey,
-      )
-    ) {
+    const normalizedKey = normalizeHeader(key).toLowerCase();
+    if (METADATA_SKIP_KEYS.has(normalizedKey)) {
       continue;
     }
     originalMetadata[key] = value;
+  }
+
+  const email2 = normalizeImportEmail(pickField(row, EMAIL_SECONDARY_KEYS));
+  if (email2 && email2 !== email) {
+    originalMetadata.email2 = pickField(row, EMAIL_SECONDARY_KEYS);
   }
 
   return { email, firstName: fn, lastName: ln, phone, rosterNumber, originalMetadata };
@@ -241,110 +342,123 @@ export async function importContactsFromRows(input: {
     result.errors.push(`Only the first ${MAX_IMPORT_ROWS} rows were processed.`);
   }
 
+  const validationError = validateImportSpreadsheet(rows);
+  if (validationError) {
+    result.errors.push(validationError);
+    return result;
+  }
+
   for (const [index, row] of capped.entries()) {
     const line = index + 2;
-    const { email, firstName, lastName, phone, rosterNumber, originalMetadata } = rowToContactFields(row);
+    try {
+      const { email, firstName, lastName, phone, rosterNumber, originalMetadata } =
+        rowToContactFields(row);
 
-    if (!email) {
-      result.skipped += 1;
-      continue;
-    }
+      if (!email) {
+        result.skipped += 1;
+        continue;
+      }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      result.errors.push(`Row ${line}: invalid email "${email}"`);
-      result.skipped += 1;
-      continue;
-    }
+      if (!isValidImportEmail(email)) {
+        result.errors.push(`Row ${line}: invalid email "${email}"`);
+        result.skipped += 1;
+        continue;
+      }
 
-    result.preview.push({
-      email,
-      name: `${firstName} ${lastName}`.trim(),
-      phone,
-    });
+      result.preview.push({
+        email,
+        name: `${firstName} ${lastName}`.trim(),
+        phone,
+      });
 
-    if (dryRun) {
+      if (dryRun) {
+        const existing = await prisma.contact.findUnique({
+          where: { tenantId_email: { tenantId, email } },
+          select: { id: true },
+        });
+        if (existing) result.updated += 1;
+        else result.created += 1;
+        continue;
+      }
+
+      const metadata = {
+        importSource: config.importSource,
+        importTag: importTag || null,
+        rosterNumber: rosterNumber || null,
+        fileLabel,
+        importedVia: "dashboard",
+        ...originalMetadata,
+      } satisfies Prisma.JsonObject;
+
       const existing = await prisma.contact.findUnique({
         where: { tenantId_email: { tenantId, email } },
-        select: { id: true },
+        select: { id: true, tags: true },
       });
+
+      const tags = [...new Set([...(existing?.tags ?? []), ...config.baseTags])];
+      const summary = existing
+        ? `Updated from spreadsheet import (${fileLabel})`
+        : `Imported from spreadsheet (${fileLabel})`;
+
+      const contact = await prisma.contact.upsert({
+        where: { tenantId_email: { tenantId, email } },
+        update: {
+          firstName,
+          lastName,
+          phone,
+          source: config.source,
+          interestType: config.interestType,
+          externalSource: config.externalSource,
+          externalId: rosterNumber || null,
+          importedAt: new Date(),
+          originalMetadata: metadata,
+          lastActivityAt: new Date(),
+          lastActivitySummary: summary,
+          tags,
+        },
+        create: {
+          tenantId,
+          firstName,
+          lastName,
+          email,
+          phone,
+          type: "OTHER",
+          source: config.source,
+          interestType: config.interestType,
+          externalSource: config.externalSource,
+          externalId: rosterNumber || null,
+          importedAt: new Date(),
+          originalMetadata: metadata,
+          lastActivityAt: new Date(),
+          lastActivitySummary: summary,
+          tags,
+          notes: `Spreadsheet import (${preset}). Imported ${new Date().toISOString().slice(0, 10)}.`,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          tenantId,
+          actorUserId,
+          action: existing ? "UPDATE" : "CREATE",
+          metadata: {
+            entity: "Contact",
+            source: config.source,
+            contactId: contact.id,
+            email,
+            preset,
+            fileLabel,
+          },
+        },
+      });
+
       if (existing) result.updated += 1;
       else result.created += 1;
-      continue;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown row error";
+      result.errors.push(`Row ${line}: ${message}`);
+      result.skipped += 1;
     }
-
-    const metadata = {
-      importSource: config.importSource,
-      importTag: importTag || null,
-      rosterNumber: rosterNumber || null,
-      fileLabel,
-      importedVia: "dashboard",
-      ...originalMetadata,
-    } satisfies Prisma.JsonObject;
-
-    const existing = await prisma.contact.findUnique({
-      where: { tenantId_email: { tenantId, email } },
-      select: { id: true, tags: true },
-    });
-
-    const tags = [...new Set([...(existing?.tags ?? []), ...config.baseTags])];
-    const summary = existing
-      ? `Updated from spreadsheet import (${fileLabel})`
-      : `Imported from spreadsheet (${fileLabel})`;
-
-    const contact = await prisma.contact.upsert({
-      where: { tenantId_email: { tenantId, email } },
-      update: {
-        firstName,
-        lastName,
-        phone,
-        source: config.source,
-        interestType: config.interestType,
-        externalSource: config.externalSource,
-        externalId: rosterNumber || null,
-        importedAt: new Date(),
-        originalMetadata: metadata,
-        lastActivityAt: new Date(),
-        lastActivitySummary: summary,
-        tags,
-      },
-      create: {
-        tenantId,
-        firstName,
-        lastName,
-        email,
-        phone,
-        type: "OTHER",
-        source: config.source,
-        interestType: config.interestType,
-        externalSource: config.externalSource,
-        externalId: rosterNumber || null,
-        importedAt: new Date(),
-        originalMetadata: metadata,
-        lastActivityAt: new Date(),
-        lastActivitySummary: summary,
-        tags,
-        notes: `Spreadsheet import (${preset}). Imported ${new Date().toISOString().slice(0, 10)}.`,
-      },
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        tenantId,
-        actorUserId,
-        action: existing ? "UPDATE" : "CREATE",
-        metadata: {
-          entity: "Contact",
-          source: config.source,
-          contactId: contact.id,
-          email,
-          preset,
-          fileLabel,
-        },
-      },
-    });
-
-    if (existing) result.updated += 1;
-    else result.created += 1;
   }
 
   return result;

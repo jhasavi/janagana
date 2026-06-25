@@ -1,0 +1,6 @@
+First Name,Last Name,Email 1,Email 2,Phone 1,Phone 2,Client Type,Subscription Status
+Nadeem,Afridi,nadeem6afridi@yahoo.com;,nadeem.alt@import.test,617-555-0100,617-555-0101,NB,Subscribed
+Jane,Doe,jane.nb@import.test,,617-555-0200,,NB,Subscribed
+Bob,Smith,,bob.secondary@import.test,617-555-0300,617-555-0301,NB,Subscribed
+Bad,Email,not-an-email,bad2@import.test,617-555-0400,,NB,Subscribed
+No,Email,,,617-555-0500,,NB,Subscribed

@@ -120,23 +120,67 @@ async function processImportForm(
     ? (preset as "generic" | "class_roster" | "raklet")
     : "generic";
 
-  const result = await runContactImportFromFile({
+  console.info("IMPORT_CONTACTS_START", {
+    route: "/api/import/contacts",
     tenantId,
-    actorUserId: context.user.id,
-    file,
+    fileName: file.name,
+    fileSize: file.size,
+    mode,
     preset: validPreset,
-    importTag,
-    dryRun: mode === "preview",
   });
 
+  let result;
+  try {
+    result = await runContactImportFromFile({
+      tenantId,
+      actorUserId: context.user.id,
+      file,
+      preset: validPreset,
+      importTag,
+      dryRun: mode === "preview",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown import error";
+    console.error("IMPORT_CONTACTS_FAILED", {
+      route: "/api/import/contacts",
+      tenantId,
+      fileName: file.name,
+      fileSize: file.size,
+      error: message.slice(0, 200),
+    });
+    return redirectMembers(req, tenantId, {
+      openImport: true,
+      error: "Import failed unexpectedly. Try CSV format or contact support.",
+    });
+  }
+
   if (!result.ok) {
+    console.error("IMPORT_CONTACTS_FAILED", {
+      route: "/api/import/contacts",
+      tenantId,
+      fileName: file.name,
+      fileSize: file.size,
+      headerNames: "headers" in result ? result.headers : [],
+      error: result.error.slice(0, 200),
+    });
     return redirectMembers(req, tenantId, {
       openImport: true,
       error: result.error,
     });
   }
 
-  const { created, updated, skipped, dryRun, errors } = result.data;
+  const { created, updated, skipped, dryRun, errors, headers } = result.data;
+  console.info("IMPORT_CONTACTS_OK", {
+    route: "/api/import/contacts",
+    tenantId,
+    fileName: file.name,
+    fileSize: file.size,
+    headerNames: headers,
+    created,
+    updated,
+    skipped,
+    errorCount: errors.length,
+  });
   const query: Record<string, string | boolean> = {
     openImport: true,
     importCreated: String(created),

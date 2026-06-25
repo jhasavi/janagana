@@ -22,6 +22,11 @@ import {
 } from "@/lib/import/contact-import-handler";
 import { MAX_IMPORT_REQUEST_BYTES } from "@/lib/import/contact-roster";
 import { runContactImportFromFile } from "@/lib/import/run-contact-import";
+import {
+  normalizeImportEmail,
+  resolveImportEmail,
+  rowsFromCsvText,
+} from "@/lib/import/contact-roster";
 import type { ActiveTenantActionResult } from "@/lib/tenant/active-tenant-context";
 
 loadEnv({ path: ".env" });
@@ -30,6 +35,7 @@ loadEnv({ path: ".env.local", override: true });
 const prisma = new PrismaClient();
 const TEST_PREFIX = "IMPORT_REGRESSION_";
 const FIXTURE_PATH = join(process.cwd(), "fixtures", "contact-import-regression.csv");
+const NB_FIXTURE_PATH = join(process.cwd(), "fixtures", "contact-import-real-world-nb.csv");
 const MEMBERS_PAGE = join(process.cwd(), "app", "dashboard", "members", "page.tsx");
 
 function assert(condition: boolean, message: string) {
@@ -62,7 +68,12 @@ function ensureSafeDb() {
 
 async function cleanup() {
   await prisma.contact.deleteMany({
-    where: { email: { endsWith: "@import.test" } },
+    where: {
+      OR: [
+        { email: { endsWith: "@import.test" } },
+        { email: "nadeem6afridi@yahoo.com" },
+      ],
+    },
   });
   await prisma.tenant.deleteMany({
     where: { slug: { startsWith: TEST_PREFIX.toLowerCase() } },
@@ -230,6 +241,108 @@ async function testFixtureDbImport(tenantA: string, tenantB: string) {
   console.log("PASS fixture DB import — create/update/skip + tenant isolation");
 }
 
+async function testRealWorldNbFixture(tenantId: string) {
+  assert(
+    normalizeImportEmail("nadeem6afridi@yahoo.com;") === "nadeem6afridi@yahoo.com",
+    "semicolon should be stripped from email",
+  );
+
+  const csv = readFileSync(NB_FIXTURE_PATH, "utf8");
+  const parsed = rowsFromCsvText(csv);
+  const row0 = parsed[0];
+  assert(resolveImportEmail(row0) === "nadeem6afridi@yahoo.com", "Email 1 with semicolon");
+  assert(resolveImportEmail(parsed[2]) === "bob.secondary@import.test", "Email 2 fallback");
+
+  const file = new File([csv], "contact-import-real-world-nb.csv", { type: "text/csv" });
+  const preview = await runContactImportFromFile({
+    tenantId,
+    actorUserId: "import-test-user",
+    file,
+    preset: "generic",
+    dryRun: true,
+  });
+  if (!preview.ok) throw new Error(`NB preview failed: ${preview.error}`);
+  const data = preview.data;
+  assert(data.created === 3, `NB preview created=${data.created}, expected 3`);
+  assert(data.skipped === 2, `NB preview skipped=${data.skipped}, expected 2`);
+  assert(data.errors.some((e) => e.includes("invalid email")), "bad email row should report error");
+
+  const importResult = await runContactImportFromFile({
+    tenantId,
+    actorUserId: "import-test-user",
+    file,
+    preset: "generic",
+    dryRun: false,
+  });
+  if (!importResult.ok) throw new Error(`NB import failed: ${importResult.error}`);
+  assert(importResult.data.created === 3, `NB import created=${importResult.data.created}`);
+
+  const nadeem = await prisma.contact.findFirst({
+    where: { tenantId, email: "nadeem6afridi@yahoo.com" },
+  });
+  assert(nadeem?.firstName === "Nadeem", "Nadeem contact should exist with cleaned email");
+  assert(Boolean(nadeem?.phone?.includes("0100")), "Phone 1 should be used");
+
+  const res = await handleContactImportPost(
+    buildImportRequest(file, { mode: "import", preset: "generic", jgTenantId: tenantId }),
+    mockAuth(tenantId),
+  );
+  assert(res.status !== 500, "NB HTTP import must not 500");
+  assert(res.status >= 300 && res.status < 400, "NB HTTP import should redirect");
+
+  console.log("PASS real-world NB fixture — Email 1/2, semicolon, phones, no 500");
+}
+
+async function testUnsupportedHeadersNo500(tenantId: string) {
+  const csv = "Foo,Bar,Baz\nalpha,beta,gamma\n";
+  const file = new File([csv], "bad-headers.csv", { type: "text/csv" });
+  const result = await runContactImportFromFile({
+    tenantId,
+    actorUserId: "import-test-user",
+    file,
+    preset: "generic",
+    dryRun: true,
+  });
+  if (result.ok) throw new Error("unsupported headers should fail cleanly");
+  assert(result.error.includes("No email column found"), result.error);
+
+  const res = await handleContactImportPost(
+    buildImportRequest(file, { mode: "preview", jgTenantId: tenantId }),
+    mockAuth(tenantId),
+  );
+  assert(res.status !== 500, "unsupported headers must not 500");
+  const location = decodeURIComponent(res.headers.get("location") ?? "");
+  assert(location.includes("No+email+column") || location.includes("No email column"), location);
+
+  console.log("PASS unsupported headers — clean error, no 500");
+}
+
+async function testNbScaleDryRun(tenantId: string) {
+  const header =
+    "First Name,Last Name,Email 1,Email 2,Phone 1,Phone 2,Client Type,Subscription Status";
+  const row =
+    "Scale,User,scale.nb@import.test,,617-555-9999,,NB,Subscribed";
+  const csv = [header, ...Array(262).fill(row)].join("\n");
+  const file = new File([csv], "nb-scale.csv", { type: "text/csv" });
+  const result = await runContactImportFromFile({
+    tenantId,
+    actorUserId: "import-test-user",
+    file,
+    preset: "generic",
+    dryRun: true,
+  });
+  if (!result.ok) throw new Error(`262-row NB dry run failed: ${result.error}`);
+  assert(result.data.created === 262, `expected 262 would-be-created, got ${result.data.created}`);
+
+  const res = await handleContactImportPost(
+    buildImportRequest(file, { mode: "preview", jgTenantId: tenantId }),
+    mockAuth(tenantId),
+  );
+  assert(res.status !== 500, "262-row NB handler must not 500");
+
+  console.log("PASS 262-row NB scale dry-run — no 500");
+}
+
 async function testPostRouteWrapperNever500() {
   const req = buildImportRequest(new File(["x"], "x.txt", { type: "text/plain" }), {
     mode: "import",
@@ -331,6 +444,9 @@ async function main() {
     await testHandlerHttpWithMockAuth(tenantA.id);
     await prisma.contact.deleteMany({ where: { tenantId: tenantA.id, email: { endsWith: "@import.test" } } });
     await testFixtureDbImport(tenantA.id, tenantB.id);
+    await testRealWorldNbFixture(tenantA.id);
+    await testUnsupportedHeadersNo500(tenantA.id);
+    await testNbScaleDryRun(tenantA.id);
     await testHandlerBadInput(tenantA.id);
     await testPostRouteWrapperNever500();
     await testOversizedContentLengthRejected();
