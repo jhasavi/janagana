@@ -1,0 +1,268 @@
+#!/usr/bin/env tsx
+/**
+ * Contact import regression suite.
+ *
+ * Verifies:
+ * - UI form targets POST /api/import/contacts
+ * - Route exports POST; GET is informational; other methods return 405
+ * - Handler accepts multipart uploads and scopes tenant correctly
+ * - Fixture CSV creates/updates/skips as expected
+ * - Bad input returns handled errors (never throws)
+ */
+import { readFileSync } from "fs";
+import { join } from "path";
+import { config as loadEnv } from "dotenv";
+import { PrismaClient } from "@prisma/client";
+import { NextRequest } from "next/server";
+import { GET, PUT } from "@/app/api/import/contacts/route";
+import {
+  handleContactImportPost,
+  type ContactImportAuth,
+} from "@/lib/import/contact-import-handler";
+import { runContactImportFromFile } from "@/lib/import/run-contact-import";
+import type { ActiveTenantActionResult } from "@/lib/tenant/active-tenant-context";
+
+loadEnv({ path: ".env" });
+loadEnv({ path: ".env.local", override: true });
+
+const prisma = new PrismaClient();
+const TEST_PREFIX = "IMPORT_REGRESSION_";
+const FIXTURE_PATH = join(process.cwd(), "fixtures", "contact-import-regression.csv");
+const MEMBERS_PAGE = join(process.cwd(), "app", "dashboard", "members", "page.tsx");
+
+function assert(condition: boolean, message: string) {
+  if (!condition) throw new Error(message);
+}
+
+function parseDatabaseUrl(raw: string | undefined) {
+  if (!raw) return { host: "unknown", database: "unknown" };
+  try {
+    const url = new URL(raw);
+    const pathname = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+    return { host: (url.hostname || "unknown").toLowerCase(), database: (pathname || "unknown").toLowerCase() };
+  } catch {
+    return { host: "unknown", database: "unknown" };
+  }
+}
+
+function ensureSafeDb() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to run contact-import regression with NODE_ENV=production");
+  }
+  const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+  const local = ["localhost", "127.0.0.1"].some((t) => parsed.host.includes(t));
+  if (!local && process.env.ALLOW_DEV_DB_TESTS !== "true") {
+    throw new Error(
+      `Refusing to run against non-local DB (${parsed.host}). Set ALLOW_DEV_DB_TESTS=true if intentional.`,
+    );
+  }
+}
+
+async function cleanup() {
+  await prisma.contact.deleteMany({
+    where: { email: { endsWith: "@import.test" } },
+  });
+  await prisma.tenant.deleteMany({
+    where: { slug: { startsWith: TEST_PREFIX.toLowerCase() } },
+  });
+}
+
+async function upsertTenant(suffix: "a" | "b") {
+  return prisma.tenant.upsert({
+    where: { slug: `${TEST_PREFIX.toLowerCase()}tenant-${suffix}` },
+    update: { status: "ACTIVE" },
+    create: {
+      slug: `${TEST_PREFIX.toLowerCase()}tenant-${suffix}`,
+      name: `${TEST_PREFIX}TENANT_${suffix.toUpperCase()}`,
+      clerkOrgId: `${TEST_PREFIX.toLowerCase()}org_${suffix}`,
+      status: "ACTIVE",
+    },
+  });
+}
+
+function mockAuth(tenantId: string, userId = "import-test-user"): ContactImportAuth {
+  return async (): Promise<ActiveTenantActionResult> => ({
+    ok: true,
+    context: {
+      tenant: {
+        id: tenantId,
+        name: "Import Test Tenant",
+        slug: "import-test",
+        clerkOrgId: "import_test_org",
+        status: "ACTIVE",
+      },
+      user: { id: userId, email: "import@test.local", name: "Import Tester" },
+    },
+  });
+}
+
+function buildImportRequest(
+  file: File | Blob,
+  fields: Record<string, string>,
+  origin = "http://localhost:3020",
+) {
+  const form = new FormData();
+  form.set("file", file);
+  for (const [key, value] of Object.entries(fields)) {
+    form.set(key, value);
+  }
+  return new NextRequest(`${origin}/api/import/contacts`, {
+    method: "POST",
+    body: form,
+    headers: {
+      Origin: origin,
+      Referer: `${origin}/dashboard/members`,
+    },
+  });
+}
+
+async function testUiFormContract() {
+  const html = readFileSync(MEMBERS_PAGE, "utf8");
+  assert(html.includes('action="/api/import/contacts"'), "Members page form must POST to /api/import/contacts");
+  assert(html.includes('method="post"'), "Members page form must use method=post");
+  assert(html.includes("multipart/form-data"), "Members page form must use multipart encoding");
+  console.log("PASS UI form contract → POST /api/import/contacts multipart");
+}
+
+async function testRouteMethods() {
+  const getRes = await GET();
+  assert(getRes.status === 200, `GET should return 200, got ${getRes.status}`);
+  const getJson = await getRes.json();
+  assert(getJson.allowedMethods?.includes("POST"), "GET JSON should document POST");
+
+  const putRes = await PUT();
+  assert(putRes.status === 405, `PUT should return 405, got ${putRes.status}`);
+  assert(putRes.headers.get("Allow") === "POST", "405 should include Allow: POST");
+
+  console.log("PASS route methods — GET 200 docs, PUT 405 with Allow: POST");
+}
+
+async function testHandlerHttpWithMockAuth(tenantId: string) {
+  const csv = readFileSync(FIXTURE_PATH);
+  const file = new File([csv], "contact-import-regression.csv", { type: "text/csv" });
+  const req = buildImportRequest(file, {
+    mode: "import",
+    preset: "generic",
+    jgTenantId: tenantId,
+  });
+
+  const res = await handleContactImportPost(req, mockAuth(tenantId));
+  assert(res.status === 307 || res.status === 302, `Expected redirect, got ${res.status}`);
+  const location = res.headers.get("location") ?? "";
+  assert(location.includes("/dashboard/members"), `Redirect should target members page: ${location}`);
+  assert(location.includes("success=import"), `Redirect should include success=import: ${location}`);
+  assert(location.includes("importCreated=1"), `Expected 1 created (Alice), got ${location}`);
+  assert(location.includes("importUpdated=1"), `Expected 1 updated (duplicate Alice), got ${location}`);
+  assert(location.includes("importSkipped=1"), `Expected 1 skipped (Bob no email), got ${location}`);
+
+  console.log("PASS handler HTTP path — redirect with import counts");
+}
+
+async function testHandlerBadInput(tenantId: string) {
+  const empty = new File([""], "empty.csv", { type: "text/csv" });
+  const res = await handleContactImportPost(
+    buildImportRequest(empty, { mode: "import", jgTenantId: tenantId }),
+    mockAuth(tenantId),
+  );
+  assert(res.status >= 300 && res.status < 400, "Empty file should redirect, not 500");
+  const location = res.headers.get("location") ?? "";
+  assert(location.includes("error="), `Empty file should surface error in redirect: ${location}`);
+
+  const badCsv = new File(["not,a,valid\n"], "bad.csv", { type: "text/csv" });
+  const badRes = await handleContactImportPost(
+    buildImportRequest(badCsv, { mode: "import", jgTenantId: tenantId }),
+    mockAuth(tenantId),
+  );
+  assert(badRes.status >= 300 && badRes.status < 400, "Sparse CSV should redirect, not 500");
+
+  const unauthRes = await handleContactImportPost(
+    buildImportRequest(badCsv, { mode: "import" }),
+    async () => ({ ok: false, error: "Not authenticated" }),
+  );
+  assert(unauthRes.status >= 300 && unauthRes.status < 400, "Unauthenticated should redirect to sign-in");
+
+  console.log("PASS bad input — handled redirects, no throw");
+}
+
+async function testFixtureDbImport(tenantA: string, tenantB: string) {
+  const csv = readFileSync(FIXTURE_PATH);
+  const file = new File([csv], "regression.csv", { type: "text/csv" });
+
+  const first = await runContactImportFromFile({
+    tenantId: tenantA,
+    actorUserId: "import-test-user",
+    file,
+    preset: "generic",
+  });
+  if (!first.ok) {
+    throw new Error(`Fixture import failed: ${first.error}`);
+  }
+  const firstData = first.data;
+  assert(firstData.created === 1, `Expected 1 created, got ${firstData.created}`);
+  assert(firstData.updated === 1, `Expected 1 updated (duplicate), got ${firstData.updated}`);
+  assert(firstData.skipped === 1, `Expected 1 skipped (no email), got ${firstData.skipped}`);
+
+  const inA = await prisma.contact.count({
+    where: { tenantId: tenantA, email: { endsWith: "@import.test" } },
+  });
+  assert(inA === 1, `Tenant A should have exactly 1 contact (deduped email), got ${inA}`);
+
+  const fileB = new File([csv], "regression.csv", { type: "text/csv" });
+  const inB = await runContactImportFromFile({
+    tenantId: tenantB,
+    actorUserId: "import-test-user",
+    file: fileB,
+    preset: "generic",
+  });
+  assert(inB.ok, `Tenant B import failed`);
+  const countB = await prisma.contact.count({
+    where: { tenantId: tenantB, email: { endsWith: "@import.test" } },
+  });
+  assert(countB === 1, `Tenant B should have its own contact, got ${countB}`);
+
+  const cross = await prisma.contact.findFirst({
+    where: { tenantId: tenantB, email: "alice-regression@import.test" },
+  });
+  assert(cross?.tenantId === tenantB, "Contact must stay in tenant B, not leak from A");
+
+  console.log("PASS fixture DB import — create/update/skip + tenant isolation");
+}
+
+async function testPostRouteWrapperNever500() {
+  const req = buildImportRequest(new File(["x"], "x.txt", { type: "text/plain" }), {
+    mode: "import",
+  });
+  const res = await handleContactImportPost(req, async () => ({ ok: false, error: "Not authenticated" }));
+  assert(res.status !== 500, `Handler must not return 500, got ${res.status}`);
+  console.log("PASS POST handler — unauthenticated redirect, no 500");
+}
+
+async function main() {
+  console.log("Contact import regression\n");
+  ensureSafeDb();
+
+  await testUiFormContract();
+  await testRouteMethods();
+
+  await cleanup();
+  const tenantA = await upsertTenant("a");
+  const tenantB = await upsertTenant("b");
+
+  try {
+    await testHandlerHttpWithMockAuth(tenantA.id);
+    await prisma.contact.deleteMany({ where: { tenantId: tenantA.id, email: { endsWith: "@import.test" } } });
+    await testFixtureDbImport(tenantA.id, tenantB.id);
+    await testHandlerBadInput(tenantA.id);
+    await testPostRouteWrapperNever500();
+  } finally {
+    await cleanup();
+    await prisma.$disconnect();
+  }
+
+  console.log("\nAll contact import regression checks passed.");
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+});
