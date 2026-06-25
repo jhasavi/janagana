@@ -232,7 +232,7 @@ async function processImportForm(
     importCreated: String(created),
     importUpdated: String(updated),
     importSkipped: String(skipped),
-    source: sourceFilterForPreset(validPreset),
+    importSource: sourceFilterForPreset(validPreset),
   };
   if (errors.length > 0) {
     query.importErrors = errors.slice(0, 3).join(" | ");

@@ -31,6 +31,7 @@ export default async function ContactsPage({
     importUpdated?: string;
     importSkipped?: string;
     importErrors?: string;
+    importSource?: string;
     openImport?: string;
     q?: string;
     source?: string;
@@ -53,7 +54,8 @@ export default async function ContactsPage({
   const summary = tenant ? await getTenantDashboardSummary(tenant.id) : null;
   const filters = {
     q: params.q ?? "",
-    source: params.source ?? "",
+    // Legacy import redirects used ?source= — do not auto-filter 200+ rows on success page load.
+    source: params.success === "import" ? "" : (params.source ?? ""),
     interestType: params.interestType ?? "",
   };
 
@@ -139,14 +141,16 @@ export default async function ContactsPage({
 
   const contactsResult = await listContacts(filters);
   const contacts = contactsResult.ok ? contactsResult.data : [];
+  const contactsTotal = contactsResult.ok ? contactsResult.totalCount : 0;
+  const contactsTruncated = contactsResult.ok ? contactsResult.truncated : false;
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
   const interestOptions = contactsResult.ok ? contactsResult.interestOptions : [];
 
   const basePath = "/dashboard/members";
   const importSourceFilter =
-    params.source === "dashboard_raklet_import"
-      ? "dashboard_raklet_import"
-      : params.source || filters.source;
+    params.importSource ??
+    (params.success === "import" ? params.source : undefined) ??
+    "dashboard_csv_import";
 
   return (
     <section className="space-y-4">
@@ -201,6 +205,13 @@ export default async function ContactsPage({
       {params.importErrors && (
         <p className="text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
           Row warnings: {params.importErrors}
+        </p>
+      )}
+
+      {contactsTruncated && (
+        <p className="text-sm text-slate-700 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+          Showing first {contacts.length} of {contactsTotal} contacts matching these filters. Narrow with search or
+          channel filter.
         </p>
       )}
 

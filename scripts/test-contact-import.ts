@@ -179,7 +179,7 @@ async function testHandlerHttpWithMockAuth(tenantId: string) {
   assert(location.includes("importCreated=1"), `Expected 1 created (Alice), got ${location}`);
   assert(location.includes("importUpdated=1"), `Expected 1 updated (duplicate Alice), got ${location}`);
   assert(location.includes("importSkipped=1"), `Expected 1 skipped (Bob no email), got ${location}`);
-  assert(location.includes("source=dashboard_csv_import"), `Success should filter by import source: ${location}`);
+  assert(location.includes("source=dashboard_csv_import") || location.includes("importSource=dashboard_csv_import"), `Success should include import source hint: ${location}`);
 
   console.log("PASS handler HTTP path — redirect with import counts");
 }
@@ -481,7 +481,10 @@ async function testRakletFixture(tenantId: string) {
   );
   assert(res.status !== 500, "Raklet HTTP import must not 500");
   const location = res.headers.get("location") ?? "";
-  assert(location.includes("source=dashboard_raklet_import"), `Raklet success should filter raklet source: ${location}`);
+  assert(
+    location.includes("importSource=dashboard_raklet_import") || location.includes("source=dashboard_raklet_import"),
+    `Raklet success should include import source hint: ${location}`,
+  );
 
   console.log("PASS Raklet fixture — E-mail address columns, preset tags, redirect filter");
 }

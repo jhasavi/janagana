@@ -49,6 +49,9 @@ export const ContactListSchema = z
   })
   .strict();
 
+/** Cap list payload — large imports (200+ rows) exceed RSC limits with inline edit forms. */
+export const CONTACT_LIST_PAGE_SIZE = 100;
+
 export async function createContact(input: unknown, options?: TenantActionOptions) {
   const auth = await requireActiveTenantForActions(options);
   if (!auth.ok) {
@@ -217,7 +220,23 @@ export async function listContacts(input: unknown = {}) {
   const contacts = await prisma.contact.findMany({
     where,
     orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }, { email: "asc" }],
-    include: {
+    take: CONTACT_LIST_PAGE_SIZE,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      type: true,
+      source: true,
+      interestType: true,
+      lastActivityAt: true,
+      lastActivitySummary: true,
+      notes: true,
+      tags: true,
+      externalSource: true,
+      importedAt: true,
+      createdAt: true,
       tenant: {
         select: { id: true, name: true, slug: true, clerkOrgId: true },
       },
@@ -243,6 +262,8 @@ export async function listContacts(input: unknown = {}) {
     },
   });
 
+  const totalCount = await prisma.contact.count({ where });
+
   const [sourceRows, interestRows] = await Promise.all([
     prisma.contact.findMany({
       where: { tenantId: context.tenant.id, source: { not: null } },
@@ -262,6 +283,8 @@ export async function listContacts(input: unknown = {}) {
     ok: true as const,
     tenant: context.tenant,
     data: contacts,
+    totalCount,
+    truncated: totalCount > contacts.length,
     sourceOptions: sourceRows.map((row) => row.source).filter((source): source is string => Boolean(source)),
     interestOptions: interestRows
       .map((row) => row.interestType)
