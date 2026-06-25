@@ -146,6 +146,8 @@ async function testUiFormContract() {
   const membersHtml = readFileSync(MEMBERS_PAGE, "utf8");
   assert(membersHtml.includes("/dashboard/members/import"), "Members page must link to dedicated import route");
   assert(!membersHtml.includes('action="/api/import/contacts"'), "Import form must not live on members list page");
+  assert(membersHtml.includes("ContactsCrmTable"), "Members page must use compact CRM table");
+  assert(membersHtml.includes('params.success === "import"'), "Members page must handle import success banner");
   console.log("PASS UI form contract → import page POST /api/import/contacts multipart");
 }
 

@@ -46,6 +46,10 @@ export const ContactListSchema = z
     q: z.string().trim().max(120).optional().or(z.literal("")),
     source: z.string().trim().max(80).optional().or(z.literal("")),
     interestType: z.string().trim().max(80).optional().or(z.literal("")),
+    preset: z
+      .enum(["members", "leads", "no-email", "recent"])
+      .optional()
+      .or(z.literal("")),
   })
   .strict();
 
@@ -197,25 +201,49 @@ export async function listContacts(input: unknown = {}) {
   const context = auth.context;
   const parsed = ContactListSchema.safeParse(input);
   const filters = parsed.success ? parsed.data : {};
-  const where: Prisma.ContactWhereInput = { tenantId: context.tenant.id };
+  const and: Prisma.ContactWhereInput[] = [{ tenantId: context.tenant.id }];
 
   if (filters.q) {
-    where.OR = [
-      { firstName: { contains: filters.q, mode: "insensitive" } },
-      { lastName: { contains: filters.q, mode: "insensitive" } },
-      { email: { contains: filters.q, mode: "insensitive" } },
-      { phone: { contains: filters.q, mode: "insensitive" } },
-      { notes: { contains: filters.q, mode: "insensitive" } },
-    ];
+    and.push({
+      OR: [
+        { firstName: { contains: filters.q, mode: "insensitive" } },
+        { lastName: { contains: filters.q, mode: "insensitive" } },
+        { email: { contains: filters.q, mode: "insensitive" } },
+        { phone: { contains: filters.q, mode: "insensitive" } },
+        { notes: { contains: filters.q, mode: "insensitive" } },
+      ],
+    });
   }
 
   if (filters.source) {
-    where.source = filters.source;
+    and.push({ source: filters.source });
   }
 
   if (filters.interestType) {
-    where.interestType = filters.interestType;
+    and.push({ interestType: filters.interestType });
   }
+
+  if (filters.preset === "members") {
+    and.push({
+      OR: [{ type: "MEMBER" }, { memberships: { some: { status: "ACTIVE" } } }],
+    });
+  } else if (filters.preset === "leads") {
+    and.push({ type: "OTHER" });
+  } else if (filters.preset === "no-email") {
+    and.push({
+      OR: [
+        { email: "" },
+        { email: { not: { contains: "@" } } },
+        { email: { endsWith: "@example.com", mode: "insensitive" } },
+      ],
+    });
+  } else if (filters.preset === "recent") {
+    const since = new Date();
+    since.setDate(since.getDate() - 7);
+    and.push({ lastActivityAt: { gte: since } });
+  }
+
+  const where: Prisma.ContactWhereInput = and.length === 1 ? and[0]! : { AND: and };
 
   const contacts = await prisma.contact.findMany({
     where,
@@ -232,28 +260,17 @@ export async function listContacts(input: unknown = {}) {
       interestType: true,
       lastActivityAt: true,
       lastActivitySummary: true,
-      notes: true,
       tags: true,
-      externalSource: true,
       importedAt: true,
       createdAt: true,
-      tenant: {
-        select: { id: true, name: true, slug: true, clerkOrgId: true },
-      },
-      registrations: {
-        orderBy: { createdAt: "desc" },
-        take: 3,
+      memberships: {
+        where: { status: "ACTIVE" },
+        take: 1,
+        orderBy: { expiresAt: "desc" },
         select: {
-          id: true,
           status: true,
-          createdAt: true,
-          event: {
-            select: {
-              title: true,
-              slug: true,
-              startsAt: true,
-            },
-          },
+          expiresAt: true,
+          tier: { select: { name: true } },
         },
       },
       _count: {

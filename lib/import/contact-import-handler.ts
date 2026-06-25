@@ -63,6 +63,12 @@ function redirectMembersList(
   }
   const returnTo = `${MEMBERS_PAGE}?${params.toString()}`;
   const safeReturnTo = isSafeDashboardReturnPath(returnTo) ? returnTo : MEMBERS_PAGE;
+  console.info("IMPORT_CONTACTS_REDIRECT", {
+    route: "/api/import/contacts",
+    tenantId,
+    redirectTarget: safeReturnTo,
+    queryKeys: Object.keys(query),
+  });
   const response = NextResponse.redirect(new URL(safeReturnTo, req.url));
   if (tenantId) {
     return applyActiveTenantCookieToResponse(response, tenantId);

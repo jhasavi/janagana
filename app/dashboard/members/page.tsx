@@ -1,16 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
-import { ContactsTable } from "@/components/dashboard/contacts-table";
-import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
-import { createContact, deleteContact, listContacts, updateContact } from "@/lib/actions/contacts";
-import {
-  contactInterestLabel,
-  contactSourceLabel,
-  PILOT_INTEREST_FILTERS,
-} from "@/lib/pilot/contact-labels";
-import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard, tenantIdFromMutation } from "@/lib/tenant";
-import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
+import { ContactsCrmTable } from "@/components/dashboard/contacts-table";
+import { listContacts } from "@/lib/actions/contacts";
+import { CONTACT_QUICK_FILTERS } from "@/lib/pilot/contact-filters";
+import { contactInterestLabel, contactSourceLabel } from "@/lib/pilot/contact-labels";
+import { resolveTenantForDashboard } from "@/lib/tenant";
 
 function filterHref(base: string, params: Record<string, string>) {
   const url = new URL(base, "http://local");
@@ -19,6 +14,22 @@ function filterHref(base: string, params: Record<string, string>) {
     else url.searchParams.delete(key);
   }
   return `${url.pathname}${url.search}`;
+}
+
+function activeQuickFilter(params: {
+  preset?: string;
+  source?: string;
+  interestType?: string;
+  q?: string;
+}): string {
+  if (params.preset === "members") return "members";
+  if (params.preset === "leads") return "leads";
+  if (params.preset === "no-email") return "no-email";
+  if (params.preset === "recent") return "recent";
+  if (params.source === "dashboard_raklet_import") return "raklet";
+  if (params.source === "dashboard_csv_import") return "imported";
+  if (!params.preset && !params.source && !params.interestType && !params.q) return "all";
+  return "";
 }
 
 export default async function ContactsPage({
@@ -36,6 +47,7 @@ export default async function ContactsPage({
     q?: string;
     source?: string;
     interestType?: string;
+    preset?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -51,95 +63,35 @@ export default async function ContactsPage({
 
   const resolution = await resolveTenantForDashboard();
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
-  const summary = tenant ? await getTenantDashboardSummary(tenant.id) : null;
+
   const filters = {
     q: params.q ?? "",
-    // Legacy import redirects used ?source= — do not auto-filter 200+ rows on success page load.
     source: params.success === "import" ? "" : (params.source ?? ""),
     interestType: params.interestType ?? "",
+    preset: (params.preset ?? "") as "" | "members" | "leads" | "no-email" | "recent",
   };
 
-  async function createContactAction(formData: FormData) {
-    "use server";
-
-    const tenantHint = readTenantIdHintFromForm(formData);
-    const result = await createContact(
-      {
-        firstName: String(formData.get("firstName") ?? ""),
-        lastName: String(formData.get("lastName") ?? ""),
-        email: String(formData.get("email") ?? ""),
-        phone: String(formData.get("phone") ?? ""),
-        type: "OTHER",
-        notes: String(formData.get("notes") ?? ""),
-        tags: String(formData.get("tags") ?? ""),
-      },
-      { tenantIdHint: tenantHint }
-    );
-
-    if (!result.ok) {
-      const errorMessage = "error" in result && result.error ? result.error : "Failed to create contact";
-      const tenantId = tenantIdFromMutation(tenantHint);
-      if (tenantId) {
-        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
-      }
-      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
-    }
-
-    redirectWithActiveTenant(result.data.tenantId, "/dashboard/members?success=1");
+  let contactsResult;
+  try {
+    contactsResult = await listContacts(filters);
+    console.info("MEMBERS_PAGE_RENDER", {
+      tenantId: tenant?.id ?? null,
+      success: params.success ?? null,
+      filterSource: filters.source || null,
+      filterPreset: filters.preset || null,
+      rowCount: contactsResult.ok ? contactsResult.data.length : 0,
+      totalCount: contactsResult.ok ? contactsResult.totalCount : 0,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown render error";
+    console.error("MEMBERS_PAGE_RENDER_FAILED", {
+      tenantId: tenant?.id ?? null,
+      success: params.success ?? null,
+      error: message.slice(0, 200),
+    });
+    throw error;
   }
 
-  async function updateContactAction(formData: FormData) {
-    "use server";
-
-    const tenantHint = readTenantIdHintFromForm(formData);
-    const result = await updateContact(
-      {
-        contactId: String(formData.get("contactId") ?? ""),
-        firstName: String(formData.get("firstName") ?? ""),
-        lastName: String(formData.get("lastName") ?? ""),
-        phone: String(formData.get("phone") ?? ""),
-        type: String(formData.get("type") ?? "OTHER"),
-        notes: String(formData.get("notes") ?? ""),
-        tags: String(formData.get("tags") ?? ""),
-      },
-      { tenantIdHint: tenantHint }
-    );
-
-    if (!result.ok) {
-      const errorMessage = "error" in result && result.error ? result.error : "Failed to update contact";
-      const tenantId = tenantIdFromMutation(tenantHint);
-      if (tenantId) {
-        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
-      }
-      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
-    }
-
-    redirectWithActiveTenant(result.data.tenantId, "/dashboard/members?success=updated");
-  }
-
-  async function deleteContactAction(formData: FormData) {
-    "use server";
-
-    const tenantHint = readTenantIdHintFromForm(formData);
-    const contactId = String(formData.get("contactId") ?? "").trim();
-    const result = await deleteContact(contactId, { tenantIdHint: tenantHint });
-
-    if (!result.ok) {
-      const errorMessage = "error" in result && result.error ? result.error : "Failed to delete contact";
-      const tenantId = tenantIdFromMutation(tenantHint);
-      if (tenantId) {
-        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
-      }
-      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
-    }
-
-    if (tenantHint) {
-      redirectWithActiveTenant(tenantHint, "/dashboard/members?success=deleted");
-    }
-    redirect("/dashboard/members?success=deleted");
-  }
-
-  const contactsResult = await listContacts(filters);
   const contacts = contactsResult.ok ? contactsResult.data : [];
   const contactsTotal = contactsResult.ok ? contactsResult.totalCount : 0;
   const contactsTruncated = contactsResult.ok ? contactsResult.truncated : false;
@@ -151,124 +103,119 @@ export default async function ContactsPage({
     params.importSource ??
     (params.success === "import" ? params.source : undefined) ??
     "dashboard_csv_import";
+  const quickActive = activeQuickFilter({
+    preset: filters.preset,
+    source: params.source,
+    interestType: filters.interestType,
+    q: filters.q,
+  });
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold">Contacts & leads</h1>
-            <a
-              href="/api/export/contacts"
-              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
-            >
-              Export CSV
-            </a>
-            <Link
-              href="/dashboard/members/import"
-              className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100"
-            >
-              Import spreadsheet
-            </Link>
-          </div>
-          {summary && (
-            <p className="mt-2 text-sm text-gray-600">
-              <strong>{summary.contactsTotal}</strong> people · <strong>{summary.contactsLeads}</strong> portal leads ·{" "}
-              <strong>{summary.eventRegistrationsConfirmed}</strong> with event registration
-            </p>
-          )}
+          <h1 className="text-xl font-semibold text-slate-950">Contacts</h1>
+          <p className="text-sm text-slate-600">
+            {contactsTotal} contact{contactsTotal === 1 ? "" : "s"}
+            {contactsTruncated ? ` · showing ${contacts.length}` : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/members/import"
+            className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100"
+          >
+            Import
+          </Link>
+          <a
+            href="/api/export/contacts"
+            className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-stone-50"
+          >
+            Export CSV
+          </a>
+          <Link
+            href="/dashboard/members/new"
+            className="rounded-md bg-slate-950 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-900"
+          >
+            Add contact
+          </Link>
         </div>
       </div>
 
-      {params.error && <p className="text-sm text-red-700">{params.error}</p>}
-      {params.success === "1" && <p className="text-sm text-green-700">Contact added manually.</p>}
-      {params.success === "updated" && <p className="text-sm text-green-700">Contact updated.</p>}
-      {params.success === "deleted" && <p className="text-sm text-green-700">Contact removed.</p>}
+      {params.error && (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{params.error}</p>
+      )}
+      {params.success === "1" && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          Contact added.
+        </p>
+      )}
+      {params.success === "updated" && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          Contact updated.
+        </p>
+      )}
+      {params.success === "deleted" && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          Contact removed.
+        </p>
+      )}
       {params.success === "import" && (
-        <p className="text-sm text-green-700">
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
           Import complete — {params.importCreated ?? "0"} created, {params.importUpdated ?? "0"} updated,{" "}
           {params.importSkipped ?? "0"} skipped (no email).{" "}
           <Link
-            href={filterHref(basePath, {
-              ...filters,
-              source: importSourceFilter || "dashboard_csv_import",
-            })}
+            href={filterHref(basePath, { source: importSourceFilter })}
             className="font-semibold underline"
           >
             View imported contacts
           </Link>
-          .
         </p>
       )}
       {params.importErrors && (
-        <p className="text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Row warnings: {params.importErrors}
         </p>
       )}
-
       {contactsTruncated && (
-        <p className="text-sm text-slate-700 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-          Showing first {contacts.length} of {contactsTotal} contacts matching these filters. Narrow with search or
-          channel filter.
+        <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-slate-700">
+          Showing first {contacts.length} of {contactsTotal} matching contacts. Use search or filters to narrow results.
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <span className="text-xs font-medium text-gray-500 py-1">Quick filters:</span>
-        <Link
-          href={basePath}
-          className={`rounded-full px-2.5 py-1 text-xs ${!filters.interestType && !filters.source ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-        >
-          All
-        </Link>
-        {PILOT_INTEREST_FILTERS.map((preset) => (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {CONTACT_QUICK_FILTERS.map((chip) => (
           <Link
-            key={preset.value}
-            href={filterHref(basePath, { ...filters, interestType: preset.value })}
-            className={`rounded-full px-2.5 py-1 text-xs ${
-              filters.interestType === preset.value
-                ? "bg-blue-700 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            key={chip.id}
+            href={chip.href(basePath)}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+              quickActive === chip.id
+                ? "bg-slate-900 text-white"
+                : "bg-stone-100 text-slate-700 hover:bg-stone-200"
             }`}
           >
-            {preset.label}
+            {chip.label}
           </Link>
         ))}
-        <Link
-          href={filterHref(basePath, { ...filters, source: "dashboard_csv_import" })}
-          className={`rounded-full px-2.5 py-1 text-xs ${
-            filters.source === "dashboard_csv_import"
-              ? "bg-teal-800 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Imported
-        </Link>
-        <Link
-          href={filterHref(basePath, { ...filters, source: "dashboard_raklet_import" })}
-          className={`rounded-full px-2.5 py-1 text-xs ${
-            filters.source === "dashboard_raklet_import"
-              ? "bg-teal-800 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
-        >
-          Raklet import
-        </Link>
       </div>
 
       <form
         action={basePath}
-        className="grid gap-3 rounded-md border border-gray-200 bg-white p-4 md:grid-cols-[1fr_160px_180px_auto]"
+        className="flex flex-col gap-2 rounded-md border border-stone-200 bg-white p-3 sm:flex-row sm:items-center"
       >
         <input
           name="q"
           defaultValue={filters.q}
-          placeholder="Search name, email, phone, notes, tags"
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          placeholder="Search name, email, phone, tags"
+          className="min-w-0 flex-1 rounded border border-stone-300 px-3 py-1.5 text-sm"
         />
-        <select name="source" defaultValue={filters.source} className="rounded border border-gray-300 px-3 py-2 text-sm">
+        <select
+          name="source"
+          defaultValue={filters.source}
+          className="rounded border border-stone-300 px-2 py-1.5 text-sm"
+        >
           <option value="">All channels</option>
           {sourceOptions.map((source) => (
             <option key={source} value={source}>
@@ -279,7 +226,7 @@ export default async function ContactsPage({
         <select
           name="interestType"
           defaultValue={filters.interestType}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          className="rounded border border-stone-300 px-2 py-1.5 text-sm"
         >
           <option value="">All intents</option>
           {interestOptions.map((interest) => (
@@ -288,70 +235,31 @@ export default async function ContactsPage({
             </option>
           ))}
         </select>
-        <button type="submit" className="rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black">
+        {filters.preset && <input type="hidden" name="preset" value={filters.preset} />}
+        <button type="submit" className="rounded bg-slate-900 px-4 py-1.5 text-sm text-white hover:bg-teal-900">
           Search
         </button>
       </form>
 
-      <details className="rounded-md border border-gray-200 bg-white p-4">
-        <summary className="cursor-pointer text-sm font-medium text-gray-900">Add manual entry</summary>
-        <p className="mt-2 text-xs text-gray-600">For walk-ins or phone calls — not from the public portal.</p>
-        <form action={createContactAction} className="mt-4 grid gap-3 md:grid-cols-2">
-          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
-          <input name="firstName" required placeholder="First name" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <input name="lastName" required placeholder="Last name" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <input
-            name="email"
-            required
-            type="email"
-            placeholder="Email"
-            className="rounded border border-gray-300 px-3 py-2 text-sm md:col-span-2"
-          />
-          <input name="phone" placeholder="Phone" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <input
-            name="tags"
-            placeholder="Tags (comma-separated, optional)"
-            className="rounded border border-gray-300 px-3 py-2 text-sm"
-          />
-          <textarea
-            name="notes"
-            rows={3}
-            placeholder="Admin notes (optional)"
-            className="rounded border border-gray-300 px-3 py-2 text-sm md:col-span-2"
-          />
-          <div className="md:col-span-2">
-            <button type="submit" className="rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black">
-              Add contact
-            </button>
-          </div>
-        </form>
-      </details>
-
-      <div className="rounded-md border border-gray-200 bg-white p-4">
+      <div className="rounded-md border border-stone-200 bg-white">
         {contacts.length === 0 ? (
-          <div className="space-y-3 rounded-md border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-700">
-            <p className="font-medium text-gray-900">
-              {filters.q || filters.source || filters.interestType
+          <div className="space-y-2 p-8 text-center text-sm text-slate-600">
+            <p className="font-medium text-slate-900">
+              {filters.q || filters.source || filters.interestType || filters.preset
                 ? "No contacts match these filters"
                 : `No contacts for ${tenant?.slug ?? "this tenant"} yet`}
             </p>
-            {!filters.q && !filters.source && !filters.interestType && (
+            {!filters.q && !filters.source && !filters.interestType && !filters.preset && (
               <p>
-                <Link href="/dashboard/members/import" className="font-medium text-teal-900 underline">
-                  Import a Raklet or Excel export
+                <Link href="/dashboard/members/import" className="font-semibold text-teal-900 underline">
+                  Import a spreadsheet
                 </Link>{" "}
-                or test your portal contact form from the dashboard home page.
+                to get started.
               </p>
             )}
           </div>
         ) : (
-          <ContactsTable
-            contacts={contacts}
-            tenantId={tenant?.id ?? ""}
-            tenantSlug={tenant?.slug ?? "—"}
-            updateContactAction={updateContactAction}
-            deleteContactAction={deleteContactAction}
-          />
+          <ContactsCrmTable contacts={contacts} />
         )}
       </div>
     </section>
