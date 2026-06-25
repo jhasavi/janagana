@@ -39,6 +39,7 @@
     "seed:e2e": "tsx e2e/global-setup.ts",
     "seed:local-clerk": "tsx scripts/seed-local-clerk-tenants.ts",
     "verify:tenants": "tsx scripts/verify-tenant-integration.ts",
+    "verify:pilot-demo": "tsx scripts/verify-pilot-demo.ts",
     "test:actions": "tsx scripts/test-tenant-isolation.ts",
     "test:lead:capture": "tsx scripts/test-lead-capture.ts",
     "test:registration:ops": "tsx scripts/test-registration-operations.ts",

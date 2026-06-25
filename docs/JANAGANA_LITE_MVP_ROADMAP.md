@@ -135,10 +135,13 @@ Run before merging each slice:
 npm run lint
 npm run typecheck
 npm run prisma:validate
+npm run verify:pilot-demo -- --base-url=https://janagana.namasteneedham.com
 npm run test:membership-renewals
 npm run test:dashboard:semantics
 npm run gate:quick   # when DB available
 ```
+
+**External demo gate:** [JANAGANA_LITE_PILOT_DEMO_V1.md](./JANAGANA_LITE_PILOT_DEMO_V1.md)
 
 ---
 

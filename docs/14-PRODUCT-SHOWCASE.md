@@ -3,6 +3,8 @@
 **Audience:** Founders, operators, demo presenters.  
 **Goal:** Replace Raklet for diaspora/community orgs while borrowing the best of Zeffy (transparent fees), Eventbrite (events), and Mailchimp-lite (lists) — without building a bloated suite.
 
+> **Canonical demo runbook:** [JANAGANA_LITE_PILOT_DEMO_V1.md](./JANAGANA_LITE_PILOT_DEMO_V1.md) — 15-minute script, URLs, test data, go/no-go checklist, and `npm run verify:pilot-demo`.
+
 ---
 
 ## Positioning (one paragraph)
@@ -26,33 +28,11 @@
 
 ---
 
-## Showcase demo script (15 minutes)
+## Demo script and checklist
 
-**Setup:** Production tenant with real logo, 10+ imported contacts, 1 published event, website CTAs wired.
+See **[JANAGANA_LITE_PILOT_DEMO_V1.md](./JANAGANA_LITE_PILOT_DEMO_V1.md)** for the exact 15-minute script, URLs, test data, limitations, and go/no-go checklist.
 
-1. **Operator story (3 min)** — Sign in → dashboard signal → Contacts with import provenance → publish event → copy register link.
-2. **Visitor story (5 min)** — Incognito on tenant site → Events → Register → confirm return to tenant site → show new row in Contacts + Registrations.
-3. **Migration story (4 min)** — Export Raklet (or Excel) → **Dashboard → Contacts → Import spreadsheet** (`/dashboard/members/import`) → Preview → Import → filter **Raklet import** or **Imported**.
-4. **Multi-tenant (2 min)** — Switch NB ↔ TPW; show isolation (counts, portal URLs differ).
-5. **Close (1 min)** — Roadmap slide: donations with donor-covered fees, email reminders, custom domain proxy.
-
-**Do not demo:** localhost onboarding, CLI scripts, unfinished donations UI.
-
----
-
-## Showcase readiness checklist
-
-Mark ready when **all** are true for at least one tenant (TPW first):
-
-- [ ] 20+ real contacts (import + portal leads)
-- [ ] Dashboard import used successfully (not CLI-only)
-- [ ] 1+ published event with live registration
-- [ ] Tenant website CTAs point to portal with `returnTo`
-- [ ] Operator weekly routine documented ([01-PILOT-RUNBOOK.md](./01-PILOT-RUNBOOK.md))
-- [ ] Incognito registration → dashboard in &lt; 2 minutes
-- [ ] Multi-tenant isolation verified on production
-
-**Prompt the founder for external showcase only when this list is green for TPW.**
+Automated gate: `npm run verify:pilot-demo -- --base-url=https://janagana.namasteneedham.com`
 
 ---
 

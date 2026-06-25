@@ -17,7 +17,8 @@ Canonical docs for the NB/TPW pilot. Older filenames were merged here to reduce 
 | 11 | [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md) | TPW full integration success criteria (do TPW before NB) |
 | 12 | [12-PILOT-RESET.md](./12-PILOT-RESET.md) | Three-mode pilot testing: operational reset, reseed, bootstrap |
 | 13 | [13-TENANT-WEBSITE-INTEGRATION.md](./13-TENANT-WEBSITE-INTEGRATION.md) | Operator vs visitor planes; tenant deployment checklist; embed levels |
-| 14 | [14-PRODUCT-SHOWCASE.md](./14-PRODUCT-SHOWCASE.md) | GTM, Raklet replacement pitch, demo script, showcase readiness |
+| 14 | [14-PRODUCT-SHOWCASE.md](./14-PRODUCT-SHOWCASE.md) | GTM positioning (high level) |
+| 15 | [JANAGANA_LITE_PILOT_DEMO_V1.md](./JANAGANA_LITE_PILOT_DEMO_V1.md) | **Pilot Demo v1** — 15-min script, URLs, go/no-go, limitations |
 | — | [JANAGANA_LITE_PRODUCT_PLAN.md](./JANAGANA_LITE_PRODUCT_PLAN.md) | Community OS positioning, MVP modules, scope |
 | — | [JANAGANA_LITE_MVP_ROADMAP.md](./JANAGANA_LITE_MVP_ROADMAP.md) | Phased build plan and next slices |
 | — | [PARKING-LOT.md](./PARKING-LOT.md) | Deferred features (contact roles, etc.) |
