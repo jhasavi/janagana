@@ -31,6 +31,7 @@ assert(new Set(hrefs).size === hrefs.length, "Duplicate nav hrefs");
 assert(PILOT_DASHBOARD_NAV.length === flat.length, "PILOT_DASHBOARD_NAV should match flattened COMMUNITY_OS_NAV");
 
 const comingSoon = flat.filter((item) => item.status === "coming-soon");
+assert(hrefs.includes("/dashboard/donations"), "Nav must include donations");
 assert(comingSoon.length >= 4, "Expected at least 4 coming-soon modules");
 
 console.log("Community OS navigation checks passed:");

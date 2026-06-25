@@ -58,7 +58,7 @@ It is **not** another generic event-ticketing app. It is **not** a CiviCRM clone
 | 5 | Membership purchases / renewals | **Partial** | Renewals desk + reminder queue; checkout polish remains |
 | 6 | Events | **Live** | Publish, register, check-in statuses |
 | 7 | Ticket types & registration | **Live** | `EventTicketType`, quantity-aware |
-| 8 | Donations | **Planned** | `PaymentPurpose.DONATION` in ledger only |
+| 8 | Donations | **Live** | Portal donate + admin desk + Stripe |
 | 9 | Sponsors | **Planned** | Placeholder |
 | 10 | Volunteers | **Planned** | `ContactType.VOLUNTEER` exists; no workflows |
 | 11 | Payments / receipts | **Partial** | `PaymentRecord`, receipts, Stripe webhooks |

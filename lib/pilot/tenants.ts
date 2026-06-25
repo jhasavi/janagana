@@ -51,6 +51,7 @@ const COMMON_LINKS = (root: string, slug: string): PortalLink[] => [
   { label: "Portal home", href: root, hint: "Link from your website — visitors open JanaGana portal (no Clerk sign-in)" },
   { label: "Events listing", href: `${root}/events`, hint: "Or render events on your site via embed API (see Portal & setup)" },
   { label: "Membership join", href: `${root}/join` },
+  { label: "Donate", href: `${root}/donate`, hint: "One-time gifts via Stripe Checkout" },
   {
     label: "Newsletter / community updates",
     href: `${root}/contact?interest=newsletter`,

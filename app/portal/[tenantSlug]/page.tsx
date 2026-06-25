@@ -51,6 +51,12 @@ export default async function PortalHomePage({ params }: Props) {
                 <HeartHandshake className="h-4 w-4" />
                 Membership
               </Link>
+              <Link
+                href={`/portal/${result.tenant.slug}/donate`}
+                className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-stone-50"
+              >
+                Donate
+              </Link>
             </div>
           </div>
 
@@ -59,6 +65,7 @@ export default async function PortalHomePage({ params }: Props) {
             <div className="mt-5 grid gap-3">
               <PortalAction href={`/portal/${result.tenant.slug}/events`} title="Attend an event" detail={`${result.data.length} published event${result.data.length === 1 ? "" : "s"}`} />
               <PortalAction href={`/portal/${result.tenant.slug}/join`} title="Become a member" detail="Choose an available membership" />
+              <PortalAction href={`/portal/${result.tenant.slug}/donate`} title="Make a donation" detail="Support the community with a one-time gift" />
               <PortalAction href={`/portal/${result.tenant.slug}/contact?interest=newsletter`} title="Stay in touch" detail="Get updates from the community" />
             </div>
           </div>
@@ -67,7 +74,7 @@ export default async function PortalHomePage({ params }: Props) {
 
       <div className="grid gap-4 md:grid-cols-3">
         <FeatureTile icon={<CalendarDays className="h-5 w-5" />} title="Events" text="Browse published programs and register in a few steps." />
-        <FeatureTile icon={<HeartHandshake className="h-5 w-5" />} title="Membership" text="Support the community and keep your membership details current." />
+        <FeatureTile icon={<HeartHandshake className="h-5 w-5" />} title="Donate" text="Make a one-time gift to support community programs." />
         <FeatureTile icon={<Mail className="h-5 w-5" />} title="Updates" text="Share your interests so organizers can follow up clearly." />
       </div>
 

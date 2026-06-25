@@ -69,19 +69,24 @@ Pilot infrastructure that must not break:
 
 ---
 
-## Phase 3 — Donations + receipts
+## Phase 3 — Donations + receipts ✅ (June 2026)
 
-**Goal:** Accept and track donations without building Zeffy clone.
+**Implemented:**
 
-| Task | Value |
-|------|-------|
-| Public donation page on portal | High |
-| Admin donation recording (offline + Stripe) | High |
-| Donor receipt + outbox delivery | Medium |
-| Donation list on dashboard (replace placeholder) | Medium |
-| Optional donor-covered processing fee (Zeffy-style) | Low (deferred) |
+- `/portal/{slug}/donate` — preset amounts, custom amount, Stripe Checkout
+- `/dashboard/donations` — admin list, summary cards, offline donation recording
+- Stripe webhook handles `PaymentPurpose.DONATION` (not only membership)
+- Receipt + outbox on paid donations
+- Portal home + settings links include donate URL
+- Test: `npm run test:donations`
 
-**Schema:** `PaymentPurpose.DONATION` already exists.
+**Remains:**
+
+| Task | Status |
+|------|--------|
+| Optional donor-covered processing fee (Zeffy-style) | Deferred |
+| Recurring donations | Deferred |
+| Donation campaigns / funds | Deferred |
 
 ---
 
@@ -112,15 +117,7 @@ Pilot infrastructure that must not break:
 
 ## Recommended next 3 build slices
 
-### Slice B — Donations portal page (1–2 weeks) ← **recommended next**
-
-1. `/portal/{slug}/donate` with amount + Stripe
-2. Admin donations page (replace placeholder)
-3. Receipt + outbox on completion
-
-**Why second:** Ledger ready; high visibility for nonprofits.
-
-### Slice C — Households MVP (2 weeks)
+### Slice C — Households MVP (2 weeks) ← **recommended next**
 
 1. `Household` + `householdId` on Contact
 2. Families admin page (replace placeholder)

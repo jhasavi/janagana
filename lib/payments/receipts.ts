@@ -28,7 +28,9 @@ export async function issueReceiptForPayment(paymentId: string) {
   const recipientName = [payment.contact.firstName, payment.contact.lastName].filter(Boolean).join(" ");
   const description = payment.membership
     ? `${payment.membership.tier.name} membership (${payment.membership.tier.interval.toLowerCase()})`
-    : `${payment.purpose.toLowerCase()} payment`;
+    : payment.purpose === "DONATION"
+      ? `Donation to ${payment.tenant.name}`
+      : `${payment.purpose.toLowerCase()} payment`;
 
   const receipt = await prisma.paymentReceipt.create({
     data: {
