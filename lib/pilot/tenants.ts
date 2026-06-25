@@ -8,11 +8,25 @@ export type PilotTenantSlug = (typeof PILOT_TENANT_SLUGS)[number];
 
 export const PILOT_TENANTS: Record<
   PilotTenantSlug,
-  { slug: PilotTenantSlug; name: string }
+  { slug: PilotTenantSlug; name: string; websiteUrl: string }
 > = {
-  "namaste-boston": { slug: "namaste-boston", name: "Namaste Boston" },
-  "purple-wings": { slug: "purple-wings", name: "The Purple Wings" },
+  "namaste-boston": {
+    slug: "namaste-boston",
+    name: "Namaste Boston",
+    websiteUrl: "https://www.namastebostonhomes.com",
+  },
+  "purple-wings": {
+    slug: "purple-wings",
+    name: "The Purple Wings",
+    websiteUrl: "https://www.thepurplewings.org",
+  },
 };
+
+/** Marketing site visitors return to after portal forms (when returnTo is omitted). */
+export function tenantWebsiteUrl(slug: string): string | null {
+  if (!isPilotTenantSlug(slug)) return null;
+  return PILOT_TENANTS[slug].websiteUrl;
+}
 
 export function isPilotTenantSlug(slug: string): slug is PilotTenantSlug {
   return (PILOT_TENANT_SLUGS as readonly string[]).includes(slug);

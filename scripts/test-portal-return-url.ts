@@ -19,6 +19,8 @@ function main() {
   assert(readSafeReturnUrl("javascript:alert(1)") === null, "block js");
 
   assert((defaultVisitorReturnUrl("purple-wings") ?? "").includes("thepurplewings.org"), "tpw default");
+  assert((defaultVisitorReturnUrl("namaste-boston") ?? "").includes("namastebostonhomes.com"), "nb default");
+  assert(isSafeVisitorReturnUrl("https://www.namastebostonhomes.com"), "nb website allowed");
   assert(defaultVisitorReturnUrl("unknown-slug") === null, "unknown tenant");
 
   const withStatus = visitorReturnUrlWithStatus("https://www.thepurplewings.org/events", "registration", "registered");

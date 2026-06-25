@@ -34,6 +34,7 @@ export default async function ContactsPage({
     importUpdated?: string;
     importSkipped?: string;
     importPreview?: string;
+    openImport?: string;
     q?: string;
     source?: string;
     interestType?: string;
@@ -141,8 +142,8 @@ export default async function ContactsPage({
     if (!(file instanceof File) || file.size === 0) {
       const tenantId = tenantIdFromMutation(tenantHint);
       const msg = "Choose a CSV or Excel file.";
-      if (tenantId) redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(msg)}`);
-      redirect(`/dashboard/members?error=${encodeURIComponent(msg)}`);
+      if (tenantId) redirectWithActiveTenant(tenantId, `/dashboard/members?openImport=1&error=${encodeURIComponent(msg)}`);
+      redirect(`/dashboard/members?openImport=1&error=${encodeURIComponent(msg)}`);
     }
 
     const validPreset = ["generic", "class_roster", "raklet"].includes(preset)
@@ -163,9 +164,9 @@ export default async function ContactsPage({
       const errorMessage = result.error;
       const tenantId = tenantIdFromMutation(tenantHint);
       if (tenantId) {
-        redirectWithActiveTenant(tenantId, `/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+        redirectWithActiveTenant(tenantId, `/dashboard/members?openImport=1&error=${encodeURIComponent(errorMessage)}`);
       }
-      redirect(`/dashboard/members?error=${encodeURIComponent(errorMessage)}`);
+      redirect(`/dashboard/members?openImport=1&error=${encodeURIComponent(errorMessage)}`);
     }
 
     const { tenantId, created, updated, skipped, dryRun } = result.data;
@@ -197,12 +198,12 @@ export default async function ContactsPage({
             >
               Export CSV
             </a>
-            <a
-              href="#import-spreadsheet"
+            <Link
+              href="/dashboard/members?openImport=1"
               className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100"
             >
               Import spreadsheet
-            </a>
+            </Link>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
             See who reached you, how (newsletter, investment analysis, event registration, import, or manual entry), what
@@ -317,7 +318,16 @@ export default async function ContactsPage({
         </button>
       </form>
 
-      <details id="import-spreadsheet" className="mt-4 rounded-md border border-teal-200 bg-teal-50/50 p-4 open:border-teal-300">
+      <details
+        id="import-spreadsheet"
+        open={
+          params.openImport === "1" ||
+          params.success === "import" ||
+          params.importPreview === "1" ||
+          Boolean(params.error && params.openImport === "1")
+        }
+        className="mt-4 rounded-md border border-teal-200 bg-teal-50/50 p-4 open:border-teal-300"
+      >
         <summary className="cursor-pointer text-sm font-semibold text-teal-950">Import spreadsheet (CSV or Excel)</summary>
         <p className="mt-2 text-xs text-teal-900">
           Export from Raklet, Excel, or Google Sheets (.csv / .xlsx). Required column: <strong>Email</strong> (or{" "}
@@ -332,7 +342,7 @@ export default async function ContactsPage({
           Namaste Boston live CRM sync still uses <code className="font-mono">npm run import:nb-crm</code> when connected
           to Supabase.
         </p>
-        <form action={importContactsAction} className="mt-4 grid gap-3 md:grid-cols-2">
+        <form action={importContactsAction} encType="multipart/form-data" className="mt-4 grid gap-3 md:grid-cols-2">
           {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
           <label className="block text-sm md:col-span-2">
             File

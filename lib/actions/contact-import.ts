@@ -71,7 +71,11 @@ export async function importContactsFromSpreadsheet(
         dryRun,
       },
     };
-  } catch {
-    return { ok: false as const, error: "Failed to read spreadsheet. Try saving as CSV and import again." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown import error";
+    return {
+      ok: false as const,
+      error: `Failed to read spreadsheet: ${message}. Try saving as CSV and import again.`,
+    };
   }
 }

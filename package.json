@@ -46,6 +46,7 @@
     "test:dashboard:semantics": "tsx scripts/test-dashboard-semantics.ts",
     "test:community-os:nav": "tsx scripts/test-community-os-nav.ts",
     "test:membership-renewals": "tsx scripts/test-membership-renewals.ts",
+    "smoke:renewals-desk": "tsx scripts/smoke-renewals-desk.ts",
     "test:tenant:contract": "tsx scripts/test-tenant-resolution-contract.ts",
     "test:multi-tenant": "tsx scripts/test-multi-tenant-active-tenant.ts",
     "test:portal-return": "tsx scripts/test-portal-return-url.ts",

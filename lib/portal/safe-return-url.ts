@@ -1,19 +1,16 @@
-import { isPilotTenantSlug } from "@/lib/pilot/tenants";
+import { isPilotTenantSlug, tenantWebsiteUrl } from "@/lib/pilot/tenants";
 
 /** Operator websites visitors may return to after portal forms. */
 const ALLOWED_RETURN_HOSTS = new Set([
   "www.thepurplewings.org",
   "thepurplewings.org",
+  "www.namastebostonhomes.com",
+  "namastebostonhomes.com",
   "namasteneedham.com",
   "www.namasteneedham.com",
   "localhost",
   "127.0.0.1",
 ]);
-
-const DEFAULT_RETURN_BY_TENANT: Record<string, string> = {
-  "purple-wings": "https://www.thepurplewings.org/events",
-  "namaste-boston": "https://namasteneedham.com",
-};
 
 export function isSafeVisitorReturnUrl(url: string): boolean {
   const trimmed = url.trim();
@@ -33,7 +30,7 @@ export function isSafeVisitorReturnUrl(url: string): boolean {
     if (ALLOWED_RETURN_HOSTS.has(host)) {
       return true;
     }
-    return host.endsWith(".thepurplewings.org");
+    return host.endsWith(".thepurplewings.org") || host.endsWith(".namastebostonhomes.com");
   } catch {
     return false;
   }
@@ -51,7 +48,7 @@ export function defaultVisitorReturnUrl(tenantSlug: string): string | null {
   if (!isPilotTenantSlug(tenantSlug)) {
     return null;
   }
-  return DEFAULT_RETURN_BY_TENANT[tenantSlug] ?? null;
+  return tenantWebsiteUrl(tenantSlug);
 }
 
 export function visitorReturnUrlWithStatus(
