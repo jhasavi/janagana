@@ -38,7 +38,7 @@ export {
   activeTenantCookieOptions,
 } from "./active-tenant-cookie";
 
-export { requireActiveTenantForActions } from "./active-tenant-context";
+export { requireActiveTenantForActions, requireActiveTenantForImport } from "./active-tenant-context";
 
 export type {
   ActiveTenantActionContext,

@@ -51,3 +51,30 @@ export async function requireActiveTenantForActions(
 
   return { ok: true, context: { user, tenant } };
 }
+
+/**
+ * API route import handler: resolve tenant without mutating cookies.
+ * Cookie is applied on redirect via applyActiveTenantCookieToResponse only.
+ */
+export async function requireActiveTenantForImport(
+  options?: TenantActionOptions,
+): Promise<ActiveTenantActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, error: "Not authenticated" };
+  }
+
+  const mappedTenants = await findMappedTenantsForUser();
+  if (mappedTenants.length === 0) {
+    return { ok: false, error: "No tenant access" };
+  }
+
+  const cookieTenantId = await getActiveTenantCookie();
+  const tenant = pickActiveTenant(mappedTenants, cookieTenantId, options?.tenantIdHint);
+
+  if (!tenant) {
+    return { ok: false, error: "No active tenant context" };
+  }
+
+  return { ok: true, context: { user, tenant } };
+}

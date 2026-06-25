@@ -159,7 +159,20 @@ export function rowsFromSpreadsheetBuffer(buffer: Buffer, filename: string): Csv
 }
 
 export function normalizeImportEmail(raw: string): string {
-  return raw
+  let value = String(raw ?? "").trim();
+
+  // Hyperlinked exports: [user@example.com](mailto:user@example.com) or [label](user@example.com)
+  const markdownMailto = value.match(/\[([^\]]*)\]\(\s*mailto:([^)]+)\s*\)/i);
+  if (markdownMailto) {
+    value = markdownMailto[2];
+  } else {
+    const markdownLink = value.match(/\[([^\]]*)\]\(\s*([^)]+)\s*\)/);
+    if (markdownLink && markdownLink[2].includes("@")) {
+      value = markdownLink[2];
+    }
+  }
+
+  return value
     .trim()
     .replace(/;+\s*$/g, "")
     .replace(/^mailto:/i, "")

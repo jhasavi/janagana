@@ -9,7 +9,7 @@ import { readTenantIdHintFromForm } from "@/lib/tenant/active-tenant-form";
 import { applyActiveTenantCookieToResponse } from "@/lib/tenant/active-tenant-cookie";
 import { isSameOriginMutationRequest } from "@/lib/security/same-origin";
 import {
-  requireActiveTenantForActions,
+  requireActiveTenantForImport,
   type ActiveTenantActionContext,
   type ActiveTenantActionResult,
 } from "@/lib/tenant/active-tenant-context";
@@ -207,7 +207,7 @@ async function processImportForm(
  */
 export async function handleContactImportPost(
   req: NextRequest,
-  resolveAuth: ContactImportAuth = requireActiveTenantForActions,
+  resolveAuth: ContactImportAuth = requireActiveTenantForImport,
 ) {
   if (!isSameOriginMutationRequest(req)) {
     return redirectMembers(req, null, {

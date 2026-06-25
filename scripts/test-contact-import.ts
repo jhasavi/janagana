@@ -72,6 +72,7 @@ async function cleanup() {
       OR: [
         { email: { endsWith: "@import.test" } },
         { email: "nadeem6afridi@yahoo.com" },
+        { email: "markdown.user@import.test" },
       ],
     },
   });
@@ -246,6 +247,11 @@ async function testRealWorldNbFixture(tenantId: string) {
     normalizeImportEmail("nadeem6afridi@yahoo.com;") === "nadeem6afridi@yahoo.com",
     "semicolon should be stripped from email",
   );
+  assert(
+    normalizeImportEmail("[nadeem6afridi@yahoo.com](mailto:nadeem6afridi@yahoo.com);") ===
+      "nadeem6afridi@yahoo.com",
+    "markdown mailto link should extract email",
+  );
 
   const csv = readFileSync(NB_FIXTURE_PATH, "utf8");
   const parsed = rowsFromCsvText(csv);
@@ -263,7 +269,7 @@ async function testRealWorldNbFixture(tenantId: string) {
   });
   if (!preview.ok) throw new Error(`NB preview failed: ${preview.error}`);
   const data = preview.data;
-  assert(data.created === 3, `NB preview created=${data.created}, expected 3`);
+  assert(data.created === 4, `NB preview created=${data.created}, expected 4`);
   assert(data.skipped === 2, `NB preview skipped=${data.skipped}, expected 2`);
   assert(data.errors.some((e) => e.includes("invalid email")), "bad email row should report error");
 
@@ -275,13 +281,18 @@ async function testRealWorldNbFixture(tenantId: string) {
     dryRun: false,
   });
   if (!importResult.ok) throw new Error(`NB import failed: ${importResult.error}`);
-  assert(importResult.data.created === 3, `NB import created=${importResult.data.created}`);
+  assert(importResult.data.created === 4, `NB import created=${importResult.data.created}`);
 
   const nadeem = await prisma.contact.findFirst({
     where: { tenantId, email: "nadeem6afridi@yahoo.com" },
   });
   assert(nadeem?.firstName === "Nadeem", "Nadeem contact should exist with cleaned email");
   assert(Boolean(nadeem?.phone?.includes("0100")), "Phone 1 should be used");
+
+  const markdown = await prisma.contact.findFirst({
+    where: { tenantId, email: "markdown.user@import.test" },
+  });
+  assert(markdown?.firstName === "Markdown", "Markdown mailto row should import");
 
   const res = await handleContactImportPost(
     buildImportRequest(file, { mode: "import", preset: "generic", jgTenantId: tenantId }),

@@ -17,6 +17,7 @@ export async function GET() {
     endpoint: "contact-import",
     message: "POST multipart form from Dashboard → Contacts → Import spreadsheet.",
     allowedMethods: ["POST"],
+    commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
   });
 }
 
