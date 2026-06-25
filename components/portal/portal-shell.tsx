@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CalendarDays, HeartHandshake, Mail, UsersRound } from "lucide-react";
+import { CalendarDays, Gift, HeartHandshake, Mail, UsersRound } from "lucide-react";
 
 export type PortalShellTenant = {
   name: string;
@@ -87,6 +87,13 @@ export function PortalShell({
             >
               <HeartHandshake className="h-4 w-4" />
               <span>Join</span>
+            </Link>
+            <Link
+              href={`/portal/${tenant.slug}/donate`}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 font-medium text-slate-700 hover:bg-white hover:text-slate-950"
+            >
+              <Gift className="h-4 w-4" />
+              <span>Donate</span>
             </Link>
             <Link
               href={`/portal/${tenant.slug}/contact`}

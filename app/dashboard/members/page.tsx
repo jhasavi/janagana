@@ -5,7 +5,6 @@ import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsTable } from "@/components/dashboard/contacts-table";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { createContact, deleteContact, listContacts, updateContact } from "@/lib/actions/contacts";
-import { importContactsFromSpreadsheet } from "@/lib/actions/contact-import";
 import { publicPortalUrl } from "@/lib/environment";
 import {
   contactInterestLabel,
@@ -33,6 +32,7 @@ export default async function ContactsPage({
     importCreated?: string;
     importUpdated?: string;
     importSkipped?: string;
+    importErrors?: string;
     importPreview?: string;
     openImport?: string;
     q?: string;
@@ -130,52 +130,6 @@ export default async function ContactsPage({
     redirect("/dashboard/members?success=deleted");
   }
 
-  async function importContactsAction(formData: FormData) {
-    "use server";
-
-    const tenantHint = readTenantIdHintFromForm(formData);
-    const file = formData.get("file");
-    const mode = String(formData.get("mode") ?? "import");
-    const preset = String(formData.get("preset") ?? "generic");
-    const importTag = String(formData.get("importTag") ?? "");
-
-    if (!(file instanceof File) || file.size === 0) {
-      const tenantId = tenantIdFromMutation(tenantHint);
-      const msg = "Choose a CSV or Excel file.";
-      if (tenantId) redirectWithActiveTenant(tenantId, `/dashboard/members?openImport=1&error=${encodeURIComponent(msg)}`);
-      redirect(`/dashboard/members?openImport=1&error=${encodeURIComponent(msg)}`);
-    }
-
-    const validPreset = ["generic", "class_roster", "raklet"].includes(preset)
-      ? (preset as "generic" | "class_roster" | "raklet")
-      : "generic";
-
-    const result = await importContactsFromSpreadsheet(
-      {
-        file,
-        preset: validPreset,
-        importTag,
-        dryRun: mode === "preview",
-      },
-      { tenantIdHint: tenantHint },
-    );
-
-    if (!result.ok) {
-      const errorMessage = result.error;
-      const tenantId = tenantIdFromMutation(tenantHint);
-      if (tenantId) {
-        redirectWithActiveTenant(tenantId, `/dashboard/members?openImport=1&error=${encodeURIComponent(errorMessage)}`);
-      }
-      redirect(`/dashboard/members?openImport=1&error=${encodeURIComponent(errorMessage)}`);
-    }
-
-    const { tenantId, created, updated, skipped, dryRun } = result.data;
-    const base = dryRun
-      ? `/dashboard/members?importPreview=1&importCreated=${created}&importUpdated=${updated}&importSkipped=${skipped}`
-      : `/dashboard/members?success=import&importCreated=${created}&importUpdated=${updated}&importSkipped=${skipped}`;
-    redirectWithActiveTenant(tenantId, base);
-  }
-
   const contactsResult = await listContacts(filters);
   const contacts = contactsResult.ok ? contactsResult.data : [];
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
@@ -250,7 +204,16 @@ export default async function ContactsPage({
       {params.success === "import" && (
         <p className="mt-4 text-sm text-green-700">
           Import complete — {params.importCreated ?? "0"} created, {params.importUpdated ?? "0"} updated,{" "}
-          {params.importSkipped ?? "0"} skipped (no email). Filter by <strong>Imported</strong> to review.
+          {params.importSkipped ?? "0"} skipped (no email).{" "}
+          <Link href={filterHref(basePath, { ...filters, source: "dashboard_csv_import" })} className="font-semibold underline">
+            View imported contacts
+          </Link>
+          .
+        </p>
+      )}
+      {params.importErrors && (
+        <p className="mt-2 text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+          Row warnings: {params.importErrors}
         </p>
       )}
       {params.importPreview === "1" && (
@@ -281,6 +244,16 @@ export default async function ContactsPage({
             {preset.label}
           </Link>
         ))}
+        <Link
+          href={filterHref(basePath, { ...filters, source: "dashboard_csv_import" })}
+          className={`rounded-full px-2.5 py-1 text-xs ${
+            filters.source === "dashboard_csv_import"
+              ? "bg-teal-800 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Imported
+        </Link>
       </div>
 
       <form
@@ -342,7 +315,7 @@ export default async function ContactsPage({
           Namaste Boston live CRM sync still uses <code className="font-mono">npm run import:nb-crm</code> when connected
           to Supabase.
         </p>
-        <form action={importContactsAction} encType="multipart/form-data" className="mt-4 grid gap-3 md:grid-cols-2">
+        <form action="/api/import/contacts" method="post" encType="multipart/form-data" className="mt-4 grid gap-3 md:grid-cols-2">
           {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
           <label className="block text-sm md:col-span-2">
             File

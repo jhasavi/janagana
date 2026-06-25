@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, HeartHandshake } from "lucide-react";
 import {
-  createPublicDonationCheckout,
   DONATION_PRESET_CENTS,
   getPublicDonationContext,
 } from "@/lib/actions/public-donations";
@@ -43,36 +42,6 @@ export default async function PublicDonatePage({
   const safeReturnTo = readSafeReturnUrl(query.returnTo);
   const backUrl = safeReturnTo ?? defaultVisitorReturnUrl(tenantSlug);
   const message = statusMessage(query.status, query.error);
-
-  async function donateAction(formData: FormData) {
-    "use server";
-
-    const returnTo = readSafeReturnUrl(String(formData.get(RETURN_TO_FIELD) ?? ""));
-    const preset = String(formData.get("amountPreset") ?? "");
-    const customDollars = String(formData.get("customAmountDollars") ?? "").trim();
-    const amountCents =
-      preset === "custom"
-        ? Math.round(Number(customDollars) * 100)
-        : Number(preset);
-
-    const checkout = await createPublicDonationCheckout({
-      tenantSlug,
-      firstName: String(formData.get("firstName") ?? ""),
-      lastName: String(formData.get("lastName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      amountCents,
-      dedication: String(formData.get("dedication") ?? ""),
-    });
-
-    if (!checkout.ok || !checkout.checkoutUrl) {
-      const errorParams = new URLSearchParams({ error: checkout.error ?? "Checkout failed" });
-      if (returnTo) errorParams.set("returnTo", returnTo);
-      redirect(`/portal/${tenantSlug}/donate?${errorParams.toString()}`);
-    }
-
-    redirect(checkout.checkoutUrl);
-  }
 
   return (
     <main className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[0.85fr_1.15fr]">
@@ -119,7 +88,8 @@ export default async function PublicDonatePage({
         )}
 
         {query.status !== "thankyou" && ctx.stripeEnabled && (
-          <form action={donateAction} className="mt-4 space-y-4">
+          <form action="/api/public/donate" method="post" className="mt-4 space-y-4">
+            <input type="hidden" name="tenantSlug" value={tenantSlug} />
             {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
 
             <fieldset>
@@ -189,6 +159,9 @@ export default async function PublicDonatePage({
         )}
 
         <p className="mt-6 text-xs text-slate-500">
+          No login required — this page is public for donors and visitors.
+        </p>
+        <p className="mt-2 text-xs text-slate-500">
           Portal URL for your website:{" "}
           <Link href={`/portal/${tenantSlug}/donate`} className="font-mono text-teal-900 hover:underline">
             /portal/{tenantSlug}/donate

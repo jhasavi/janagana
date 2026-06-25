@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processStripeWebhookEvent } from "@/lib/payments/stripe-webhooks";
-import { stripeWebhookSecret, verifyStripeWebhookSignature } from "@/lib/payments/stripe";
+import { stripeWebhookConfigured, stripeWebhookSecret, verifyStripeWebhookSignature } from "@/lib/payments/stripe";
 
 export const runtime = "nodejs";
+
+/**
+ * GET /api/webhooks/stripe — health check (browser visits show 405 without this).
+ * Stripe delivers events via POST with stripe-signature header.
+ */
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    endpoint: "stripe-webhook",
+    configured: stripeWebhookConfigured(),
+    message: "POST Stripe events here. GET is only a health check.",
+  });
+}
 
 /**
  * POST /api/webhooks/stripe
  *
  * Stripe is the source of truth for online payments. This route verifies the
- * raw webhook payload, then activates paid memberships and issues receipts.
+ * raw webhook payload, then activates paid memberships/donations and issues receipts.
  */
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();

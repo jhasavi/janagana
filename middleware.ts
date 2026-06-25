@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   "/portal(.*)",
   "/api/health/ready",
   "/api/webhooks(.*)",
+  "/api/public(.*)",
 ]);
 
 const isProtectedRoute = createRouteMatcher([
@@ -21,6 +22,7 @@ const isProtectedRoute = createRouteMatcher([
   "/api/select-tenant(.*)",
   "/api/sign-out(.*)",
   "/api/export(.*)",
+  "/api/import(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
