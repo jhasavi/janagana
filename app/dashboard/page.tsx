@@ -163,102 +163,19 @@ export default async function DashboardPage() {
             href="/dashboard/payments"
             highlight={financial.totalRevenueCents > 0}
           />
-          <MetricCard
-            label="Volunteer contacts"
-            value={dashboard.summary.contactsVolunteerType}
-            detail="Shift sign-up coming soon"
-            href="/dashboard/volunteers"
-            highlight={dashboard.summary.contactsVolunteerType > 0}
-          />
-          <MetricCard
-            label="Donations received"
-            value={financial.donationPaymentCount}
-            detail={formatCents(financial.donationRevenueCents)}
-            href="/dashboard/donations"
-            highlight={financial.donationPaymentCount > 0}
-          />
         </div>
-      </section>
-
-      <section className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Money</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">Revenue snapshot</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Total revenue"
-          value={formatCents(financial.totalRevenueCents)}
-          detail={`${financial.pendingOrFailedCount} pending/failed`}
-          href="/dashboard/tiers"
-          highlight={financial.totalRevenueCents > 0}
-        />
-        <MetricCard
-          label="Membership revenue"
-          value={formatCents(financial.membershipRevenueCents)}
-          detail={`${financial.membershipPaymentCount} payments`}
-          href="/dashboard/tiers"
-          highlight={financial.membershipRevenueCents > 0}
-        />
-        <MetricCard
-          label="Event revenue"
-          value={formatCents(financial.eventRevenueCents)}
-          detail={`${financial.eventPaymentCount} payments`}
-          href="/dashboard/events"
-          highlight={financial.eventRevenueCents > 0}
-        />
-        <MetricCard
-          label="Donations"
-          value={formatCents(financial.donationRevenueCents)}
-          detail={`${financial.donationPaymentCount} payments`}
-          href="/dashboard/donations"
-          highlight={financial.donationRevenueCents > 0}
-        />
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Activity</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">People and events</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          label="Contacts in this tenant"
-          value={dashboard.summary.contactsTotal}
-          detail={`${activity.contactsLast7Days} new in ${activity.windowDays}d`}
-          href="/dashboard/members"
-          highlight={dashboard.summary.contactsTotal > 0}
-        />
-        <MetricCard
-          label="Portal leads / inquiries"
-          value={dashboard.summary.contactsLeads}
-          detail="Newsletter, contact form, interest CTAs"
-          href="/dashboard/members"
-          highlight={dashboard.summary.contactsLeads > 0}
-        />
-        <MetricCard
-          label="Active memberships"
-          value={dashboard.summary.activeMemberships}
-          detail={`${dashboard.summary.formalMemberships} total enrollments`}
-          href="/dashboard/tiers"
-          highlight={dashboard.summary.activeMemberships > 0}
-        />
-        <MetricCard
-          label="Confirmed registrations"
-          value={dashboard.summary.eventRegistrationsConfirmed}
-          detail={`${activity.registrationsLast7Days} new in ${activity.windowDays}d · ${dashboard.summary.eventRegistrationsTotal} total`}
-          href="/dashboard/events"
-          highlight={dashboard.summary.eventRegistrationsConfirmed > 0}
-        />
-        <MetricCard
-          label="Published events live"
-          value={dashboard.publishedEvents}
-          detail={`${dashboard.draftEvents} draft`}
-          href="/dashboard/events"
-          highlight={dashboard.publishedEvents > 0}
-        />
-        </div>
+        <p className="text-sm text-slate-600">
+          Revenue: <strong>{formatCents(financial.totalRevenueCents)}</strong> total
+          {" · "}
+          {formatCents(financial.membershipRevenueCents)} memberships
+          {" · "}
+          {formatCents(financial.eventRevenueCents)} events
+          {" · "}
+          {formatCents(financial.donationRevenueCents)} donations —{" "}
+          <Link href="/dashboard/payments" className="font-semibold text-teal-900 hover:text-slate-950">
+            View payments
+          </Link>
+        </p>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">

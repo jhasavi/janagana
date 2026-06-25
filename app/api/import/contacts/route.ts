@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     console.error("IMPORT_CONTACTS_UNHANDLED", error);
     return NextResponse.redirect(
       new URL(
-        "/dashboard/members?openImport=1&error=Import%20failed%20unexpectedly.%20Try%20CSV%20format%20or%20contact%20support.",
+        "/dashboard/members/import?error=Import%20failed%20unexpectedly.%20Try%20CSV%20format%20or%20contact%20support.",
         req.url,
       ),
     );

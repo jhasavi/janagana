@@ -141,7 +141,7 @@ async function main() {
 
   console.log("\n=== Import fix (static) ===");
   console.log("✓ Contact import form uses encType=multipart/form-data");
-  console.log("✓ Import panel opens via ?openImport=1");
+  console.log("✓ Import lives at /dashboard/members/import");
 
   // Cleanup
   await prisma.communicationMessage.deleteMany({ where: { tenantId: { in: [tenantA.id, tenantB.id] } } });

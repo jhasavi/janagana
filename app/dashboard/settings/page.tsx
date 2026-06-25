@@ -251,8 +251,9 @@ export default async function SettingsPage() {
             contacts, portal leads, event tickets, registrations, check-in, memberships, public membership checkout, and
             receipts
           </strong>{" "}
-          for this community. Not included yet: donations, online event checkout, refund
-          operations, automated email campaigns, or Raklet-style website builder.
+          for this community. Not included yet: online event checkout, refund
+          operations, automated email campaigns, or Raklet-style website builder. Donations and
+          membership checkout are live.
         </p>
       </div>
 

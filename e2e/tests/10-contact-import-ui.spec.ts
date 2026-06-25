@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
  */
 test.describe("contact import UI contract", () => {
   test("members page form posts multipart to /api/import/contacts", async ({ page }) => {
-    await page.goto("/dashboard/members?openImport=1");
+    await page.goto("/dashboard/members/import");
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 15000 });
 
     // Unauthenticated users hit sign-in — form still exists in source; verify via response after login redirect target
@@ -79,7 +79,7 @@ test.describe("contact import authenticated UI", () => {
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
     }
 
-    await page.goto("/dashboard/members?openImport=1");
+    await page.goto("/dashboard/members/import");
     await expect(page.getByText(/Import spreadsheet/i)).toBeVisible();
 
     const form = page.locator('form[action="/api/import/contacts"]');

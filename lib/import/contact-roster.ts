@@ -23,6 +23,8 @@ const MAX_FILE_BYTES = MAX_IMPORT_FILE_BYTES;
 const EMAIL_PRIMARY_KEYS = [
   "Email 1",
   "Email Address",
+  "E-mail address",
+  "E-mail Address",
   "email",
   "Email",
   "E-mail",
@@ -31,8 +33,23 @@ const EMAIL_PRIMARY_KEYS = [
 ];
 const EMAIL_SECONDARY_KEYS = ["Email 2", "email 2", "secondary email"];
 const NAME_KEYS = ["Name", "name", "Full Name", "full name", "Member Name"];
-const FIRST_KEYS = ["First Name", "first_name", "FirstName", "first name", "Given Name"];
-const LAST_KEYS = ["Last Name", "last_name", "LastName", "last name", "Family Name", "Surname"];
+const FIRST_KEYS = [
+  "First Name",
+  "First name",
+  "first_name",
+  "FirstName",
+  "first name",
+  "Given Name",
+];
+const LAST_KEYS = [
+  "Last Name",
+  "Last name",
+  "last_name",
+  "LastName",
+  "last name",
+  "Family Name",
+  "Surname",
+];
 const PHONE_PRIMARY_KEYS = [
   "Phone 1",
   "Phone Numbers",
@@ -44,12 +61,13 @@ const PHONE_PRIMARY_KEYS = [
   "phone number",
 ];
 const PHONE_SECONDARY_KEYS = ["Phone 2", "phone 2"];
-const NUMBER_KEYS = ["#", "number", "No", "ID", "Member ID", "member id"];
+const NUMBER_KEYS = ["#", "number", "No", "ID", "Member ID", "member id", "Member No", "member no"];
 
 const METADATA_SKIP_KEYS = new Set([
   "email 1",
   "email 2",
   "email address",
+  "e-mail address",
   "email",
   "e-mail",
   "name",
@@ -68,6 +86,7 @@ const METADATA_SKIP_KEYS = new Set([
   "no",
   "id",
   "member id",
+  "member no",
 ]);
 
 /** Minimal RFC-style CSV parser (handles quoted fields and embedded newlines). */

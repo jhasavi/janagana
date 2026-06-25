@@ -49,6 +49,24 @@ export const COMMUNITY_OS_NAV: readonly DashboardNavGroup[] = [
 /** Flat list for tests and legacy callers. */
 export const PILOT_DASHBOARD_NAV = COMMUNITY_OS_NAV.flatMap((group) => group.items);
 
+/** Hide unfinished modules from sidebar during pilot (default on). Set PILOT_HIDE_COMING_SOON_NAV=false to show all. */
+export function hideComingSoonNav(): boolean {
+  return process.env.PILOT_HIDE_COMING_SOON_NAV !== "false";
+}
+
+export function getVisibleCommunityOsNav(): DashboardNavGroup[] {
+  if (!hideComingSoonNav()) {
+    return COMMUNITY_OS_NAV.map((group) => ({
+      label: group.label,
+      items: [...group.items],
+    }));
+  }
+  return COMMUNITY_OS_NAV.map((group) => ({
+    label: group.label,
+    items: group.items.filter((item) => item.status === "live"),
+  })).filter((group) => group.items.length > 0);
+}
+
 export { PILOT_TENANT_SLUGS, type PilotTenantSlug, isPilotTenantSlug, communityLabel, portalLinksForTenant } from "@/lib/pilot/tenants";
 
 export function selfServeOnboardingEnabled(): boolean {

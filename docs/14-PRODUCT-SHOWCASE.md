@@ -32,7 +32,7 @@
 
 1. **Operator story (3 min)** — Sign in → dashboard signal → Contacts with import provenance → publish event → copy register link.
 2. **Visitor story (5 min)** — Incognito on tenant site → Events → Register → confirm return to tenant site → show new row in Contacts + Registrations.
-3. **Migration story (4 min)** — Export Raklet (or Excel) → Dashboard → Import spreadsheet → Preview → Import → filter **Imported**.
+3. **Migration story (4 min)** — Export Raklet (or Excel) → **Dashboard → Contacts → Import spreadsheet** (`/dashboard/members/import`) → Preview → Import → filter **Raklet import** or **Imported**.
 4. **Multi-tenant (2 min)** — Switch NB ↔ TPW; show isolation (counts, portal URLs differ).
 5. **Close (1 min)** — Roadmap slide: donations with donor-covered fees, email reminders, custom domain proxy.
 

@@ -1,0 +1,6 @@
+First name,Last name,E-mail address,Phone,Member No,Membership Type,Member type
+Priya,Sharma,priya.raklet@import.test,617-555-0101,M-000001,Annual,Member
+Raj,Patel,raj.raklet@import.test,617-555-0102,M-000002,Monthly,Member
+Potential,Member,,617-555-0103,M-000003,Annual,PotentialMember
+Sunita,Rao,sunita.raklet@import.test,,M-000004,Annual,Member
+Duplicate,Raj,raj.raklet@import.test,617-555-0199,M-000005,Monthly,Member

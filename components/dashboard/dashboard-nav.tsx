@@ -16,7 +16,7 @@ import {
   UsersRound,
   Wallet,
 } from "lucide-react";
-import { COMMUNITY_OS_NAV, type DashboardNavItem } from "@/lib/pilot/dashboard-nav";
+import { COMMUNITY_OS_NAV, type DashboardNavGroup, type DashboardNavItem } from "@/lib/pilot/dashboard-nav";
 
 const navIcons: Record<string, typeof LayoutDashboard> = {
   "/dashboard": LayoutDashboard,
@@ -63,12 +63,13 @@ function NavLink({ item, pathname }: { item: DashboardNavItem; pathname: string 
   );
 }
 
-export function DashboardNav() {
+export function DashboardNav({ groups }: { groups?: DashboardNavGroup[] }) {
   const pathname = usePathname();
+  const navGroups = groups ?? COMMUNITY_OS_NAV.map((group) => ({ label: group.label, items: [...group.items] }));
 
   return (
     <nav className="space-y-5">
-      {COMMUNITY_OS_NAV.map((group) => (
+      {navGroups.map((group) => (
         <div key={group.label ?? "root"}>
           {group.label && (
             <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">

@@ -36,6 +36,8 @@ const prisma = new PrismaClient();
 const TEST_PREFIX = "IMPORT_REGRESSION_";
 const FIXTURE_PATH = join(process.cwd(), "fixtures", "contact-import-regression.csv");
 const NB_FIXTURE_PATH = join(process.cwd(), "fixtures", "contact-import-real-world-nb.csv");
+const RAKLET_FIXTURE_PATH = join(process.cwd(), "fixtures", "contact-import-raklet-sample.csv");
+const IMPORT_PAGE = join(process.cwd(), "app", "dashboard", "members", "import", "page.tsx");
 const MEMBERS_PAGE = join(process.cwd(), "app", "dashboard", "members", "page.tsx");
 
 function assert(condition: boolean, message: string) {
@@ -73,6 +75,10 @@ async function cleanup() {
         { email: { endsWith: "@import.test" } },
         { email: "nadeem6afridi@yahoo.com" },
         { email: "markdown.user@import.test" },
+        { email: { endsWith: "@raklet.import.test" } },
+        { email: "priya.raklet@import.test" },
+        { email: "raj.raklet@import.test" },
+        { email: "sunita.raklet@import.test" },
       ],
     },
   });
@@ -114,6 +120,7 @@ function buildImportRequest(
   file: File | Blob,
   fields: Record<string, string>,
   origin = "http://localhost:3020",
+  refererPath = "/dashboard/members/import",
 ) {
   const form = new FormData();
   form.set("file", file);
@@ -125,17 +132,21 @@ function buildImportRequest(
     body: form,
     headers: {
       Origin: origin,
-      Referer: `${origin}/dashboard/members`,
+      Referer: `${origin}${refererPath}`,
     },
   });
 }
 
 async function testUiFormContract() {
-  const html = readFileSync(MEMBERS_PAGE, "utf8");
-  assert(html.includes('action="/api/import/contacts"'), "Members page form must POST to /api/import/contacts");
-  assert(html.includes('method="post"'), "Members page form must use method=post");
-  assert(html.includes("multipart/form-data"), "Members page form must use multipart encoding");
-  console.log("PASS UI form contract → POST /api/import/contacts multipart");
+  const importHtml = readFileSync(IMPORT_PAGE, "utf8");
+  assert(importHtml.includes('action="/api/import/contacts"'), "Import page form must POST to /api/import/contacts");
+  assert(importHtml.includes('method="post"'), "Import page form must use method=post");
+  assert(importHtml.includes("multipart/form-data"), "Import page form must use multipart encoding");
+
+  const membersHtml = readFileSync(MEMBERS_PAGE, "utf8");
+  assert(membersHtml.includes("/dashboard/members/import"), "Members page must link to dedicated import route");
+  assert(!membersHtml.includes('action="/api/import/contacts"'), "Import form must not live on members list page");
+  console.log("PASS UI form contract → import page POST /api/import/contacts multipart");
 }
 
 async function testRouteMethods() {
@@ -168,6 +179,7 @@ async function testHandlerHttpWithMockAuth(tenantId: string) {
   assert(location.includes("importCreated=1"), `Expected 1 created (Alice), got ${location}`);
   assert(location.includes("importUpdated=1"), `Expected 1 updated (duplicate Alice), got ${location}`);
   assert(location.includes("importSkipped=1"), `Expected 1 skipped (Bob no email), got ${location}`);
+  assert(location.includes("source=dashboard_csv_import"), `Success should filter by import source: ${location}`);
 
   console.log("PASS handler HTTP path — redirect with import counts");
 }
@@ -323,6 +335,7 @@ async function testUnsupportedHeadersNo500(tenantId: string) {
   );
   assert(res.status !== 500, "unsupported headers must not 500");
   const location = decodeURIComponent(res.headers.get("location") ?? "");
+  assert(location.includes("/dashboard/members/import"), `Error should redirect to import page: ${location}`);
   assert(location.includes("No+email+column") || location.includes("No email column"), location);
 
   console.log("PASS unsupported headers — clean error, no 500");
@@ -425,6 +438,54 @@ async function testAuthBeforeFormDataWithTenantHint() {
   console.log("PASS auth before formData — tenant hint only after authenticated cookie miss");
 }
 
+async function testRakletFixture(tenantId: string) {
+  const csv = readFileSync(RAKLET_FIXTURE_PATH, "utf8");
+  const parsed = rowsFromCsvText(csv);
+  assert(resolveImportEmail(parsed[0]) === "priya.raklet@import.test", "Raklet E-mail address column");
+
+  const file = new File([csv], "contact-import-raklet-sample.csv", { type: "text/csv" });
+  const preview = await runContactImportFromFile({
+    tenantId,
+    actorUserId: "import-test-user",
+    file,
+    preset: "raklet",
+    dryRun: true,
+  });
+  if (!preview.ok) throw new Error(`Raklet preview failed: ${preview.error}`);
+  assert(preview.data.created === 4, `Raklet preview created=${preview.data.created}, expected 4 (no in-file dedupe on dry-run)`);
+  assert(preview.data.skipped === 1, `Raklet preview skipped=${preview.data.skipped}, expected 1`);
+
+  const importResult = await runContactImportFromFile({
+    tenantId,
+    actorUserId: "import-test-user",
+    file,
+    preset: "raklet",
+    importTag: "raklet-2026",
+    dryRun: false,
+  });
+  if (!importResult.ok) throw new Error(`Raklet import failed: ${importResult.error}`);
+  assert(importResult.data.created === 3, `Raklet import created=${importResult.data.created}, expected 3`);
+  assert(importResult.data.updated === 1, `Raklet import updated=${importResult.data.updated}, expected 1`);
+  assert(importResult.data.skipped === 1, `Raklet import skipped=${importResult.data.skipped}, expected 1`);
+
+  const priya = await prisma.contact.findFirst({
+    where: { tenantId, email: "priya.raklet@import.test" },
+  });
+  assert(priya?.source === "dashboard_raklet_import", "Raklet preset should set raklet source");
+  assert(Boolean(priya?.tags?.includes("raklet")), "Raklet preset should tag raklet");
+  assert(Boolean(priya?.tags?.includes("raklet-2026")), "Import tag should be applied");
+
+  const res = await handleContactImportPost(
+    buildImportRequest(file, { mode: "import", preset: "raklet", jgTenantId: tenantId }),
+    mockAuth(tenantId),
+  );
+  assert(res.status !== 500, "Raklet HTTP import must not 500");
+  const location = res.headers.get("location") ?? "";
+  assert(location.includes("source=dashboard_raklet_import"), `Raklet success should filter raklet source: ${location}`);
+
+  console.log("PASS Raklet fixture — E-mail address columns, preset tags, redirect filter");
+}
+
 function testContentLengthHelper() {
   const okReq = new NextRequest("http://localhost/api/import/contacts", {
     headers: { "Content-Length": "1024" },
@@ -456,6 +517,7 @@ async function main() {
     await prisma.contact.deleteMany({ where: { tenantId: tenantA.id, email: { endsWith: "@import.test" } } });
     await testFixtureDbImport(tenantA.id, tenantB.id);
     await testRealWorldNbFixture(tenantA.id);
+    await testRakletFixture(tenantA.id);
     await testUnsupportedHeadersNo500(tenantA.id);
     await testNbScaleDryRun(tenantA.id);
     await testHandlerBadInput(tenantA.id);

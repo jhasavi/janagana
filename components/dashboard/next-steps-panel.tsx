@@ -22,7 +22,7 @@ export function NextStepsPanel({
     {
       done: hasContacts,
       label: "Import your member list or verify a portal lead in Contacts",
-      href: "/dashboard/members#import-spreadsheet",
+      href: "/dashboard/members/import",
     },
     {
       done: hasPublishedEvents,

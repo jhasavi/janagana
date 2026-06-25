@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsTable } from "@/components/dashboard/contacts-table";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { createContact, deleteContact, listContacts, updateContact } from "@/lib/actions/contacts";
-import { publicPortalUrl } from "@/lib/environment";
 import {
   contactInterestLabel,
   contactSourceLabel,
@@ -33,7 +31,6 @@ export default async function ContactsPage({
     importUpdated?: string;
     importSkipped?: string;
     importErrors?: string;
-    importPreview?: string;
     openImport?: string;
     q?: string;
     source?: string;
@@ -41,6 +38,16 @@ export default async function ContactsPage({
   }>;
 }) {
   const params = await searchParams;
+
+  if (params.openImport === "1") {
+    const q = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (key === "openImport" || !value) continue;
+      q.set(key, value);
+    }
+    redirect(`/dashboard/members/import${q.size ? `?${q.toString()}` : ""}`);
+  }
+
   const resolution = await resolveTenantForDashboard();
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
   const summary = tenant ? await getTenantDashboardSummary(tenant.id) : null;
@@ -135,8 +142,11 @@ export default async function ContactsPage({
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
   const interestOptions = contactsResult.ok ? contactsResult.interestOptions : [];
 
-  const portalUrl = tenant ? publicPortalUrl(tenant.slug) : null;
   const basePath = "/dashboard/members";
+  const importSourceFilter =
+    params.source === "dashboard_raklet_import"
+      ? "dashboard_raklet_import"
+      : params.source || filters.source;
 
   return (
     <section className="space-y-4">
@@ -153,77 +163,48 @@ export default async function ContactsPage({
               Export CSV
             </a>
             <Link
-              href="/dashboard/members?openImport=1"
+              href="/dashboard/members/import"
               className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100"
             >
               Import spreadsheet
             </Link>
           </div>
-          <p className="mt-2 max-w-3xl text-sm text-gray-600">
-            See who reached you, how (newsletter, investment analysis, event registration, import, or manual entry), what
-            they did last, and whether they registered for events. Bring Raklet or Excel exports via{" "}
-            <strong>Import spreadsheet</strong> below.
-          </p>
+          {summary && (
+            <p className="mt-2 text-sm text-gray-600">
+              <strong>{summary.contactsTotal}</strong> people · <strong>{summary.contactsLeads}</strong> portal leads ·{" "}
+              <strong>{summary.eventRegistrationsConfirmed}</strong> with event registration
+            </p>
+          )}
         </div>
-        {tenant && portalUrl && (
-          <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-950">
-            <p className="font-medium">Test portal capture</p>
-            <p className="mt-1 break-all font-mono">{portalUrl}/contact</p>
-            <div className="mt-2 flex gap-2">
-              <CopyTextButton text={`${portalUrl}/contact`} label="Copy form URL" />
-              <a href={`${portalUrl}/contact`} target="_blank" rel="noreferrer" className="text-blue-800 underline">
-                Open ↗
-              </a>
-            </div>
-          </div>
-        )}
       </div>
 
-      {summary && (
-        <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
-          <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-            <span className="text-gray-500">People in this tenant</span>
-            <p className="text-lg font-semibold text-gray-900">{summary.contactsTotal}</p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-            <span className="text-gray-500">Portal leads / inquiries</span>
-            <p className="text-lg font-semibold text-gray-900">{summary.contactsLeads}</p>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-white px-3 py-2">
-            <span className="text-gray-500">With event registration</span>
-            <p className="text-lg font-semibold text-gray-900">{summary.eventRegistrationsConfirmed}</p>
-            <p className="text-xs text-gray-400">confirmed registrations</p>
-          </div>
-        </div>
-      )}
-
-      {params.error && <p className="mt-4 text-sm text-red-700">{params.error}</p>}
-      {params.success === "1" && <p className="mt-4 text-sm text-green-700">Contact added manually.</p>}
-      {params.success === "updated" && <p className="mt-4 text-sm text-green-700">Contact updated.</p>}
-      {params.success === "deleted" && <p className="mt-4 text-sm text-green-700">Contact removed.</p>}
+      {params.error && <p className="text-sm text-red-700">{params.error}</p>}
+      {params.success === "1" && <p className="text-sm text-green-700">Contact added manually.</p>}
+      {params.success === "updated" && <p className="text-sm text-green-700">Contact updated.</p>}
+      {params.success === "deleted" && <p className="text-sm text-green-700">Contact removed.</p>}
       {params.success === "import" && (
-        <p className="mt-4 text-sm text-green-700">
+        <p className="text-sm text-green-700">
           Import complete — {params.importCreated ?? "0"} created, {params.importUpdated ?? "0"} updated,{" "}
           {params.importSkipped ?? "0"} skipped (no email).{" "}
-          <Link href={filterHref(basePath, { ...filters, source: "dashboard_csv_import" })} className="font-semibold underline">
+          <Link
+            href={filterHref(basePath, {
+              ...filters,
+              source: importSourceFilter || "dashboard_csv_import",
+            })}
+            className="font-semibold underline"
+          >
             View imported contacts
           </Link>
           .
         </p>
       )}
       {params.importErrors && (
-        <p className="mt-2 text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+        <p className="text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
           Row warnings: {params.importErrors}
         </p>
       )}
-      {params.importPreview === "1" && (
-        <p className="mt-4 text-sm text-amber-900 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
-          Preview only — {params.importCreated ?? "0"} would be created, {params.importUpdated ?? "0"} would be updated,{" "}
-          {params.importSkipped ?? "0"} skipped. Click <strong>Import now</strong> to apply.
-        </p>
-      )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <span className="text-xs font-medium text-gray-500 py-1">Quick filters:</span>
         <Link
           href={basePath}
@@ -254,11 +235,21 @@ export default async function ContactsPage({
         >
           Imported
         </Link>
+        <Link
+          href={filterHref(basePath, { ...filters, source: "dashboard_raklet_import" })}
+          className={`rounded-full px-2.5 py-1 text-xs ${
+            filters.source === "dashboard_raklet_import"
+              ? "bg-teal-800 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Raklet import
+        </Link>
       </div>
 
       <form
         action={basePath}
-        className="mt-4 grid gap-3 rounded-md border border-gray-200 bg-white p-4 md:grid-cols-[1fr_160px_180px_auto]"
+        className="grid gap-3 rounded-md border border-gray-200 bg-white p-4 md:grid-cols-[1fr_160px_180px_auto]"
       >
         <input
           name="q"
@@ -291,80 +282,7 @@ export default async function ContactsPage({
         </button>
       </form>
 
-      <details
-        id="import-spreadsheet"
-        open={
-          params.openImport === "1" ||
-          params.success === "import" ||
-          params.importPreview === "1" ||
-          Boolean(params.error && params.openImport === "1")
-        }
-        className="mt-4 rounded-md border border-teal-200 bg-teal-50/50 p-4 open:border-teal-300"
-      >
-        <summary className="cursor-pointer text-sm font-semibold text-teal-950">Import spreadsheet (CSV or Excel)</summary>
-        <p className="mt-2 text-xs text-teal-900">
-          Export from Raklet, Excel, or Google Sheets (.csv / .xlsx). Required column: <strong>Email</strong> (or{" "}
-          <strong>Email Address</strong>). Name columns are optional. Re-import is safe — we upsert by email per
-          community.
-        </p>
-        <p className="mt-2 text-xs text-teal-800">
-          <a href="/templates/contact-import-template.csv" className="underline">
-            Download template CSV
-          </a>
-          {" · "}
-          Namaste Boston live CRM sync still uses <code className="font-mono">npm run import:nb-crm</code> when connected
-          to Supabase.
-        </p>
-        <form action="/api/import/contacts" method="post" encType="multipart/form-data" className="mt-4 grid gap-3 md:grid-cols-2">
-          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
-          <label className="block text-sm md:col-span-2">
-            File
-            <input
-              name="file"
-              type="file"
-              required
-              accept=".csv,.txt,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              className="mt-1 block w-full text-sm"
-            />
-          </label>
-          <label className="block text-sm">
-            Import type
-            <select name="preset" defaultValue="generic" className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm">
-              <option value="generic">General spreadsheet</option>
-              <option value="raklet">Raklet export</option>
-              <option value="class_roster">Class roster (TPW-style)</option>
-            </select>
-          </label>
-          <label className="block text-sm">
-            Tag (optional)
-            <input
-              name="importTag"
-              placeholder="e.g. class1, raklet-2026"
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            />
-          </label>
-          <div className="flex flex-wrap gap-2 md:col-span-2">
-            <button
-              type="submit"
-              name="mode"
-              value="preview"
-              className="rounded border border-teal-700 bg-white px-4 py-2 text-sm font-medium text-teal-900 hover:bg-teal-50"
-            >
-              Preview
-            </button>
-            <button
-              type="submit"
-              name="mode"
-              value="import"
-              className="rounded bg-teal-900 px-4 py-2 text-sm font-medium text-white hover:bg-teal-950"
-            >
-              Import now
-            </button>
-          </div>
-        </form>
-      </details>
-
-      <details className="mt-4 rounded-md border border-gray-200 bg-white p-4">
+      <details className="rounded-md border border-gray-200 bg-white p-4">
         <summary className="cursor-pointer text-sm font-medium text-gray-900">Add manual entry</summary>
         <p className="mt-2 text-xs text-gray-600">For walk-ins or phone calls — not from the public portal.</p>
         <form action={createContactAction} className="mt-4 grid gap-3 md:grid-cols-2">
@@ -398,7 +316,7 @@ export default async function ContactsPage({
         </form>
       </details>
 
-      <div className="mt-6 rounded-md border border-gray-200 bg-white p-4">
+      <div className="rounded-md border border-gray-200 bg-white p-4">
         {contacts.length === 0 ? (
           <div className="space-y-3 rounded-md border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-700">
             <p className="font-medium text-gray-900">
@@ -406,33 +324,13 @@ export default async function ContactsPage({
                 ? "No contacts match these filters"
                 : `No contacts for ${tenant?.slug ?? "this tenant"} yet`}
             </p>
-            {!filters.q && !filters.source && !filters.interestType && tenant && portalUrl && (
-              <>
-                <p>
-                  Submit a test in incognito (newsletter, investment analysis, or event registration). Imported CRM rows
-                  appear with an import label.
-                </p>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>
-                    <a href={`${portalUrl}/contact?interest=newsletter`} className="text-blue-700 underline break-all">
-                      Newsletter
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={`${portalUrl}/contact?interest=investment-analysis`}
-                      className="text-blue-700 underline break-all"
-                    >
-                      Investment analysis (NB)
-                    </a>
-                  </li>
-                  <li>
-                    <a href={`${portalUrl}/events`} className="text-blue-700 underline break-all">
-                      Events → register
-                    </a>
-                  </li>
-                </ul>
-              </>
+            {!filters.q && !filters.source && !filters.interestType && (
+              <p>
+                <Link href="/dashboard/members/import" className="font-medium text-teal-900 underline">
+                  Import a Raklet or Excel export
+                </Link>{" "}
+                or test your portal contact form from the dashboard home page.
+              </p>
             )}
           </div>
         ) : (

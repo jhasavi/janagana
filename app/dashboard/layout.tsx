@@ -6,6 +6,7 @@ import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { getCurrentUser } from "@/lib/auth";
 import { publicPortalUrl } from "@/lib/environment";
 import { communityLabel } from "@/lib/pilot/portal-links";
+import { getVisibleCommunityOsNav } from "@/lib/pilot/dashboard-nav";
 import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
 import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
 
@@ -88,7 +89,7 @@ export default async function DashboardLayout({
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
           <aside className="lg:sticky lg:top-6 lg:self-start">
-            <DashboardNav />
+            <DashboardNav groups={getVisibleCommunityOsNav()} />
             <div className="mt-6 rounded-lg border border-stone-200 bg-white p-4 text-xs text-slate-600 shadow-sm">
               <p className="font-semibold text-slate-950">{community}</p>
               <p className="mt-1 font-mono text-[11px] text-slate-700">{tenant.slug}</p>

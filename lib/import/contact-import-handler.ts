@@ -3,6 +3,7 @@ import { runContactImportFromFile } from "@/lib/import/run-contact-import";
 import {
   MAX_IMPORT_FILE_BYTES,
   MAX_IMPORT_REQUEST_BYTES,
+  type ContactImportPreset,
 } from "@/lib/import/contact-roster";
 import { isSafeDashboardReturnPath } from "@/lib/tenant/redirect-with-tenant";
 import { readTenantIdHintFromForm } from "@/lib/tenant/active-tenant-form";
@@ -18,6 +19,9 @@ export type ContactImportAuth = (
   options?: { tenantIdHint?: string },
 ) => Promise<ActiveTenantActionResult>;
 
+const IMPORT_PAGE = "/dashboard/members/import";
+const MEMBERS_PAGE = "/dashboard/members";
+
 function uploadFromForm(form: FormData): File | null {
   const entry = form.get("file");
   if (!(entry instanceof File) || entry.size === 0) {
@@ -26,7 +30,7 @@ function uploadFromForm(form: FormData): File | null {
   return entry;
 }
 
-function redirectMembers(
+function redirectImport(
   req: NextRequest,
   tenantId: string | null,
   query: Record<string, string | boolean>,
@@ -37,13 +41,44 @@ function redirectMembers(
     else if (value === false) continue;
     else if (value) params.set(key, value);
   }
-  const returnTo = `/dashboard/members?${params.toString()}`;
-  const safeReturnTo = isSafeDashboardReturnPath(returnTo) ? returnTo : "/dashboard/members";
+  const returnTo = `${IMPORT_PAGE}?${params.toString()}`;
+  const safeReturnTo = isSafeDashboardReturnPath(returnTo) ? returnTo : IMPORT_PAGE;
   const response = NextResponse.redirect(new URL(safeReturnTo, req.url));
   if (tenantId) {
     return applyActiveTenantCookieToResponse(response, tenantId);
   }
   return response;
+}
+
+function redirectMembersList(
+  req: NextRequest,
+  tenantId: string | null,
+  query: Record<string, string | boolean>,
+) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value === true) params.set(key, "1");
+    else if (value === false) continue;
+    else if (value) params.set(key, value);
+  }
+  const returnTo = `${MEMBERS_PAGE}?${params.toString()}`;
+  const safeReturnTo = isSafeDashboardReturnPath(returnTo) ? returnTo : MEMBERS_PAGE;
+  const response = NextResponse.redirect(new URL(safeReturnTo, req.url));
+  if (tenantId) {
+    return applyActiveTenantCookieToResponse(response, tenantId);
+  }
+  return response;
+}
+
+function sourceFilterForPreset(preset: ContactImportPreset): string {
+  switch (preset) {
+    case "raklet":
+      return "dashboard_raklet_import";
+    case "class_roster":
+      return "tpw_class_import";
+    default:
+      return "dashboard_csv_import";
+  }
 }
 
 /** Reject oversized uploads before buffering multipart body (when Content-Length is sent). */
@@ -95,7 +130,7 @@ function authFailureRedirect(
     auth.error === "No active tenant context"
       ? "No active tenant. Select your community and try again."
       : auth.error;
-  return redirectMembers(req, tenantHint ?? null, { openImport: true, error: message });
+  return redirectImport(req, tenantHint ?? null, { error: message });
 }
 
 async function processImportForm(
@@ -110,14 +145,13 @@ async function processImportForm(
   const importTag = String(form.get("importTag") ?? "");
 
   if (!file) {
-    return redirectMembers(req, tenantId, {
-      openImport: true,
+    return redirectImport(req, tenantId, {
       error: "Choose a CSV or Excel file.",
     });
   }
 
   const validPreset = ["generic", "class_roster", "raklet"].includes(preset)
-    ? (preset as "generic" | "class_roster" | "raklet")
+    ? (preset as ContactImportPreset)
     : "generic";
 
   console.info("IMPORT_CONTACTS_START", {
@@ -148,8 +182,7 @@ async function processImportForm(
       fileSize: file.size,
       error: message.slice(0, 200),
     });
-    return redirectMembers(req, tenantId, {
-      openImport: true,
+    return redirectImport(req, tenantId, {
       error: "Import failed unexpectedly. Try CSV format or contact support.",
     });
   }
@@ -163,8 +196,7 @@ async function processImportForm(
       headerNames: "headers" in result ? result.headers : [],
       error: result.error.slice(0, 200),
     });
-    return redirectMembers(req, tenantId, {
-      openImport: true,
+    return redirectImport(req, tenantId, {
       error: result.error,
     });
   }
@@ -181,22 +213,32 @@ async function processImportForm(
     skipped,
     errorCount: errors.length,
   });
+
+  if (dryRun) {
+    const query: Record<string, string | boolean> = {
+      importPreview: true,
+      importCreated: String(created),
+      importUpdated: String(updated),
+      importSkipped: String(skipped),
+    };
+    if (errors.length > 0) {
+      query.importErrors = errors.slice(0, 3).join(" | ");
+    }
+    return redirectImport(req, tenantId, query);
+  }
+
   const query: Record<string, string | boolean> = {
-    openImport: true,
+    success: "import",
     importCreated: String(created),
     importUpdated: String(updated),
     importSkipped: String(skipped),
+    source: sourceFilterForPreset(validPreset),
   };
-  if (dryRun) {
-    query.importPreview = true;
-  } else {
-    query.success = "import";
-  }
   if (errors.length > 0) {
     query.importErrors = errors.slice(0, 3).join(" | ");
   }
 
-  return redirectMembers(req, tenantId, query);
+  return redirectMembersList(req, tenantId, query);
 }
 
 /**
@@ -210,15 +252,14 @@ export async function handleContactImportPost(
   resolveAuth: ContactImportAuth = requireActiveTenantForImport,
 ) {
   if (!isSameOriginMutationRequest(req)) {
-    return redirectMembers(req, null, {
-      openImport: true,
+    return redirectImport(req, null, {
       error: "Invalid request origin. Refresh the page and try again.",
     });
   }
 
   const oversizeError = rejectOversizedImportRequest(req);
   if (oversizeError) {
-    return redirectMembers(req, null, { openImport: true, error: oversizeError });
+    return redirectImport(req, null, { error: oversizeError });
   }
 
   const initialAuth = await resolveImportAuth(resolveAuth);
@@ -229,7 +270,7 @@ export async function handleContactImportPost(
 
     const parsed = await parseImportForm(req);
     if (!parsed.ok) {
-      return redirectMembers(req, null, { openImport: true, error: parsed.error });
+      return redirectImport(req, null, { error: parsed.error });
     }
 
     const tenantHint = readTenantIdHintFromForm(parsed.form);
@@ -246,8 +287,7 @@ export async function handleContactImportPost(
 
   const parsed = await parseImportForm(req);
   if (!parsed.ok) {
-    return redirectMembers(req, initialAuth.context.tenant.id, {
-      openImport: true,
+    return redirectImport(req, initialAuth.context.tenant.id, {
       error: parsed.error,
     });
   }
