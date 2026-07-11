@@ -21,7 +21,7 @@ export async function GET() {
   }
 
   checks.stripeWebhook = stripeWebhookConfigured() ? "configured" : "missing";
-  checks.resend = process.env.RESEND_API_KEY?.trim() ? "configured" : "missing";
+  checks.zeptomail = process.env.ZEPTOMAIL_TOKEN?.trim() && process.env.ZEPTOMAIL_FROM?.trim() ? "configured" : "missing";
   checks.cronSecret = process.env.CRON_SECRET?.trim() ? "configured" : "missing";
   checks.opsAlertWebhook = process.env.OPS_ALERT_WEBHOOK_URL?.trim() ? "configured" : "missing";
 

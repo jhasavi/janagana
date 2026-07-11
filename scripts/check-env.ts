@@ -86,9 +86,11 @@ if (stripeSecret || stripeWebhookSecret) {
   }
 }
 
-const resend = process.env.RESEND_API_KEY?.trim() ?? "";
-console.log(`- RESEND_API_KEY: ${resend ? `present (fp=${fingerprint(resend)})` : "missing"}`);
-if (!resend) warnings.push("RESEND_API_KEY missing — outbox messages will queue but not deliver");
+const zeptoToken = process.env.ZEPTOMAIL_TOKEN?.trim() ?? "";
+const zeptoFrom = process.env.ZEPTOMAIL_FROM?.trim() ?? "";
+console.log(`- ZEPTOMAIL_TOKEN: ${zeptoToken ? `present (fp=${fingerprint(zeptoToken)})` : "missing"}`);
+console.log(`- ZEPTOMAIL_FROM: ${zeptoFrom ? "present" : "missing"}`);
+if (!zeptoToken || !zeptoFrom) warnings.push("ZEPTOMAIL_TOKEN/ZEPTOMAIL_FROM missing — outbox messages will queue but not deliver");
 
 const cronSecret = process.env.CRON_SECRET?.trim() ?? "";
 console.log(`- CRON_SECRET: ${cronSecret ? "present" : "missing"}`);

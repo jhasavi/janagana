@@ -5,7 +5,7 @@
 | # | Item | Deliverable |
 |---|------|-------------|
 | 1 | Pilot sign-off automation | `npm run verify:pilot-signoff` + docs/04 sign-off template |
-| 2 | Production env verification | `npm run verify:production-env -- --strict` + check-env RESEND/CRON warnings |
+| 2 | Production env verification | `npm run verify:production-env -- --strict` + check-env ZeptoMail/CRON warnings |
 | 3 | Production smoke orchestration | `npm run verify:production-ready` |
 | 4 | TPW integration gate | `npm run verify:tpw` (existing, wired into orchestrator) |
 | 5 | Renewal reminder cron | `vercel.json` cron + `/api/cron/renewal-reminders` |
@@ -19,7 +19,7 @@
 ## Manual owner steps (cannot automate)
 
 - [ ] Complete Part A/B in `docs/01-PILOT-RUNBOOK.md` for PW + NB (signed-in admin + incognito registration)
-- [ ] Set Vercel env: `CRON_SECRET`, `RESEND_API_KEY`, live Stripe keys, `OPS_ALERT_WEBHOOK_URL`
+- [ ] Set Vercel env: `CRON_SECRET`, `ZEPTOMAIL_TOKEN`, `ZEPTOMAIL_FROM`, live Stripe keys, `OPS_ALERT_WEBHOOK_URL`
 - [ ] Record sign-off line in `docs/04-PRODUCTION.md`
 
 ## Commands

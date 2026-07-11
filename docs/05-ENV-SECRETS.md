@@ -45,8 +45,9 @@
 
 | Variable | Description |
 |---|---|
-| `RESEND_API_KEY` | Resend API key for outbox delivery |
-| `EMAIL_FROM` | Optional From address (defaults to Resend onboarding domain) |
+| `ZEPTOMAIL_TOKEN` | ZeptoMail API token for outbox delivery (shared with the `namasteneedham.com` ZeptoMail account used by the NB/TPW sites) |
+| `ZEPTOMAIL_FROM` | From address, must be a verified sender on the ZeptoMail account (e.g. `noreply@namasteneedham.com`) |
+| `ZEPTOMAIL_FROM_NAME` | Optional From display name (defaults to `JanaGana`) |
 
 ### Production ops
 
