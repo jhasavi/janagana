@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { PortalShell } from "@/components/portal/portal-shell";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getCurrentMemberContact } from "@/lib/actions/member-auth";
 
 export default async function PortalTenantLayout({
   children,
@@ -24,6 +25,9 @@ export default async function PortalTenantLayout({
     publicTagline: tenant.publicTagline,
   };
 
+  const currentMember = await getCurrentMemberContact(tenantSlug);
+  const shellMember = currentMember ? { firstName: currentMember.contact.firstName } : null;
+
   return (
     <Suspense
       fallback={
@@ -34,7 +38,7 @@ export default async function PortalTenantLayout({
         </div>
       }
     >
-      <PortalShell tenant={shellTenant}>{children}</PortalShell>
+      <PortalShell tenant={shellTenant} member={shellMember}>{children}</PortalShell>
     </Suspense>
   );
 }

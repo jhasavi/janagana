@@ -74,6 +74,7 @@ enum CommunicationPurpose {
   EVENT_CONFIRMATION
   EVENT_REMINDER
   RENEWAL_REMINDER
+  MEMBER_SIGN_IN
   GENERAL
 }
 
@@ -132,6 +133,8 @@ model Tenant {
   events        Event[]
   registrations EventRegistration[]
   auditLogs     AuditLog[]
+  contactLoginTokens ContactLoginToken[]
+  contactSessions    ContactSession[]
 }
 
 /// Cache of which Clerk users are admins of which Tenants.
@@ -180,12 +183,48 @@ model Contact {
   payments      PaymentRecord[]
   receipts      PaymentReceipt[]
   communications CommunicationMessage[]
+  loginTokens   ContactLoginToken[]
+  sessions      ContactSession[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([tenantId, source])
   @@index([tenantId, interestType])
   @@index([tenantId, lastActivityAt])
+}
+
+/// A short-lived, single-use magic-link token for portal sign-in.
+/// INVARIANT: Never stores the raw token — only its SHA-256 hash.
+model ContactLoginToken {
+  id         String    @id @default(cuid())
+  tenantId   String
+  contactId  String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, contactId])
+}
+
+/// A long-lived portal session for a signed-in Contact.
+/// INVARIANT: Never stores the raw token — only its SHA-256 hash.
+model ContactSession {
+  id         String    @id @default(cuid())
+  tenantId   String
+  contactId  String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, contactId])
 }
 
 /// A membership plan offered by a tenant.

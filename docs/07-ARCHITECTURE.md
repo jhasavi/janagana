@@ -19,9 +19,9 @@ Do not pass dashboard cookies into public portal resolution.
 
 ## Platform surfaces
 
-**Live:** Admin membership tiers and enrollments; renewals desk with failed-payment/dunning visibility; Stripe subscriptions (`autoRenew`); renewal reminder job; public join (side-by-side tier comparison)/donate/event checkout; donor-covered processing fee toggle; digital membership card + verify API; contact CRM (edit, type/role, tags, filters, export, unified activity timeline); payments ledger; printable receipts + year-end giving summary export; communications admin UI (outbox with retry); transactional communication outbox (queue + Resend delivery); event registration with paid Stripe checkout; contact import; embed API.
+**Live:** Admin membership tiers and enrollments; renewals desk with failed-payment/dunning visibility; Stripe subscriptions (`autoRenew`); renewal reminder job; public join (side-by-side tier comparison)/donate/event checkout; donor-covered processing fee toggle; digital membership card + verify API; contact CRM (edit, type/role, tags, filters, export, unified activity timeline); payments ledger; printable receipts + year-end giving summary export; communications admin UI (outbox with retry); transactional communication outbox (queue + Resend delivery); event registration with paid Stripe checkout; contact import; embed API; authenticated member self-service portal (magic-link sign-in, profile edit, renew, activity timeline at `/portal/{slug}/account`).
 
-**Deferred (post-pilot):** CRM pipeline automation; refunds UI; payout reporting; authenticated member self-service portal; households / group membership; member directory; custom contact fields; Apple/Google Wallet passes; campaigns; analytics.
+**Deferred (post-pilot):** CRM pipeline automation; refunds UI; payout reporting; households / group membership; member directory; custom contact fields; Apple/Google Wallet passes; campaigns; analytics.
 
 Payment policy: JanaGana platform fee is **0 bps**. Stripe processor fees are disclosed; optional payer contribution is built on donate, join, and paid events.
 

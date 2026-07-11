@@ -14,6 +14,7 @@
 | 8 | Multi-admin RBAC | Clerk org role → `canWrite`; view-only banner; write actions guarded |
 | 9 | Refunds workflow | Mark refunded on `/dashboard/payments` |
 | 10 | Monitoring + alerts | `/api/health/ready` DB metrics + `OPS_ALERT_WEBHOOK_URL` on failures |
+| 11 | Authenticated member self-service portal | `/portal/[tenantSlug]/account` — magic-link sign-in, profile edit, renew, activity timeline |
 
 ## Manual owner steps (cannot automate)
 
@@ -31,5 +32,4 @@ curl https://janagana.namasteneedham.com/api/health/ready
 
 ## Phase 2 (not prod blockers)
 
-- Authenticated member self-service portal
 - Households / group membership

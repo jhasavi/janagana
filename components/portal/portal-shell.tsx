@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CalendarDays, Gift, HeartHandshake, Home, Mail } from "lucide-react";
+import { CalendarDays, Gift, HeartHandshake, Home, Mail, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PortalShellTenant = {
@@ -12,7 +12,11 @@ export type PortalShellTenant = {
   publicTagline: string | null;
 };
 
-const navItems: Array<{
+export type PortalShellMember = {
+  firstName: string;
+} | null;
+
+const baseNavItems: Array<{
   href: string;
   label: string;
   icon: typeof Home;
@@ -42,15 +46,26 @@ function TenantMark({ tenant }: { tenant: PortalShellTenant }) {
 
 export function PortalShell({
   tenant,
+  member = null,
   children,
 }: {
   tenant: PortalShellTenant;
+  member?: PortalShellMember;
   children: React.ReactNode;
 }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const embed = searchParams.get("embed") === "1";
   const base = `/portal/${tenant.slug}`;
+
+  const navItems = [
+    ...baseNavItems,
+    {
+      href: member ? "/account" : "/account/sign-in",
+      label: member ? member.firstName : "Sign in",
+      icon: UserCircle,
+    },
+  ];
 
   if (embed) {
     return (
@@ -112,7 +127,7 @@ export function PortalShell({
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">{children}</main>
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur-md md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-5 gap-1 px-2 py-2">
+        <div className="mx-auto grid max-w-lg grid-cols-6 gap-1 px-2 py-2">
           {navItems.map((item) => {
             const href = item.href ? `${base}${item.href}` : base;
             const active = item.exact ? pathname === base : pathname.startsWith(`${base}${item.href}`);

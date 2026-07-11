@@ -97,12 +97,12 @@ Status key: **Done** · **Partial** · **Missing**
 | # | Item | vs | Status | Why it matters |
 |---|------|-----|--------|----------------|
 | 28 | **Apple / Google Wallet pass** for membership card | Join It | Missing | Their wow moment — Phase 2 |
-| 29 | **Authenticated member portal** (view status, renew, update profile) | Join It portal | Missing | Large build — Phase 2 |
+| 29 | **Authenticated member portal** (view status, renew, update profile) | Join It portal | Done | `/portal/{slug}/account` — magic-link sign-in, profile edit, renew, activity timeline |
 | 30 | **Year-end giving summary** export for donors | Zeffy | Done | `/api/export/giving-summary` CSV, linked from Donations |
 | 31 | **Multi-admin roles** (viewer vs admin) | Join It | Missing | Clerk org roles exist (owner/admin/member) but aren't enforced inside the dashboard yet — explicit roadmap item, not hacked in before a demo |
 | 32 | **Demo objection cheat sheet** (1-pager for presenters) | — | Done | See battlecard below |
 
-**Count:** 32 items (28 must-have for competitive demo + 4 Phase 2 differentiators).
+**Count:** 32 items (29 must-have for competitive demo + 3 Phase 2 differentiators).
 
 ---
 
@@ -120,7 +120,7 @@ Status key: **Done** · **Partial** · **Missing**
 ### Sprint 4 — Differentiation (2 weeks)
 14, 15, 21, 30, 32 — **all done**; 22 (households) and 26 (member directory) still open
 
-Phase 2 (post-win): 28, 29, 31 — remaining open items, all explicit roadmap call-outs, not silent gaps.
+Phase 2 (post-win): 28, 31 — remaining open items, all explicit roadmap call-outs, not silent gaps.
 
 ---
 
@@ -133,7 +133,7 @@ Phase 2 (post-win): 28, 29, 31 — remaining open items, all explicit roadmap ca
 | “We need recurring memberships” | “Built — Stripe subscriptions with `autoRenew`, plus an automated reminder job at 7/30/60 days.” | Join flow + renewals desk |
 | “Can we keep our website?” | “Yes — embed events, join, donate on **your** site. Join It wants you in their builder.” | TPW embed / iframe demo |
 | “Import our Raklet export” | “Built for that migration path.” | Import → Raklet filter → tags |
-| “Can members log in and manage their own profile?” | “Not yet — today operators manage everyone from one dashboard, which is faster for most community orgs day one. Authenticated self-service is our next major build; we're sequencing it deliberately (Clerk magic link vs. a lightweight contact token) rather than bolting on auth that isn't secure.” | Contact profile edit + timeline as the operator-side alternative |
+| “Can members log in and manage their own profile?” | “Yes — a member enters their email, gets a one-time sign-in link, and can view their membership status, renew, update their profile, and see their full activity history, no password to manage or Clerk account to provision.” | `/portal/{slug}/account` sign-in → member dashboard |
 | “What happens when a card gets declined?” | “It shows up immediately on the renewals desk with a **Payment failed** badge and the exact amount/date — no separate trip to Stripe.” | Renewals desk dunning banner |
 | “Can donors get a receipt for taxes?” | “Every payment gets a numbered receipt with a print/save-as-PDF view, and operators can export a year-end giving summary per donor in one click.” | Donations page → receipt link → CSV export |
 | “Do you have a communications / email history?” | “Yes — every receipt, confirmation, and reminder lands in one outbox with delivery status, and failed sends can be retried in a click.” | `/dashboard/communications` |

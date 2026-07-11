@@ -37,7 +37,7 @@ export default async function PublicMembershipJoinPage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ status?: string; error?: string }>;
+  searchParams: Promise<{ status?: string; error?: string; tierId?: string }>;
 }) {
   const { tenantSlug } = await params;
   const query = await searchParams;
@@ -69,7 +69,8 @@ export default async function PublicMembershipJoinPage({
   }
 
   const message = statusMessage(query.status, query.error);
-  const defaultTierId = result.data[0]?.id ?? "";
+  const requestedTier = query.tierId ? result.data.find((tier) => tier.id === query.tierId) : undefined;
+  const defaultTierId = requestedTier?.id ?? result.data[0]?.id ?? "";
   // Middle tier gets the "Most popular" highlight when there are exactly 3 — the
   // classic good/better/best pattern. With a different count we skip the claim
   // rather than guess.
