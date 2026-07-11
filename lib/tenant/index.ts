@@ -38,7 +38,12 @@ export {
   activeTenantCookieOptions,
 } from "./active-tenant-cookie";
 
-export { requireActiveTenantForActions, requireActiveTenantForWriteActions, requireActiveTenantForImport } from "./active-tenant-context";
+export {
+  requireActiveTenantForActions,
+  requireActiveTenantForWriteActions,
+  requireAdminAccessForTenant,
+  requireActiveTenantForImport,
+} from "./active-tenant-context";
 
 export type {
   ActiveTenantActionContext,

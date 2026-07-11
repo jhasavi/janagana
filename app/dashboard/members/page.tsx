@@ -113,14 +113,28 @@ export default async function ContactsPage({
     throw error;
   }
 
-  const contacts = contactsResult.ok ? contactsResult.data : [];
-  const contactsTotal = contactsResult.ok ? contactsResult.totalCount : 0;
-  const pageSize = contactsResult.ok ? contactsResult.pageSize : 100;
-  const pageCount = contactsResult.ok ? contactsResult.pageCount : 1;
-  const currentPage = contactsResult.ok ? contactsResult.page : 1;
-  const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
-  const interestOptions = contactsResult.ok ? contactsResult.interestOptions : [];
-  const tagOptions = contactsResult.ok ? contactsResult.tagOptions : [];
+  if (!contactsResult.ok) {
+    return (
+      <section className="space-y-6">
+        <PageHeader eyebrow="People" title="Contacts" />
+        <Card>
+          <CardBody>
+            <p className="font-semibold text-foreground">Admins only</p>
+            <p className="mt-1 text-sm text-muted-foreground">{contactsResult.error}</p>
+          </CardBody>
+        </Card>
+      </section>
+    );
+  }
+
+  const contacts = contactsResult.data;
+  const contactsTotal = contactsResult.totalCount;
+  const pageSize = contactsResult.pageSize;
+  const pageCount = contactsResult.pageCount;
+  const currentPage = contactsResult.page;
+  const sourceOptions = contactsResult.sourceOptions;
+  const interestOptions = contactsResult.interestOptions;
+  const tagOptions = contactsResult.tagOptions;
   const exportHref = contactExportHref(filters);
   const filtersActive = hasActiveContactFilters(filters);
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/list-filters";
 import { parseContactTags } from "@/lib/contacts/tags";
-import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireAdminAccessForTenant, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
 export const ContactCreateSchema = z
   .object({
@@ -163,7 +163,7 @@ export async function deleteContact(contactId: string, options?: TenantActionOpt
 }
 
 export async function listContacts(input: unknown = {}, page = 1) {
-  const auth = await requireActiveTenantForActions();
+  const auth = await requireAdminAccessForTenant();
   if (!auth.ok) {
     return {
       ok: false as const,
@@ -261,7 +261,7 @@ export async function listContacts(input: unknown = {}, page = 1) {
 }
 
 export async function getContactProfile(contactId: string) {
-  const auth = await requireActiveTenantForActions();
+  const auth = await requireAdminAccessForTenant();
   if (!auth.ok) {
     return { ok: false as const, error: auth.error, data: null as any };
   }

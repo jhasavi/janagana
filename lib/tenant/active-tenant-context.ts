@@ -77,6 +77,24 @@ export async function requireActiveTenantForWriteActions(
 }
 
 /**
+ * Contact PII reads: require admin/owner Clerk org role for the active tenant.
+ * View-only roles can browse the rest of the dashboard but not contact records.
+ */
+export async function requireAdminAccessForTenant(
+  options?: TenantActionOptions,
+): Promise<ActiveTenantActionResult> {
+  const result = await requireActiveTenantForActions(options);
+  if (!result.ok) return result;
+  if (!result.context.canWrite) {
+    return {
+      ok: false,
+      error: "Contacts are restricted to org admins. Ask an org admin for access.",
+    };
+  }
+  return result;
+}
+
+/**
  * API route import handler: resolve tenant without mutating cookies.
  * Cookie is applied on redirect via applyActiveTenantCookieToResponse only.
  */

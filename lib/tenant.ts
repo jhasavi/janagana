@@ -10,6 +10,7 @@ export {
   applyActiveTenantCookieToResponse,
   requireActiveTenantForActions,
   requireActiveTenantForWriteActions,
+  requireAdminAccessForTenant,
   requireActiveTenantForImport,
   readTenantIdHintFromForm,
   ACTIVE_TENANT_COOKIE_NAME,
