@@ -112,6 +112,8 @@ function mockAuth(tenantId: string, userId = "import-test-user"): ContactImportA
         status: "ACTIVE",
       },
       user: { id: userId, email: "import@test.local", name: "Import Tester" },
+      orgRole: "org:admin",
+      canWrite: true,
     },
   });
 }
@@ -425,6 +427,8 @@ async function testAuthBeforeFormDataWithTenantHint() {
           status: "ACTIVE",
         },
         user: { id: "user-1", email: "u@test.local", name: "User" },
+        orgRole: "org:admin",
+        canWrite: true,
       },
     };
   };

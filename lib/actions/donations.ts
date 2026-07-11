@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
 const PaymentMethodSchema = z.enum(["OFFLINE", "CASH", "CHECK", "CARD", "BANK_TRANSFER", "STRIPE", "OTHER"]);
 const PaymentStatusSchema = z.enum(["PAID", "PENDING", "FAILED", "REFUNDED", "WAIVED"]);
@@ -110,7 +110,7 @@ export async function listDonationAdminData() {
 }
 
 export async function recordOfflineDonation(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

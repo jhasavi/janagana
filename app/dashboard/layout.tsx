@@ -4,7 +4,7 @@ import { ExternalLink, LogOut, Shuffle } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardWorkflowNav } from "@/components/dashboard/dashboard-workflow-nav";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getDashboardAccessForTenant } from "@/lib/auth";
 import { publicPortalUrl } from "@/lib/environment";
 import { getVisibleCommunityOsNav } from "@/lib/pilot/dashboard-nav";
 import { communityLabel } from "@/lib/pilot/portal-links";
@@ -41,6 +41,7 @@ export default async function DashboardLayout({
   const portalUrl = publicPortalUrl(tenant.slug);
   const community = communityLabel(tenant.slug);
   const navGroups = getVisibleCommunityOsNav();
+  const access = await getDashboardAccessForTenant(tenant);
 
   return (
     <div className="flex min-h-screen bg-muted/40">
@@ -135,7 +136,15 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          {!access.canWrite && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <span className="font-semibold">View-only ({access.roleLabel}).</span> You can browse the command center but
+              cannot import contacts, edit records, or take payments actions. Ask an org admin to upgrade your Clerk role.
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

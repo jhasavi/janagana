@@ -43,6 +43,8 @@ export async function getTenantFinancialSummary(tenantId: string, filters: Payme
         method: true,
         paidAt: true,
         createdAt: true,
+        notes: true,
+        receipt: { select: { id: true } },
         contact: { select: { firstName: true, lastName: true, email: true } },
       },
     }),

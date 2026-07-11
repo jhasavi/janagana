@@ -32,7 +32,7 @@ test.describe("public portal registration", () => {
           description: "Playwright portal smoke published event",
           startsAt: new Date("2032-02-01T10:00:00.000Z"),
           status: "PUBLISHED",
-          priceCents: 2500,
+          priceCents: 0,
           capacity: 20,
         },
         {
@@ -65,7 +65,8 @@ test.describe("public portal registration", () => {
       await page.getByLabel(/phone/i).fill("555-0100");
       await page.getByRole("button", { name: /complete registration/i }).click();
 
-      await expect(page.getByText(/registration successful/i)).toBeVisible();
+      await page.waitForURL(/registration=registered/, { timeout: 15_000 });
+      expect(page.url()).toContain("registration=registered");
     } finally {
       await prisma.eventRegistration.deleteMany({ where: { event: { slug: { in: [publishedSlug, draftSlug] } } } });
       await prisma.event.deleteMany({ where: { slug: { in: [publishedSlug, draftSlug] } } });

@@ -81,6 +81,19 @@ if (stripeSecret || stripeWebhookSecret) {
   console.log(`- STRIPE_WEBHOOK_SECRET: ${stripeWebhookSecret ? `present (fp=${fingerprint(stripeWebhookSecret)})` : "missing"}`);
   if (!stripeSecret) warnings.push("Stripe webhook secret is configured but STRIPE_SECRET_KEY is missing");
   if (!stripeWebhookSecret) warnings.push("Stripe checkout key is configured but STRIPE_WEBHOOK_SECRET is missing");
+  if (stripeSecret && stripeWebhookSecret && keyModeFromPrefix(stripeSecret) !== keyModeFromPrefix(stripeWebhookSecret)) {
+    warnings.push("Stripe key modes may differ between secret key and webhook secret");
+  }
+}
+
+const resend = process.env.RESEND_API_KEY?.trim() ?? "";
+console.log(`- RESEND_API_KEY: ${resend ? `present (fp=${fingerprint(resend)})` : "missing"}`);
+if (!resend) warnings.push("RESEND_API_KEY missing — outbox messages will queue but not deliver");
+
+const cronSecret = process.env.CRON_SECRET?.trim() ?? "";
+console.log(`- CRON_SECRET: ${cronSecret ? "present" : "missing"}`);
+if (!cronSecret && !appUrl.includes("localhost")) {
+  warnings.push("CRON_SECRET missing — Vercel renewal cron will be rejected in production");
 }
 
 const examplePath = path.resolve(process.cwd(), ".env.example");

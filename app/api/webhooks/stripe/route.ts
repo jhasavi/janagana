@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { emitOpsAlert } from "@/lib/ops/alert";
 import { processStripeWebhookEvent } from "@/lib/payments/stripe-webhooks";
 import { stripeWebhookConfigured, stripeWebhookSecret, verifyStripeWebhookSignature } from "@/lib/payments/stripe";
 
@@ -52,6 +53,11 @@ export async function POST(req: NextRequest) {
   );
 
   if (!result.ok) {
+    await emitOpsAlert({
+      kind: "stripe-webhook",
+      message: result.error ?? "Stripe webhook processing failed",
+      metadata: { eventType: (event as { type?: string }).type },
+    });
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 

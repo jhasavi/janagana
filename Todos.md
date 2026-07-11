@@ -1,44 +1,35 @@
-# Product improvement backlog — quality review (July 2026)
+# Production readiness backlog (July 2026)
 
-Last gate run: `npm run gate:quick` ✓ · `npm run build` ✓ · `npm run test:dashboard:semantics` ✓
+## Implemented (this pass)
 
-**Status:** 8 of 10 items shipped. Items **6** and **9** remain Phase 2 (explicitly deferred in demo script).
+| # | Item | Deliverable |
+|---|------|-------------|
+| 1 | Pilot sign-off automation | `npm run verify:pilot-signoff` + docs/04 sign-off template |
+| 2 | Production env verification | `npm run verify:production-env -- --strict` + check-env RESEND/CRON warnings |
+| 3 | Production smoke orchestration | `npm run verify:production-ready` |
+| 4 | TPW integration gate | `npm run verify:tpw` (existing, wired into orchestrator) |
+| 5 | Renewal reminder cron | `vercel.json` cron + `/api/cron/renewal-reminders` |
+| 6 | Full release gate | `npm run gate:release` (run before deploy) |
+| 7 | NB tenant parity gate | `npm run verify:nb` |
+| 8 | Multi-admin RBAC | Clerk org role → `canWrite`; view-only banner; write actions guarded |
+| 9 | Refunds workflow | Mark refunded on `/dashboard/payments` |
+| 10 | Monitoring + alerts | `/api/health/ready` DB metrics + `OPS_ALERT_WEBHOOK_URL` on failures |
 
----
+## Manual owner steps (cannot automate)
 
-## Done
+- [ ] Complete Part A/B in `docs/01-PILOT-RUNBOOK.md` for PW + NB (signed-in admin + incognito registration)
+- [ ] Set Vercel env: `CRON_SECRET`, `RESEND_API_KEY`, live Stripe keys, `OPS_ALERT_WEBHOOK_URL`
+- [ ] Record sign-off line in `docs/04-PRODUCTION.md`
 
-| # | Item | Notes |
-|---|------|-------|
-| 1 | Fix failing release gate (contact interest E2E) | `getByTestId("portal-flow-description")` |
-| 2 | Communications admin UI | `/dashboard/communications` — queue/sent/failed + retry |
-| 3 | Printable receipts + year-end giving summary | `/dashboard/payments/receipts/{id}`, `/api/export/giving-summary` |
-| 4 | Failed payment / past-due on renewals desk | Dunning banner + `payment_failed` filter |
-| 5 | Unified contact activity timeline | `ContactTimeline` on profile |
-| 7 | Documentation drift | README + docs consolidated (see `docs/README.md`) |
-| 8 | Portal `/join` tier comparison UX | Side-by-side plan cards |
-| 10 | Demo script + Join It/Zeffy battlecard | `docs/14-PRODUCT-SHOWCASE.md`, `docs/18-JOIN-IT-ZEFFY-DEMO-PLAN.md` |
-
----
-
-## Phase 2 (not blocking ship)
-
-| # | Item | Notes |
-|---|------|-------|
-| 6 | Authenticated member self-service portal | No member sign-in on portal yet |
-| 9 | Households / group membership | `/dashboard/families` still placeholder |
-
----
-
-## Test gates
+## Commands
 
 ```bash
-npm run gate:quick
-npm run test:dashboard:semantics
-npm run verify:pilot-demo -- --base-url=https://janagana.namasteneedham.com
-npm run seed:joinit-demo -- --confirm-joinit-demo
+npm run verify:production-ready
+npm run gate:release
+curl https://janagana.namasteneedham.com/api/health/ready
 ```
 
-## Doc index
+## Phase 2 (not prod blockers)
 
-See [docs/README.md](./docs/README.md).
+- Authenticated member self-service portal
+- Households / group membership

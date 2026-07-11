@@ -92,6 +92,33 @@ export async function queueEventRegistrationCommunication(registrationId: string
   });
 }
 
+export async function queueMemberSignInCommunication(params: {
+  tenantId: string;
+  contactId: string;
+  tenantName: string;
+  recipientEmail: string;
+  recipientName: string | null;
+  magicLinkUrl: string;
+}) {
+  return queueAndDeliver({
+    tenantId: params.tenantId,
+    contactId: params.contactId,
+    purpose: "MEMBER_SIGN_IN",
+    recipientEmail: params.recipientEmail,
+    recipientName: params.recipientName,
+    subject: `Sign in to your ${params.tenantName} account`,
+    body: [
+      `Hello${params.recipientName ? ` ${params.recipientName}` : ""},`,
+      "",
+      `Use the link below to sign in to your ${params.tenantName} account. This link expires in 20 minutes and can only be used once.`,
+      "",
+      params.magicLinkUrl,
+      "",
+      "If you didn't request this, you can safely ignore this email.",
+    ].join("\n"),
+  });
+}
+
 /**
  * Queue a renewal reminder and attempt delivery when Resend is configured.
  */

@@ -1,6 +1,6 @@
 import type { ContactImportPreset } from "@/lib/import/contact-roster";
 import { runContactImportFromFile } from "@/lib/import/run-contact-import";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
 export async function importContactsFromSpreadsheet(
   input: {
@@ -11,7 +11,7 @@ export async function importContactsFromSpreadsheet(
   },
   options?: TenantActionOptions,
 ) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

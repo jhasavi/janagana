@@ -41,6 +41,20 @@
 | `STRIPE_SECRET_KEY` | Stripe backend key used to create Checkout Sessions |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret used by `/api/webhooks/stripe` |
 
+### Email (production receipts + renewal reminders)
+
+| Variable | Description |
+|---|---|
+| `RESEND_API_KEY` | Resend API key for outbox delivery |
+| `EMAIL_FROM` | Optional From address (defaults to Resend onboarding domain) |
+
+### Production ops
+
+| Variable | Description |
+|---|---|
+| `CRON_SECRET` | Bearer token Vercel sends to `/api/cron/renewal-reminders` |
+| `OPS_ALERT_WEBHOOK_URL` | Slack-compatible webhook for Stripe/email/cron failures |
+
 ### Ops (optional)
 
 | Variable | Description |

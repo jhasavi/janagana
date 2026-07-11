@@ -56,3 +56,29 @@ Pilot demo gate (production): `npm run verify:pilot-demo`
 - [ ] Import spreadsheet still works from quick action
 
 Post-launch deferrals: see [07-ARCHITECTURE.md](./07-ARCHITECTURE.md#parking-lot-explicit-deferrals).
+
+## Production readiness (automated)
+
+Run before owner sign-off:
+
+```bash
+npm run verify:production-ready
+# Or step by step:
+npm run verify:production-env -- --strict
+npm run verify:pilot-signoff -- --base-url=https://janagana.namasteneedham.com
+npm run verify:tpw -- --base-url=https://janagana.namasteneedham.com
+npm run verify:nb -- --base-url=https://janagana.namasteneedham.com
+npm run gate:release
+```
+
+Health check (DB + integration flags): `GET /api/health/ready`
+
+Renewal reminders cron: daily `GET /api/cron/renewal-reminders` (requires `CRON_SECRET` on Vercel).
+
+## Owner sign-off record
+
+When Part A/B in [01-PILOT-RUNBOOK.md](./01-PILOT-RUNBOOK.md) are complete for **both** orgs:
+
+```
+Pilot sign-off: YYYY-MM-DD by <name> — admin + dual-tenant validated (verify:production-ready PASS).
+```

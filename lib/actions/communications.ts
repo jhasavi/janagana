@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { deliverCommunicationMessage } from "@/lib/communications/deliver";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
 export type CommunicationListRow = {
   id: string;
@@ -70,7 +70,7 @@ export async function listCommunicationsAdminData(filters?: { status?: string; p
 }
 
 export async function retryCommunication(messageId: string, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

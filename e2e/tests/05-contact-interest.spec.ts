@@ -6,11 +6,11 @@ test.beforeAll(async ({ request }) => {
 
 test("investment interest alias resolves on contact page", async ({ page }) => {
   await page.goto("/portal/namaste-boston/interest/investment", { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await expect(page).toHaveURL(/interest=investment_analysis/);
-  await expect(page.getByTestId("portal-flow-description")).toHaveText(/investment analysis/i);
+  await page.waitForURL(/interest=investment_analysis/, { timeout: 15_000 });
+  await expect(page.getByRole("main").getByTestId("portal-flow-description")).toHaveText(/investment analysis/i);
 });
 
 test("contact page accepts investment query param", async ({ page }) => {
   await page.goto("/portal/purple-wings/contact?interest=investment");
-  await expect(page.getByTestId("portal-flow-description")).toHaveText(/investment analysis/i);
+  await expect(page.getByRole("main").getByTestId("portal-flow-description")).toHaveText(/investment analysis/i);
 });

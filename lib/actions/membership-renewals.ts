@@ -6,7 +6,7 @@ import {
   classifyMembershipRenewal,
   hasUsableEmail,
 } from "@/lib/memberships/renewals";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
 export { hasUsableEmail };
 
@@ -17,7 +17,7 @@ const QueueRenewalReminderSchema = z
   .strict();
 
 export async function queueMembershipRenewalReminder(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

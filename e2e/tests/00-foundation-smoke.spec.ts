@@ -3,7 +3,10 @@ import { test, expect } from "@playwright/test";
 test("health route responds", async ({ request }) => {
   const response = await request.get("/api/health/ready");
   expect(response.status()).toBe(200);
-  await expect(response.json()).resolves.toEqual({ ok: true, app: "janagana" });
+  const body = await response.json();
+  expect(body.ok).toBe(true);
+  expect(body.app).toBe("janagana");
+  expect(body.database).toBe("ok");
 });
 
 test("home page loads", async ({ page }) => {

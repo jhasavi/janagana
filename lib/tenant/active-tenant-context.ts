@@ -1,4 +1,6 @@
 import { getCurrentUser, type CurrentUserSummary } from "@/lib/auth";
+import { resolveOrgRoleForTenant } from "@/lib/auth/dashboard-access";
+import { isClerkOrgAdminRole } from "@/lib/auth/clerk-roles";
 import { pickActiveTenant } from "@/lib/tenant/pick-active-tenant";
 import { getActiveTenantCookie, setActiveTenantCookie } from "@/lib/tenant/active-tenant-cookie";
 import { findMappedTenantsForUser, type MappedTenant } from "@/lib/tenant/tenant-resolver";
@@ -6,6 +8,8 @@ import { findMappedTenantsForUser, type MappedTenant } from "@/lib/tenant/tenant
 export type ActiveTenantActionContext = {
   user: CurrentUserSummary;
   tenant: MappedTenant;
+  orgRole: string;
+  canWrite: boolean;
 };
 
 export type ActiveTenantActionResult =
@@ -49,7 +53,27 @@ export async function requireActiveTenantForActions(
     });
   }
 
-  return { ok: true, context: { user, tenant } };
+  const orgRole = await resolveOrgRoleForTenant(tenant.clerkOrgId);
+  const canWrite = isClerkOrgAdminRole(orgRole);
+
+  return { ok: true, context: { user, tenant, orgRole, canWrite } };
+}
+
+/**
+ * Mutations: require admin/owner Clerk org role for the active tenant.
+ */
+export async function requireActiveTenantForWriteActions(
+  options?: TenantActionOptions,
+): Promise<ActiveTenantActionResult> {
+  const result = await requireActiveTenantForActions(options);
+  if (!result.ok) return result;
+  if (!result.context.canWrite) {
+    return {
+      ok: false,
+      error: "View-only access — your Clerk role cannot change data. Ask an org admin.",
+    };
+  }
+  return result;
 }
 
 /**
@@ -76,5 +100,8 @@ export async function requireActiveTenantForImport(
     return { ok: false, error: "No active tenant context" };
   }
 
-  return { ok: true, context: { user, tenant } };
+  const orgRole = await resolveOrgRoleForTenant(tenant.clerkOrgId);
+  const canWrite = isClerkOrgAdminRole(orgRole);
+
+  return { ok: true, context: { user, tenant, orgRole, canWrite } };
 }

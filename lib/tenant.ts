@@ -9,6 +9,8 @@ export {
   clearActiveTenantCookies,
   applyActiveTenantCookieToResponse,
   requireActiveTenantForActions,
+  requireActiveTenantForWriteActions,
+  requireActiveTenantForImport,
   readTenantIdHintFromForm,
   ACTIVE_TENANT_COOKIE_NAME,
   ACTIVE_TENANT_FORM_FIELD,

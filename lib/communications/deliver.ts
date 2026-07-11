@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { emitOpsAlert } from "@/lib/ops/alert";
 
 function emailFromAddress() {
   const from = process.env.EMAIL_FROM?.trim();
@@ -51,6 +52,11 @@ export async function deliverCommunicationMessage(messageId: string) {
         status: "FAILED",
         error: `Resend ${response.status}: ${errorText}`,
       },
+    });
+    await emitOpsAlert({
+      kind: "email-delivery",
+      message: `Resend ${response.status} for message ${message.id}`,
+      metadata: { messageId: message.id, recipient: message.recipientEmail },
     });
     return { ok: false as const, error: errorText };
   }

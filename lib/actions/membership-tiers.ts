@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
 
 const MembershipStatusSchema = z.enum(["PENDING", "ACTIVE", "INACTIVE", "EXPIRED", "CANCELED"]);
@@ -18,7 +18,7 @@ export const MembershipTierCreateSchema = z
   .strict();
 
 export async function createMembershipTier(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -216,7 +216,7 @@ export async function listMembershipAdminData() {
 }
 
 export async function enrollMembership(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -315,7 +315,7 @@ export async function enrollMembership(input: unknown, options?: TenantActionOpt
 }
 
 export async function recordMembershipPayment(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -374,7 +374,7 @@ export async function recordMembershipPayment(input: unknown, options?: TenantAc
 }
 
 export async function updateMembershipStatus(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

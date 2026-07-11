@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 
@@ -22,7 +22,7 @@ export const EventCreateSchema = z
 const ACTIVE_REGISTRATION_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "ATTENDED"] as const;
 
 export async function createEvent(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -310,7 +310,7 @@ export async function cancelEventRegistration(
   input: { eventId: string; registrationId: string },
   options?: TenantActionOptions
 ) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -329,7 +329,7 @@ export async function confirmEventRegistration(
   input: { eventId: string; registrationId: string },
   options?: TenantActionOptions
 ) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -348,7 +348,7 @@ export async function checkInEventRegistration(
   input: { eventId: string; registrationId: string },
   options?: TenantActionOptions
 ) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -367,7 +367,7 @@ export async function markEventRegistrationNoShow(
   input: { eventId: string; registrationId: string },
   options?: TenantActionOptions
 ) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

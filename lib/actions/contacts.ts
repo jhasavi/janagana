@@ -2,7 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/list-filters";
 import { parseContactTags } from "@/lib/contacts/tags";
-import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
+import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
 export const ContactCreateSchema = z
   .object({
@@ -34,7 +34,7 @@ export const ContactListSchema = ContactListFilterSchema;
 export const CONTACT_LIST_PAGE_SIZE = 100;
 
 export async function createContact(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -84,7 +84,7 @@ export async function createContact(input: unknown, options?: TenantActionOption
 }
 
 export async function updateContact(input: unknown, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
@@ -127,7 +127,7 @@ export async function updateContact(input: unknown, options?: TenantActionOption
 }
 
 export async function deleteContact(contactId: string, options?: TenantActionOptions) {
-  const auth = await requireActiveTenantForActions(options);
+  const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }

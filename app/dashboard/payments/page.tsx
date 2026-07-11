@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CalendarDays, HeartHandshake, Users, Wallet } from "lucide-react";
+import { markPaymentRefunded } from "@/lib/actions/payments";
+import { getDashboardAccessForTenant } from "@/lib/auth";
 import { getTenantFinancialSummary } from "@/lib/dashboard/financial-summary";
-import { resolveTenantForDashboard } from "@/lib/tenant";
+import { ACTIVE_TENANT_FORM_FIELD, readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterChip } from "@/components/ui/filter-chip";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import {
@@ -34,7 +40,7 @@ function purposeLabel(purpose: string) {
 function statusVariant(status: string): "success" | "warning" | "danger" | "default" {
   if (status === "PAID") return "success";
   if (status === "PENDING") return "warning";
-  if (status === "FAILED") return "danger";
+  if (status === "FAILED" || status === "REFUNDED") return "danger";
   return "default";
 }
 
@@ -50,11 +56,12 @@ function filterHref(base: string, params: Record<string, string>) {
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ purpose?: string; status?: string }>;
+  searchParams: Promise<{ purpose?: string; status?: string; error?: string; refunded?: string }>;
 }) {
   const params = await searchParams;
   const resolution = await resolveTenantForDashboard();
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
+  const access = tenant ? await getDashboardAccessForTenant(tenant) : null;
   const filters = {
     purpose: (params.purpose ?? "") as "" | "MEMBERSHIP" | "EVENT" | "DONATION",
     status: (params.status ?? "") as "" | "PAID" | "PENDING" | "FAILED" | "WAIVED" | "REFUNDED",
@@ -68,6 +75,22 @@ export default async function PaymentsPage({
 
   const basePath = "/dashboard/payments";
 
+  async function refundAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const paymentId = String(formData.get("paymentId") ?? "");
+    const notes = String(formData.get("notes") ?? "");
+    const result = await markPaymentRefunded({ paymentId, notes }, { tenantIdHint: tenantHint });
+    if (!result.ok) {
+      const dest = `${basePath}?error=${encodeURIComponent(result.error)}`;
+      if (tenantHint) redirectWithActiveTenant(tenantHint, dest);
+      redirect(dest);
+    }
+    const dest = `${basePath}?refunded=1`;
+    if (tenantHint) redirectWithActiveTenant(tenantHint, dest);
+    redirect(dest);
+  }
+
   return (
     <section className="space-y-6">
       <PageHeader
@@ -75,11 +98,16 @@ export default async function PaymentsPage({
         title="Payments"
         description="Membership dues, event fees, and donations. 0% JanaGana platform fee — card processor fees are separate (donors can cover them at checkout)."
         actions={
-          <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
-            Record membership payment
-          </Link>
+          access?.canWrite ? (
+            <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
+              Record membership payment
+            </Link>
+          ) : undefined
         }
       />
+
+      {params.error && <Alert variant="error">{params.error}</Alert>}
+      {params.refunded && <Alert variant="success">Payment marked as refunded.</Alert>}
 
       {financial && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -109,6 +137,12 @@ export default async function PaymentsPage({
         >
           Pending
         </FilterChip>
+        <FilterChip
+          href={filterHref(basePath, { purpose: filters.purpose, status: "REFUNDED" })}
+          active={filters.status === "REFUNDED"}
+        >
+          Refunded
+        </FilterChip>
       </div>
 
       <Card>
@@ -126,9 +160,11 @@ export default async function PaymentsPage({
                 title="No payments match these filters"
                 description="Record offline dues on Memberships or wait for Stripe checkout to complete."
                 action={
-                  <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
-                    Go to memberships
-                  </Link>
+                  access?.canWrite ? (
+                    <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
+                      Go to memberships
+                    </Link>
+                  ) : undefined
                 }
               />
             </div>
@@ -141,6 +177,7 @@ export default async function PaymentsPage({
                 <DataTableHeaderCell>Amount</DataTableHeaderCell>
                 <DataTableHeaderCell>Method</DataTableHeaderCell>
                 <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell>Actions</DataTableHeaderCell>
               </DataTableHead>
               <DataTableBody>
                 {financial.recentPayments.map((payment) => (
@@ -167,6 +204,28 @@ export default async function PaymentsPage({
                     <DataTableCell className="text-muted-foreground">{payment.method}</DataTableCell>
                     <DataTableCell>
                       <Badge variant={statusVariant(payment.status)}>{payment.status}</Badge>
+                    </DataTableCell>
+                    <DataTableCell>
+                      <div className="flex flex-col gap-2">
+                        {payment.receipt?.id && (
+                          <Link
+                            href={`/dashboard/payments/receipts/${payment.receipt.id}`}
+                            className="text-xs font-semibold text-primary hover:text-foreground"
+                          >
+                            Receipt
+                          </Link>
+                        )}
+                        {access?.canWrite && (payment.status === "PAID" || payment.status === "PENDING") && (
+                          <form action={refundAction} className="flex flex-col gap-1">
+                            {tenant && <input type="hidden" name={ACTIVE_TENANT_FORM_FIELD} value={tenant.id} />}
+                            <input type="hidden" name="paymentId" value={payment.id} />
+                            <Input name="notes" placeholder="Refund note" className="h-8 text-xs" />
+                            <Button type="submit" variant="secondary" className="h-8 px-2 text-xs">
+                              Mark refunded
+                            </Button>
+                          </form>
+                        )}
+                      </div>
                     </DataTableCell>
                   </DataTableRow>
                 ))}

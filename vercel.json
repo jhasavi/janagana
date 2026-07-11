@@ -1,5 +1,11 @@
 {
   "buildCommand": "npx prisma db push && npx prisma generate && npm run build",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/renewal-reminders",
+      "schedule": "0 14 * * *"
+    }
+  ]
 }
