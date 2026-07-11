@@ -3,6 +3,8 @@
 export type ContactQuickFilter =
   | "all"
   | "members"
+  | "volunteers"
+  | "donors"
   | "leads"
   | "imported"
   | "raklet"
@@ -19,6 +21,16 @@ export const CONTACT_QUICK_FILTERS: ReadonlyArray<{
     id: "members",
     label: "Members",
     href: (base) => `${base}?preset=members`,
+  },
+  {
+    id: "volunteers",
+    label: "Volunteers",
+    href: (base) => `${base}?preset=volunteers`,
+  },
+  {
+    id: "donors",
+    label: "Donors",
+    href: (base) => `${base}?preset=donors`,
   },
   {
     id: "leads",

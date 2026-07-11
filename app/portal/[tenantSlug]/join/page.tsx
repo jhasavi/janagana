@@ -1,5 +1,12 @@
 import { redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2, CreditCard, HeartHandshake } from "lucide-react";
+import { ArrowRight, Check, CreditCard, HeartHandshake } from "lucide-react";
+import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
+import { AutoRenewField } from "@/components/portal/recurring-billing-fields";
+import { PortalFlowLayout } from "@/components/portal/portal-flow-layout";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FormField, FormGrid, Input } from "@/components/ui/input";
 import { createPublicMembershipCheckout, listPublicMembershipTiers } from "@/lib/actions/public-memberships";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import { formatCents } from "@/lib/utils";
@@ -10,6 +17,19 @@ function statusMessage(status?: string, error?: string) {
   if (status === "joined") return "Membership activated. Your receipt has been recorded.";
   if (status === "canceled") return "Checkout was canceled. You can choose a membership and try again.";
   return null;
+}
+
+/** Turn a free-text tier description into short comparison bullets. */
+function tierFeatures(tier: { description: string | null; interval: string }): string[] {
+  if (tier.description) {
+    const parts = tier.description
+      .split(/[•;\n]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts.slice(0, 4);
+  }
+  const intervalLabel = tier.interval === "ONE_TIME" ? "one-time" : tier.interval.toLowerCase();
+  return ["Full member access", `Billed ${intervalLabel}`, "Cancel anytime"];
 }
 
 export default async function PublicMembershipJoinPage({
@@ -37,6 +57,8 @@ export default async function PublicMembershipJoinPage({
       lastName: String(formData.get("lastName") ?? ""),
       email: String(formData.get("email") ?? ""),
       phone: String(formData.get("phone") ?? ""),
+      coverProcessingFee: formData.get("coverProcessingFee") === "1",
+      autoRenew: formData.get("autoRenew") === "1",
     });
 
     if (!checkout.ok || !checkout.checkoutUrl) {
@@ -48,102 +70,112 @@ export default async function PublicMembershipJoinPage({
 
   const message = statusMessage(query.status, query.error);
   const defaultTierId = result.data[0]?.id ?? "";
+  // Middle tier gets the "Most popular" highlight when there are exactly 3 — the
+  // classic good/better/best pattern. With a different count we skip the claim
+  // rather than guess.
+  const featuredIndex = result.data.length === 3 ? 1 : -1;
 
   return (
-    <main className="space-y-7">
-      <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-teal-50 text-teal-900">
-          <HeartHandshake className="h-5 w-5" />
-        </div>
-        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-teal-800">Membership</p>
-        <h1 className="mt-2 text-3xl font-semibold text-slate-950">Join {result.tenant.name}</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-          Choose a membership and enter your details. Paid memberships continue to secure checkout.
-        </p>
-        <p className="mt-3 inline-flex items-center gap-2 rounded-md bg-stone-100 px-3 py-2 text-sm font-medium text-slate-700">
-          <CreditCard className="h-4 w-4 text-teal-900" />
-          {paymentFeeDisclosure()}
-        </p>
-        {message && <p className="mt-4 rounded-md bg-teal-50 px-4 py-3 text-sm text-teal-950">{message}</p>}
-      </section>
+    <PortalFlowLayout
+      icon={<HeartHandshake className="h-5 w-5" />}
+      eyebrow="Membership"
+      title={`Join ${result.tenant.name}`}
+      description="Compare plans, pick the one that fits, and enter your details. Paid memberships continue to secure checkout."
+    >
+      <p className="inline-flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-sm font-medium text-foreground">
+        <CreditCard className="h-4 w-4 text-primary" />
+        {paymentFeeDisclosure()}
+      </p>
+
+      {message && (
+        <Alert variant={query.error ? "error" : "success"} className="mt-4">
+          {message}
+        </Alert>
+      )}
 
       {result.data.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-stone-300 bg-white p-6 text-sm text-slate-600">
-          Memberships are not open online yet. Please check back soon.
-        </div>
+        <EmptyState title="Memberships not open yet" description="Please check back soon." />
       ) : (
-        <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-slate-950">Available memberships</h2>
-            {result.data.map((tier) => (
-              <article key={tier.id} className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="flex items-center gap-2 text-base font-semibold text-slate-950">
-                      <CheckCircle2 className="h-4 w-4 text-teal-800" />
-                      {tier.name}
-                    </h3>
-                    {tier.description && <p className="mt-2 text-sm leading-6 text-slate-600">{tier.description}</p>}
-                  </div>
-                  <p className="shrink-0 text-sm font-semibold text-slate-950">
-                    {formatCents(tier.amountCents)}
-                    <span className="block text-right text-xs font-normal text-slate-500">
-                      {tier.interval.toLowerCase()}
-                    </span>
-                  </p>
-                </div>
-              </article>
-            ))}
+        <form action={checkoutAction} className="mt-6 space-y-8">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Compare plans</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Select the plan that is right for you.</p>
+            <div className={`mt-4 grid gap-4 ${result.data.length >= 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2"}`}>
+              {result.data.map((tier, index) => {
+                const featured = index === featuredIndex;
+                return (
+                  <label key={tier.id} className="group relative block cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tierId"
+                      value={tier.id}
+                      defaultChecked={tier.id === defaultTierId}
+                      className="peer sr-only"
+                      required
+                    />
+                    {featured && (
+                      <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-[10.5px] font-bold text-accent-foreground">
+                        Most popular
+                      </span>
+                    )}
+                    <div className="flex h-full flex-col rounded-2xl border-2 border-border/80 bg-card p-5 shadow-sm transition-all peer-checked:border-primary peer-checked:shadow-md peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+                      <h3 className="text-base font-bold text-foreground">{tier.name}</h3>
+                      <p className="mt-2">
+                        <span className="text-2xl font-extrabold text-foreground">{formatCents(tier.amountCents)}</span>
+                        <span className="ml-1 text-xs font-medium text-muted-foreground">
+                          / {tier.interval === "ONE_TIME" ? "one-time" : tier.interval.toLowerCase()}
+                        </span>
+                      </p>
+                      <ul className="mt-4 flex-1 space-y-2">
+                        {tierFeatures(tier).map((feature) => (
+                          <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+                            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-5 flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs font-bold text-muted-foreground transition-colors peer-checked:border-primary/40 peer-checked:bg-primary/10 peer-checked:text-primary">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-current">
+                          <span className="hidden h-1.5 w-1.5 rounded-full bg-current group-has-[:checked]:block" />
+                        </span>
+                        Select {tier.name}
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
-          <form action={checkoutAction} className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-950">Member details</h2>
-            <div className="mt-5 space-y-4">
-              <label className="block text-sm font-medium text-slate-700">
-                Membership
-                <select
-                  name="tierId"
-                  required
-                  defaultValue={defaultTierId}
-                  className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm"
-                >
-                  {result.data.map((tier) => (
-                    <option key={tier.id} value={tier.id}>
-                      {tier.name} - {formatCents(tier.amountCents)} / {tier.interval.toLowerCase()}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <div className="space-y-4 border-t border-border/70 pt-6">
+            <h2 className="text-lg font-bold text-foreground">Your details</h2>
+            <FormGrid>
+              <FormField label="First name">
+                <Input name="firstName" required />
+              </FormField>
+              <FormField label="Last name">
+                <Input name="lastName" required />
+              </FormField>
+            </FormGrid>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-slate-700">
-                First name
-                  <input name="firstName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-                </label>
-                <label className="block text-sm font-medium text-slate-700">
-                  Last name
-                  <input name="lastName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
+            <FormField label="Email">
+              <Input type="email" name="email" required />
+            </FormField>
 
-              <label className="block text-sm font-medium text-slate-700">
-                Email
-                <input type="email" name="email" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-              </label>
+            <FormField label="Phone">
+              <Input name="phone" type="tel" />
+            </FormField>
 
-              <label className="block text-sm font-medium text-slate-700">
-                Phone
-                <input name="phone" type="tel" className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-              </label>
-            </div>
+            <CoverProcessingFeeField baseCents={result.data[0]?.amountCents ?? 0} />
+            <AutoRenewField defaultChecked />
 
-            <button type="submit" className="mt-6 inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900">
+            <Button type="submit">
               Continue
               <ArrowRight className="h-4 w-4" />
-            </button>
-          </form>
-        </section>
+            </Button>
+          </div>
+        </form>
       )}
-    </main>
+    </PortalFlowLayout>
   );
 }

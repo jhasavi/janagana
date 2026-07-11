@@ -93,8 +93,7 @@ export async function queueEventRegistrationCommunication(registrationId: string
 }
 
 /**
- * Queue a renewal reminder without attempting delivery.
- * Delivery remains opt-in via RESEND when a separate processor runs queued rows.
+ * Queue a renewal reminder and attempt delivery when Resend is configured.
  */
 export async function queueRenewalReminderCommunication(membershipId: string) {
   const membership = await prisma.membership.findUnique({
@@ -116,7 +115,7 @@ export async function queueRenewalReminderCommunication(membershipId: string) {
     ? `Your ${membership.tier.name} membership expires on ${formatDate(membership.expiresAt)}.`
     : `Your ${membership.tier.name} membership is due for renewal.`;
 
-  return queueCommunicationOnly({
+  return queueAndDeliver({
     tenantId: membership.tenantId,
     contactId: membership.contactId,
     membershipId: membership.id,

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, HeartHandshake } from "lucide-react";
+import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
+import { RecurringDonationField } from "@/components/portal/recurring-billing-fields";
+import { PortalFlowLayout } from "@/components/portal/portal-flow-layout";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { FormField, FormGrid, Input, Textarea } from "@/components/ui/input";
 import {
   DONATION_PRESET_CENTS,
   getPublicDonationContext,
@@ -44,130 +50,99 @@ export default async function PublicDonatePage({
   const message = statusMessage(query.status, query.error);
 
   return (
-    <main className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-      <section className="rounded-lg border border-stone-200 bg-teal-950 p-6 text-white shadow-sm sm:p-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-teal-50">
-          <HeartHandshake className="h-5 w-5" />
-        </div>
-        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-teal-100">Support</p>
-        <h1 className="mt-2 text-3xl font-semibold">Donate to {ctx.tenant.name}</h1>
-        <p className="mt-4 text-sm leading-6 text-teal-100">
-          Your gift helps this volunteer-run community continue programs, events, and outreach. JanaGana does not charge a
-          platform fee on donations.
-        </p>
-        <p className="mt-4 text-sm text-teal-50">{paymentFeeDisclosure()}</p>
-        {backUrl && (
-          <a href={backUrl} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-teal-100">
+    <PortalFlowLayout
+      icon={<HeartHandshake className="h-5 w-5" />}
+      eyebrow="Support"
+      title={`Donate to ${ctx.tenant.name}`}
+      description={`Your gift helps this volunteer-run community continue programs, events, and outreach. JanaGana does not charge a platform fee on donations. ${paymentFeeDisclosure()}`}
+      backHref={backUrl}
+      backLabel="Community website"
+    >
+      {message && <Alert variant={query.error ? "error" : "success"}>{message}</Alert>}
+
+      {query.status === "thankyou" && backUrl && (
+        <p className="mt-3">
+          <a
+            href={visitorReturnUrlWithStatus(backUrl, "donation", "thankyou")}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
-            Community website
+            Return to community website
           </a>
-        )}
-      </section>
+        </p>
+      )}
 
-      <section className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-        {message && (
-          <p className="rounded-md bg-teal-50 px-4 py-3 text-sm text-teal-950">{message}</p>
-        )}
+      {!ctx.stripeEnabled && (
+        <Alert variant="warning" className="mt-4">
+          Online donations are not open yet. Please contact the organization directly.
+        </Alert>
+      )}
 
-        {query.status === "thankyou" && backUrl && (
-          <p className="mt-3">
-            <a
-              href={visitorReturnUrlWithStatus(backUrl, "donation", "thankyou")}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-teal-900 hover:text-slate-950"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Return to community website
-            </a>
-          </p>
-        )}
+      {query.status !== "thankyou" && ctx.stripeEnabled && (
+        <form action="/api/public/donate" method="post" className="mt-4 space-y-4">
+          <input type="hidden" name="tenantSlug" value={tenantSlug} />
+          {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
 
-        {!ctx.stripeEnabled && (
-          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            Online donations are not open yet. Please contact the organization directly.
-          </div>
-        )}
-
-        {query.status !== "thankyou" && ctx.stripeEnabled && (
-          <form action="/api/public/donate" method="post" className="mt-4 space-y-4">
-            <input type="hidden" name="tenantSlug" value={tenantSlug} />
-            {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
-
-            <fieldset>
-              <legend className="text-sm font-medium text-slate-700">Gift amount</legend>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {DONATION_PRESET_CENTS.map((cents) => (
-                  <label
-                    key={cents}
-                    className="flex cursor-pointer items-center justify-center rounded-md border border-stone-300 px-3 py-2 text-sm font-semibold text-slate-800 has-[:checked]:border-teal-700 has-[:checked]:bg-teal-50"
-                  >
-                    <input type="radio" name="amountPreset" value={cents} defaultChecked={cents === 5000} className="sr-only" />
-                    {formatCents(cents)}
-                  </label>
-                ))}
-                <label className="flex cursor-pointer items-center justify-center rounded-md border border-stone-300 px-3 py-2 text-sm font-semibold text-slate-800 has-[:checked]:border-teal-700 has-[:checked]:bg-teal-50 sm:col-span-1">
-                  <input type="radio" name="amountPreset" value="custom" className="sr-only" />
-                  Other
+          <fieldset>
+            <legend className="text-sm font-medium text-foreground">Gift amount</legend>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {DONATION_PRESET_CENTS.map((cents) => (
+                <label
+                  key={cents}
+                  className="flex cursor-pointer items-center justify-center rounded-xl border border-input px-3 py-2 text-sm font-semibold text-foreground has-[:checked]:border-primary/40 has-[:checked]:bg-primary/5"
+                >
+                  <input type="radio" name="amountPreset" value={cents} defaultChecked={cents === 5000} className="sr-only" />
+                  {formatCents(cents)}
                 </label>
-              </div>
-              <label className="mt-3 block text-sm text-slate-600">
-                Custom amount (USD)
-                <input
-                  name="customAmountDollars"
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  placeholder="e.g. 75"
-                  className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm"
-                />
-              </label>
-            </fieldset>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm font-medium text-slate-700">
-                First name
-                <input name="firstName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Last name
-                <input name="lastName" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
+              ))}
+              <label className="flex cursor-pointer items-center justify-center rounded-xl border border-input px-3 py-2 text-sm font-semibold text-foreground has-[:checked]:border-primary/40 has-[:checked]:bg-primary/5 sm:col-span-1">
+                <input type="radio" name="amountPreset" value="custom" className="sr-only" />
+                Other
               </label>
             </div>
+            <FormField label="Custom amount (USD)" className="mt-3">
+              <Input name="customAmountDollars" type="number" min="1" step="0.01" placeholder="e.g. 75" />
+            </FormField>
+          </fieldset>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Email
-              <input type="email" name="email" required className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-            </label>
+          <FormGrid>
+            <FormField label="First name">
+              <Input name="firstName" required />
+            </FormField>
+            <FormField label="Last name">
+              <Input name="lastName" required />
+            </FormField>
+          </FormGrid>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Phone (optional)
-              <input name="phone" type="tel" className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-            </label>
+          <FormField label="Email">
+            <Input type="email" name="email" required />
+          </FormField>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Dedication or note (optional)
-              <textarea name="dedication" rows={3} className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-sm" />
-            </label>
+          <FormField label="Phone (optional)">
+            <Input name="phone" type="tel" />
+          </FormField>
 
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900"
-            >
-              Continue to secure checkout
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </form>
-        )}
+          <FormField label="Dedication or note (optional)">
+            <Textarea name="dedication" rows={3} />
+          </FormField>
 
-        <p className="mt-6 text-xs text-slate-500">
-          No login required — this page is public for donors and visitors.
-        </p>
-        <p className="mt-2 text-xs text-slate-500">
-          Portal URL for your website:{" "}
-          <Link href={`/portal/${tenantSlug}/donate`} className="font-mono text-teal-900 hover:underline">
-            /portal/{tenantSlug}/donate
-          </Link>
-        </p>
-      </section>
-    </main>
+          <CoverProcessingFeeField baseCents={5000} />
+          <RecurringDonationField />
+
+          <Button type="submit">
+            Continue to secure checkout
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </form>
+      )}
+
+      <p className="mt-6 text-xs text-muted-foreground">No login required — this page is public for donors and visitors.</p>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Portal URL for your website:{" "}
+        <Link href={`/portal/${tenantSlug}/donate`} className="font-mono text-primary hover:text-foreground">
+          /portal/{tenantSlug}/donate
+        </Link>
+      </p>
+    </PortalFlowLayout>
   );
 }

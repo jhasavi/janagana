@@ -6,6 +6,8 @@ import { communityLabel } from "@/lib/pilot/tenants";
 import { PILOT_TENANT_SLUGS } from "@/lib/pilot/tenants";
 import { findMappedTenantsForUser } from "@/lib/tenant";
 import { isLocalClerkMode } from "@/lib/tenant/onboarding-redirect";
+import { ButtonLink } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
 
 function shortId(value: string): string {
   if (value.length <= 12) return value;
@@ -33,60 +35,62 @@ export default async function NoAccessPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
-      <p className="text-sm font-medium text-amber-800">No operator access yet</p>
-      <h1 className="mt-2 text-2xl font-semibold text-gray-900">Your account is not connected to a pilot community</h1>
-      <p className="mt-3 text-sm text-gray-600">
-        Signed in as <strong>{user.email ?? user.name ?? user.id}</strong>. The production pilot only includes{" "}
-        <strong>{pilotNames}</strong>. Your Clerk organization must be mapped in JanaGana before the dashboard opens.
+      <p className="jg-eyebrow">Access</p>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">No operator access yet</h1>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        Signed in as <strong className="text-foreground">{user.email ?? user.name ?? user.id}</strong>. The production
+        pilot only includes <strong className="text-foreground">{pilotNames}</strong>. Your Clerk organization must be
+        mapped in JanaGana before the dashboard opens.
       </p>
 
       {unmappedOrgs.length > 0 && (
-        <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-          <p className="font-medium">Clerk organizations on your account (not connected):</p>
-          <ul className="mt-3 space-y-2">
-            {unmappedOrgs.map((org) => (
-              <li key={org.clerkOrgId} className="rounded-md border border-amber-100 bg-white px-3 py-2">
-                <p className="font-medium text-gray-900">{org.name}</p>
-                <p className="mt-1 text-xs text-gray-600">
-                  Role: {clerkOrgRoleLabel(org.role)} · Clerk org ID:{" "}
-                  <span className="font-mono">{shortId(org.clerkOrgId)}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <Card className="mt-6 border-amber-200/80 bg-amber-50/50">
+          <CardBody>
+            <p className="font-medium text-foreground">Clerk organizations on your account (not connected)</p>
+            <ul className="mt-3 space-y-2">
+              {unmappedOrgs.map((org) => (
+                <li key={org.clerkOrgId} className="rounded-xl border border-border/70 bg-card px-3 py-2">
+                  <p className="font-medium text-foreground">{org.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Role: {clerkOrgRoleLabel(org.role)} · Clerk org ID:{" "}
+                    <span className="font-mono">{shortId(org.clerkOrgId)}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
       )}
 
       {isLocalClerkMode() && (
-        <div className="mt-6 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-          <p className="font-medium">Local development note</p>
-          <p className="mt-2">
-            You are using <strong>Clerk test</strong> keys. Localhost only works when your test Clerk org IDs match the{" "}
-            <span className="font-mono">Tenant.clerkOrgId</span> rows in your dev database, or when an admin adds you to
-            mapped test orgs.
-          </p>
-          <p className="mt-2">
-            Quick options: run <span className="font-mono">npm run seed:local-clerk</span> after setting org IDs in{" "}
-            <span className="font-mono">.env.local</span>, or sign in on production with your pilot operator account.
-          </p>
-        </div>
+        <Card className="mt-6 border-primary/20 bg-primary/5">
+          <CardBody>
+            <p className="font-medium text-foreground">Local development note</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              You are using <strong>Clerk test</strong> keys. Localhost only works when your test Clerk org IDs match the{" "}
+              <span className="font-mono">Tenant.clerkOrgId</span> rows in your dev database.
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Run <span className="font-mono">npm run seed:local-clerk</span> after setting org IDs in{" "}
+              <span className="font-mono">.env.local</span>, or sign in on production with your pilot operator account.
+            </p>
+          </CardBody>
+        </Card>
       )}
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Link
-          href="https://janagana.namasteneedham.com/sign-in"
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
-        >
-          Open production sign-in
-        </Link>
+        <ButtonLink href="https://janagana.namasteneedham.com/sign-in">Open production sign-in</ButtonLink>
         <form action="/api/sign-out" method="POST">
-          <button type="submit" className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+          <button
+            type="submit"
+            className="inline-flex h-10 items-center rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted/60"
+          >
             Sign out
           </button>
         </form>
       </div>
 
-      <p className="mt-6 text-xs text-gray-500">
+      <p className="mt-6 text-xs text-muted-foreground">
         Need access? Ask your administrator to add you to Namaste Boston or The Purple Wings in Clerk, then map the org in
         JanaGana.
       </p>

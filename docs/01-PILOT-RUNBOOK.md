@@ -110,7 +110,7 @@ After submit you should see **“Registration successful.”** (or “already re
 
 When all boxes in A and B are checked for **both** orgs:
 
-1. Check the manual items in `docs/PRE_LAUNCH_CHECKLIST.md` (Production smoke → Manual section).
+1. Check the manual items in [04-PRODUCTION.md](./04-PRODUCTION.md) (Production smoke → Manual section).
 2. Add one line to [04-PRODUCTION.md](./04-PRODUCTION.md):  
    `Pilot sign-off: <date> by <name> — admin + dual-tenant validated.`
 

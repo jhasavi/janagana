@@ -15,7 +15,8 @@ export type RenewalFilter =
   | "expired"
   | "no_email"
   | "recently_paid"
-  | "needs_reminder";
+  | "needs_reminder"
+  | "payment_failed";
 
 export type RenewalReminderStatus =
   | "none"
@@ -44,6 +45,9 @@ export type MembershipRenewalRow = {
   lastPaymentAt: Date | null;
   lastPaymentAmountCents: number | null;
   recentlyPaid: boolean;
+  hasPaymentIssue: boolean;
+  lastFailedPaymentAt: Date | null;
+  lastFailedPaymentAmountCents: number | null;
   reminderStatus: RenewalReminderStatus;
   lastReminderAt: Date | null;
   isActive: boolean;
@@ -64,6 +68,7 @@ export type MembershipRenewalsSummary = {
   recentlyPaidCount: number;
   needsReminderCount: number;
   noEmailCount: number;
+  paymentIssuesCount: number;
   totalEnrollments: number;
 };
 
@@ -169,6 +174,15 @@ export function classifyMembershipRenewal(
   const recentCutoff = new Date(now.getTime() - RECENT_MEMBERSHIP_PAYMENT_DAYS * MS_PER_DAY);
   const recentlyPaid = lastPaymentAt !== null && lastPaymentAt >= recentCutoff;
 
+  const failedPayments = membership.payments
+    .filter((payment) => payment.status === "FAILED")
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const lastFailedPayment = failedPayments[0] ?? null;
+  // A payment issue is live only if the most recent failure hasn't since been resolved
+  // by a successful payment (dunning state, not stale history).
+  const hasPaymentIssue =
+    lastFailedPayment !== null && (!lastPaymentAt || lastFailedPayment.createdAt > lastPaymentAt);
+
   const renewalComms = membership.communications
     .filter((message) => message.purpose === "RENEWAL_REMINDER")
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -216,6 +230,9 @@ export function classifyMembershipRenewal(
     lastPaymentAt,
     lastPaymentAmountCents: lastPayment?.amountCents ?? null,
     recentlyPaid,
+    hasPaymentIssue,
+    lastFailedPaymentAt: lastFailedPayment ? (lastFailedPayment.paidAt ?? lastFailedPayment.createdAt) : null,
+    lastFailedPaymentAmountCents: lastFailedPayment?.amountCents ?? null,
     reminderStatus,
     lastReminderAt: lastReminder?.createdAt ?? null,
     isActive,
@@ -243,6 +260,7 @@ export function summarizeMembershipRenewals(rows: MembershipRenewalRow[]): Membe
         row.reminderStatus !== "recently_queued",
     ).length,
     noEmailCount: rows.filter((row) => !row.hasUsableEmail).length,
+    paymentIssuesCount: rows.filter((row) => row.hasPaymentIssue).length,
     totalEnrollments: rows.length,
   };
 }
@@ -266,6 +284,8 @@ export function filterMembershipRenewals(
       return rows.filter((row) => !row.hasUsableEmail);
     case "recently_paid":
       return rows.filter((row) => row.recentlyPaid);
+    case "payment_failed":
+      return rows.filter((row) => row.hasPaymentIssue);
     case "needs_reminder":
       return rows.filter(
         (row) =>

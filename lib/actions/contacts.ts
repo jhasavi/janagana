@@ -1,21 +1,8 @@
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/list-filters";
+import { parseContactTags } from "@/lib/contacts/tags";
 import { requireActiveTenantForActions, type TenantActionOptions } from "@/lib/tenant";
-
-function parseTags(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map((tag) => String(tag).trim()).filter(Boolean).slice(0, 12);
-  }
-
-  if (typeof value !== "string") return [];
-
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean)
-    .slice(0, 12);
-}
 
 export const ContactCreateSchema = z
   .object({
@@ -41,17 +28,7 @@ export const ContactUpdateSchema = z
   })
   .strict();
 
-export const ContactListSchema = z
-  .object({
-    q: z.string().trim().max(120).optional().or(z.literal("")),
-    source: z.string().trim().max(80).optional().or(z.literal("")),
-    interestType: z.string().trim().max(80).optional().or(z.literal("")),
-    preset: z
-      .enum(["members", "leads", "no-email", "recent"])
-      .optional()
-      .or(z.literal("")),
-  })
-  .strict();
+export const ContactListSchema = ContactListFilterSchema;
 
 /** Cap list payload — large imports (200+ rows) exceed RSC limits with inline edit forms. */
 export const CONTACT_LIST_PAGE_SIZE = 100;
@@ -82,8 +59,8 @@ export async function createContact(input: unknown, options?: TenantActionOption
         lastActivityAt: new Date(),
         lastActivitySummary: "Manual entry by admin",
         notes: parsed.data.notes || null,
-        tags: parseTags(parsed.data.tags).length
-          ? parseTags(parsed.data.tags)
+        tags: parseContactTags(parsed.data.tags).length
+          ? parseContactTags(parsed.data.tags)
           : ["manual-entry"],
       },
     });
@@ -133,7 +110,7 @@ export async function updateContact(input: unknown, options?: TenantActionOption
       phone: parsed.data.phone || null,
       type: parsed.data.type,
       notes: parsed.data.notes || null,
-      tags: parseTags(parsed.data.tags),
+      tags: parseContactTags(parsed.data.tags),
     },
   });
 
@@ -195,55 +172,14 @@ export async function listContacts(input: unknown = {}) {
       data: [] as any[],
       sourceOptions: [] as string[],
       interestOptions: [] as string[],
+      tagOptions: [] as string[],
     };
   }
 
   const context = auth.context;
   const parsed = ContactListSchema.safeParse(input);
   const filters = parsed.success ? parsed.data : {};
-  const and: Prisma.ContactWhereInput[] = [{ tenantId: context.tenant.id }];
-
-  if (filters.q) {
-    and.push({
-      OR: [
-        { firstName: { contains: filters.q, mode: "insensitive" } },
-        { lastName: { contains: filters.q, mode: "insensitive" } },
-        { email: { contains: filters.q, mode: "insensitive" } },
-        { phone: { contains: filters.q, mode: "insensitive" } },
-        { notes: { contains: filters.q, mode: "insensitive" } },
-      ],
-    });
-  }
-
-  if (filters.source) {
-    and.push({ source: filters.source });
-  }
-
-  if (filters.interestType) {
-    and.push({ interestType: filters.interestType });
-  }
-
-  if (filters.preset === "members") {
-    and.push({
-      OR: [{ type: "MEMBER" }, { memberships: { some: { status: "ACTIVE" } } }],
-    });
-  } else if (filters.preset === "leads") {
-    and.push({ type: "OTHER" });
-  } else if (filters.preset === "no-email") {
-    and.push({
-      OR: [
-        { email: "" },
-        { email: { not: { contains: "@" } } },
-        { email: { endsWith: "@example.com", mode: "insensitive" } },
-      ],
-    });
-  } else if (filters.preset === "recent") {
-    const since = new Date();
-    since.setDate(since.getDate() - 7);
-    and.push({ lastActivityAt: { gte: since } });
-  }
-
-  const where: Prisma.ContactWhereInput = and.length === 1 ? and[0]! : { AND: and };
+  const where = buildContactListWhere(context.tenant.id, filters);
 
   const contacts = await prisma.contact.findMany({
     where,
@@ -281,7 +217,7 @@ export async function listContacts(input: unknown = {}) {
 
   const totalCount = await prisma.contact.count({ where });
 
-  const [sourceRows, interestRows] = await Promise.all([
+  const [sourceRows, interestRows, tagRows] = await Promise.all([
     prisma.contact.findMany({
       where: { tenantId: context.tenant.id, source: { not: null } },
       distinct: ["source"],
@@ -294,7 +230,16 @@ export async function listContacts(input: unknown = {}) {
       select: { interestType: true },
       orderBy: { interestType: "asc" },
     }),
+    prisma.contact.findMany({
+      where: { tenantId: context.tenant.id },
+      select: { tags: true },
+    }),
   ]);
+
+  const tagSet = new Set<string>();
+  for (const row of tagRows) {
+    for (const tag of row.tags) tagSet.add(tag);
+  }
 
   return {
     ok: true as const,
@@ -306,6 +251,7 @@ export async function listContacts(input: unknown = {}) {
     interestOptions: interestRows
       .map((row) => row.interestType)
       .filter((interestType): interestType is string => Boolean(interestType)),
+    tagOptions: Array.from(tagSet).sort(),
   };
 }
 
@@ -330,6 +276,7 @@ export async function getContactProfile(contactId: string) {
             include: {
               receipt: {
                 select: {
+                  id: true,
                   receiptNumber: true,
                   issuedAt: true,
                 },
@@ -362,6 +309,7 @@ export async function getContactProfile(contactId: string) {
             include: {
               receipt: {
                 select: {
+                  id: true,
                   receiptNumber: true,
                   issuedAt: true,
                 },
@@ -376,6 +324,7 @@ export async function getContactProfile(contactId: string) {
         include: {
           receipt: {
             select: {
+              id: true,
               receiptNumber: true,
               issuedAt: true,
             },

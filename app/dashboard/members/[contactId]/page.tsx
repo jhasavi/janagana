@@ -1,28 +1,60 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { ContactEditForm } from "@/components/dashboard/contact-edit-form";
+import { ContactTimeline } from "@/components/dashboard/contact-timeline";
+import { DigitalMembershipCard } from "@/components/dashboard/digital-membership-card";
+import { ContactTagBadges } from "@/components/dashboard/contact-tags-field";
+import { CopyEmailButton } from "@/components/dashboard/copy-email-button";
 import { DeleteContactButton } from "@/components/dashboard/delete-contact-button";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
-import { deleteContact, getContactProfile } from "@/lib/actions/contacts";
-import { contactSourceLabel, contactTypeLabel, formatContactTags } from "@/lib/pilot/contact-labels";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { EmptyState as UiEmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
+import { deleteContact, getContactProfile, updateContact } from "@/lib/actions/contacts";
+import { buildContactTimeline } from "@/lib/contacts/timeline";
+import {
+  contactInterestLabel,
+  contactSourceLabel,
+  contactTypeLabel,
+} from "@/lib/pilot/contact-labels";
 import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 
-function statusClass(status: string) {
-  if (status === "ACTIVE" || status === "CONFIRMED" || status === "ATTENDED" || status === "PAID") {
-    return "bg-emerald-100 text-emerald-900";
-  }
-  if (status === "PENDING" || status === "PENDING_PAYMENT") return "bg-amber-100 text-amber-900";
-  if (status === "EXPIRED" || status === "FAILED" || status === "NO_SHOW") return "bg-red-100 text-red-900";
-  return "bg-gray-100 text-gray-700";
+function statusBadgeVariant(status: string): "success" | "warning" | "danger" | "default" {
+  if (status === "ACTIVE" || status === "CONFIRMED" || status === "ATTENDED" || status === "PAID") return "success";
+  if (status === "PENDING" || status === "PENDING_PAYMENT") return "warning";
+  if (status === "EXPIRED" || status === "FAILED" || status === "NO_SHOW") return "danger";
+  return "default";
+}
+
+function contactTypeBadgeVariant(type: string): "brand" | "success" | "warning" | "default" {
+  if (type === "MEMBER") return "brand";
+  if (type === "DONOR") return "success";
+  if (type === "VOLUNTEER") return "warning";
+  return "default";
 }
 
 export default async function ContactProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ contactId: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const { contactId } = await params;
+  const query = await searchParams;
   const [resolution, result] = await Promise.all([
     resolveTenantForDashboard(),
     getContactProfile(contactId),
@@ -34,6 +66,38 @@ export default async function ContactProfilePage({
   }
 
   const contact = result.data;
+
+  async function updateContactAction(formData: FormData) {
+    "use server";
+
+    const id = String(formData.get("contactId") ?? "").trim();
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const updateResult = await updateContact(
+      {
+        contactId: id,
+        firstName: String(formData.get("firstName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+        phone: String(formData.get("phone") ?? ""),
+        type: String(formData.get("type") ?? "OTHER"),
+        notes: String(formData.get("notes") ?? ""),
+        tags: String(formData.get("tags") ?? ""),
+      },
+      { tenantIdHint: tenantHint },
+    );
+
+    if (!updateResult.ok) {
+      const errorMessage = "error" in updateResult && updateResult.error ? updateResult.error : "Failed to update";
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/members/${id}?error=${encodeURIComponent(errorMessage)}`);
+      }
+      redirect(`/dashboard/members/${id}?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, `/dashboard/members/${id}?success=updated`);
+    }
+    redirect(`/dashboard/members/${id}?success=updated`);
+  }
 
   async function deleteContactAction(formData: FormData) {
     "use server";
@@ -55,6 +119,7 @@ export default async function ContactProfilePage({
   }
 
   const activeMemberships = contact.memberships.filter((membership) => membership.status === "ACTIVE");
+  const primaryActiveMembership = activeMemberships[0];
   const paidTotal = contact.payments
     .filter((payment) => payment.status === "PAID" || payment.status === "WAIVED")
     .reduce((sum, payment) => sum + payment.amountCents, 0);
@@ -63,80 +128,146 @@ export default async function ContactProfilePage({
     .reduce((sum, payment) => sum + payment.amountCents, 0);
 
   return (
-    <section className="space-y-5">
-      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="People"
+        title={`${contact.firstName} ${contact.lastName}`}
+        description={
+          <span className="flex flex-wrap items-center gap-2">
+            <a href={`mailto:${contact.email}`} className="font-medium text-primary hover:text-foreground">
+              {contact.email}
+            </a>
+            <CopyEmailButton email={contact.email} />
+          </span>
+        }
+        actions={<ButtonLink href="/dashboard/members" variant="secondary" size="sm">Back to contacts</ButtonLink>}
+      />
 
-      <Link href="/dashboard/members" className="text-sm font-medium text-blue-700 hover:underline">
-        ← Back to contacts
-      </Link>
+      {query.error && <Alert variant="error">{query.error}</Alert>}
+      {query.success === "updated" && <Alert variant="success">Contact updated.</Alert>}
 
-      <header className="rounded-md border border-gray-200 bg-white p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-gray-500">Contact profile</p>
-            <h1 className="mt-1 text-2xl font-semibold text-gray-900">
-              {contact.firstName} {contact.lastName}
-            </h1>
-            <p className="mt-1 text-sm text-gray-700">{contact.email}</p>
-            <p className="text-sm text-gray-500">{contact.phone ?? "No phone"}</p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+        <Card>
+          <CardBody className="space-y-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">{contact.phone ?? "No phone on file"}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={contactTypeBadgeVariant(contact.type)}>{contactTypeLabel(contact.type)}</Badge>
+                  {contact.interestType && (
+                    <Badge variant="default">{contactInterestLabel(contact.interestType)}</Badge>
+                  )}
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3 md:min-w-[420px]">
+                <StatCard label="Active memberships" value={String(activeMemberships.length)} />
+                <StatCard label="Paid / waived" value={formatCents(paidTotal)} />
+                <StatCard label="Pending" value={formatCents(pendingTotal)} />
+              </div>
+            </div>
+
+            <dl className="grid gap-3 text-sm md:grid-cols-3">
+              <ProfileRow label="Source">{contactSourceLabel(contact.source)}</ProfileRow>
+              <ProfileRow label="First seen">{formatDate(contact.createdAt)}</ProfileRow>
+              <ProfileRow label="Last activity">
+                {contact.lastActivityAt ? formatRelativeTime(contact.lastActivityAt) : "None"}
+              </ProfileRow>
+              <ProfileRow label="Community">{contact.tenant.slug}</ProfileRow>
+              <ProfileRow label="Tags">
+                <ContactTagBadges tags={contact.tags} />
+              </ProfileRow>
+            </dl>
+
+            {contact.notes && (
+              <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Admin notes</p>
+                <p className="mt-1 whitespace-pre-wrap">{contact.notes}</p>
+              </div>
+            )}
+
+            <form action={deleteContactAction} className="border-t border-border/70 pt-4">
+              {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
+              <DeleteContactButton
+                contactId={contact.id}
+                displayName={`${contact.firstName} ${contact.lastName}`}
+                label="Delete this contact"
+              />
+            </form>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">Quick links</h2>
+            <nav className="flex flex-col gap-2 text-sm">
+              <Link href="/dashboard/renewals" className="font-medium text-primary hover:text-foreground">
+                Membership renewals
+              </Link>
+              <Link href="/dashboard/tiers" className="font-medium text-primary hover:text-foreground">
+                Membership tiers
+              </Link>
+              <Link href="/dashboard/events" className="font-medium text-primary hover:text-foreground">
+                Events
+              </Link>
+              <Link href="/dashboard/payments" className="font-medium text-primary hover:text-foreground">
+                All payments
+              </Link>
+            </nav>
+          </CardBody>
+        </Card>
+      </div>
+
+      <Card>
+        <CardBody>
+          <h2 className="text-base font-bold text-foreground">Activity timeline</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Every touchpoint with {contact.firstName} in one chronological view — import, registrations, payments, and
+            messages.
+          </p>
+          <div className="mt-5">
+            <ContactTimeline events={buildContactTimeline(contact)} />
           </div>
-          <div className="grid gap-2 text-sm sm:grid-cols-3 md:min-w-[420px]">
-            <Metric label="Active memberships" value={activeMemberships.length} />
-            <Metric label="Paid / waived" value={formatCents(paidTotal)} />
-            <Metric label="Pending" value={formatCents(pendingTotal)} />
-          </div>
-        </div>
-        <dl className="mt-5 grid gap-3 text-sm md:grid-cols-3">
-          <ProfileRow label="Type">{contactTypeLabel(contact.type)}</ProfileRow>
-          <ProfileRow label="Source">{contactSourceLabel(contact.source)}</ProfileRow>
-          <ProfileRow label="First seen">{formatDate(contact.createdAt)}</ProfileRow>
-          <ProfileRow label="Last activity">
-            {contact.lastActivityAt ? formatRelativeTime(contact.lastActivityAt) : "None"}
-          </ProfileRow>
-          <ProfileRow label="Tags">{contact.tags.length ? formatContactTags(contact.tags) : "None"}</ProfileRow>
-          <ProfileRow label="Tenant">{contact.tenant.slug}</ProfileRow>
-        </dl>
-        {contact.notes && (
-          <div className="mt-4 rounded-md border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
-            <p className="font-medium text-gray-900">Admin notes</p>
-            <p className="mt-1 whitespace-pre-wrap">{contact.notes}</p>
-          </div>
-        )}
-        <form action={deleteContactAction} className="mt-4 border-t border-gray-100 pt-4">
-          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
-          <DeleteContactButton
-            contactId={contact.id}
-            displayName={`${contact.firstName} ${contact.lastName}`}
-            label="Delete this contact"
-          />
-        </form>
-      </header>
+        </CardBody>
+      </Card>
+
+      {primaryActiveMembership && (
+        <DigitalMembershipCard
+          contactName={`${contact.firstName} ${contact.lastName}`}
+          membership={{
+            id: primaryActiveMembership.id,
+            status: primaryActiveMembership.status,
+            expiresAt: primaryActiveMembership.expiresAt,
+            tier: primaryActiveMembership.tier,
+            tenant: contact.tenant,
+          }}
+        />
+      )}
+
+      {tenant && <ContactEditForm tenantId={tenant.id} contact={contact} action={updateContactAction} />}
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Panel title="Memberships">
           {contact.memberships.length === 0 ? (
-            <EmptyState>No formal memberships yet.</EmptyState>
+            <UiEmptyState title="No formal memberships yet." />
           ) : (
             <div className="space-y-3">
               {contact.memberships.map((membership) => (
-                <article key={membership.id} className="rounded border border-gray-200 p-3">
+                <article key={membership.id} className="rounded-xl border border-border p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium text-gray-900">{membership.tier.name}</p>
-                      <p className="text-xs text-gray-600">
+                      <p className="font-medium text-foreground">{membership.tier.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {formatCents(membership.tier.amountCents)} / {membership.tier.interval.toLowerCase()}
                       </p>
                     </div>
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClass(membership.status)}`}>
-                      {membership.status}
-                    </span>
+                    <Badge variant={statusBadgeVariant(membership.status)}>{membership.status}</Badge>
                   </div>
-                  <p className="mt-2 text-xs text-gray-600">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     Starts {formatDate(membership.startsAt)}
                     {membership.expiresAt ? ` · Expires ${formatDate(membership.expiresAt)}` : " · No expiration"}
                   </p>
                   {membership.payments.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-xs text-gray-700">
+                    <ul className="mt-2 space-y-1 text-xs text-foreground/80">
                       {membership.payments.map((payment) => (
                         <li key={payment.id}>
                           {formatCents(payment.amountCents)} · {payment.status} · {payment.method.replace(/_/g, " ")}
@@ -151,32 +282,32 @@ export default async function ContactProfilePage({
           )}
         </Panel>
 
-        <Panel title="Event History">
+        <Panel title="Event history">
           {contact.registrations.length === 0 ? (
-            <EmptyState>No event registrations yet.</EmptyState>
+            <UiEmptyState title="No event registrations yet." />
           ) : (
             <div className="space-y-3">
               {contact.registrations.map((registration) => (
-                <article key={registration.id} className="rounded border border-gray-200 p-3">
+                <article key={registration.id} className="rounded-xl border border-border p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium text-gray-900">{registration.event.title}</p>
-                      <p className="text-xs text-gray-600">{formatDate(registration.event.startsAt)}</p>
+                      <p className="font-medium text-foreground">{registration.event.title}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(registration.event.startsAt)}</p>
                     </div>
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClass(registration.status)}`}>
-                      {registration.status}
-                    </span>
+                    <Badge variant={statusBadgeVariant(registration.status)}>{registration.status}</Badge>
                   </div>
-                  <p className="mt-2 text-xs text-gray-600">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {registration.ticketType?.name ?? "General admission"} · Qty {registration.quantity} ·{" "}
                     {formatCents(registration.amountCents)}
                   </p>
                   {registration.checkedInAt && (
-                    <p className="mt-1 text-xs text-gray-500">Checked in {formatRelativeTime(registration.checkedInAt)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Checked in {formatRelativeTime(registration.checkedInAt)}
+                    </p>
                   )}
                   <Link
                     href={`/dashboard/events/${registration.event.id}/registrations`}
-                    className="mt-2 inline-block text-xs text-blue-700 underline"
+                    className="mt-2 inline-block text-xs font-semibold text-primary hover:text-foreground"
                   >
                     Open event registrations
                   </Link>
@@ -187,111 +318,88 @@ export default async function ContactProfilePage({
         </Panel>
       </section>
 
-      <Panel title="Payments & Receipts">
+      <Panel title="Payments & receipts">
         {contact.payments.length === 0 ? (
-          <EmptyState>No payments recorded.</EmptyState>
+          <UiEmptyState title="No payments recorded." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-                  <th className="py-2 pr-4">When</th>
-                  <th className="py-2 pr-4">Purpose</th>
-                  <th className="py-2 pr-4">Amount</th>
-                  <th className="py-2 pr-4">Status</th>
-                  <th className="py-2 pr-4">Receipt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contact.payments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-gray-100">
-                    <td className="py-3 pr-4 text-gray-600">
-                      {payment.paidAt ? formatDate(payment.paidAt) : formatDate(payment.createdAt)}
-                    </td>
-                    <td className="py-3 pr-4 text-gray-700">{payment.purpose}</td>
-                    <td className="py-3 pr-4 font-medium text-gray-900">{formatCents(payment.amountCents)}</td>
-                    <td className="py-3 pr-4">
-                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClass(payment.status)}`}>
-                        {payment.status}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-xs text-gray-600">
-                      {payment.receipt ? payment.receipt.receiptNumber : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable>
+            <DataTableHead>
+              <DataTableHeaderCell>When</DataTableHeaderCell>
+              <DataTableHeaderCell>Purpose</DataTableHeaderCell>
+              <DataTableHeaderCell>Amount</DataTableHeaderCell>
+              <DataTableHeaderCell>Status</DataTableHeaderCell>
+              <DataTableHeaderCell>Receipt</DataTableHeaderCell>
+            </DataTableHead>
+            <DataTableBody>
+              {contact.payments.map((payment) => (
+                <DataTableRow key={payment.id}>
+                  <DataTableCell className="text-muted-foreground">
+                    {payment.paidAt ? formatDate(payment.paidAt) : formatDate(payment.createdAt)}
+                  </DataTableCell>
+                  <DataTableCell>{payment.purpose}</DataTableCell>
+                  <DataTableCell className="font-medium">{formatCents(payment.amountCents)}</DataTableCell>
+                  <DataTableCell>
+                    <Badge variant={statusBadgeVariant(payment.status)}>{payment.status}</Badge>
+                  </DataTableCell>
+                  <DataTableCell className="text-xs text-muted-foreground">
+                    {payment.receipt ? payment.receipt.receiptNumber : "—"}
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
         )}
       </Panel>
 
-      <Panel title="Communication Outbox">
+      <Panel title="Communication outbox">
         {contact.communications.length === 0 ? (
-          <EmptyState>No communication messages queued yet.</EmptyState>
+          <UiEmptyState title="No communication messages queued yet." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-                  <th className="py-2 pr-4">Created</th>
-                  <th className="py-2 pr-4">Purpose</th>
-                  <th className="py-2 pr-4">Subject</th>
-                  <th className="py-2 pr-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contact.communications.map((message) => (
-                  <tr key={message.id} className="border-b border-gray-100 align-top">
-                    <td className="py-3 pr-4 text-gray-600">{formatRelativeTime(message.createdAt)}</td>
-                    <td className="py-3 pr-4 text-gray-700">{message.purpose.replace(/_/g, " ")}</td>
-                    <td className="py-3 pr-4">
-                      <p className="font-medium text-gray-900">{message.subject}</p>
-                      <p className="mt-1 max-w-2xl whitespace-pre-wrap text-xs text-gray-600">{message.body}</p>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusClass(message.status)}`}>
-                        {message.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable>
+            <DataTableHead>
+              <DataTableHeaderCell>Created</DataTableHeaderCell>
+              <DataTableHeaderCell>Purpose</DataTableHeaderCell>
+              <DataTableHeaderCell>Subject</DataTableHeaderCell>
+              <DataTableHeaderCell>Status</DataTableHeaderCell>
+            </DataTableHead>
+            <DataTableBody>
+              {contact.communications.map((message) => (
+                <DataTableRow key={message.id} className="align-top">
+                  <DataTableCell className="text-muted-foreground">{formatRelativeTime(message.createdAt)}</DataTableCell>
+                  <DataTableCell>{message.purpose.replace(/_/g, " ")}</DataTableCell>
+                  <DataTableCell>
+                    <p className="font-medium">{message.subject}</p>
+                    <p className="mt-1 max-w-2xl whitespace-pre-wrap text-xs text-muted-foreground">{message.body}</p>
+                  </DataTableCell>
+                  <DataTableCell>
+                    <Badge variant={statusBadgeVariant(message.status)}>{message.status}</Badge>
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
         )}
       </Panel>
     </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-      <span className="text-xs text-gray-500">{label}</span>
-      <p className="text-base font-semibold text-gray-900">{value}</p>
-    </div>
   );
 }
 
 function ProfileRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-      <dd className="mt-1 text-gray-800">{children}</dd>
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-foreground">{children}</dd>
     </div>
   );
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-md border border-gray-200 bg-white p-4">
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </section>
+    <Card>
+      <CardBody>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        <div className="mt-3">{children}</div>
+      </CardBody>
+    </Card>
   );
-}
-
-function EmptyState({ children }: { children: React.ReactNode }) {
-  return <div className="rounded border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">{children}</div>;
 }

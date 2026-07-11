@@ -17,6 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { COMMUNITY_OS_NAV, type DashboardNavGroup, type DashboardNavItem } from "@/lib/pilot/dashboard-nav";
+import { cn } from "@/lib/utils";
 
 const navIcons: Record<string, typeof LayoutDashboard> = {
   "/dashboard": LayoutDashboard,
@@ -46,16 +47,12 @@ function NavLink({ item, pathname }: { item: DashboardNavItem; pathname: string 
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
-        active
-          ? "bg-white font-semibold text-slate-950 shadow-sm ring-1 ring-stone-200"
-          : "text-slate-600 hover:bg-white hover:text-slate-950 hover:shadow-sm"
-      }`}
+      className={cn("jg-nav-link", active && "jg-nav-link-active")}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon className="h-[18px] w-[18px] shrink-0" />
       <span className="flex-1">{item.label}</span>
       {item.status === "coming-soon" && (
-        <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-muted-foreground/80">
           Soon
         </span>
       )}
@@ -68,14 +65,10 @@ export function DashboardNav({ groups }: { groups?: DashboardNavGroup[] }) {
   const navGroups = groups ?? COMMUNITY_OS_NAV.map((group) => ({ label: group.label, items: [...group.items] }));
 
   return (
-    <nav className="space-y-5">
+    <nav className="space-y-1">
       {navGroups.map((group) => (
         <div key={group.label ?? "root"}>
-          {group.label && (
-            <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {group.label}
-            </p>
-          )}
+          {group.label && <p className="jg-nav-group-label">{group.label}</p>}
           <div className="space-y-0.5">
             {group.items.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} />

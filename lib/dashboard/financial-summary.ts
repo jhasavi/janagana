@@ -1,6 +1,17 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getTenantFinancialSummary(tenantId: string) {
+export type PaymentListFilters = {
+  purpose?: "MEMBERSHIP" | "EVENT" | "DONATION";
+  status?: "PAID" | "PENDING" | "FAILED" | "WAIVED" | "REFUNDED";
+};
+
+export async function getTenantFinancialSummary(tenantId: string, filters: PaymentListFilters = {}) {
+  const paymentWhere = {
+    tenantId,
+    ...(filters.purpose ? { purpose: filters.purpose } : {}),
+    ...(filters.status ? { status: filters.status } : {}),
+  };
+
   const [membershipPaid, eventPaid, donationPaid, pendingCount, recentPayments] = await Promise.all([
     prisma.paymentRecord.aggregate({
       where: { tenantId, purpose: "MEMBERSHIP", status: "PAID" },
@@ -21,9 +32,9 @@ export async function getTenantFinancialSummary(tenantId: string) {
       where: { tenantId, status: { in: ["PENDING", "FAILED"] } },
     }),
     prisma.paymentRecord.findMany({
-      where: { tenantId },
+      where: paymentWhere,
       orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
-      take: 5,
+      take: 25,
       select: {
         id: true,
         amountCents: true,

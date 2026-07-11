@@ -2,9 +2,12 @@ import { z } from "zod";
 import { headers } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { configuredAppUrl } from "@/lib/environment";
 import { getTenantBySlug } from "@/lib/tenant";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
+import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { createStripeCheckoutSession, stripeCheckoutConfigured } from "@/lib/payments/stripe";
 
 const PublicRegistrationSchema = z
   .object({
@@ -16,6 +19,7 @@ const PublicRegistrationSchema = z
     lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
+    coverProcessingFee: z.boolean().optional().default(false),
   })
   .strict();
 
@@ -327,9 +331,12 @@ export async function registerPublicEvent(input: unknown) {
                     registrationId: registration.id,
                     amountCents,
                     status: "PENDING",
-                    method: "OFFLINE",
+                    method: stripeCheckoutConfigured() ? "STRIPE" : "OFFLINE",
                     purpose: "EVENT",
-                    notes: "Event ticket payment due",
+                    provider: stripeCheckoutConfigured() ? "stripe" : null,
+                    notes: stripeCheckoutConfigured()
+                      ? "Event ticket checkout started"
+                      : "Event ticket payment due",
                   },
                 })
               : null;
@@ -366,6 +373,72 @@ export async function registerPublicEvent(input: unknown) {
           },
         },
       });
+
+      if (result.payment && result.payment.amountCents > 0 && stripeCheckoutConfigured()) {
+        const amounts = calculateCheckoutAmount({
+          baseCents: result.payment.amountCents,
+          coverProcessingFee: parsed.data.coverProcessingFee,
+        });
+
+        await prisma.paymentRecord.update({
+          where: { id: result.payment.id },
+          data: {
+            amountCents: amounts.totalCents,
+            notes: amounts.processingFeeCents
+              ? `Stripe checkout · registrant covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
+              : "Stripe checkout session pending",
+          },
+        });
+
+        const successUrl = `${configuredAppUrl()}/portal/${tenant.slug}/register/${event.slug}?status=processing&session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${configuredAppUrl()}/portal/${tenant.slug}/register/${event.slug}?status=canceled`;
+
+        const checkout = await createStripeCheckoutSession({
+          amountCents: amounts.totalCents,
+          currency: "USD",
+          customerEmail: result.contact.email,
+          productName: `${event.title} — event ticket`,
+          successUrl,
+          cancelUrl,
+          clientReferenceId: result.payment.id,
+          metadata: {
+            paymentRecordId: result.payment.id,
+            tenantId: tenant.id,
+            tenantSlug: tenant.slug,
+            contactId: result.contact.id,
+            eventId: event.id,
+            registrationId: result.registration.id,
+            purpose: "EVENT",
+            baseAmountCents: String(amounts.baseCents),
+            processingFeeCents: String(amounts.processingFeeCents),
+            coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
+            janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
+            janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),
+          },
+        });
+
+        if (!checkout.ok) {
+          await prisma.paymentRecord.update({
+            where: { id: result.payment.id },
+            data: { status: "FAILED", notes: checkout.error },
+          });
+          return {
+            ok: false as const,
+            alreadyRegistered: false as const,
+            error: checkout.error,
+          };
+        }
+
+        await prisma.paymentRecord.update({
+          where: { id: result.payment.id },
+          data: { providerRef: checkout.sessionId },
+        });
+
+        return {
+          ...result,
+          checkoutUrl: checkout.url,
+        };
+      }
 
       await queueEventRegistrationCommunication(result.registration.id);
 

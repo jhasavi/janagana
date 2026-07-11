@@ -40,7 +40,7 @@ export const COMMUNITY_OS_NAV: readonly DashboardNavGroup[] = [
     label: "Operations",
     items: [
       { href: "/dashboard/payments", label: "Payments", status: "live" },
-      { href: "/dashboard/communications", label: "Communications", status: "coming-soon" },
+      { href: "/dashboard/communications", label: "Communications", status: "live" },
       { href: "/dashboard/settings", label: "Settings", status: "live" },
     ],
   },

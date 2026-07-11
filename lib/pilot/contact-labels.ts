@@ -105,10 +105,19 @@ export function importProvenanceLabel(contact: {
   return "Import";
 }
 
-/** Pilot contact types only — see docs/PARKING-LOT.md for staff/vendor/guest roles later. */
+/** Contact types an operator can assign from the Contacts UI (create + edit). */
 export const CONTACT_TYPE_OPTIONS = [
   { value: "OTHER", label: "Lead / inquiry" },
+  { value: "MEMBER", label: "Member" },
+  { value: "VOLUNTEER", label: "Volunteer" },
+  { value: "DONOR", label: "Donor" },
   { value: "REGISTRANT", label: "Event registrant" },
 ] as const;
+
+export type ContactTypeOptionValue = (typeof CONTACT_TYPE_OPTIONS)[number]["value"];
+
+export function isContactTypeOption(value: string): value is ContactTypeOptionValue {
+  return CONTACT_TYPE_OPTIONS.some((option) => option.value === value);
+}
 
 export const MANUAL_CONTACT_TYPE_OPTIONS = CONTACT_TYPE_OPTIONS;

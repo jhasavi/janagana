@@ -19,9 +19,27 @@ Do not pass dashboard cookies into public portal resolution.
 
 ## Platform surfaces
 
-Admin-managed membership tiers, formal enrollments, renewal dates, statuses, public membership checkout, Stripe webhook activation, event ticket types, quantity-aware event registration, check-in/no-show status, receipts, transactional communication outbox, and the shared payment ledger are exposed. Donations, CRM pipelines, online event checkout, refunds, payout reporting, provider email delivery, scheduled reminders, and campaigns remain deferred.
+**Live:** Admin membership tiers and enrollments; renewals desk with failed-payment/dunning visibility; Stripe subscriptions (`autoRenew`); renewal reminder job; public join (side-by-side tier comparison)/donate/event checkout; donor-covered processing fee toggle; digital membership card + verify API; contact CRM (edit, type/role, tags, filters, export, unified activity timeline); payments ledger; printable receipts + year-end giving summary export; communications admin UI (outbox with retry); transactional communication outbox (queue + Resend delivery); event registration with paid Stripe checkout; contact import; embed API.
 
-Payment policy: JanaGana platform fee is currently 0 bps. Stripe/card processor fees are not hidden; a Zeffy-style payer contribution or verified nonprofit subsidy model would be a later business-model layer, not a silent checkout assumption.
+**Deferred (post-pilot):** CRM pipeline automation; refunds UI; payout reporting; authenticated member self-service portal; households / group membership; member directory; custom contact fields; Apple/Google Wallet passes; campaigns; analytics.
+
+Payment policy: JanaGana platform fee is **0 bps**. Stripe processor fees are disclosed; optional payer contribution is built on donate, join, and paid events.
+
+## Parking lot (explicit deferrals)
+
+Do not expand until NB/TPW pilot sign-off unless listed in [18-JOIN-IT-ZEFFY-DEMO-PLAN.md](./18-JOIN-IT-ZEFFY-DEMO-PLAN.md).
+
+### Contact roles (staff, volunteer, guest, director, vendor)
+
+**Today:** Every person is a **Contact** per tenant. Operators assign `type` (Lead, Member, Volunteer, Donor, or Event registrant) at creation or via edit, filter by it on the Contacts list, plus `interestType` / `source` and freeform `tags` (`staff`, `vendor`, …).
+
+**Later:** Operator-side permission levels (e.g. a restricted "volunteer coordinator" login) and first-class role permissions — distinct from formal **Membership** (tiers, Stripe, renewals) and from the Contact `type` field above.
+
+### Other deferred modules
+
+- Families / households (`/dashboard/families` placeholder)
+- Volunteers, sponsors dedicated dashboard modules (placeholders — volunteers/donors are usable today as Contact types, see above)
+- Custom portal domains, full dark mode, self-serve onboarding polish
 
 ## Product workflow principles
 

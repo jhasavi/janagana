@@ -2,7 +2,7 @@
 
 **Sequence:** Pilot Demo v1 green → TPW integration → Namaste Boston → ICON/Raklet review.
 
-**Demo runbook:** [JANAGANA_LITE_PILOT_DEMO_V1.md](./JANAGANA_LITE_PILOT_DEMO_V1.md) · Gate: `npm run verify:pilot-demo`
+**Demo runbook:** [docs/14-PRODUCT-SHOWCASE.md](./docs/14-PRODUCT-SHOWCASE.md) — 15-minute script, URLs, go/no-go, and `npm run verify:pilot-demo`.
 
 **Repos:** JanaGana `~/janagana` · TPW site `~/tpw`  
 **Production:** https://janagana.namasteneedham.com · https://www.thepurplewings.org  

@@ -2,8 +2,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { FormField, Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { clerkOrgRoleLabel } from "@/lib/auth/clerk-roles";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
@@ -82,205 +87,239 @@ export default async function SettingsPage() {
   })();
 
   return (
-    <section className="space-y-4">
-      {activeTenant && <TenantScopeBanner slug={activeTenant.slug} name={activeTenant.name} />}
-
-      <h1 className="text-2xl font-semibold">Portal & setup</h1>
-      <p className="mt-2 max-w-2xl text-sm text-gray-600">
-        Operator setup for{" "}
-        {activeTenant ? communityLabel(activeTenant.slug) : "your community"}: public portal URL, website links, and
-        whether your Clerk login maps to this tenant. Access is enforced by{" "}
-        <strong>Clerk org membership</strong>, not a separate admin table.
-      </p>
+    <section className="space-y-6">
+      <PageHeader
+        title="Portal & setup"
+        description={`Operator setup for ${activeTenant ? communityLabel(activeTenant.slug) : "your community"}: public portal URL, website links, and whether your Clerk login maps to this tenant. Access is enforced by Clerk org membership, not a separate admin table.`}
+      />
 
       {activeTenant && (
-        <div className="mt-6 rounded-md border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Public portal branding</h2>
-          <p className="mt-1 text-sm text-gray-600">Shown on your public portal header.</p>
-          <form action={updateBrandingAction} className="mt-4 grid gap-3 md:grid-cols-2">
-            <TenantScopeHiddenFields tenantId={activeTenant.id} />
-            <label className="block text-sm md:col-span-2">
-              Tagline
-              <input
-                name="publicTagline"
-                defaultValue={branding?.publicTagline ?? ""}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block text-sm">
-              Contact email
-              <input
-                name="publicContactEmail"
-                type="email"
-                defaultValue={branding?.publicContactEmail ?? ""}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block text-sm">
-              Contact phone
-              <input
-                name="publicContactPhone"
-                defaultValue={branding?.publicContactPhone ?? ""}
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block text-sm md:col-span-2">
-              Logo URL
-              <input
-                name="logoUrl"
-                type="url"
-                defaultValue={branding?.logoUrl ?? ""}
-                placeholder="https://..."
-                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              />
-            </label>
-            <div className="md:col-span-2">
-              <button type="submit" className="rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black">
-                Save branding
-              </button>
-            </div>
-          </form>
-        </div>
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-foreground">Public portal branding</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Shown on your public portal header.</p>
+            <form action={updateBrandingAction} className="mt-4 grid gap-3 md:grid-cols-2">
+              <TenantScopeHiddenFields tenantId={activeTenant.id} />
+              <FormField label="Tagline" className="md:col-span-2">
+                <Input name="publicTagline" defaultValue={branding?.publicTagline ?? ""} />
+              </FormField>
+              <FormField label="Contact email">
+                <Input name="publicContactEmail" type="email" defaultValue={branding?.publicContactEmail ?? ""} />
+              </FormField>
+              <FormField label="Contact phone">
+                <Input name="publicContactPhone" defaultValue={branding?.publicContactPhone ?? ""} />
+              </FormField>
+              <FormField label="Logo URL" className="md:col-span-2">
+                <Input name="logoUrl" type="url" defaultValue={branding?.logoUrl ?? ""} placeholder="https://..." />
+              </FormField>
+              <div className="md:col-span-2">
+                <Button type="submit">Save branding</Button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
       )}
 
       {activeTenant && portalUrl && (
-        <div className="mt-6 rounded-md border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Tenant & mapping</h2>
-          <dl className="mt-3 grid grid-cols-1 gap-y-2 text-sm text-gray-700">
-            <Row label="Community">{communityLabel(activeTenant.slug)}</Row>
-            <Row label="Tenant name">{activeTenant.name}</Row>
-            <Row label="Tenant slug (portal path)">
-              <span className="font-mono">{activeTenant.slug}</span>
-            </Row>
-            <Row label="Public portal URL">
-              <a href={portalUrl} target="_blank" rel="noreferrer" className="break-all text-blue-700 underline">
-                {portalUrl}
-              </a>
-            </Row>
-            <Row label="Clerk org ID">
-              <span className="break-all font-mono text-xs">{activeTenant.clerkOrgId}</span>
-            </Row>
-            <Row label="Your Clerk role">{clerkOrgRoleLabel(activeClerkOrg?.role)}</Row>
-            <Row label="Tenant status">{tenantStatusLabel(activeTenant.status)}</Row>
-            <Row label="Mapping status">
-              {tenantMappingStatusLabel({
-                tenantStatus: activeTenant.status,
-                hasClerkMembership: Boolean(activeClerkOrg),
-              })}
-            </Row>
-            <Row label="Contacts in dashboard">{summary?.contactsTotal ?? 0}</Row>
-            <Row label="Published events">{summary?.eventsTotal ?? 0} total in DB</Row>
-          </dl>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <CopyTextButton text={portalUrl} label="Copy portal URL" />
-            <Link href="/dashboard" className="text-sm text-blue-700 underline">
-              Back to overview
-            </Link>
-            {canSwitchCommunity && (
-              <Link href="/api/select-tenant?reason=prepare-switch" className="text-sm text-blue-700 underline">
-                Switch community
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-foreground">Tenant & mapping</h2>
+            <dl className="mt-3 grid grid-cols-1 gap-y-2 text-sm text-foreground">
+              <Row label="Community">{communityLabel(activeTenant.slug)}</Row>
+              <Row label="Tenant name">{activeTenant.name}</Row>
+              <Row label="Tenant slug (portal path)">
+                <span className="font-mono">{activeTenant.slug}</span>
+              </Row>
+              <Row label="Public portal URL">
+                <a href={portalUrl} target="_blank" rel="noreferrer" className="break-all text-primary underline">
+                  {portalUrl}
+                </a>
+              </Row>
+              <Row label="Clerk org ID">
+                <span className="break-all font-mono text-xs">{activeTenant.clerkOrgId}</span>
+              </Row>
+              <Row label="Your Clerk role">
+                <Badge variant="brand">{clerkOrgRoleLabel(activeClerkOrg?.role)}</Badge>
+              </Row>
+              <Row label="Tenant status">
+                <Badge variant={activeTenant.status === "ACTIVE" ? "success" : "warning"}>
+                  {tenantStatusLabel(activeTenant.status)}
+                </Badge>
+              </Row>
+              <Row label="Mapping status">
+                <Badge variant={activeClerkOrg ? "success" : "danger"}>
+                  {tenantMappingStatusLabel({
+                    tenantStatus: activeTenant.status,
+                    hasClerkMembership: Boolean(activeClerkOrg),
+                  })}
+                </Badge>
+              </Row>
+              <Row label="Contacts in dashboard">{summary?.contactsTotal ?? 0}</Row>
+              <Row label="Published events">{summary?.eventsTotal ?? 0} total in DB</Row>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <CopyTextButton text={portalUrl} label="Copy portal URL" />
+              <Link href="/dashboard" className="text-sm text-primary underline">
+                Back to overview
               </Link>
-            )}
-          </div>
-        </div>
+              {canSwitchCommunity && (
+                <Link href="/api/select-tenant?reason=prepare-switch" className="text-sm text-primary underline">
+                  Switch community
+                </Link>
+              )}
+            </div>
+          </CardBody>
+        </Card>
       )}
 
+      <Card>
+        <CardBody>
+          <h2 className="text-sm font-semibold text-foreground">Communities you can access</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Based on your Clerk sign-in. If a community is missing, someone needs to add {user.email ?? "your account"}{" "}
+            to that community&apos;s Clerk organization.
+          </p>
+          {mappedTenants.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">No communities mapped to this login yet.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {mappedTenants.map((t) => (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/80 bg-muted/40 px-3.5 py-2.5"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary">
+                      {t.name.slice(0, 2).toUpperCase()}
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{communityLabel(t.slug)}</p>
+                      <p className="text-xs text-muted-foreground">{t.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={t.id === activeTenant?.id ? "success" : "default"}>
+                      {t.id === activeTenant?.id ? "Currently viewing" : "Available"}
+                    </Badge>
+                    {t.id !== activeTenant?.id && (
+                      <form action="/api/select-tenant" method="POST">
+                        <input type="hidden" name="tenantId" value={t.id} />
+                        <button type="submit" className="text-xs font-bold text-primary hover:text-foreground">
+                          Switch →
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
       {activeTenant && portalUrl && (
-        <div className="mt-4 rounded-md border border-teal-100 bg-teal-50/80 p-4">
-          <h2 className="text-sm font-semibold text-teal-950">How your website connects</h2>
-          <p className="mt-2 text-sm text-teal-900">
-            <strong>You (operator)</strong> use this dashboard at{" "}
-            <span className="font-mono text-xs">{configuredAppUrl()}</span> with Clerk sign-in.
-            <strong className="ml-1">Website visitors</strong> never sign in here — they use the public portal URLs below
-            (linked or embedded from your community website).
-          </p>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-teal-900">
-            <li>
-              <strong>Link-out:</strong> buttons on your site open portal pages; add <code className="font-mono">returnTo</code>{" "}
-              so visitors return to your site after registration.
-            </li>
-            <li>
-              <strong>Embed API:</strong> your site calls the events JSON endpoint and renders its own event cards.
-            </li>
-            <li>
-              <strong>Embed iframe:</strong> append <code className="font-mono">?embed=1</code> to a portal URL for a
-              minimal form inside your page.
-            </li>
-          </ul>
-          <p className="mt-3 text-xs text-teal-800">
-            Full deployment checklist:{" "}
-            <code className="rounded bg-white/60 px-1 font-mono">docs/13-TENANT-WEBSITE-INTEGRATION.md</code> in the repo.
-          </p>
-          <div className="mt-3 rounded border border-teal-200/80 bg-white/70 p-3">
-            <p className="text-xs font-medium text-teal-950">Example iframe (newsletter form)</p>
-            <CopyTextButton
-              text={portalEmbedUrl(`/portal/${activeTenant.slug}/contact?interest=newsletter`)}
-              label="Copy embed URL"
-            />
-            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[10px] text-teal-900">{`<iframe title="Stay updated" src="${portalEmbedUrl(`/portal/${activeTenant.slug}/contact?interest=newsletter`)}" class="w-full min-h-[520px] border-0 rounded-xl" />`}</pre>
-          </div>
-        </div>
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-foreground">How your website connects</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              <strong>You (operator)</strong> use this dashboard at{" "}
+              <span className="font-mono text-xs">{configuredAppUrl()}</span> with Clerk sign-in.{" "}
+              <strong>Website visitors</strong> never sign in here — they use the public portal URLs below (linked or
+              embedded from your community website).
+            </p>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+              <li>
+                <strong>Link-out:</strong> buttons on your site open portal pages; add <code className="font-mono">returnTo</code>{" "}
+                so visitors return to your site after registration.
+              </li>
+              <li>
+                <strong>Embed API:</strong> your site calls the events JSON endpoint and renders its own event cards.
+              </li>
+              <li>
+                <strong>Embed iframe:</strong> append <code className="font-mono">?embed=1</code> to a portal URL for a
+                minimal form inside your page.
+              </li>
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Full deployment checklist:{" "}
+              <code className="rounded bg-muted px-1 font-mono">docs/13-TENANT-WEBSITE-INTEGRATION.md</code> in the repo.
+            </p>
+            <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">
+              <p className="text-xs font-medium text-foreground">Example iframe (newsletter form)</p>
+              <CopyTextButton
+                text={portalEmbedUrl(`/portal/${activeTenant.slug}/contact?interest=newsletter`)}
+                label="Copy embed URL"
+              />
+              <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[10px] text-muted-foreground">{`<iframe title="Stay updated" src="${portalEmbedUrl(`/portal/${activeTenant.slug}/contact?interest=newsletter`)}" class="w-full min-h-[520px] border-0 rounded-xl" />`}</pre>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {tenantLinks.length > 0 && (
-        <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4">
-          <h2 className="text-sm font-semibold text-blue-950">Website links to copy</h2>
-          <p className="mt-1 text-xs text-blue-900">
-            Point your website CTAs here for {activeTenant ? communityLabel(activeTenant.slug) : "this community"}.
-            Visitors do not sign in with Clerk.
-          </p>
-          <ul className="mt-3 space-y-3 text-sm text-blue-950">
-            {tenantLinks.map((link) => (
-              <li key={link.href}>
-                <p className="font-medium">{link.label}</p>
-                {link.hint && <p className="text-xs text-blue-800">{link.hint}</p>}
-                <a href={link.href} target="_blank" rel="noreferrer" className="mt-1 block break-all font-mono text-blue-700 underline">
-                  {link.href}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-foreground">Website links to copy</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Point your website CTAs here for {activeTenant ? communityLabel(activeTenant.slug) : "this community"}.
+              Visitors do not sign in with Clerk.
+            </p>
+            <ul className="mt-3 space-y-3 text-sm text-foreground">
+              {tenantLinks.map((link) => (
+                <li key={link.href}>
+                  <p className="font-medium">{link.label}</p>
+                  {link.hint && <p className="text-xs text-muted-foreground">{link.hint}</p>}
+                  <a href={link.href} target="_blank" rel="noreferrer" className="mt-1 block break-all font-mono text-primary underline">
+                    {link.href}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
       )}
 
-      <div id="pilot-scope" className="mt-6 rounded-md border border-gray-200 bg-gray-50 p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Pilot scope</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          This release is{" "}
-          <strong>
-            contacts, portal leads, event tickets, registrations, check-in, memberships, public membership checkout, and
-            receipts
-          </strong>{" "}
-          for this community. Not included yet: online event checkout, refund
-          operations, automated email campaigns, or Raklet-style website builder. Donations and
-          membership checkout are live.
-        </p>
-      </div>
+      <Card>
+        <CardBody>
+          <h2 className="text-sm font-semibold text-foreground">Pilot scope</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This release is{" "}
+            <strong>
+              contacts, portal leads, event tickets, registrations, check-in, memberships, public membership checkout, and
+              receipts
+            </strong>{" "}
+            for this community. Not included yet: online event checkout, refund operations, automated email campaigns, or
+            Raklet-style website builder. Donations and membership checkout are live.
+          </p>
+        </CardBody>
+      </Card>
 
-      <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4 text-sm text-blue-950">
-        <h2 className="font-semibold">How access works</h2>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>Clerk sign-in proves who you are.</li>
-          <li>Clerk org membership determines which tenants you can open.</li>
-          <li>The dashboard cookie only remembers which tenant you last selected.</li>
-          <li>Public visitors use <span className="font-mono">/portal/{"{slug}"}</span> only.</li>
-        </ul>
-      </div>
+      <Card>
+        <CardBody>
+          <h2 className="font-semibold text-foreground">How access works</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            <li>Clerk sign-in proves who you are.</li>
+            <li>Clerk org membership determines which tenants you can open.</li>
+            <li>The dashboard cookie only remembers which tenant you last selected.</li>
+            <li>
+              Public visitors use <span className="font-mono">/portal/{"{slug}"}</span> only.
+            </li>
+          </ul>
+        </CardBody>
+      </Card>
 
       {!selfServeOnboardingEnabled() && (
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           New communities cannot be self-served in this pilot. Contact your administrator for access changes.
         </p>
       )}
 
-      <details className="mt-6 rounded-md border border-gray-200 bg-white p-4">
-        <summary className="cursor-pointer text-sm font-medium text-gray-700">
-          Advanced diagnostics (engineering)
-        </summary>
-        <p className="mt-2 text-xs text-gray-500">
+      <details className="jg-card p-5">
+        <summary className="cursor-pointer text-sm font-medium text-foreground">Advanced diagnostics (engineering)</summary>
+        <p className="mt-2 text-xs text-muted-foreground">
           For operators troubleshooting mapping. Slug repair, QA cleanup, and reconciliation run outside this UI.
         </p>
-        <dl className="mt-4 grid grid-cols-1 gap-y-2 text-sm text-gray-700">
+        <dl className="mt-4 grid grid-cols-1 gap-y-2 text-sm text-foreground">
           <Row label="Signed-in user">{user.email ?? user.name ?? user.id}</Row>
           <Row label="Tenant resolution">{resolution.status}</Row>
           {resolution.status === "ONE_TENANT" && (
@@ -296,7 +335,9 @@ export default async function SettingsPage() {
           </Row>
           <Row label="Runtime">{appEnvironment}</Row>
           <Row label="Database">{dbHealth ? "reachable" : "unreachable"}</Row>
-          <Row label="Clerk keys">{currentClerkMode()} publishable · {clerkSecretMode} secret</Row>
+          <Row label="Clerk keys">
+            {currentClerkMode()} publishable · {clerkSecretMode} secret
+          </Row>
           <Row label="Clerk webhook secret">
             {engineeringFlags.clerkWebhookSecretConfigured ? "configured" : "missing"}
           </Row>
@@ -312,7 +353,7 @@ export default async function SettingsPage() {
           </Row>
         </dl>
         {unmappedOrgs.length > 0 && (
-          <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+          <Alert variant="warning" className="mt-4">
             <p className="font-medium">Clerk orgs not linked to a tenant</p>
             <ul className="mt-2 list-disc pl-5">
               {unmappedOrgs.map((org) => (
@@ -321,12 +362,12 @@ export default async function SettingsPage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Alert>
         )}
         {activeTenant && (
           <Link
             href={`/onboarding/complete?tenantId=${encodeURIComponent(activeTenant.id)}`}
-            className="mt-4 inline-block text-xs text-blue-700 underline"
+            className="mt-4 inline-block text-xs text-primary underline"
           >
             Onboarding receipt
           </Link>
@@ -339,7 +380,7 @@ export default async function SettingsPage() {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-      <dt className="font-medium text-gray-500">{label}</dt>
+      <dt className="font-medium text-muted-foreground">{label}</dt>
       <dd className="sm:text-right">{children}</dd>
     </div>
   );

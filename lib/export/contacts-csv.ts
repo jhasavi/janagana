@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { rowsToCsv } from "@/lib/export/csv";
+import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/list-filters";
 
-export async function buildContactsCsv(tenantId: string) {
+export async function buildContactsCsv(tenantId: string, filtersInput: unknown = {}) {
+  const parsed = ContactListFilterSchema.safeParse(filtersInput);
+  const filters = parsed.success ? parsed.data : {};
+  const where = buildContactListWhere(tenantId, filters);
+
   const contacts = await prisma.contact.findMany({
-    where: { tenantId },
+    where,
     orderBy: [{ createdAt: "desc" }, { email: "asc" }],
     include: {
       _count: { select: { registrations: true } },

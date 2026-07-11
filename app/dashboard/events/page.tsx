@@ -1,8 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CalendarCheck, CalendarDays, PencilLine, Users } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FormField, FormGrid, Input, Select, Textarea } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
 import { createEvent, listEvents } from "@/lib/actions/events";
 import { publicPortalUrl } from "@/lib/environment";
 import { communityLabel, publicRegisterUrl } from "@/lib/pilot/tenants";
@@ -10,8 +26,8 @@ import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDas
 import { formatCents, formatDate } from "@/lib/utils";
 
 function eventStatusLabel(status: string): string {
-  if (status === "PUBLISHED") return "Published (live on portal)";
-  if (status === "DRAFT") return "Draft (hidden)";
+  if (status === "PUBLISHED") return "Published";
+  if (status === "DRAFT") return "Draft";
   return status;
 }
 
@@ -57,7 +73,7 @@ export default async function EventsPage({
         memberPriceCents,
         capacity,
       },
-      { tenantIdHint: tenantHint }
+      { tenantIdHint: tenantHint },
     );
 
     if (!result.ok) {
@@ -77,81 +93,101 @@ export default async function EventsPage({
   const drafts = events.filter((e) => e.status !== "PUBLISHED");
 
   return (
-    <section className="space-y-4">
-      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="Programs"
+        title="Events"
+        description="Only published events appear on your member portal. Share registration links on your website or email."
+        actions={
+          eventsUrl ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <a href={eventsUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:text-foreground break-all">
+                {eventsUrl}
+              </a>
+              <CopyTextButton text={eventsUrl} label="Copy events page" />
+            </div>
+          ) : undefined
+        }
+      />
 
-      <div>
-        <h1 className="text-2xl font-semibold">Events</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Only <strong>Published</strong> events appear on the public portal. After publishing, copy the registration
-          link to your website or email.
-        </p>
-        {eventsUrl && tenant && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <a href={eventsUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-700 underline break-all">
-              {eventsUrl}
-            </a>
-            <CopyTextButton text={eventsUrl} label="Copy events page" />
-          </div>
-        )}
-      </div>
-
-      {params.error && <p className="text-sm text-red-700">{params.error}</p>}
+      {params.error && <Alert variant="error">{params.error}</Alert>}
       {params.success === "created" && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          Event saved. If status is Published, it is live on the portal now.
-        </p>
+        <Alert variant="success">Event saved. If status is Published, it is live on the portal now.</Alert>
       )}
 
-      <details className="rounded-md border border-gray-200 bg-white p-4">
-        <summary className="cursor-pointer text-sm font-medium text-gray-900">Create a new event</summary>
-        <form action={createEventAction} className="mt-4 grid gap-3 md:grid-cols-2">
-          {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
-          <input name="title" required placeholder="Event title" className="rounded border border-gray-300 px-3 py-2 text-sm md:col-span-2" />
-          <input name="slug" placeholder="URL slug (e.g. spring-meetup)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <input name="location" placeholder="Location" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <textarea name="description" placeholder="Description" className="rounded border border-gray-300 px-3 py-2 text-sm md:col-span-2" rows={2} />
-          <input name="startsAt" required type="datetime-local" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <select name="status" defaultValue="PUBLISHED" className="rounded border border-gray-300 px-3 py-2 text-sm">
-            <option value="PUBLISHED">Published — live on portal</option>
-            <option value="DRAFT">Draft — hidden from visitors</option>
-          </select>
-          <input name="priceDollars" type="number" min="0" step="0.01" defaultValue="0" placeholder="Price (USD)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <input name="memberPriceDollars" type="number" min="0" step="0.01" placeholder="Member price (optional)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <input name="capacity" type="number" min="1" placeholder="Capacity (optional)" className="rounded border border-gray-300 px-3 py-2 text-sm" />
-          <div className="md:col-span-2">
-            <button type="submit" className="rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black">
-              Save event
-            </button>
-          </div>
-        </form>
-      </details>
-
-      <div className="rounded-md border border-gray-200 bg-white p-4">
-        {events.length === 0 ? (
-          <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-700">
-            <p className="font-medium text-gray-900">No events for {tenant ? communityLabel(tenant.slug) : "this tenant"} yet</p>
-            <p className="mt-2">Create an event above with status <strong>Published</strong>, then share the registration link from the table.</p>
-            {eventsUrl && (
-              <p className="mt-2">
-                Public listing:{" "}
-                <a href={eventsUrl} className="text-blue-700 underline break-all">
-                  {eventsUrl}
-                </a>
-              </p>
-            )}
-          </div>
-        ) : tenant ? (
-          <div className="space-y-6">
-            {published.length > 0 && (
-              <EventTable title="Published events" events={published} tenantSlug={tenant.slug} showRegisterLink />
-            )}
-            {drafts.length > 0 && (
-              <EventTable title="Drafts (not on public portal)" events={drafts} tenantSlug={tenant.slug} showRegisterLink={false} />
-            )}
-          </div>
-        ) : null}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={CalendarCheck} tone="success" label="Published" value={String(published.length)} />
+        <StatCard icon={PencilLine} tone="warning" label="Drafts" value={String(drafts.length)} />
+        <StatCard
+          icon={Users}
+          tone="primary"
+          label="Total registrations"
+          value={String(events.reduce((sum, event) => sum + event.registrationSummary.confirmed, 0))}
+        />
+        <StatCard icon={CalendarDays} tone="accent" label="Total events" value={String(events.length)} />
       </div>
+
+      <Card>
+        <CardBody>
+          <h2 className="text-base font-semibold text-foreground">Create event</h2>
+          <form action={createEventAction} className="mt-4 grid gap-4 md:grid-cols-2">
+            {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
+            <FormField label="Title" className="md:col-span-2">
+              <Input name="title" required placeholder="Spring community workshop" />
+            </FormField>
+            <FormField label="URL slug">
+              <Input name="slug" placeholder="spring-workshop" />
+            </FormField>
+            <FormField label="Location">
+              <Input name="location" placeholder="Community center" />
+            </FormField>
+            <FormField label="Description" className="md:col-span-2">
+              <Textarea name="description" rows={2} placeholder="What attendees should know" />
+            </FormField>
+            <FormField label="Start date & time">
+              <Input name="startsAt" required type="datetime-local" />
+            </FormField>
+            <FormField label="Status">
+              <Select name="status" defaultValue="PUBLISHED">
+                <option value="PUBLISHED">Published — live on portal</option>
+                <option value="DRAFT">Draft — hidden from visitors</option>
+              </Select>
+            </FormField>
+            <FormField label="Price (USD)">
+              <Input name="priceDollars" type="number" min="0" step="0.01" defaultValue="0" />
+            </FormField>
+            <FormField label="Member price (optional)">
+              <Input name="memberPriceDollars" type="number" min="0" step="0.01" />
+            </FormField>
+            <FormField label="Capacity (optional)">
+              <Input name="capacity" type="number" min="1" />
+            </FormField>
+            <div className="md:col-span-2">
+              <Button type="submit">Save event</Button>
+            </div>
+          </form>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardBody>
+          {events.length === 0 ? (
+            <EmptyState
+              title={`No events for ${tenant ? communityLabel(tenant.slug) : "this community"} yet`}
+              description="Create an event above with status Published, then share the registration link."
+            />
+          ) : tenant ? (
+            <div className="space-y-8">
+              {published.length > 0 && (
+                <EventTable title="Published events" events={published} tenantSlug={tenant.slug} showRegisterLink />
+              )}
+              {drafts.length > 0 && (
+                <EventTable title="Drafts" events={drafts} tenantSlug={tenant.slug} showRegisterLink={false} />
+              )}
+            </div>
+          ) : null}
+        </CardBody>
+      </Card>
     </section>
   );
 }
@@ -178,69 +214,53 @@ function EventTable({
 }) {
   return (
     <div>
-      <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-      <div className="mt-3 overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
-              <th className="py-2 pr-4">Event</th>
-              <th className="py-2 pr-4">When</th>
-              <th className="py-2 pr-4">Status</th>
-              <th className="py-2 pr-4">Registrations</th>
-              {showRegisterLink && <th className="py-2 pr-4">Public register link</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((event) => {
-              const registerUrl = publicRegisterUrl(tenantSlug, event.slug);
-              return (
-                <tr key={event.id} className="border-b border-gray-100 align-top">
-                  <td className="py-3 pr-4">
-                    <p className="font-medium text-gray-900">{event.title}</p>
-                    <p className="font-mono text-xs text-gray-500">{event.slug}</p>
-                    {event.ticketTypes.length > 0 && (
-                      <p className="mt-1 text-xs text-gray-600">
-                        {event.ticketTypes
-                          .filter((ticket) => ticket.active)
-                          .map((ticket) =>
-                            ticket.memberPriceCents !== null
-                              ? `${ticket.name}: ${formatCents(ticket.priceCents)} / member ${formatCents(ticket.memberPriceCents)}`
-                              : `${ticket.name}: ${formatCents(ticket.priceCents)}`,
-                          )
-                          .join(" · ")}
-                      </p>
-                    )}
-                  </td>
-                  <td className="py-3 pr-4 text-gray-700">{formatDate(event.startsAt)}</td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                        event.status === "PUBLISHED" ? "bg-emerald-100 text-emerald-900" : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {eventStatusLabel(event.status)}
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <DataTable className="mt-3">
+        <DataTableHead>
+          <DataTableHeaderCell>Event</DataTableHeaderCell>
+          <DataTableHeaderCell>When</DataTableHeaderCell>
+          <DataTableHeaderCell>Status</DataTableHeaderCell>
+          <DataTableHeaderCell>Registrations</DataTableHeaderCell>
+          {showRegisterLink && <DataTableHeaderCell>Register link</DataTableHeaderCell>}
+        </DataTableHead>
+        <DataTableBody>
+          {events.map((event) => {
+            const registerUrl = publicRegisterUrl(tenantSlug, event.slug);
+            return (
+              <DataTableRow key={event.id}>
+                <DataTableCell>
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                      <CalendarDays className="h-4 w-4" />
                     </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <Link href={`/dashboard/events/${event.id}/registrations`} className="font-medium text-blue-700 underline">
-                      {event.registrationSummary.confirmed} confirmed
-                    </Link>
-                    {event.registrationSummary.total !== event.registrationSummary.confirmed && (
-                      <span className="text-gray-500"> / {event.registrationSummary.active} active / {event.registrationSummary.total} total</span>
-                    )}
-                  </td>
-                  {showRegisterLink && (
-                    <td className="py-3 pr-4">
-                      <p className="break-all font-mono text-xs text-gray-600">{registerUrl}</p>
-                      <CopyTextButton text={registerUrl} label="Copy link" className="mt-1" />
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    <span>
+                      <span className="block font-bold text-foreground">{event.title}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{event.slug}</span>
+                    </span>
+                  </div>
+                </DataTableCell>
+                <DataTableCell className="text-muted-foreground">{formatDate(event.startsAt)}</DataTableCell>
+                <DataTableCell>
+                  <Badge variant={event.status === "PUBLISHED" ? "success" : "warning"}>
+                    {eventStatusLabel(event.status)}
+                  </Badge>
+                </DataTableCell>
+                <DataTableCell>
+                  <Link href={`/dashboard/events/${event.id}/registrations`} className="font-semibold text-primary hover:text-foreground">
+                    {event.registrationSummary.confirmed} confirmed
+                  </Link>
+                </DataTableCell>
+                {showRegisterLink && (
+                  <DataTableCell>
+                    <p className="break-all font-mono text-xs text-muted-foreground">{registerUrl}</p>
+                    <CopyTextButton text={registerUrl} label="Copy link" className="mt-1" />
+                  </DataTableCell>
+                )}
+              </DataTableRow>
+            );
+          })}
+        </DataTableBody>
+      </DataTable>
     </div>
   );
 }

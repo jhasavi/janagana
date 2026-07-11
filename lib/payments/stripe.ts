@@ -19,41 +19,25 @@ export function stripeWebhookConfigured() {
   return Boolean(stripeWebhookSecret());
 }
 
+export type StripeRecurringInterval = "month" | "year";
+
+export function membershipIntervalToStripe(
+  interval: "MONTHLY" | "ANNUAL" | "ONE_TIME",
+): StripeRecurringInterval | null {
+  if (interval === "MONTHLY") return "month";
+  if (interval === "ANNUAL") return "year";
+  return null;
+}
+
 function append(params: URLSearchParams, key: string, value: string | number | boolean | null | undefined) {
   if (value === null || value === undefined || value === "") return;
   params.append(key, String(value));
 }
 
-export async function createStripeCheckoutSession(input: {
-  amountCents: number;
-  currency?: string;
-  customerEmail: string;
-  productName: string;
-  successUrl: string;
-  cancelUrl: string;
-  clientReferenceId: string;
-  metadata: Record<string, string>;
-}) {
+async function postStripeCheckout(params: URLSearchParams) {
   const secretKey = stripeSecretKey();
   if (!secretKey) {
     return { ok: false as const, error: "Stripe is not configured" };
-  }
-
-  const params = new URLSearchParams();
-  append(params, "mode", "payment");
-  append(params, "success_url", input.successUrl);
-  append(params, "cancel_url", input.cancelUrl);
-  append(params, "customer_email", input.customerEmail);
-  append(params, "client_reference_id", input.clientReferenceId);
-  append(params, "line_items[0][quantity]", 1);
-  append(params, "line_items[0][price_data][currency]", (input.currency ?? "USD").toLowerCase());
-  append(params, "line_items[0][price_data][unit_amount]", input.amountCents);
-  append(params, "line_items[0][price_data][product_data][name]", input.productName);
-  append(params, "payment_intent_data[metadata][paymentRecordId]", input.clientReferenceId);
-
-  for (const [key, value] of Object.entries(input.metadata)) {
-    append(params, `metadata[${key}]`, value);
-    append(params, `payment_intent_data[metadata][${key}]`, value);
   }
 
   const response = await fetch(`${STRIPE_API_BASE}/checkout/sessions`, {
@@ -83,6 +67,74 @@ export async function createStripeCheckoutSession(input: {
     sessionId: body.id,
     url: body.url,
   };
+}
+
+function appendCheckoutMetadata(
+  params: URLSearchParams,
+  metadata: Record<string, string>,
+  options?: { subscription?: boolean },
+) {
+  for (const [key, value] of Object.entries(metadata)) {
+    append(params, `metadata[${key}]`, value);
+    if (options?.subscription) {
+      append(params, `subscription_data[metadata][${key}]`, value);
+    } else {
+      append(params, `payment_intent_data[metadata][${key}]`, value);
+    }
+  }
+}
+
+export async function createStripeCheckoutSession(input: {
+  amountCents: number;
+  currency?: string;
+  customerEmail: string;
+  productName: string;
+  successUrl: string;
+  cancelUrl: string;
+  clientReferenceId: string;
+  metadata: Record<string, string>;
+}) {
+  const params = new URLSearchParams();
+  append(params, "mode", "payment");
+  append(params, "success_url", input.successUrl);
+  append(params, "cancel_url", input.cancelUrl);
+  append(params, "customer_email", input.customerEmail);
+  append(params, "client_reference_id", input.clientReferenceId);
+  append(params, "line_items[0][quantity]", 1);
+  append(params, "line_items[0][price_data][currency]", (input.currency ?? "USD").toLowerCase());
+  append(params, "line_items[0][price_data][unit_amount]", input.amountCents);
+  append(params, "line_items[0][price_data][product_data][name]", input.productName);
+  append(params, "payment_intent_data[metadata][paymentRecordId]", input.clientReferenceId);
+  appendCheckoutMetadata(params, input.metadata);
+
+  return postStripeCheckout(params);
+}
+
+export async function createStripeSubscriptionCheckoutSession(input: {
+  unitAmountCents: number;
+  currency?: string;
+  interval: StripeRecurringInterval;
+  customerEmail: string;
+  productName: string;
+  successUrl: string;
+  cancelUrl: string;
+  clientReferenceId: string;
+  metadata: Record<string, string>;
+}) {
+  const params = new URLSearchParams();
+  append(params, "mode", "subscription");
+  append(params, "success_url", input.successUrl);
+  append(params, "cancel_url", input.cancelUrl);
+  append(params, "customer_email", input.customerEmail);
+  append(params, "client_reference_id", input.clientReferenceId);
+  append(params, "line_items[0][quantity]", 1);
+  append(params, "line_items[0][price_data][currency]", (input.currency ?? "USD").toLowerCase());
+  append(params, "line_items[0][price_data][unit_amount]", input.unitAmountCents);
+  append(params, "line_items[0][price_data][product_data][name]", input.productName);
+  append(params, "line_items[0][price_data][recurring][interval]", input.interval);
+  appendCheckoutMetadata(params, input.metadata, { subscription: true });
+
+  return postStripeCheckout(params);
 }
 
 export function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string | null, secret: string) {

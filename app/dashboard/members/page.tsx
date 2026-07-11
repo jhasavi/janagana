@@ -1,8 +1,19 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { ContactsCrmTable } from "@/components/dashboard/contacts-table";
+import { Alert } from "@/components/ui/alert";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { Input, Select } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { listContacts } from "@/lib/actions/contacts";
+import {
+  contactExportHref,
+  contactListQueryString,
+  hasActiveContactFilters,
+} from "@/lib/contacts/list-filters";
 import { CONTACT_QUICK_FILTERS } from "@/lib/pilot/contact-filters";
 import { contactInterestLabel, contactSourceLabel } from "@/lib/pilot/contact-labels";
 import { resolveTenantForDashboard } from "@/lib/tenant";
@@ -20,15 +31,18 @@ function activeQuickFilter(params: {
   preset?: string;
   source?: string;
   interestType?: string;
+  tag?: string;
   q?: string;
 }): string {
   if (params.preset === "members") return "members";
+  if (params.preset === "volunteers") return "volunteers";
+  if (params.preset === "donors") return "donors";
   if (params.preset === "leads") return "leads";
   if (params.preset === "no-email") return "no-email";
   if (params.preset === "recent") return "recent";
   if (params.source === "dashboard_raklet_import") return "raklet";
   if (params.source === "dashboard_csv_import") return "imported";
-  if (!params.preset && !params.source && !params.interestType && !params.q) return "all";
+  if (!params.preset && !params.source && !params.interestType && !params.tag && !params.q) return "all";
   return "";
 }
 
@@ -47,6 +61,7 @@ export default async function ContactsPage({
     q?: string;
     source?: string;
     interestType?: string;
+    tag?: string;
     preset?: string;
   }>;
 }) {
@@ -68,7 +83,8 @@ export default async function ContactsPage({
     q: params.q ?? "",
     source: params.success === "import" ? "" : (params.source ?? ""),
     interestType: params.interestType ?? "",
-    preset: (params.preset ?? "") as "" | "members" | "leads" | "no-email" | "recent",
+    tag: params.tag ?? "",
+    preset: (params.preset ?? "") as "" | "members" | "volunteers" | "donors" | "leads" | "no-email" | "recent",
   };
 
   let contactsResult;
@@ -97,6 +113,9 @@ export default async function ContactsPage({
   const contactsTruncated = contactsResult.ok ? contactsResult.truncated : false;
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
   const interestOptions = contactsResult.ok ? contactsResult.interestOptions : [];
+  const tagOptions = contactsResult.ok ? contactsResult.tagOptions : [];
+  const exportHref = contactExportHref(filters);
+  const filtersActive = hasActiveContactFilters(filters);
 
   const basePath = "/dashboard/members";
   const importSourceFilter =
@@ -107,161 +126,157 @@ export default async function ContactsPage({
     preset: filters.preset,
     source: params.source,
     interestType: filters.interestType,
+    tag: filters.tag,
     q: filters.q,
   });
 
   return (
-    <section className="space-y-3">
-      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="People"
+        title="Contacts"
+        description={`${contactsTotal} contact${contactsTotal === 1 ? "" : "s"}${contactsTruncated ? ` · showing ${contacts.length}` : ""}`}
+        actions={
+          <>
+            <ButtonLink href="/dashboard/members/import" variant="secondary" size="sm">
+              Import
+            </ButtonLink>
+            <a
+              href={exportHref}
+              className="inline-flex h-8 items-center rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted/60"
+            >
+              Export CSV
+            </a>
+            <ButtonLink href="/dashboard/members/new" size="sm">
+              Add contact
+            </ButtonLink>
+          </>
+        }
+      />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-950">Contacts</h1>
-          <p className="text-sm text-slate-600">
-            {contactsTotal} contact{contactsTotal === 1 ? "" : "s"}
-            {contactsTruncated ? ` · showing ${contacts.length}` : ""}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/dashboard/members/import"
-            className="rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-900 hover:bg-teal-100"
-          >
-            Import
-          </Link>
-          <a
-            href="/api/export/contacts"
-            className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-stone-50"
-          >
-            Export CSV
-          </a>
-          <Link
-            href="/dashboard/members/new"
-            className="rounded-md bg-slate-950 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-900"
-          >
-            Add contact
-          </Link>
-        </div>
-      </div>
-
-      {params.error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{params.error}</p>
-      )}
-      {params.success === "1" && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          Contact added.
-        </p>
-      )}
-      {params.success === "updated" && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          Contact updated.
-        </p>
-      )}
-      {params.success === "deleted" && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          Contact removed.
-        </p>
-      )}
+      {params.error && <Alert variant="error">{params.error}</Alert>}
+      {params.success === "1" && <Alert variant="success">Contact added.</Alert>}
+      {params.success === "updated" && <Alert variant="success">Contact updated.</Alert>}
+      {params.success === "deleted" && <Alert variant="success">Contact removed.</Alert>}
       {params.success === "import" && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <Alert variant="success">
           Import complete — {params.importCreated ?? "0"} created, {params.importUpdated ?? "0"} updated,{" "}
           {params.importSkipped ?? "0"} skipped (no email).{" "}
-          <Link
-            href={filterHref(basePath, { source: importSourceFilter })}
-            className="font-semibold underline"
-          >
+          <Link href={filterHref(basePath, { source: importSourceFilter })} className="font-semibold underline">
             View imported contacts
           </Link>
-        </p>
+        </Alert>
       )}
-      {params.importErrors && (
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Row warnings: {params.importErrors}
-        </p>
-      )}
+      {params.importErrors && <Alert variant="warning">Row warnings: {params.importErrors}</Alert>}
       {contactsTruncated && (
-        <p className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-slate-700">
+        <Alert variant="info">
           Showing first {contacts.length} of {contactsTotal} matching contacts. Use search or filters to narrow results.
-        </p>
+        </Alert>
       )}
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        {CONTACT_QUICK_FILTERS.map((chip) => (
-          <Link
-            key={chip.id}
-            href={chip.href(basePath)}
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              quickActive === chip.id
-                ? "bg-slate-900 text-white"
-                : "bg-stone-100 text-slate-700 hover:bg-stone-200"
-            }`}
-          >
-            {chip.label}
+      {filtersActive && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
+          <span className="font-medium text-foreground">Active filters:</span>
+          {filters.q && <span className="text-muted-foreground">Search “{filters.q}”</span>}
+          {filters.tag && <span className="text-muted-foreground">Tag “{filters.tag}”</span>}
+          {filters.source && <span className="text-muted-foreground">{contactSourceLabel(filters.source)}</span>}
+          {filters.interestType && (
+            <span className="text-muted-foreground">{contactInterestLabel(filters.interestType)}</span>
+          )}
+          {filters.preset && <span className="text-muted-foreground">Preset: {filters.preset}</span>}
+          <Link href="/dashboard/members" className="ml-auto text-xs font-semibold text-primary hover:text-foreground">
+            Clear all
           </Link>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {CONTACT_QUICK_FILTERS.map((chip) => (
+          <FilterChip key={chip.id} href={chip.href(basePath)} active={quickActive === chip.id}>
+            {chip.label}
+          </FilterChip>
         ))}
       </div>
 
-      <form
-        action={basePath}
-        className="flex flex-col gap-2 rounded-md border border-stone-200 bg-white p-3 sm:flex-row sm:items-center"
-      >
-        <input
-          name="q"
-          defaultValue={filters.q}
-          placeholder="Search name, email, phone, tags"
-          className="min-w-0 flex-1 rounded border border-stone-300 px-3 py-1.5 text-sm"
-        />
-        <select
-          name="source"
-          defaultValue={filters.source}
-          className="rounded border border-stone-300 px-2 py-1.5 text-sm"
-        >
-          <option value="">All channels</option>
-          {sourceOptions.map((source) => (
-            <option key={source} value={source}>
-              {contactSourceLabel(source)}
-            </option>
-          ))}
-        </select>
-        <select
-          name="interestType"
-          defaultValue={filters.interestType}
-          className="rounded border border-stone-300 px-2 py-1.5 text-sm"
-        >
-          <option value="">All intents</option>
-          {interestOptions.map((interest) => (
-            <option key={interest} value={interest}>
-              {contactInterestLabel(interest)}
-            </option>
-          ))}
-        </select>
-        {filters.preset && <input type="hidden" name="preset" value={filters.preset} />}
-        <button type="submit" className="rounded bg-slate-900 px-4 py-1.5 text-sm text-white hover:bg-teal-900">
-          Search
-        </button>
-      </form>
-
-      <div className="rounded-md border border-stone-200 bg-white">
-        {contacts.length === 0 ? (
-          <div className="space-y-2 p-8 text-center text-sm text-slate-600">
-            <p className="font-medium text-slate-900">
-              {filters.q || filters.source || filters.interestType || filters.preset
-                ? "No contacts match these filters"
-                : `No contacts for ${tenant?.slug ?? "this tenant"} yet`}
-            </p>
-            {!filters.q && !filters.source && !filters.interestType && !filters.preset && (
-              <p>
-                <Link href="/dashboard/members/import" className="font-semibold text-teal-900 underline">
-                  Import a spreadsheet
-                </Link>{" "}
-                to get started.
-              </p>
+      <Card>
+        <CardBody className="space-y-4">
+          <form action={basePath} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input name="q" defaultValue={filters.q} placeholder="Search name, email, phone, tags" className="flex-1" />
+            <Select name="source" defaultValue={filters.source} className="sm:w-44">
+              <option value="">All channels</option>
+              {sourceOptions.map((source) => (
+                <option key={source} value={source}>
+                  {contactSourceLabel(source)}
+                </option>
+              ))}
+            </Select>
+            <Select name="interestType" defaultValue={filters.interestType} className="sm:w-44">
+              <option value="">All intents</option>
+              {interestOptions.map((interest) => (
+                <option key={interest} value={interest}>
+                  {contactInterestLabel(interest)}
+                </option>
+              ))}
+            </Select>
+            <Select name="tag" defaultValue={filters.tag} className="sm:w-44">
+              <option value="">All tags</option>
+              {tagOptions.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </Select>
+            {filters.preset && <input type="hidden" name="preset" value={filters.preset} />}
+            <Button type="submit" size="sm">
+              Search
+            </Button>
+            {filtersActive && (
+              <ButtonLink href="/dashboard/members" variant="secondary" size="sm">
+                Clear
+              </ButtonLink>
             )}
-          </div>
-        ) : (
-          <ContactsCrmTable contacts={contacts} />
-        )}
-      </div>
+          </form>
+
+          {tagOptions.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</span>
+              {tagOptions.slice(0, 8).map((tag) => (
+                <FilterChip
+                  key={tag}
+                  href={`/dashboard/members${contactListQueryString({ ...filters, tag })}`}
+                  active={filters.tag === tag}
+                >
+                  {tag}
+                </FilterChip>
+              ))}
+            </div>
+          )}
+
+          {contacts.length === 0 ? (
+            <EmptyState
+              title={
+                filters.q || filters.source || filters.interestType || filters.tag || filters.preset
+                  ? "No contacts match these filters"
+                  : `No contacts for ${tenant?.slug ?? "this community"} yet`
+              }
+              description={
+                !filters.q && !filters.source && !filters.interestType && !filters.tag && !filters.preset
+                  ? "Import a spreadsheet or test your portal contact form to capture the first lead."
+                  : undefined
+              }
+              action={
+                !filters.q && !filters.source && !filters.interestType && !filters.tag && !filters.preset ? (
+                  <ButtonLink href="/dashboard/members/import" size="sm">
+                    Import spreadsheet
+                  </ButtonLink>
+                ) : undefined
+              }
+            />
+          ) : (
+            <ContactsCrmTable contacts={contacts} />
+          )}
+        </CardBody>
+      </Card>
     </section>
   );
 }

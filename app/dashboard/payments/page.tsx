@@ -1,8 +1,22 @@
 import Link from "next/link";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { CalendarDays, HeartHandshake, Users, Wallet } from "lucide-react";
 import { getTenantFinancialSummary } from "@/lib/dashboard/financial-summary";
 import { resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
+import { Card, CardBody } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
 
 function purposeLabel(purpose: string) {
   switch (purpose) {
@@ -17,121 +31,150 @@ function purposeLabel(purpose: string) {
   }
 }
 
-function statusClass(status: string) {
-  if (status === "PAID") return "bg-emerald-100 text-emerald-900";
-  if (status === "PENDING") return "bg-amber-100 text-amber-900";
-  if (status === "FAILED") return "bg-red-100 text-red-900";
-  if (status === "REFUNDED") return "bg-gray-100 text-gray-700";
-  return "bg-slate-100 text-slate-800";
+function statusVariant(status: string): "success" | "warning" | "danger" | "default" {
+  if (status === "PAID") return "success";
+  if (status === "PENDING") return "warning";
+  if (status === "FAILED") return "danger";
+  return "default";
 }
 
-export default async function PaymentsPage() {
+function filterHref(base: string, params: Record<string, string>) {
+  const url = new URL(base, "http://local");
+  for (const [key, value] of Object.entries(params)) {
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+  }
+  return `${url.pathname}${url.search}`;
+}
+
+export default async function PaymentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ purpose?: string; status?: string }>;
+}) {
+  const params = await searchParams;
   const resolution = await resolveTenantForDashboard();
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
-  const financial = tenant ? await getTenantFinancialSummary(tenant.id) : null;
+  const filters = {
+    purpose: (params.purpose ?? "") as "" | "MEMBERSHIP" | "EVENT" | "DONATION",
+    status: (params.status ?? "") as "" | "PAID" | "PENDING" | "FAILED" | "WAIVED" | "REFUNDED",
+  };
+  const financial = tenant
+    ? await getTenantFinancialSummary(tenant.id, {
+        purpose: filters.purpose || undefined,
+        status: filters.status || undefined,
+      })
+    : null;
+
+  const basePath = "/dashboard/payments";
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Community OS</p>
-        <h1 className="text-2xl font-semibold text-slate-950">Payments</h1>
-        <p className="max-w-2xl text-sm text-slate-600">
-          Membership dues, event fees, and donations recorded for this community. JanaGana platform fee is 0 — processor
-          fees are separate.
-        </p>
-      </header>
-
-      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="Money"
+        title="Payments"
+        description="Membership dues, event fees, and donations. 0% JanaGana platform fee — card processor fees are separate (donors can cover them at checkout)."
+        actions={
+          <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
+            Record membership payment
+          </Link>
+        }
+      />
 
       {financial && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label="Total received" value={formatCents(financial.totalRevenueCents)} />
-          <SummaryCard label="Membership" value={formatCents(financial.membershipRevenueCents)} detail={`${financial.membershipPaymentCount} payments`} />
-          <SummaryCard label="Events" value={formatCents(financial.eventRevenueCents)} detail={`${financial.eventPaymentCount} payments`} />
-          <SummaryCard label="Donations" value={formatCents(financial.donationRevenueCents)} detail={`${financial.donationPaymentCount} payments`} />
+          <StatCard icon={Wallet} tone="primary" label="Total received" value={formatCents(financial.totalRevenueCents)} />
+          <StatCard icon={Users} tone="accent" label="Membership" value={formatCents(financial.membershipRevenueCents)} detail={`${financial.membershipPaymentCount} payments`} />
+          <StatCard icon={CalendarDays} tone="success" label="Events" value={formatCents(financial.eventRevenueCents)} detail={`${financial.eventPaymentCount} payments`} />
+          <StatCard icon={HeartHandshake} tone="warning" label="Donations" value={formatCents(financial.donationRevenueCents)} detail={`${financial.donationPaymentCount} payments`} />
         </div>
       )}
 
-      <section className="rounded-lg border border-stone-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between gap-4 border-b border-stone-100 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-slate-950">Recent payments</h2>
-            <p className="mt-0.5 text-sm text-slate-600">Latest transactions across memberships, events, and donations.</p>
-          </div>
-          <Link href="/dashboard/tiers" className="shrink-0 text-sm font-semibold text-teal-900 hover:text-slate-950">
-            Record membership payment
-          </Link>
-        </div>
+      <div className="flex flex-wrap gap-2">
+        <FilterChip href={basePath} active={!filters.purpose && !filters.status}>
+          All
+        </FilterChip>
+        {(["MEMBERSHIP", "EVENT", "DONATION"] as const).map((purpose) => (
+          <FilterChip
+            key={purpose}
+            href={filterHref(basePath, { purpose, status: filters.status })}
+            active={filters.purpose === purpose}
+          >
+            {purposeLabel(purpose)}
+          </FilterChip>
+        ))}
+        <FilterChip
+          href={filterHref(basePath, { purpose: filters.purpose, status: "PENDING" })}
+          active={filters.status === "PENDING"}
+        >
+          Pending
+        </FilterChip>
+      </div>
 
-        {!financial || financial.recentPayments.length === 0 ? (
-          <div className="border-t border-dashed border-stone-200 bg-stone-50 p-6 text-sm text-slate-700">
-            <p className="font-medium text-slate-950">No payments recorded yet</p>
-            <p className="mt-2">
-              Record offline dues on{" "}
-              <Link href="/dashboard/tiers" className="font-semibold text-teal-900 hover:text-slate-950">
-                Memberships
-              </Link>{" "}
-              or wait for Stripe checkout to complete.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3">When</th>
-                  <th className="px-5 py-3">Person</th>
-                  <th className="px-5 py-3">Purpose</th>
-                  <th className="px-5 py-3">Amount</th>
-                  <th className="px-5 py-3">Method</th>
-                  <th className="px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
+      <Card>
+        <CardBody>
+          <h2 className="text-base font-semibold text-foreground">Payment ledger</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {filters.purpose || filters.status
+              ? `Filtered view${filters.purpose ? ` · ${purposeLabel(filters.purpose)}` : ""}${filters.status ? ` · ${filters.status}` : ""}`
+              : "Latest transactions across memberships, events, and donations."}
+          </p>
+
+          {!financial || financial.recentPayments.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No payments match these filters"
+                description="Record offline dues on Memberships or wait for Stripe checkout to complete."
+                action={
+                  <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
+                    Go to memberships
+                  </Link>
+                }
+              />
+            </div>
+          ) : (
+            <DataTable className="mt-4">
+              <DataTableHead>
+                <DataTableHeaderCell>When</DataTableHeaderCell>
+                <DataTableHeaderCell>Person</DataTableHeaderCell>
+                <DataTableHeaderCell>Purpose</DataTableHeaderCell>
+                <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                <DataTableHeaderCell>Method</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+              </DataTableHead>
+              <DataTableBody>
                 {financial.recentPayments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-stone-100">
-                    <td className="px-5 py-3 whitespace-nowrap text-slate-600">
+                  <DataTableRow key={payment.id}>
+                    <DataTableCell className="whitespace-nowrap text-muted-foreground">
                       <span title={formatDate(payment.paidAt ?? payment.createdAt)}>
                         {formatRelativeTime(payment.paidAt ?? payment.createdAt)}
                       </span>
-                    </td>
-                    <td className="px-5 py-3">
+                    </DataTableCell>
+                    <DataTableCell>
                       {payment.contact ? (
                         <>
-                          <p className="font-medium text-slate-950">
+                          <p className="font-medium text-foreground">
                             {payment.contact.firstName} {payment.contact.lastName}
                           </p>
-                          <p className="text-slate-600">{payment.contact.email}</p>
+                          <p className="text-muted-foreground">{payment.contact.email}</p>
                         </>
                       ) : (
-                        <span className="text-slate-500">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
-                    </td>
-                    <td className="px-5 py-3 text-slate-700">{purposeLabel(payment.purpose)}</td>
-                    <td className="px-5 py-3 font-medium text-slate-950">{formatCents(payment.amountCents)}</td>
-                    <td className="px-5 py-3 text-slate-600">{payment.method}</td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${statusClass(payment.status)}`}>
-                        {payment.status}
-                      </span>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                    <DataTableCell>{purposeLabel(payment.purpose)}</DataTableCell>
+                    <DataTableCell className="font-medium">{formatCents(payment.amountCents)}</DataTableCell>
+                    <DataTableCell className="text-muted-foreground">{payment.method}</DataTableCell>
+                    <DataTableCell>
+                      <Badge variant={statusVariant(payment.status)}>{payment.status}</Badge>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function SummaryCard({ label, value, detail }: { label: string; value: string; detail?: string }) {
-  return (
-    <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-950">{value}</p>
-      {detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}
-    </div>
+              </DataTableBody>
+            </DataTable>
+          )}
+        </CardBody>
+      </Card>
+    </section>
   );
 }

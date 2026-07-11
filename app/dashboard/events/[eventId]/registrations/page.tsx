@@ -1,8 +1,20 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
+import { Alert } from "@/components/ui/alert";
+import { ButtonLink } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
 import {
   cancelEventRegistration,
   checkInEventRegistration,
@@ -168,25 +180,27 @@ export default async function EventRegistrationsPage({
   const totalCount = result.data.reduce((sum, reg) => sum + reg.quantity, 0);
 
   return (
-    <section className="space-y-4">
-      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="Programs"
+        title="Event registrations"
+        description={result.event.title}
+        actions={
+          <>
+            <ButtonLink href="/dashboard/events" variant="secondary" size="sm">Back to events</ButtonLink>
+            <a
+              href={`/api/export/events/${eventId}/registrations`}
+              className="inline-flex h-8 items-center rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted/60"
+            >
+              Export CSV
+            </a>
+          </>
+        }
+      />
 
-      <Link href="/dashboard/events" className="text-sm font-medium text-blue-700 hover:underline">
-        ← Back to events
-      </Link>
-
-      <div>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">Event registrations</h1>
-          <a
-            href={`/api/export/events/${eventId}/registrations`}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
-          >
-            Export CSV
-          </a>
-        </div>
-        <p className="mt-1 text-lg text-gray-900">{result.event.title}</p>
-        <p className="mt-1 text-sm text-gray-600">{formatDate(result.event.startsAt)}</p>
+      <Card>
+        <CardBody className="space-y-3">
+        <p className="text-sm text-muted-foreground">{formatDate(result.event.startsAt)}</p>
         <p className="mt-2 text-sm">
           <span
             className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
@@ -203,48 +217,50 @@ export default async function EventRegistrationsPage({
           </span>
         </p>
         {registerUrl && (
-          <div className="mt-3 rounded-md border border-blue-100 bg-blue-50 p-3 text-sm text-blue-950">
-            <p className="font-medium">Share this registration link</p>
-            <p className="mt-1 break-all font-mono text-xs">{registerUrl}</p>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+            <p className="font-medium text-foreground">Share this registration link</p>
+            <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{registerUrl}</p>
             <div className="mt-2 flex gap-2">
               <CopyTextButton text={registerUrl} label="Copy register link" />
-              <a href={registerUrl} target="_blank" rel="noreferrer" className="text-blue-800 underline">
+              <a href={registerUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:text-foreground">
                 Open in portal ↗
               </a>
             </div>
           </div>
         )}
         {result.event.status !== "PUBLISHED" && tenant && (
-          <p className="mt-2 text-sm text-amber-800">
+          <Alert variant="warning">
             This event is not published — visitors cannot register until you set status to Published on the Events page.
-          </p>
+          </Alert>
         )}
-      </div>
+        </CardBody>
+      </Card>
 
-      {query.error && <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{query.error}</p>}
-      {query.success && <p className="rounded bg-green-50 px-3 py-2 text-sm text-green-700">{query.success}</p>}
+      {query.error && <Alert variant="error">{query.error}</Alert>}
+      {query.success && <Alert variant="success">{query.success}</Alert>}
 
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground">
         Each row should also appear under{" "}
-        <Link href="/dashboard/members" className="text-blue-700 underline">
+        <Link href="/dashboard/members" className="font-semibold text-primary hover:text-foreground">
           Contacts & leads
         </Link>{" "}
         with intent Event registration.
       </p>
 
-      <div className="rounded-md border border-gray-200 bg-white p-4">
+      <Card>
+        <CardBody>
         {result.data.length === 0 ? (
-          <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-5 text-sm text-gray-700">
-            <p className="font-medium text-gray-900">No registrations yet</p>
-            <p className="mt-2">
-              Test in incognito: open the register link above, submit a unique email, then refresh this page and Contacts.
-            </p>
-            {registerUrl && (
-              <a href={registerUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-blue-700 underline break-all">
-                {registerUrl}
-              </a>
-            )}
-          </div>
+          <EmptyState
+            title="No registrations yet"
+            description="Test in incognito: open the register link above, submit a unique email, then refresh this page and Contacts."
+            action={
+              registerUrl ? (
+                <a href={registerUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:text-foreground break-all">
+                  {registerUrl}
+                </a>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -346,7 +362,8 @@ export default async function EventRegistrationsPage({
             </table>
           </div>
         )}
-      </div>
+        </CardBody>
+      </Card>
     </section>
   );
 }

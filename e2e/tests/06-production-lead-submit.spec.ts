@@ -6,7 +6,7 @@ test.describe("production lead capture", () => {
   test("purple wings newsletter submit", async ({ page }) => {
     const email = `${MARKER}-pw@example.com`;
     await page.goto("/portal/purple-wings/contact?interest=newsletter");
-    await expect(page.getByText(/newsletter/i)).toBeVisible();
+    await expect(page.getByTestId("portal-flow-description")).toHaveText(/newsletter/i);
     await page.getByLabel(/first name/i).fill("QA");
     await page.getByLabel(/last name/i).fill("PurpleWings");
     await page.getByLabel(/email/i).fill(email);
@@ -17,7 +17,7 @@ test.describe("production lead capture", () => {
   test("namaste boston investment submit", async ({ page }) => {
     const email = `${MARKER}-nb@example.com`;
     await page.goto("/portal/namaste-boston/contact?interest=investment");
-    await expect(page.getByText(/investment analysis/i)).toBeVisible();
+    await expect(page.getByTestId("portal-flow-description")).toHaveText(/investment analysis/i);
     await page.getByLabel(/first name/i).fill("QA");
     await page.getByLabel(/last name/i).fill("NamasteBoston");
     await page.getByLabel(/email/i).fill(email);

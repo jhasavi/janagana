@@ -193,7 +193,7 @@ async function main() {
     fail([]);
   }
   console.log("Pilot Demo v1 verification: all automated checks passed");
-  console.log("Manual: signed-in CSV import on production — see docs/JANAGANA_LITE_PILOT_DEMO_V1.md");
+  console.log("Manual: signed-in CSV import on production — see docs/14-PRODUCT-SHOWCASE.md");
 }
 
 main().catch(() => {

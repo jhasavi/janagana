@@ -18,6 +18,7 @@ loadEnv({ path: ".env.local", override: true });
 const prisma = new PrismaClient();
 const ROOT = process.cwd();
 const MEMBERS_PAGE = join(ROOT, "app", "dashboard", "members", "page.tsx");
+const PROFILE_PAGE = join(ROOT, "app", "dashboard", "members", "[contactId]", "page.tsx");
 const CRM_TABLE = join(ROOT, "components", "dashboard", "contacts-table.tsx");
 const LONG_METADATA =
   "Imported from raklet-export-2024-full-backup.csv at 2024-11-15T08:30:00Z. " +
@@ -34,7 +35,8 @@ function testStaticMembersPage() {
   assert(page.includes("Contacts"), "Members page title must be Contacts");
   assert(page.includes("ContactsCrmTable"), "Members page must render ContactsCrmTable");
   assert(page.includes('href="/dashboard/members/import"'), "Import button must link to import page");
-  assert(page.includes('href="/api/export/contacts"'), "Export CSV link must exist");
+  assert(page.includes("contactExportHref"), "Export must respect active list filters");
+  assert(page.includes('name="tag"'), "Members page must include tag filter dropdown");
   assert(page.includes('href="/dashboard/members/new"'), "Add contact button must exist");
   assert(page.includes("CONTACT_QUICK_FILTERS"), "Quick filters must be wired");
   assert(
@@ -44,11 +46,16 @@ function testStaticMembersPage() {
   assert(!page.includes("updateContactAction"), "List page must not embed per-row edit server actions");
   assert(!page.includes("deleteContactAction"), "List page must not embed per-row delete server actions");
 
+  const profile = readFileSync(PROFILE_PAGE, "utf8");
+  assert(profile.includes("ContactEditForm"), "Profile page must include contact edit form");
+  assert(profile.includes("updateContactAction"), "Profile page must wire updateContactAction");
+
   for (const header of ["Name", "Email", "Phone", "Type", "Source", "Membership", "Last activity", "Tags", "Actions"]) {
     assert(table.includes(header), `CRM table must include column header: ${header}`);
   }
   assert(!table.includes("contact.notes"), "CRM table must not render notes in list rows");
   assert(table.includes("+{extra}"), "Tags must show +N overflow");
+  assert(table.includes("/dashboard/members?tag="), "Tag pills must link to tag filter");
 
   const filterLabels = CONTACT_QUICK_FILTERS.map((f) => f.label);
   for (const label of ["All", "Members", "Leads", "Imported", "Raklet", "No email", "Recent activity"]) {

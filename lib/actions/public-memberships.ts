@@ -3,8 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { configuredAppUrl, publicPortalUrl } from "@/lib/environment";
 import { getTenantBySlug } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
-import { createStripeCheckoutSession, stripeCheckoutConfigured } from "@/lib/payments/stripe";
-import { calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import {
+  createStripeCheckoutSession,
+  createStripeSubscriptionCheckoutSession,
+  membershipIntervalToStripe,
+  stripeCheckoutConfigured,
+} from "@/lib/payments/stripe";
+import { addMembershipInterval } from "@/lib/memberships/subscription-renewal";
+import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
 
 const PublicMembershipCheckoutSchema = z
   .object({
@@ -14,15 +20,13 @@ const PublicMembershipCheckoutSchema = z
     lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
+    coverProcessingFee: z.boolean().optional().default(false),
+    autoRenew: z.boolean().optional().default(false),
   })
   .strict();
 
 function addInterval(date: Date, interval: "MONTHLY" | "ANNUAL" | "ONE_TIME") {
-  if (interval === "ONE_TIME") return null;
-  const next = new Date(date);
-  if (interval === "MONTHLY") next.setMonth(next.getMonth() + 1);
-  if (interval === "ANNUAL") next.setFullYear(next.getFullYear() + 1);
-  return next;
+  return addMembershipInterval(date, interval);
 }
 
 export async function listPublicMembershipTiers(tenantSlug: string) {
@@ -80,6 +84,12 @@ export async function createPublicMembershipCheckout(input: unknown) {
   const email = parsed.data.email.toLowerCase();
   const phone = parsed.data.phone || null;
   const expiresAt = addInterval(now, tier.interval);
+  const amounts = calculateCheckoutAmount({
+    baseCents: tier.amountCents,
+    coverProcessingFee: parsed.data.coverProcessingFee,
+  });
+  const stripeInterval = membershipIntervalToStripe(tier.interval);
+  const useSubscription = Boolean(stripeInterval && parsed.data.autoRenew);
 
   const result = await prisma.$transaction(async (tx) => {
     const contact = await tx.contact.upsert({
@@ -118,7 +128,7 @@ export async function createPublicMembershipCheckout(input: unknown) {
         status: tier.amountCents > 0 ? "PENDING" : "ACTIVE",
         startsAt: now,
         expiresAt,
-        autoRenew: false,
+        autoRenew: useSubscription,
         source: "public_checkout",
       },
     });
@@ -128,14 +138,19 @@ export async function createPublicMembershipCheckout(input: unknown) {
         tenantId: tenant.id,
         contactId: contact.id,
         membershipId: membership.id,
-        amountCents: tier.amountCents,
+        amountCents: tier.amountCents > 0 ? amounts.totalCents : 0,
         currency: "USD",
         status: tier.amountCents > 0 ? "PENDING" : "WAIVED",
         method: tier.amountCents > 0 ? "STRIPE" : "OTHER",
         purpose: "MEMBERSHIP",
         provider: tier.amountCents > 0 ? "stripe" : null,
         paidAt: tier.amountCents > 0 ? null : now,
-        notes: tier.amountCents > 0 ? "Public membership checkout started" : "Free membership checkout",
+        notes:
+          tier.amountCents > 0
+            ? amounts.processingFeeCents
+              ? `Checkout started · member covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
+              : "Public membership checkout started"
+            : "Free membership checkout",
       },
     });
 
@@ -168,25 +183,44 @@ export async function createPublicMembershipCheckout(input: unknown) {
 
   const successUrl = `${configuredAppUrl()}/portal/${tenant.slug}/join?status=processing&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${configuredAppUrl()}/portal/${tenant.slug}/join?status=canceled`;
-  const checkout = await createStripeCheckoutSession({
-    amountCents: tier.amountCents,
-    currency: "USD",
-    customerEmail: email,
-    productName: `${tenant.name} - ${tier.name}`,
-    successUrl,
-    cancelUrl,
-    clientReferenceId: result.payment.id,
-    metadata: {
-      paymentRecordId: result.payment.id,
-      tenantId: tenant.id,
-      tenantSlug: tenant.slug,
-      membershipId: result.membership.id,
-      contactId: result.contact.id,
-      tierId: tier.id,
-      janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
-      janaganaPlatformFeeCents: String(calculatePlatformFeeCents(tier.amountCents)),
-    },
-  });
+  const checkoutMetadata = {
+    paymentRecordId: result.payment.id,
+    tenantId: tenant.id,
+    tenantSlug: tenant.slug,
+    membershipId: result.membership.id,
+    contactId: result.contact.id,
+    tierId: tier.id,
+    purpose: "MEMBERSHIP",
+    baseAmountCents: String(amounts.baseCents),
+    processingFeeCents: String(amounts.processingFeeCents),
+    coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
+    recurring: useSubscription ? "true" : "false",
+    janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
+    janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),
+  };
+
+  const checkout = useSubscription && stripeInterval
+    ? await createStripeSubscriptionCheckoutSession({
+        unitAmountCents: amounts.totalCents,
+        currency: "USD",
+        interval: stripeInterval,
+        customerEmail: email,
+        productName: `${tenant.name} - ${tier.name}`,
+        successUrl,
+        cancelUrl,
+        clientReferenceId: result.payment.id,
+        metadata: checkoutMetadata,
+      })
+    : await createStripeCheckoutSession({
+        amountCents: amounts.totalCents,
+        currency: "USD",
+        customerEmail: email,
+        productName: `${tenant.name} - ${tier.name}`,
+        successUrl,
+        cancelUrl,
+        clientReferenceId: result.payment.id,
+        metadata: checkoutMetadata,
+      });
 
   if (!checkout.ok) {
     await prisma.paymentRecord.update({

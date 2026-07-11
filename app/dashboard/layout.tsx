@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { ExternalLink, LogOut, Shuffle } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { DashboardWorkflowNav } from "@/components/dashboard/dashboard-workflow-nav";
 import { getCurrentUser } from "@/lib/auth";
 import { publicPortalUrl } from "@/lib/environment";
-import { communityLabel } from "@/lib/pilot/portal-links";
 import { getVisibleCommunityOsNav } from "@/lib/pilot/dashboard-nav";
+import { communityLabel } from "@/lib/pilot/portal-links";
 import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
 import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
 
@@ -39,69 +40,102 @@ export default async function DashboardLayout({
   const tenant = resolution.tenant;
   const portalUrl = publicPortalUrl(tenant.slug);
   const community = communityLabel(tenant.slug);
+  const navGroups = getVisibleCommunityOsNav();
 
   return (
-    <div className="min-h-screen bg-[#f7f3ec]">
-      <nav className="border-b border-stone-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex min-h-16 flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link href="/dashboard" className="shrink-0 text-lg font-semibold text-slate-950 hover:text-teal-900">
-                JanaGana <span className="font-normal text-slate-500">Lite</span>
-              </Link>
-              <span className="hidden h-6 w-px bg-stone-200 sm:block" />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950">{community}</p>
-                <p className="truncate font-mono text-xs text-slate-500">{tenant.slug}</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
+    <div className="flex min-h-screen bg-muted/40">
+      {/* Desktop sidebar */}
+      <aside className="hidden w-[248px] shrink-0 flex-col border-r border-border/80 bg-card px-3 py-4 lg:flex">
+        <Link href="/dashboard" className="mb-2 flex items-center gap-2.5 rounded-xl px-2 py-1.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-extrabold text-primary-foreground shadow-sm">
+            JG
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[13.5px] font-bold text-foreground">{community}</p>
+            <p className="truncate text-[11px] font-semibold text-muted-foreground">Operator workspace</p>
+          </div>
+        </Link>
+
+        <div className="flex-1 overflow-y-auto py-1">
+          <DashboardNav groups={navGroups} />
+        </div>
+
+        <div className="space-y-1 border-t border-border/80 pt-3">
+          <a
+            href={portalUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="jg-nav-link justify-between bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+          >
+            <span className="flex items-center gap-2.5">
+              <ExternalLink className="h-4 w-4 shrink-0" />
+              Member portal
+            </span>
+          </a>
+          {canSwitchCommunity && (
+            <Link href="/api/select-tenant?reason=prepare-switch" className="jg-nav-link">
+              <Shuffle className="h-4 w-4 shrink-0" />
+              Switch community
+            </Link>
+          )}
+          <form action="/api/sign-out" method="POST">
+            <button type="submit" className="jg-nav-link w-full text-left">
+              <LogOut className="h-4 w-4 shrink-0" />
+              Sign out
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top bar */}
+        <header className="sticky top-0 z-50 border-b border-border/80 bg-card/95 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+            <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 lg:hidden">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[11px] font-extrabold text-primary-foreground shadow-sm">
+                JG
+              </span>
+              <p className="truncate text-sm font-bold text-foreground">{community}</p>
+            </Link>
+            <div className="hidden text-sm font-semibold text-muted-foreground lg:block">Operator workspace</div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <CopyTextButton text={portalUrl} label="Copy portal" className="hidden sm:inline-flex" />
               <a
                 href={portalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-900"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-accent px-3.5 text-xs font-bold text-accent-foreground shadow-sm hover:bg-accent/90 lg:hidden"
               >
-                Portal
+                Member portal
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
               {canSwitchCommunity && (
                 <Link
                   href="/api/select-tenant?reason=prepare-switch"
-                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-stone-100 hover:text-slate-950"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
                 >
                   <Shuffle className="h-3.5 w-3.5" />
-                  Switch community
+                  Switch
                 </Link>
               )}
-              <form action="/api/sign-out" method="POST">
-                <button type="submit" className="inline-flex items-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium text-slate-600 hover:bg-stone-100 hover:text-slate-950">
+              <form action="/api/sign-out" method="POST" className="lg:hidden">
+                <button
+                  type="submit"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
                   <LogOut className="h-3.5 w-3.5" />
-                  <span>Sign out</span>
+                  Sign out
                 </button>
               </form>
             </div>
           </div>
-        </div>
-      </nav>
+          {/* Mobile nav — sidebar is desktop-only */}
+          <div className="lg:hidden">
+            <DashboardWorkflowNav />
+          </div>
+        </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
-          <aside className="lg:sticky lg:top-6 lg:self-start">
-            <DashboardNav groups={getVisibleCommunityOsNav()} />
-            <div className="mt-6 rounded-lg border border-stone-200 bg-white p-4 text-xs text-slate-600 shadow-sm">
-              <p className="font-semibold text-slate-950">{community}</p>
-              <p className="mt-1 font-mono text-[11px] text-slate-700">{tenant.slug}</p>
-              <CopyTextButton text={portalUrl} label="Copy portal URL" className="mt-2 w-full text-[11px]" />
-              <Link href="/dashboard/settings" className="mt-3 inline-block font-semibold text-teal-900 hover:text-slate-950">
-                Website links
-              </Link>
-            </div>
-          </aside>
-
-          <main className="flex-1 min-w-0">{children}</main>
-        </div>
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>
   );

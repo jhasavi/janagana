@@ -167,6 +167,7 @@ export async function listMembershipAdminData() {
           include: {
             receipt: {
               select: {
+                id: true,
                 receiptNumber: true,
                 issuedAt: true,
               },

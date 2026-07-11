@@ -27,7 +27,7 @@ export default async function PortalTenantLayout({
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#f7f3ec] text-slate-950">
+        <div className="min-h-screen bg-background text-foreground">
           <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-10">{children}</main>
         </div>
       }

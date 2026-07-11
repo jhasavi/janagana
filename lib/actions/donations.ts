@@ -32,6 +32,7 @@ export type DonationListRow = {
     email: string;
     phone: string | null;
   } | null;
+  receiptId: string | null;
   receiptNumber: string | null;
 };
 
@@ -58,7 +59,7 @@ export async function listDonationAdminData() {
         contact: {
           select: { id: true, firstName: true, lastName: true, email: true, phone: true },
         },
-        receipt: { select: { receiptNumber: true } },
+        receipt: { select: { id: true, receiptNumber: true } },
       },
     }),
     prisma.paymentRecord.aggregate({
@@ -89,6 +90,7 @@ export async function listDonationAdminData() {
     createdAt: row.createdAt,
     notes: row.notes,
     contact: row.contact,
+    receiptId: row.receipt?.id ?? null,
     receiptNumber: row.receipt?.receiptNumber ?? null,
   }));
 

@@ -30,3 +30,29 @@ See git history and Vercel dashboard for current commit SHAs.
 - HTTP: `scripts/production-smoke-http.ts` (`npm run smoke:production`)
 - Playwright production config for submit flows (when credentials available)
 - Admin manual steps: [01-PILOT-RUNBOOK.md](./01-PILOT-RUNBOOK.md)
+
+## UI redesign launch checklist
+
+Run before calling the redesign shipped:
+
+```bash
+npm run typecheck
+npm run lint
+npm run test:community-os:nav
+npm run test:dashboard:semantics
+npm run test:e2e:foundation
+npm run test:e2e:portal
+npm run test:e2e:dual-portal
+npm run build
+```
+
+Pilot demo gate (production): `npm run verify:pilot-demo`
+
+### Manual smoke (~5 min)
+
+- [ ] Sign in → dashboard shows priority queue and quick actions
+- [ ] Copy portal link → open incognito → mobile nav works
+- [ ] Register for an event → appears on dashboard
+- [ ] Import spreadsheet still works from quick action
+
+Post-launch deferrals: see [07-ARCHITECTURE.md](./07-ARCHITECTURE.md#parking-lot-explicit-deferrals).

@@ -1,10 +1,29 @@
 import Link from "next/link";
 import {
   contactSourceLabel,
-  contactTypeLabel,
   pilotContactKindLabel,
 } from "@/lib/pilot/contact-labels";
 import { formatRelativeTime } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
+
+function initials(firstName: string, lastName: string): string {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
+}
+
+const typeBadgeVariant: Record<string, "brand" | "accent" | "success" | "warning" | "default"> = {
+  member: "brand",
+  donor: "accent",
+  volunteer: "success",
+  lead: "warning",
+};
 
 export type ContactListRow = {
   id: string;
@@ -28,13 +47,6 @@ export type ContactListRow = {
   _count: { registrations: number };
 };
 
-function truncate(text: string | null | undefined, max: number): string {
-  if (!text) return "—";
-  const trimmed = text.trim();
-  if (trimmed.length <= max) return trimmed;
-  return `${trimmed.slice(0, max - 1)}…`;
-}
-
 function membershipLabel(contact: ContactListRow): string {
   const active = contact.memberships[0];
   if (!active) return "—";
@@ -51,22 +63,23 @@ function activityLabel(contact: ContactListRow): string {
 }
 
 function TagPills({ tags }: { tags: string[] }) {
-  if (tags.length === 0) return <span className="text-slate-400">—</span>;
+  if (tags.length === 0) return <span className="text-muted-foreground">—</span>;
   const visible = tags.slice(0, 2);
   const extra = tags.length - visible.length;
   return (
     <div className="flex flex-wrap items-center gap-1">
       {visible.map((tag) => (
-        <span
+        <Link
           key={tag}
-          className="inline-block max-w-[72px] truncate rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700"
+          href={`/dashboard/members?tag=${encodeURIComponent(tag)}`}
+          className="inline-block max-w-[72px] truncate rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-foreground hover:bg-primary/10 hover:text-primary"
           title={tag}
         >
           {tag}
-        </span>
+        </Link>
       ))}
       {extra > 0 && (
-        <span className="text-[10px] font-medium text-slate-500" title={tags.slice(2).join(", ")}>
+        <span className="text-[10px] font-medium text-muted-foreground" title={tags.slice(2).join(", ")}>
           +{extra}
         </span>
       )}
@@ -76,65 +89,57 @@ function TagPills({ tags }: { tags: string[] }) {
 
 export function ContactsCrmTable({ contacts }: { contacts: ContactListRow[] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="border-b border-stone-200 bg-stone-50/80 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            <th className="px-3 py-2">Name</th>
-            <th className="px-3 py-2">Email</th>
-            <th className="px-3 py-2">Phone</th>
-            <th className="px-3 py-2">Type</th>
-            <th className="px-3 py-2">Source</th>
-            <th className="px-3 py-2">Membership</th>
-            <th className="px-3 py-2">Last activity</th>
-            <th className="px-3 py-2">Tags</th>
-            <th className="px-3 py-2 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-stone-100">
-          {contacts.map((contact) => (
-            <tr key={contact.id} className="h-12 hover:bg-stone-50/80">
-              <td className="whitespace-nowrap px-3 py-2 font-medium text-slate-950">
-                <Link
-                  href={`/dashboard/members/${contact.id}`}
-                  className="text-teal-900 hover:text-slate-950 hover:underline"
-                >
+    <DataTable>
+      <DataTableHead>
+        <DataTableHeaderCell>Name</DataTableHeaderCell>
+        <DataTableHeaderCell>Email</DataTableHeaderCell>
+        <DataTableHeaderCell>Phone</DataTableHeaderCell>
+        <DataTableHeaderCell>Type</DataTableHeaderCell>
+        <DataTableHeaderCell>Source</DataTableHeaderCell>
+        <DataTableHeaderCell>Membership</DataTableHeaderCell>
+        <DataTableHeaderCell>Last activity</DataTableHeaderCell>
+        <DataTableHeaderCell>Tags</DataTableHeaderCell>
+        <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+      </DataTableHead>
+      <DataTableBody>
+        {contacts.map((contact) => (
+          <DataTableRow key={contact.id}>
+            <DataTableCell className="whitespace-nowrap font-medium">
+              <Link href={`/dashboard/members/${contact.id}`} className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                  {initials(contact.firstName, contact.lastName)}
+                </span>
+                <span className="font-bold text-foreground hover:text-primary">
                   {contact.firstName} {contact.lastName}
-                </Link>
-              </td>
-              <td className="max-w-[180px] truncate px-3 py-2 text-slate-700" title={contact.email}>
-                {contact.email}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{contact.phone || "—"}</td>
-              <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-700">
+                </span>
+              </Link>
+            </DataTableCell>
+            <DataTableCell className="max-w-[180px] truncate text-foreground/80" title={contact.email}>
+              {contact.email}
+            </DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-muted-foreground">{contact.phone || "—"}</DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-xs">
+              <Badge variant={typeBadgeVariant[contact.type?.toLowerCase()] ?? "default"}>
                 {pilotContactKindLabel(contact)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-700">
-                {contactSourceLabel(contact.source)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-700">{membershipLabel(contact)}</td>
-              <td
-                className="max-w-[140px] truncate px-3 py-2 text-xs text-slate-600"
-                title={contact.lastActivitySummary ?? undefined}
-              >
-                {activityLabel(contact)}
-              </td>
-              <td className="px-3 py-2">
-                <TagPills tags={contact.tags} />
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-right">
-                <Link
-                  href={`/dashboard/members/${contact.id}`}
-                  className="text-xs font-semibold text-teal-900 hover:text-slate-950"
-                >
-                  View
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              </Badge>
+            </DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-xs">{contactSourceLabel(contact.source)}</DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-xs">{membershipLabel(contact)}</DataTableCell>
+            <DataTableCell className="max-w-[140px] truncate text-xs text-muted-foreground" title={contact.lastActivitySummary ?? undefined}>
+              {activityLabel(contact)}
+            </DataTableCell>
+            <DataTableCell>
+              <TagPills tags={contact.tags} />
+            </DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-right">
+              <Link href={`/dashboard/members/${contact.id}`} className="text-xs font-semibold text-primary hover:text-foreground">
+                View
+              </Link>
+            </DataTableCell>
+          </DataTableRow>
+        ))}
+      </DataTableBody>
+    </DataTable>
   );
 }
 

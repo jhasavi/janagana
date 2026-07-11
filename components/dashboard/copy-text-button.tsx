@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 export function CopyTextButton({
   text,
@@ -27,7 +28,10 @@ export function CopyTextButton({
     <button
       type="button"
       onClick={handleCopy}
-      className={`rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-stone-50 ${className}`}
+      className={cn(
+        "inline-flex items-center rounded-xl border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/60",
+        className,
+      )}
     >
       {copied ? "Copied" : label}
     </button>

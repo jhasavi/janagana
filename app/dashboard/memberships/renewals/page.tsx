@@ -1,7 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { TenantScopeBanner } from "@/components/dashboard/tenant-scope-banner";
+import { AlertOctagon, CalendarClock, CheckCircle2, UserX } from "lucide-react";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
 import { queueMembershipRenewalReminder } from "@/lib/actions/membership-renewals";
 import {
   type RenewalFilter,
@@ -18,6 +34,7 @@ const FILTERS: { value: RenewalFilter; label: string }[] = [
   { value: "expiring_60", label: "Expiring 60d" },
   { value: "expiring_90", label: "Expiring 90d" },
   { value: "expired", label: "Expired" },
+  { value: "payment_failed", label: "Payment failed" },
   { value: "needs_reminder", label: "Needs reminder" },
   { value: "recently_paid", label: "Recently paid" },
   { value: "no_email", label: "No email" },
@@ -27,12 +44,11 @@ function filterHref(filter: RenewalFilter) {
   return filter === "all" ? "/dashboard/memberships/renewals" : `/dashboard/memberships/renewals?filter=${filter}`;
 }
 
-function statusClass(status: string) {
-  if (status === "ACTIVE") return "bg-emerald-100 text-emerald-900";
-  if (status === "PENDING") return "bg-amber-100 text-amber-900";
-  if (status === "EXPIRED") return "bg-red-100 text-red-900";
-  if (status === "CANCELED" || status === "INACTIVE") return "bg-gray-100 text-gray-700";
-  return "bg-slate-100 text-slate-800";
+function statusVariant(status: string): "success" | "warning" | "danger" | "default" {
+  if (status === "ACTIVE") return "success";
+  if (status === "PENDING") return "warning";
+  if (status === "EXPIRED") return "danger";
+  return "default";
 }
 
 function reminderLabel(status: string) {
@@ -105,187 +121,185 @@ export default async function MembershipRenewalsPage({
 
   return (
     <section className="space-y-6">
-      {tenant && <TenantScopeBanner slug={tenant.slug} name={tenant.name} />}
-
-      <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Community OS</p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-950">Membership renewals desk</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              See who is active, expiring soon, or lapsed — and queue renewal reminders without leaving the admin
-              dashboard.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/tiers"
-            className="shrink-0 text-sm font-semibold text-teal-900 hover:text-slate-950"
-          >
+      <PageHeader
+        eyebrow="Programs"
+        title="Membership renewals desk"
+        description="See who is active, expiring soon, or lapsed — and queue renewal reminders without leaving the admin dashboard."
+        actions={
+          <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
             ← Membership plans & enrollment
           </Link>
-        </div>
-      </header>
+        }
+      />
 
-      {params.error && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">{params.error}</p>
-      )}
+      {params.error && <Alert variant="error">{params.error}</Alert>}
       {params.success === "reminder" && (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <Alert variant="success">
           Renewal reminder queued in the communications outbox. It will not send until email delivery is configured.
-        </p>
+        </Alert>
       )}
 
       {desk && (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <SummaryCard label="Active members" value={desk.summary.activeMembers} href={filterHref("active")} />
-            <SummaryCard
-              label="Expiring in 30 days"
-              value={desk.summary.expiringIn30Days}
-              href={filterHref("expiring_30")}
-              highlight={desk.summary.expiringIn30Days > 0}
-            />
-            <SummaryCard
-              label="Expiring in 60 days"
-              value={desk.summary.expiringIn60Days}
-              href={filterHref("expiring_60")}
-            />
-            <SummaryCard
-              label="Expiring in 90 days"
-              value={desk.summary.expiringIn90Days}
-              href={filterHref("expiring_90")}
-            />
-            <SummaryCard
-              label="Expired members"
-              value={desk.summary.expiredMembers}
-              href={filterHref("expired")}
-              highlight={desk.summary.expiredMembers > 0}
-            />
-            <SummaryCard
-              label="Recent membership payments"
-              value={desk.summary.recentlyPaidCount}
-              href={filterHref("recently_paid")}
-            />
-          </section>
+          {desk.summary.paymentIssuesCount > 0 && (
+            <div className="flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card text-destructive">
+                <AlertOctagon className="h-4 w-4" />
+              </span>
+              <p className="text-sm leading-6 text-foreground">
+                <span className="font-bold">
+                  {desk.summary.paymentIssuesCount} membership{desk.summary.paymentIssuesCount === 1 ? "" : "s"} with a
+                  failed charge
+                </span>{" "}
+                <span className="text-muted-foreground">
+                  need dunning follow-up before they lapse.{" "}
+                  <Link href={filterHref("payment_failed")} className="font-semibold text-destructive underline">
+                    Review now
+                  </Link>
+                </span>
+              </p>
+            </div>
+          )}
 
-          <section className="flex flex-wrap gap-2">
-            {FILTERS.map((item) => {
-              const active = activeFilter === item.value;
-              return (
-                <Link
-                  key={item.value}
-                  href={filterHref(item.value)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    active
-                      ? "bg-slate-950 text-white"
-                      : "bg-white text-slate-700 ring-1 ring-stone-200 hover:bg-stone-50"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </section>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <Link href={filterHref("active")}>
+              <StatCard icon={CheckCircle2} tone="success" label="Active members" value={String(desk.summary.activeMembers)} />
+            </Link>
+            <Link href={filterHref("expiring_30")}>
+              <StatCard icon={CalendarClock} tone="warning" label="Expiring in 30 days" value={String(desk.summary.expiringIn30Days)} />
+            </Link>
+            <Link href={filterHref("expiring_60")}>
+              <StatCard icon={CalendarClock} tone="warning" label="Expiring in 60 days" value={String(desk.summary.expiringIn60Days)} />
+            </Link>
+            <Link href={filterHref("expiring_90")}>
+              <StatCard icon={CalendarClock} tone="primary" label="Expiring in 90 days" value={String(desk.summary.expiringIn90Days)} />
+            </Link>
+            <Link href={filterHref("expired")}>
+              <StatCard icon={UserX} tone="accent" label="Expired members" value={String(desk.summary.expiredMembers)} />
+            </Link>
+            <Link href={filterHref("payment_failed")}>
+              <StatCard icon={AlertOctagon} tone="warning" label="Payment failed" value={String(desk.summary.paymentIssuesCount)} />
+            </Link>
+          </div>
 
-          <section className="rounded-lg border border-stone-200 bg-white shadow-sm">
-            <div className="border-b border-stone-100 px-5 py-4">
-              <h2 className="text-base font-semibold text-slate-950">Renewals table</h2>
-              <p className="mt-0.5 text-sm text-slate-600">
+          <div className="flex flex-wrap gap-2">
+            {FILTERS.map((item) => (
+              <FilterChip key={item.value} href={filterHref(item.value)} active={activeFilter === item.value}>
+                {item.label}
+              </FilterChip>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <h2 className="text-base font-semibold text-foreground">Renewals table</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
                 {filteredRows.length} member{filteredRows.length === 1 ? "" : "s"}
                 {activeFilter !== "all" ? ` · filter: ${FILTERS.find((f) => f.value === activeFilter)?.label}` : ""}
               </p>
-            </div>
+            </CardHeader>
 
             {desk.summary.totalEnrollments === 0 ? (
-              <EmptyPanel title="No membership records yet">
-                <p>Enroll your first member on the memberships page, then return here to track renewals.</p>
-                <Link href="/dashboard/tiers" className="mt-3 inline-block font-semibold text-teal-900 hover:text-slate-950">
-                  Go to memberships →
-                </Link>
-              </EmptyPanel>
+              <CardBody>
+                <EmptyState
+                  title="No membership records yet"
+                  description="Enroll your first member on the memberships page, then return here to track renewals."
+                  action={
+                    <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">
+                      Go to memberships →
+                    </Link>
+                  }
+                />
+              </CardBody>
             ) : filteredRows.length === 0 ? (
-              <EmptyPanel title={emptyTitleForFilter(activeFilter)}>
-                <p>{emptyBodyForFilter(activeFilter)}</p>
-              </EmptyPanel>
+              <CardBody>
+                <EmptyState title={emptyTitleForFilter(activeFilter)} description={emptyBodyForFilter(activeFilter)} />
+              </CardBody>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                      <th className="px-5 py-3">Member</th>
-                      <th className="px-5 py-3">Plan</th>
-                      <th className="px-5 py-3">Status</th>
-                      <th className="px-5 py-3">Term</th>
-                      <th className="px-5 py-3">Expiration</th>
-                      <th className="px-5 py-3">Last payment</th>
-                      <th className="px-5 py-3">Reminder</th>
-                      <th className="px-5 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <CardBody className="pt-0">
+                <DataTable>
+                  <DataTableHead>
+                    <DataTableHeaderCell>Member</DataTableHeaderCell>
+                    <DataTableHeaderCell>Plan</DataTableHeaderCell>
+                    <DataTableHeaderCell>Status</DataTableHeaderCell>
+                    <DataTableHeaderCell>Term</DataTableHeaderCell>
+                    <DataTableHeaderCell>Expiration</DataTableHeaderCell>
+                    <DataTableHeaderCell>Last payment</DataTableHeaderCell>
+                    <DataTableHeaderCell>Reminder</DataTableHeaderCell>
+                    <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                  </DataTableHead>
+                  <DataTableBody>
                     {filteredRows.map((row) => (
-                      <tr key={row.membershipId} className="border-b border-stone-100 align-top">
-                        <td className="px-5 py-3">
-                          <p className="font-medium text-slate-950">
+                      <DataTableRow key={row.membershipId}>
+                        <DataTableCell>
+                          <p className="font-medium text-foreground">
                             {row.firstName} {row.lastName}
                           </p>
-                          <p className="text-slate-600">{row.email}</p>
-                          <p className="text-xs text-slate-500">{row.phone ?? "No phone"}</p>
+                          <p className="text-muted-foreground">{row.email}</p>
+                          <p className="text-xs text-muted-foreground">{row.phone ?? "No phone"}</p>
                           {!row.hasUsableEmail && (
                             <p className="mt-1 text-xs font-medium text-amber-800">No usable email for reminder</p>
                           )}
-                        </td>
-                        <td className="px-5 py-3">
-                          <p className="font-medium text-slate-900">{row.tierName}</p>
-                          <p className="text-xs text-slate-600">
+                        </DataTableCell>
+                        <DataTableCell>
+                          <p className="font-medium text-foreground">{row.tierName}</p>
+                          <p className="text-xs text-muted-foreground">
                             {formatCents(row.tierAmountCents)} / {row.tierInterval.toLowerCase()}
                           </p>
-                        </td>
-                        <td className="px-5 py-3">
-                          <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${statusClass(row.status)}`}>
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-slate-700">
+                        </DataTableCell>
+                        <DataTableCell>
+                          <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+                        </DataTableCell>
+                        <DataTableCell className="text-foreground">
                           <p>Starts {formatDate(row.startsAt)}</p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             {row.expirationKnown && row.expiresAt
                               ? `Ends ${formatDate(row.expiresAt)}`
                               : "No end date on file"}
                           </p>
-                        </td>
-                        <td className="px-5 py-3">
-                          <p className={`font-medium ${row.isExpired ? "text-red-800" : row.isExpiringWithin30 ? "text-amber-800" : "text-slate-800"}`}>
+                        </DataTableCell>
+                        <DataTableCell>
+                          <p
+                            className={`font-medium ${row.isExpired ? "text-destructive" : row.isExpiringWithin30 ? "text-amber-800" : "text-foreground"}`}
+                          >
                             {expirationLabel(row)}
                           </p>
-                        </td>
-                        <td className="px-5 py-3 text-slate-700">
+                        </DataTableCell>
+                        <DataTableCell className="text-foreground">
                           {row.lastPaymentAt ? (
                             <>
                               <p className="font-medium">{formatCents(row.lastPaymentAmountCents ?? 0)}</p>
-                              <p className="text-xs text-slate-500">{formatRelativeTime(row.lastPaymentAt)}</p>
+                              <p className="text-xs text-muted-foreground">{formatRelativeTime(row.lastPaymentAt)}</p>
                             </>
                           ) : (
-                            <span className="text-xs text-slate-500">No payment recorded</span>
+                            <span className="text-xs text-muted-foreground">No payment recorded</span>
                           )}
-                        </td>
-                        <td className="px-5 py-3 text-slate-700">
+                          {row.hasPaymentIssue && (
+                            <div className="mt-1.5">
+                              <Badge variant="danger">
+                                Failed {formatCents(row.lastFailedPaymentAmountCents ?? 0)}
+                                {row.lastFailedPaymentAt ? ` · ${formatRelativeTime(row.lastFailedPaymentAt)}` : ""}
+                              </Badge>
+                            </div>
+                          )}
+                        </DataTableCell>
+                        <DataTableCell className="text-foreground">
                           <p className="text-xs font-medium">{reminderLabel(row.reminderStatus)}</p>
                           {row.lastReminderAt && (
-                            <p className="text-xs text-slate-500">{formatRelativeTime(row.lastReminderAt)}</p>
+                            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.lastReminderAt)}</p>
                           )}
-                        </td>
-                        <td className="px-5 py-3 min-w-[180px]">
+                        </DataTableCell>
+                        <DataTableCell className="min-w-[180px]">
                           <div className="flex flex-col gap-2">
                             <Link
                               href={`/dashboard/members/${row.contactId}`}
-                              className="text-xs font-semibold text-teal-900 hover:text-slate-950"
+                              className="text-xs font-semibold text-primary hover:text-foreground"
                             >
                               View contact
                             </Link>
                             <Link
                               href="/dashboard/payments"
-                              className="text-xs font-semibold text-teal-900 hover:text-slate-950"
+                              className="text-xs font-semibold text-primary hover:text-foreground"
                             >
                               View payments
                             </Link>
@@ -294,68 +308,34 @@ export default async function MembershipRenewalsPage({
                                 {tenant && <TenantScopeHiddenFields tenantId={tenant.id} />}
                                 <input type="hidden" name="membershipId" value={row.membershipId} />
                                 <input type="hidden" name="returnFilter" value={activeFilter} />
-                                <button
+                                <Button
                                   type="submit"
+                                  size="sm"
                                   disabled={row.reminderStatus === "recently_queued"}
-                                  className="rounded bg-slate-950 px-2 py-1 text-xs font-medium text-white hover:bg-teal-900 disabled:cursor-not-allowed disabled:bg-stone-300"
                                 >
                                   {row.reminderStatus === "recently_queued" ? "Reminder queued" : "Queue reminder"}
-                                </button>
+                                </Button>
                               </form>
                             ) : (
                               <p className="text-xs text-amber-800">Add a valid email before queueing</p>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </DataTableCell>
+                      </DataTableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </DataTableBody>
+                </DataTable>
+              </CardBody>
             )}
-          </section>
+          </Card>
 
-          <p className="text-xs text-slate-500">
-            Expiration uses <code className="rounded bg-stone-100 px-1">Membership.expiresAt</code> when set at
-            enrollment. One-time plans may have no end date — those members appear as active without an expiration
-            window.
+          <p className="text-xs text-muted-foreground">
+            Expiration uses <code className="rounded bg-muted px-1">Membership.expiresAt</code> when set at enrollment.
+            One-time plans may have no end date — those members appear as active without an expiration window.
           </p>
         </>
       )}
     </section>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  href,
-  highlight,
-}: {
-  label: string;
-  value: number;
-  href: string;
-  highlight?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-lg border p-4 shadow-sm transition-colors hover:border-teal-300 ${
-        highlight ? "border-stone-200 bg-white" : "border-stone-200 bg-stone-50"
-      }`}
-    >
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-950">{value}</p>
-    </Link>
-  );
-}
-
-function EmptyPanel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="border-t border-dashed border-stone-200 bg-stone-50 p-6 text-sm text-slate-700">
-      <p className="font-medium text-slate-950">{title}</p>
-      <div className="mt-2">{children}</div>
-    </div>
   );
 }
 
@@ -371,6 +351,8 @@ function emptyTitleForFilter(filter: RenewalFilter) {
       return "All members have a usable email";
     case "recently_paid":
       return "No recent membership payments";
+    case "payment_failed":
+      return "No failed charges right now";
     case "needs_reminder":
       return "No members need a renewal reminder right now";
     case "active":
@@ -390,6 +372,8 @@ function emptyBodyForFilter(filter: RenewalFilter) {
       return "No active memberships with a known expiration date in this window.";
     case "needs_reminder":
       return "Everyone expiring soon either has a recent reminder queued or needs an email address first.";
+    case "payment_failed":
+      return "Every charge on file went through — nothing needs dunning follow-up.";
     default:
       return "Try another filter or enroll members with expiration dates.";
   }

@@ -1,16 +1,29 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
+import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
+import { extendMembershipExpiration } from "@/lib/memberships/subscription-renewal";
 
 type StripeCheckoutSession = {
   id: string;
   object: "checkout.session";
+  mode?: string;
   payment_status?: string;
   amount_total?: number | null;
   currency?: string | null;
   client_reference_id?: string | null;
   customer_email?: string | null;
+  subscription?: string | null;
   metadata?: Record<string, string | undefined> | null;
+};
+
+type StripeInvoice = {
+  id: string;
+  object: "invoice";
+  subscription?: string | null;
+  amount_paid?: number;
+  currency?: string | null;
+  billing_reason?: string | null;
 };
 
 type StripeEvent = {
@@ -20,6 +33,159 @@ type StripeEvent = {
     object: unknown;
   };
 };
+
+function isStripeInvoice(value: unknown): value is StripeInvoice {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { object?: unknown }).object === "invoice" &&
+    typeof (value as { id?: unknown }).id === "string"
+  );
+}
+
+async function attachStripeSubscription(input: {
+  paymentId: string;
+  subscriptionId: string;
+  membershipId: string | null;
+}) {
+  await prisma.paymentRecord.update({
+    where: { id: input.paymentId },
+    data: { stripeSubscriptionId: input.subscriptionId },
+  });
+  if (input.membershipId) {
+    await prisma.membership.update({
+      where: { id: input.membershipId },
+      data: { stripeSubscriptionId: input.subscriptionId, autoRenew: true },
+    });
+  }
+}
+
+async function processSubscriptionRenewalInvoice(invoice: StripeInvoice, event: StripeEvent) {
+  const subscriptionId = invoice.subscription;
+  if (!subscriptionId || invoice.billing_reason !== "subscription_cycle") {
+    return { ok: true as const, duplicate: false, processed: false };
+  }
+
+  const existing = await prisma.paymentRecord.findFirst({
+    where: { provider: "stripe", providerRef: invoice.id },
+    select: { id: true },
+  });
+  if (existing) {
+    return { ok: true as const, duplicate: true, processed: false };
+  }
+
+  const now = new Date();
+  const amountCents = invoice.amount_paid ?? 0;
+  const currency = (invoice.currency ?? "usd").toUpperCase();
+
+  const membership = await prisma.membership.findFirst({
+    where: { stripeSubscriptionId: subscriptionId },
+    include: {
+      tier: true,
+      contact: { select: { id: true } },
+    },
+  });
+
+  if (membership) {
+    const payment = await prisma.paymentRecord.create({
+      data: {
+        tenantId: membership.tenantId,
+        contactId: membership.contactId,
+        membershipId: membership.id,
+        amountCents,
+        currency,
+        status: "PAID",
+        method: "STRIPE",
+        purpose: "MEMBERSHIP",
+        provider: "stripe",
+        providerRef: invoice.id,
+        stripeSubscriptionId: subscriptionId,
+        paidAt: now,
+        notes: "Stripe subscription renewal",
+      },
+    });
+
+    const nextExpiresAt = extendMembershipExpiration({
+      currentExpiresAt: membership.expiresAt,
+      interval: membership.tier.interval,
+      from: now,
+    });
+
+    await prisma.membership.update({
+      where: { id: membership.id },
+      data: {
+        status: "ACTIVE",
+        expiresAt: nextExpiresAt,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: membership.tenantId,
+        actorUserId: null,
+        action: "CREATE",
+        metadata: {
+          entity: "PaymentRecord",
+          source: "stripe_invoice",
+          purpose: "MEMBERSHIP",
+          stripeEventId: event.id,
+          stripeInvoiceId: invoice.id,
+          paymentId: payment.id,
+          membershipId: membership.id,
+        },
+      },
+    });
+
+    await issueReceiptForPayment(payment.id);
+    return { ok: true as const, duplicate: false, processed: true, tenantId: membership.tenantId };
+  }
+
+  const anchor = await prisma.paymentRecord.findFirst({
+    where: { stripeSubscriptionId: subscriptionId, purpose: "DONATION" },
+    orderBy: { createdAt: "asc" },
+    include: { contact: { select: { id: true } } },
+  });
+
+  if (!anchor?.contact) {
+    return { ok: true as const, duplicate: false, processed: false };
+  }
+
+  const payment = await prisma.paymentRecord.create({
+    data: {
+      tenantId: anchor.tenantId,
+      contactId: anchor.contactId,
+      amountCents,
+      currency,
+      status: "PAID",
+      method: "STRIPE",
+      purpose: "DONATION",
+      provider: "stripe",
+      providerRef: invoice.id,
+      stripeSubscriptionId: subscriptionId,
+      paidAt: now,
+      notes: "Monthly recurring donation",
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: anchor.tenantId,
+      actorUserId: null,
+      action: "CREATE",
+      metadata: {
+        entity: "PaymentRecord",
+        source: "stripe_invoice",
+        purpose: "DONATION",
+        stripeEventId: event.id,
+        stripeInvoiceId: invoice.id,
+        paymentId: payment.id,
+      },
+    },
+  });
+
+  await issueReceiptForPayment(payment.id);
+  return { ok: true as const, duplicate: false, processed: true, tenantId: anchor.tenantId };
+}
 
 function isCheckoutSession(value: unknown): value is StripeCheckoutSession {
   return (
@@ -185,6 +351,82 @@ async function finalizeMembershipPayment(
   }
 }
 
+async function finalizeEventPayment(
+  payment: {
+    id: string;
+    tenantId: string;
+    amountCents: number;
+    currency: string;
+    paidAt: Date | null;
+    registrationId: string | null;
+    contact: { id: string } | null;
+  },
+  session: StripeCheckoutSession,
+  event: StripeEvent,
+  paid: boolean,
+) {
+  const nextPaymentStatus = paid ? "PAID" : "PENDING";
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentRecord.update({
+      where: { id: payment.id },
+      data: {
+        status: nextPaymentStatus,
+        method: "STRIPE",
+        provider: "stripe",
+        providerRef: session.id,
+        amountCents: session.amount_total ?? payment.amountCents,
+        currency: (session.currency ?? payment.currency).toUpperCase(),
+        paidAt: paid ? now : payment.paidAt,
+        notes: paid ? "Stripe event ticket payment confirmed" : "Stripe Checkout completed; payment not marked paid",
+      },
+    });
+
+    if (paid && payment.registrationId) {
+      await tx.eventRegistration.update({
+        where: { id: payment.registrationId },
+        data: { status: "CONFIRMED" },
+      });
+    }
+
+    if (paid && payment.contact) {
+      await tx.contact.update({
+        where: { id: payment.contact.id },
+        data: {
+          lastActivityAt: now,
+          lastActivitySummary: "Paid for event registration",
+        },
+      });
+    }
+
+    await tx.auditLog.create({
+      data: {
+        tenantId: payment.tenantId,
+        actorUserId: null,
+        action: "UPDATE",
+        metadata: {
+          entity: "PaymentRecord",
+          source: "stripe_webhook",
+          purpose: "EVENT",
+          stripeEventId: event.id,
+          stripeCheckoutSessionId: session.id,
+          paymentId: payment.id,
+          registrationId: payment.registrationId,
+          nextPaymentStatus,
+        },
+      },
+    });
+  });
+
+  if (paid) {
+    await issueReceiptForPayment(payment.id);
+    if (payment.registrationId) {
+      await queueEventRegistrationCommunication(payment.registrationId);
+    }
+  }
+}
+
 export async function processStripeWebhookEvent(event: StripeEvent) {
   const existing = await prisma.stripeWebhookEvent.findUnique({
     where: { stripeEventId: event.id },
@@ -192,6 +434,26 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
   });
   if (existing) {
     return { ok: true as const, duplicate: true, processed: false };
+  }
+
+  if (event.type === "invoice.paid") {
+    if (!isStripeInvoice(event.data.object)) {
+      return { ok: false as const, error: "Webhook event object is not an Invoice" };
+    }
+    const result = await processSubscriptionRenewalInvoice(event.data.object, event);
+    await prisma.stripeWebhookEvent.create({
+      data: {
+        tenantId: "tenantId" in result && typeof result.tenantId === "string" ? result.tenantId : null,
+        stripeEventId: event.id,
+        eventType: event.type,
+        metadata: jsonMetadata({
+          processed: result.processed,
+          duplicate: result.duplicate,
+          invoiceId: event.data.object.id,
+        }),
+      },
+    });
+    return { ok: true as const, duplicate: result.duplicate, processed: result.processed };
   }
 
   if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {
@@ -222,6 +484,7 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
     include: {
       membership: { include: { tier: true } },
       contact: true,
+      registration: true,
     },
   });
 
@@ -241,8 +504,21 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
       return { ok: false as const, error: "Membership payment is missing membership or contact" };
     }
     await finalizeMembershipPayment(payment, session, event, paid);
+  } else if (payment.purpose === "EVENT") {
+    if (!payment.contact) {
+      return { ok: false as const, error: "Event payment is missing contact" };
+    }
+    await finalizeEventPayment(payment, session, event, paid);
   } else {
     return { ok: false as const, error: `Unsupported payment purpose for Checkout Session: ${payment.purpose}` };
+  }
+
+  if (session.subscription) {
+    await attachStripeSubscription({
+      paymentId: payment.id,
+      subscriptionId: session.subscription,
+      membershipId: payment.membershipId,
+    });
   }
 
   await prisma.stripeWebhookEvent.upsert({
@@ -255,6 +531,7 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
         paymentRecordId: payment.id,
         purpose: payment.purpose,
         membershipId: payment.membershipId,
+        subscriptionId: session.subscription ?? null,
         paid,
       }),
     },
@@ -267,6 +544,7 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
         paymentRecordId: payment.id,
         purpose: payment.purpose,
         membershipId: payment.membershipId,
+        subscriptionId: session.subscription ?? null,
         paid,
       }),
     },

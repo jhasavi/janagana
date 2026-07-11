@@ -2,8 +2,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { configuredAppUrl } from "@/lib/environment";
 import { getTenantBySlug } from "@/lib/tenant";
-import { calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
-import { createStripeCheckoutSession, stripeCheckoutConfigured } from "@/lib/payments/stripe";
+import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import {
+  createStripeCheckoutSession,
+  createStripeSubscriptionCheckoutSession,
+  stripeCheckoutConfigured,
+} from "@/lib/payments/stripe";
 
 export const DONATION_PRESET_CENTS = [2500, 5000, 10000, 25000, 50000] as const;
 export const MIN_DONATION_CENTS = 100;
@@ -18,6 +22,8 @@ const PublicDonationCheckoutSchema = z
     phone: z.string().trim().max(30).optional().or(z.literal("")),
     amountCents: z.number().int().min(MIN_DONATION_CENTS).max(MAX_DONATION_CENTS),
     dedication: z.string().trim().max(500).optional().or(z.literal("")),
+    coverProcessingFee: z.boolean().optional().default(false),
+    recurringMonthly: z.boolean().optional().default(false),
   })
   .strict();
 
@@ -61,6 +67,11 @@ export async function createPublicDonationCheckout(input: unknown) {
   const email = parsed.data.email.toLowerCase();
   const phone = parsed.data.phone || null;
   const dedication = parsed.data.dedication?.trim() || null;
+  const amounts = calculateCheckoutAmount({
+    baseCents: parsed.data.amountCents,
+    coverProcessingFee: parsed.data.coverProcessingFee,
+  });
+  const useSubscription = parsed.data.recurringMonthly;
 
   const result = await prisma.$transaction(async (tx) => {
     const contact = await tx.contact.upsert({
@@ -93,13 +104,17 @@ export async function createPublicDonationCheckout(input: unknown) {
       data: {
         tenantId: tenant.id,
         contactId: contact.id,
-        amountCents: parsed.data.amountCents,
+        amountCents: amounts.totalCents,
         currency: "USD",
         status: "PENDING",
         method: "STRIPE",
         purpose: "DONATION",
         provider: "stripe",
-        notes: dedication ? `Dedication: ${dedication}` : "Public donation checkout started",
+        notes: dedication
+          ? `Dedication: ${dedication}${amounts.processingFeeCents ? ` · Donor covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing` : ""}`
+          : amounts.processingFeeCents
+            ? `Donor covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
+            : "Public donation checkout started",
       },
     });
 
@@ -108,25 +123,42 @@ export async function createPublicDonationCheckout(input: unknown) {
 
   const successUrl = `${configuredAppUrl()}/portal/${tenant.slug}/donate?status=thankyou&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${configuredAppUrl()}/portal/${tenant.slug}/donate?status=canceled`;
+  const checkoutMetadata = {
+    paymentRecordId: result.payment.id,
+    tenantId: tenant.id,
+    tenantSlug: tenant.slug,
+    contactId: result.contact.id,
+    purpose: "DONATION",
+    baseAmountCents: String(amounts.baseCents),
+    processingFeeCents: String(amounts.processingFeeCents),
+    coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
+    recurring: useSubscription ? "true" : "false",
+    janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
+    janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),
+  };
 
-  const checkout = await createStripeCheckoutSession({
-    amountCents: parsed.data.amountCents,
-    currency: "USD",
-    customerEmail: email,
-    productName: `Donation to ${tenant.name}`,
-    successUrl,
-    cancelUrl,
-    clientReferenceId: result.payment.id,
-    metadata: {
-      paymentRecordId: result.payment.id,
-      tenantId: tenant.id,
-      tenantSlug: tenant.slug,
-      contactId: result.contact.id,
-      purpose: "DONATION",
-      janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
-      janaganaPlatformFeeCents: String(calculatePlatformFeeCents(parsed.data.amountCents)),
-    },
-  });
+  const checkout = useSubscription
+    ? await createStripeSubscriptionCheckoutSession({
+        unitAmountCents: amounts.totalCents,
+        currency: "USD",
+        interval: "month",
+        customerEmail: email,
+        productName: `Monthly donation to ${tenant.name}`,
+        successUrl,
+        cancelUrl,
+        clientReferenceId: result.payment.id,
+        metadata: checkoutMetadata,
+      })
+    : await createStripeCheckoutSession({
+        amountCents: amounts.totalCents,
+        currency: "USD",
+        customerEmail: email,
+        productName: `Donation to ${tenant.name}`,
+        successUrl,
+        cancelUrl,
+        clientReferenceId: result.payment.id,
+        metadata: checkoutMetadata,
+      });
 
   if (!checkout.ok) {
     await prisma.paymentRecord.update({
