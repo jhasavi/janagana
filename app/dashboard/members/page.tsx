@@ -63,6 +63,7 @@ export default async function ContactsPage({
     interestType?: string;
     tag?: string;
     preset?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -87,9 +88,12 @@ export default async function ContactsPage({
     preset: (params.preset ?? "") as "" | "members" | "volunteers" | "donors" | "leads" | "no-email" | "recent",
   };
 
+  const requestedPage = Number.parseInt(params.page ?? "1", 10);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
   let contactsResult;
   try {
-    contactsResult = await listContacts(filters);
+    contactsResult = await listContacts(filters, page);
     console.info("MEMBERS_PAGE_RENDER", {
       tenantId: tenant?.id ?? null,
       success: params.success ?? null,
@@ -97,6 +101,7 @@ export default async function ContactsPage({
       filterPreset: filters.preset || null,
       rowCount: contactsResult.ok ? contactsResult.data.length : 0,
       totalCount: contactsResult.ok ? contactsResult.totalCount : 0,
+      page,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown render error";
@@ -110,7 +115,9 @@ export default async function ContactsPage({
 
   const contacts = contactsResult.ok ? contactsResult.data : [];
   const contactsTotal = contactsResult.ok ? contactsResult.totalCount : 0;
-  const contactsTruncated = contactsResult.ok ? contactsResult.truncated : false;
+  const pageSize = contactsResult.ok ? contactsResult.pageSize : 100;
+  const pageCount = contactsResult.ok ? contactsResult.pageCount : 1;
+  const currentPage = contactsResult.ok ? contactsResult.page : 1;
   const sourceOptions = contactsResult.ok ? contactsResult.sourceOptions : [];
   const interestOptions = contactsResult.ok ? contactsResult.interestOptions : [];
   const tagOptions = contactsResult.ok ? contactsResult.tagOptions : [];
@@ -118,6 +125,10 @@ export default async function ContactsPage({
   const filtersActive = hasActiveContactFilters(filters);
 
   const basePath = "/dashboard/members";
+  const rangeStart = contacts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const rangeEnd = (currentPage - 1) * pageSize + contacts.length;
+  const pageHref = (targetPage: number) =>
+    `${basePath}${contactListQueryString(filters)}${contactListQueryString(filters) ? "&" : "?"}page=${targetPage}`;
   const importSourceFilter =
     params.importSource ??
     (params.success === "import" ? params.source : undefined) ??
@@ -135,7 +146,11 @@ export default async function ContactsPage({
       <PageHeader
         eyebrow="People"
         title="Contacts"
-        description={`${contactsTotal} contact${contactsTotal === 1 ? "" : "s"}${contactsTruncated ? ` · showing ${contacts.length}` : ""}`}
+        description={
+          contactsTotal === 0
+            ? "0 contacts"
+            : `Showing ${rangeStart}–${rangeEnd} of ${contactsTotal} contact${contactsTotal === 1 ? "" : "s"}`
+        }
         actions={
           <>
             <ButtonLink href="/dashboard/members/import" variant="secondary" size="sm">
@@ -168,11 +183,6 @@ export default async function ContactsPage({
         </Alert>
       )}
       {params.importErrors && <Alert variant="warning">Row warnings: {params.importErrors}</Alert>}
-      {contactsTruncated && (
-        <Alert variant="info">
-          Showing first {contacts.length} of {contactsTotal} matching contacts. Use search or filters to narrow results.
-        </Alert>
-      )}
 
       {filtersActive && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
@@ -273,7 +283,36 @@ export default async function ContactsPage({
               }
             />
           ) : (
-            <ContactsCrmTable contacts={contacts} />
+            <>
+              <ContactsCrmTable contacts={contacts} />
+              {pageCount > 1 && (
+                <div className="flex items-center justify-between border-t border-border/70 pt-4">
+                  <p className="text-xs text-muted-foreground">
+                    Page {currentPage} of {pageCount}
+                  </p>
+                  <div className="flex gap-2">
+                    {currentPage > 1 ? (
+                      <ButtonLink href={pageHref(currentPage - 1)} variant="secondary" size="sm">
+                        Previous
+                      </ButtonLink>
+                    ) : (
+                      <Button variant="secondary" size="sm" disabled>
+                        Previous
+                      </Button>
+                    )}
+                    {currentPage < pageCount ? (
+                      <ButtonLink href={pageHref(currentPage + 1)} variant="secondary" size="sm">
+                        Next
+                      </ButtonLink>
+                    ) : (
+                      <Button variant="secondary" size="sm" disabled>
+                        Next
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardBody>
       </Card>

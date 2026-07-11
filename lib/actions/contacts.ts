@@ -162,7 +162,7 @@ export async function deleteContact(contactId: string, options?: TenantActionOpt
   return { ok: true as const };
 }
 
-export async function listContacts(input: unknown = {}) {
+export async function listContacts(input: unknown = {}, page = 1) {
   const auth = await requireActiveTenantForActions();
   if (!auth.ok) {
     return {
@@ -180,10 +180,12 @@ export async function listContacts(input: unknown = {}) {
   const parsed = ContactListSchema.safeParse(input);
   const filters = parsed.success ? parsed.data : {};
   const where = buildContactListWhere(context.tenant.id, filters);
+  const safePage = Number.isInteger(page) && page > 0 ? page : 1;
 
   const contacts = await prisma.contact.findMany({
     where,
     orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }, { email: "asc" }],
+    skip: (safePage - 1) * CONTACT_LIST_PAGE_SIZE,
     take: CONTACT_LIST_PAGE_SIZE,
     select: {
       id: true,
@@ -247,6 +249,9 @@ export async function listContacts(input: unknown = {}) {
     data: contacts,
     totalCount,
     truncated: totalCount > contacts.length,
+    page: safePage,
+    pageSize: CONTACT_LIST_PAGE_SIZE,
+    pageCount: Math.max(1, Math.ceil(totalCount / CONTACT_LIST_PAGE_SIZE)),
     sourceOptions: sourceRows.map((row) => row.source).filter((source): source is string => Boolean(source)),
     interestOptions: interestRows
       .map((row) => row.interestType)

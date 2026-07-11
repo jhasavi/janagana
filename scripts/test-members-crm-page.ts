@@ -128,10 +128,25 @@ async function testImportedContactsListPayload() {
   assert(contacts.every((c) => c.tags.includes("imported")), "imported tags must be present");
   assert(contacts.every((c) => !("notes" in c)), "list select must not include notes field");
 
+  const page2 = await prisma.contact.findMany({
+    where: { tenantId: tenant.id },
+    orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }, { email: "asc" }],
+    skip: CONTACT_LIST_PAGE_SIZE,
+    take: CONTACT_LIST_PAGE_SIZE,
+    select: { id: true },
+  });
+  assert(page2.length === rowCount - CONTACT_LIST_PAGE_SIZE, "page 2 must return the remaining rows past the cap");
+  const page1Ids = new Set(contacts.map((c) => c.id));
+  assert(page2.every((c) => !page1Ids.has(c.id)), "page 2 rows must not overlap page 1");
+  const pageCount = Math.max(1, Math.ceil(total / CONTACT_LIST_PAGE_SIZE));
+  assert(pageCount === 2, `expected 2 pages for ${rowCount} rows at page size ${CONTACT_LIST_PAGE_SIZE}, got ${pageCount}`);
+
   await prisma.contact.deleteMany({ where: { tenantId: tenant.id } });
   await prisma.tenant.delete({ where: { id: tenant.id } });
 
-  console.log(`PASS imported contacts list payload (${rowCount} rows, capped at ${CONTACT_LIST_PAGE_SIZE})`);
+  console.log(
+    `PASS imported contacts list payload (${rowCount} rows across ${pageCount} pages, ${CONTACT_LIST_PAGE_SIZE}/page)`,
+  );
 }
 
 async function main() {
