@@ -93,8 +93,8 @@ async function main() {
   });
 
   checks.push(
-    await fetchCheck("/portal/purple-wings", ["The Purple Wings", "Public portal"]),
-    await fetchCheck("/portal/namaste-boston", ["Namaste Boston", "Public portal"]),
+    await fetchCheck("/portal/purple-wings", ["The Purple Wings", "Welcome"]),
+    await fetchCheck("/portal/namaste-boston", ["Namaste Boston", "Welcome"]),
     await fetchCheck("/portal/purple-wings/contact?interest=newsletter", ["Newsletter"]),
     await fetchCheck("/portal/namaste-boston/contact?interest=investment", ["Investment analysis"]),
     await fetchCheck("/portal/namaste-boston/donate", ["Donate to", "No login required"]),
