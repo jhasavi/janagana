@@ -103,6 +103,14 @@ enum AuditAction {
   REGISTER
 }
 
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+}
+
 // ─── MODELS ───────────────────────────────────────────────────────────────────
 
 /// An organization admin account.
@@ -118,11 +126,15 @@ model Tenant {
   publicContactEmail String?
   publicContactPhone String?
   logoUrl            String?
+  /// Public member directory on the portal is opt-in per tenant, off by default.
+  directoryEnabled   Boolean      @default(false)
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
   tenantAdmins  TenantAdmin[]
   contacts      Contact[]
+  households    Household[]
+  customFieldDefinitions CustomFieldDefinition[]
   tiers         MembershipTier[]
   memberships   Membership[]
   eventTicketTypes EventTicketType[]
@@ -174,10 +186,18 @@ model Contact {
   externalId          String?
   importedAt          DateTime?
   originalMetadata    Json?
+  householdId         String?
+  /// Contact has opted in to being listed on the tenant's public directory.
+  /// Defaults off — the directory only ever shows name + type/tags, never email/phone.
+  directoryOptIn      Boolean     @default(false)
+  /// Values for the tenant's CustomFieldDefinitions, keyed by CustomFieldDefinition.key.
+  customFieldValues   Json?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
   tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  household     Household?          @relation("HouseholdMembers", fields: [householdId], references: [id], onDelete: SetNull)
+  payerFor      Household[]         @relation("HouseholdPayer")
   memberships   Membership[]
   registrations EventRegistration[]
   payments      PaymentRecord[]
@@ -191,6 +211,46 @@ model Contact {
   @@index([tenantId, source])
   @@index([tenantId, interestType])
   @@index([tenantId, lastActivityAt])
+  @@index([householdId])
+}
+
+/// Groups multiple Contacts into a family/household for CRM visibility —
+/// e.g. renewal reminders and event RSVPs shown per household, not just per person.
+/// Deliberately NOT a shared-billing entity: Membership stays 1:1 with the paying Contact.
+model Household {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  payerContactId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members Contact[] @relation("HouseholdMembers")
+  payer   Contact?  @relation("HouseholdPayer", fields: [payerContactId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([payerContactId])
+}
+
+/// Up to 3 active admin-defined fields per tenant (enforced in app code).
+/// Values live on Contact.customFieldValues, keyed by `key`.
+model CustomFieldDefinition {
+  id        String          @id @default(cuid())
+  tenantId  String
+  key       String
+  label     String
+  type      CustomFieldType @default(TEXT)
+  options   Json?
+  sortOrder Int             @default(0)
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
 }
 
 /// A short-lived, single-use magic-link token for portal sign-in.
@@ -259,6 +319,9 @@ model Membership {
   source    String           @default("admin")
   notes     String?
   stripeSubscriptionId String? @unique
+  /// Opaque token used by the public /api/membership-verify endpoint and QR/wallet
+  /// passes instead of the raw membership id, so a guessable cuid can't be scanned.
+  verifyToken String? @unique
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
