@@ -17,6 +17,7 @@ export async function getTenantBySlug(slug: string) {
       publicContactEmail: true,
       publicContactPhone: true,
       logoUrl: true,
+      directoryEnabled: true,
     },
   });
 }

@@ -363,6 +363,69 @@ export async function checkInEventRegistration(
   });
 }
 
+/**
+ * Quick check-in by scanned/pasted code: accepts either a scanned membership
+ * verify URL/token (from a member's digital membership card) or a plain email.
+ * Resolves to the matching CONFIRMED registration for this event and checks them in.
+ */
+export async function checkInByLookup(input: { eventId: string; query: string }, options?: TenantActionOptions) {
+  const auth = await requireActiveTenantForWriteActions(options);
+  if (!auth.ok) {
+    return { ok: false as const, error: auth.error };
+  }
+  const context = auth.context;
+
+  const raw = input.query.trim();
+  if (!raw) {
+    return { ok: false as const, error: "Scan a membership QR or enter an email" };
+  }
+
+  let contactId: string | null = null;
+
+  const tokenMatch = raw.match(/token=([A-Za-z0-9_-]+)/) ?? (/^[A-Za-z0-9_-]{20,}$/.test(raw) ? [null, raw] : null);
+  if (tokenMatch) {
+    const membership = await prisma.membership.findFirst({
+      where: { verifyToken: tokenMatch[1], tenantId: context.tenant.id },
+      select: { contactId: true },
+    });
+    contactId = membership?.contactId ?? null;
+  }
+
+  if (!contactId && raw.includes("@")) {
+    const contact = await prisma.contact.findUnique({
+      where: { tenantId_email: { tenantId: context.tenant.id, email: raw.toLowerCase() } },
+      select: { id: true },
+    });
+    contactId = contact?.id ?? null;
+  }
+
+  if (!contactId) {
+    return { ok: false as const, error: "No matching member or email found" };
+  }
+
+  const registration = await prisma.eventRegistration.findFirst({
+    where: {
+      tenantId: context.tenant.id,
+      eventId: input.eventId,
+      contactId,
+      status: "CONFIRMED",
+    },
+    select: { id: true },
+  });
+
+  if (!registration) {
+    return { ok: false as const, error: "No confirmed registration for this event matches that member" };
+  }
+
+  return updateRegistrationStatusForTenant({
+    tenantId: context.tenant.id,
+    eventId: input.eventId,
+    registrationId: registration.id,
+    nextStatus: "ATTENDED",
+    actorUserId: context.user.id,
+  });
+}
+
 export async function markEventRegistrationNoShow(
   input: { eventId: string; registrationId: string },
   options?: TenantActionOptions

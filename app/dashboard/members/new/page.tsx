@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ContactTagsField } from "@/components/dashboard/contact-tags-field";
+import { CustomFieldInputs } from "@/components/dashboard/custom-field-inputs";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { Alert } from "@/components/ui/alert";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -8,6 +9,8 @@ import { Card, CardBody } from "@/components/ui/card";
 import { FormField, Input, Select, Textarea } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { createContact } from "@/lib/actions/contacts";
+import { listCustomFieldDefinitions } from "@/lib/actions/custom-fields";
+import { parseCustomFieldValuesFromForm } from "@/lib/custom-fields/shared";
 import { CONTACT_TYPE_OPTIONS, isContactTypeOption } from "@/lib/pilot/contact-labels";
 import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard, tenantIdFromMutation } from "@/lib/tenant";
 
@@ -20,11 +23,16 @@ export default async function NewContactPage({
   const defaultType = params.type && isContactTypeOption(params.type) ? params.type : "OTHER";
   const resolution = await resolveTenantForDashboard();
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
+  const customFieldsResult = await listCustomFieldDefinitions();
+  const activeCustomFields = customFieldsResult.ok
+    ? customFieldsResult.data.filter((def: { active: boolean }) => def.active)
+    : [];
 
   async function createContactAction(formData: FormData) {
     "use server";
 
     const tenantHint = readTenantIdHintFromForm(formData);
+    const definitions = (await listCustomFieldDefinitions()).data;
     const result = await createContact(
       {
         firstName: String(formData.get("firstName") ?? ""),
@@ -34,6 +42,7 @@ export default async function NewContactPage({
         type: String(formData.get("type") ?? "OTHER"),
         notes: String(formData.get("notes") ?? ""),
         tags: String(formData.get("tags") ?? ""),
+        customFieldValues: parseCustomFieldValuesFromForm(definitions, formData),
       },
       { tenantIdHint: tenantHint },
     );
@@ -90,6 +99,7 @@ export default async function NewContactPage({
             <FormField label="Notes">
               <Textarea name="notes" rows={3} />
             </FormField>
+            {activeCustomFields.length > 0 && <CustomFieldInputs definitions={activeCustomFields} values={{}} />}
             <Button type="submit">Save contact</Button>
           </form>
         </CardBody>

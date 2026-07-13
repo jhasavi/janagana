@@ -7,10 +7,17 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { FormField, Input } from "@/components/ui/input";
+import { FormField, Input, Select } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser, getUserClerkOrganizations } from "@/lib/auth";
 import { clerkOrgRoleLabel } from "@/lib/auth/clerk-roles";
+import {
+  createCustomFieldDefinition,
+  deleteCustomFieldDefinition,
+  listCustomFieldDefinitions,
+  setCustomFieldDefinitionActive,
+} from "@/lib/actions/custom-fields";
+import { MAX_CUSTOM_FIELDS } from "@/lib/custom-fields/shared";
 import { getTenantDashboardSummary } from "@/lib/dashboard/tenant-summary";
 import { configuredAppUrl, currentClerkMode, keyModeFromPrefix, publicPortalUrl } from "@/lib/environment";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
@@ -20,6 +27,7 @@ import { selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mapping-labels";
 import { findMappedTenantsForUser, readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { getTenantBranding, updateTenantBranding } from "@/lib/actions/tenant-branding";
+import { updateDirectoryEnabled } from "@/lib/actions/directory-settings";
 import { prisma } from "@/lib/prisma";
 
 export default async function SettingsPage() {
@@ -45,6 +53,8 @@ export default async function SettingsPage() {
   const branding = activeTenant ? await getTenantBranding(activeTenant.id) : null;
   const tenantLinks = activeTenant ? portalLinksForTenant(activeTenant.slug) : [];
   const canSwitchCommunity = mappedTenants.length > 1;
+  const customFieldsResult = activeTenant ? await listCustomFieldDefinitions() : null;
+  const customFieldDefinitions = customFieldsResult?.ok ? customFieldsResult.data : [];
 
   async function updateBrandingAction(formData: FormData) {
     "use server";
@@ -65,6 +75,76 @@ export default async function SettingsPage() {
       redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
     }
     redirectWithActiveTenant(result.data.id, "/dashboard/settings?success=branding");
+  }
+
+  async function updateDirectoryEnabledAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await updateDirectoryEnabled(formData.get("directoryEnabled") === "1", {
+      tenantIdHint: tenantHint,
+    });
+    if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      }
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+    }
+    redirectWithActiveTenant(result.data.id, "/dashboard/settings?success=directory");
+  }
+
+  async function createCustomFieldAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await createCustomFieldDefinition(
+      {
+        label: String(formData.get("label") ?? ""),
+        type: String(formData.get("type") ?? "TEXT"),
+        options: String(formData.get("options") ?? ""),
+      },
+      { tenantIdHint: tenantHint },
+    );
+    if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      }
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+    }
+    redirectWithActiveTenant(result.data.tenantId, "/dashboard/settings?success=field-added");
+  }
+
+  async function toggleCustomFieldAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const definitionId = String(formData.get("definitionId") ?? "");
+    const active = formData.get("active") === "1";
+    const result = await setCustomFieldDefinitionActive(definitionId, active, { tenantIdHint: tenantHint });
+    if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      }
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+    }
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, "/dashboard/settings?success=field-updated");
+    }
+    redirect("/dashboard/settings?success=field-updated");
+  }
+
+  async function deleteCustomFieldAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const definitionId = String(formData.get("definitionId") ?? "");
+    const result = await deleteCustomFieldDefinition(definitionId, { tenantIdHint: tenantHint });
+    if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      }
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+    }
+    if (tenantHint) {
+      redirectWithActiveTenant(tenantHint, "/dashboard/settings?success=field-deleted");
+    }
+    redirect("/dashboard/settings?success=field-deleted");
   }
 
   const engineeringFlags = {
@@ -116,6 +196,106 @@ export default async function SettingsPage() {
                 <Button type="submit">Save branding</Button>
               </div>
             </form>
+          </CardBody>
+        </Card>
+      )}
+
+      {activeTenant && (
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-foreground">Public member directory</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              When on, contacts who opt in from their profile appear on your public portal at{" "}
+              <span className="font-mono">/portal/{activeTenant.slug}/directory</span> — name and type/tags only,
+              never email or phone. Off by default.
+            </p>
+            <form action={updateDirectoryEnabledAction} className="mt-4 flex items-center gap-3">
+              <TenantScopeHiddenFields tenantId={activeTenant.id} />
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  name="directoryEnabled"
+                  value="1"
+                  defaultChecked={branding?.directoryEnabled ?? false}
+                  className="h-4 w-4 rounded border-input"
+                />
+                Enable public member directory
+              </label>
+              <Button type="submit" size="sm">
+                Save
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+      )}
+
+      {activeTenant && (
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-foreground">Custom fields</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Up to {MAX_CUSTOM_FIELDS} admin-defined fields shown on every contact. {customFieldDefinitions.length}/
+              {MAX_CUSTOM_FIELDS} active.
+            </p>
+
+            {customFieldDefinitions.length > 0 && (
+              <ul className="mt-4 divide-y divide-border/70">
+                {customFieldDefinitions.map((def) => (
+                  <li key={def.id} className="flex items-center justify-between gap-3 py-3">
+                    <div>
+                      <p className="font-medium text-foreground">{def.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {def.type} · <span className="font-mono">{def.key}</span>
+                        {!def.active && " · inactive"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <form action={toggleCustomFieldAction}>
+                        <TenantScopeHiddenFields tenantId={activeTenant.id} />
+                        <input type="hidden" name="definitionId" value={def.id} />
+                        <input type="hidden" name="active" value={def.active ? "0" : "1"} />
+                        <Button type="submit" variant="secondary" size="sm">
+                          {def.active ? "Deactivate" : "Activate"}
+                        </Button>
+                      </form>
+                      <form action={deleteCustomFieldAction}>
+                        <TenantScopeHiddenFields tenantId={activeTenant.id} />
+                        <input type="hidden" name="definitionId" value={def.id} />
+                        <Button type="submit" variant="ghost" size="sm">
+                          Delete
+                        </Button>
+                      </form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {customFieldDefinitions.filter((d) => d.active).length < MAX_CUSTOM_FIELDS && (
+              <form action={createCustomFieldAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_1fr_auto]">
+                <TenantScopeHiddenFields tenantId={activeTenant.id} />
+                <FormField label="Label">
+                  <Input name="label" required placeholder="Preferred language" />
+                </FormField>
+                <FormField label="Type">
+                  <Select name="type" defaultValue="TEXT">
+                    <option value="TEXT">Text</option>
+                    <option value="NUMBER">Number</option>
+                    <option value="DATE">Date</option>
+                    <option value="BOOLEAN">Yes/No</option>
+                    <option value="SELECT">Select</option>
+                  </Select>
+                </FormField>
+                <FormField label="Options (Select only, comma-separated)">
+                  <Input name="options" placeholder="English, Hindi, Telugu" />
+                </FormField>
+                <div className="flex items-end">
+                  <Button type="submit" size="sm">
+                    Add field
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardBody>
         </Card>
       )}

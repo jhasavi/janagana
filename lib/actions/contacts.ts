@@ -4,6 +4,8 @@ import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/l
 import { parseContactTags } from "@/lib/contacts/tags";
 import { requireAdminAccessForTenant, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 
+const CustomFieldValuesSchema = z.record(z.union([z.string(), z.number(), z.boolean()])).optional();
+
 export const ContactCreateSchema = z
   .object({
     firstName: z.string().trim().min(1).max(100),
@@ -13,6 +15,7 @@ export const ContactCreateSchema = z
     type: z.enum(["MEMBER", "REGISTRANT", "VOLUNTEER", "DONOR", "OTHER"]).default("OTHER"),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
     tags: z.unknown().optional(),
+    customFieldValues: CustomFieldValuesSchema,
   })
   .strict();
 
@@ -25,6 +28,8 @@ export const ContactUpdateSchema = z
     type: z.enum(["MEMBER", "REGISTRANT", "VOLUNTEER", "DONOR", "OTHER"]),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
     tags: z.unknown().optional(),
+    directoryOptIn: z.boolean().optional().default(false),
+    customFieldValues: CustomFieldValuesSchema,
   })
   .strict();
 
@@ -62,6 +67,7 @@ export async function createContact(input: unknown, options?: TenantActionOption
         tags: parseContactTags(parsed.data.tags).length
           ? parseContactTags(parsed.data.tags)
           : ["manual-entry"],
+        customFieldValues: parsed.data.customFieldValues ?? undefined,
       },
     });
 
@@ -111,6 +117,8 @@ export async function updateContact(input: unknown, options?: TenantActionOption
       type: parsed.data.type,
       notes: parsed.data.notes || null,
       tags: parseContactTags(parsed.data.tags),
+      directoryOptIn: parsed.data.directoryOptIn,
+      customFieldValues: parsed.data.customFieldValues ?? undefined,
     },
   });
 
@@ -273,6 +281,9 @@ export async function getContactProfile(contactId: string) {
       tenantId: context.tenant.id,
     },
     include: {
+      household: {
+        select: { id: true, name: true },
+      },
       memberships: {
         include: {
           tier: true,

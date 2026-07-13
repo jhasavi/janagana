@@ -9,7 +9,8 @@ export type ContactQuickFilter =
   | "imported"
   | "raklet"
   | "no-email"
-  | "recent";
+  | "recent"
+  | "no-household";
 
 export const CONTACT_QUICK_FILTERS: ReadonlyArray<{
   id: ContactQuickFilter;
@@ -56,6 +57,11 @@ export const CONTACT_QUICK_FILTERS: ReadonlyArray<{
     id: "recent",
     label: "Recent activity",
     href: (base) => `${base}?preset=recent`,
+  },
+  {
+    id: "no-household",
+    label: "No household",
+    href: (base) => `${base}?preset=no-household`,
   },
 ] as const;
 

@@ -72,6 +72,29 @@ export async function listPublishedPortalEvents(tenantSlug: string) {
   return { ok: true as const, tenant, data: events };
 }
 
+/**
+ * Public member directory — only contacts who explicitly opted in, and only
+ * when the tenant has turned the directory on. Never returns email/phone.
+ */
+export async function listPublicDirectoryContacts(tenantSlug: string) {
+  const tenant = await getTenantBySlug(tenantSlug);
+  if (!tenant) {
+    return { ok: false as const, error: "Tenant not found", tenant: null, data: [] as any[] };
+  }
+
+  if (!tenant.directoryEnabled) {
+    return { ok: false as const, error: "Directory not enabled", tenant, data: [] as any[] };
+  }
+
+  const contacts = await prisma.contact.findMany({
+    where: { tenantId: tenant.id, directoryOptIn: true },
+    select: { id: true, firstName: true, lastName: true, type: true, tags: true },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+
+  return { ok: true as const, tenant, data: contacts };
+}
+
 export async function getPublishedPortalEvent(tenantSlug: string, eventSlug: string) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) {

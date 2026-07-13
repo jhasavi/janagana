@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import QRCode from "qrcode";
 import { ContactEditForm } from "@/components/dashboard/contact-edit-form";
 import { ContactTimeline } from "@/components/dashboard/contact-timeline";
 import { DigitalMembershipCard } from "@/components/dashboard/digital-membership-card";
@@ -23,6 +24,8 @@ import {
   DataTableRow,
 } from "@/components/ui/data-table";
 import { deleteContact, getContactProfile, updateContact } from "@/lib/actions/contacts";
+import { listCustomFieldDefinitions } from "@/lib/actions/custom-fields";
+import { parseCustomFieldValuesFromForm } from "@/lib/custom-fields/shared";
 import { buildContactTimeline } from "@/lib/contacts/timeline";
 import {
   contactInterestLabel,
@@ -31,6 +34,9 @@ import {
 } from "@/lib/pilot/contact-labels";
 import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
+import { configuredAppUrl } from "@/lib/environment";
+import { ensureMembershipVerifyToken } from "@/lib/memberships/verify-token";
+import { appleWalletConfigured, googleWalletConfigured } from "@/lib/wallet/config";
 
 function statusBadgeVariant(status: string): "success" | "warning" | "danger" | "default" {
   if (status === "ACTIVE" || status === "CONFIRMED" || status === "ATTENDED" || status === "PAID") return "success";
@@ -55,9 +61,10 @@ export default async function ContactProfilePage({
 }) {
   const { contactId } = await params;
   const query = await searchParams;
-  const [resolution, result] = await Promise.all([
+  const [resolution, result, customFieldsResult] = await Promise.all([
     resolveTenantForDashboard(),
     getContactProfile(contactId),
+    listCustomFieldDefinitions(),
   ]);
   const tenant = resolution.status === "ONE_TENANT" ? resolution.tenant : null;
 
@@ -66,12 +73,16 @@ export default async function ContactProfilePage({
   }
 
   const contact = result.data;
+  const activeCustomFields = customFieldsResult.ok
+    ? customFieldsResult.data.filter((def: { active: boolean }) => def.active)
+    : [];
 
   async function updateContactAction(formData: FormData) {
     "use server";
 
     const id = String(formData.get("contactId") ?? "").trim();
     const tenantHint = readTenantIdHintFromForm(formData);
+    const definitions = (await listCustomFieldDefinitions()).data;
     const updateResult = await updateContact(
       {
         contactId: id,
@@ -81,6 +92,8 @@ export default async function ContactProfilePage({
         type: String(formData.get("type") ?? "OTHER"),
         notes: String(formData.get("notes") ?? ""),
         tags: String(formData.get("tags") ?? ""),
+        directoryOptIn: formData.get("directoryOptIn") === "1",
+        customFieldValues: parseCustomFieldValuesFromForm(definitions, formData),
       },
       { tenantIdHint: tenantHint },
     );
@@ -120,6 +133,25 @@ export default async function ContactProfilePage({
 
   const activeMemberships = contact.memberships.filter((membership) => membership.status === "ACTIVE");
   const primaryActiveMembership = activeMemberships[0];
+
+  let membershipCardProps: {
+    verifyUrl: string;
+    qrDataUrl: string;
+    appleWalletHref: string | null;
+    googleWalletHref: string | null;
+  } | null = null;
+  if (primaryActiveMembership) {
+    const token = await ensureMembershipVerifyToken(primaryActiveMembership.id);
+    const verifyUrl = `${configuredAppUrl()}/api/membership-verify?token=${token}`;
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 160, margin: 1 });
+    membershipCardProps = {
+      verifyUrl,
+      qrDataUrl,
+      appleWalletHref: appleWalletConfigured() ? `/api/wallet/apple?token=${token}` : null,
+      googleWalletHref: googleWalletConfigured() ? `/api/wallet/google?token=${token}` : null,
+    };
+  }
+
   const paidTotal = contact.payments
     .filter((payment) => payment.status === "PAID" || payment.status === "WAIVED")
     .reduce((sum, payment) => sum + payment.amountCents, 0);
@@ -176,6 +208,29 @@ export default async function ContactProfilePage({
               <ProfileRow label="Tags">
                 <ContactTagBadges tags={contact.tags} />
               </ProfileRow>
+              <ProfileRow label="Household">
+                {contact.household ? (
+                  <Link href={`/dashboard/families/${contact.household.id}`} className="font-medium text-primary hover:text-foreground">
+                    {contact.household.name}
+                  </Link>
+                ) : (
+                  <Link href="/dashboard/families" className="text-muted-foreground hover:text-primary">
+                    Not in a household
+                  </Link>
+                )}
+              </ProfileRow>
+              {activeCustomFields.map((def: { key: string; label: string }) => {
+                const raw = (contact.customFieldValues as Record<string, unknown> | null)?.[def.key];
+                return (
+                  <ProfileRow key={def.key} label={def.label}>
+                    {raw === undefined || raw === null || raw === "" ? (
+                      <span className="text-muted-foreground">Not set</span>
+                    ) : (
+                      String(raw)
+                    )}
+                  </ProfileRow>
+                );
+              })}
             </dl>
 
             {contact.notes && (
@@ -230,7 +285,7 @@ export default async function ContactProfilePage({
         </CardBody>
       </Card>
 
-      {primaryActiveMembership && (
+      {primaryActiveMembership && membershipCardProps && (
         <DigitalMembershipCard
           contactName={`${contact.firstName} ${contact.lastName}`}
           membership={{
@@ -240,10 +295,18 @@ export default async function ContactProfilePage({
             tier: primaryActiveMembership.tier,
             tenant: contact.tenant,
           }}
+          {...membershipCardProps}
         />
       )}
 
-      {tenant && <ContactEditForm tenantId={tenant.id} contact={contact} action={updateContactAction} />}
+      {tenant && (
+        <ContactEditForm
+          tenantId={tenant.id}
+          contact={contact}
+          customFieldDefinitions={activeCustomFields}
+          action={updateContactAction}
+        />
+      )}
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Panel title="Memberships">

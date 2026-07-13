@@ -23,6 +23,7 @@ export default async function PortalTenantLayout({
     slug: tenant.slug,
     logoUrl: tenant.logoUrl,
     publicTagline: tenant.publicTagline,
+    directoryEnabled: tenant.directoryEnabled,
   };
 
   const currentMember = await getCurrentMemberContact(tenantSlug);

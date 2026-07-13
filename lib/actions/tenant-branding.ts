@@ -52,6 +52,7 @@ export async function getTenantBranding(tenantId: string) {
       publicContactEmail: true,
       publicContactPhone: true,
       logoUrl: true,
+      directoryEnabled: true,
     },
   });
 }

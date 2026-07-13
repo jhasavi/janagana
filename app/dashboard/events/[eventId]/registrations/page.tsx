@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
+import { QrCheckinPanel } from "@/components/dashboard/qr-checkin-panel";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
 import { Alert } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/data-table";
 import {
   cancelEventRegistration,
+  checkInByLookup,
   checkInEventRegistration,
   confirmEventRegistration,
   listEventRegistrations,
@@ -138,6 +140,33 @@ export default async function EventRegistrationsPage({
     redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Attendee checked in")}`);
   }
 
+  async function checkInByLookupAction(formData: FormData) {
+    "use server";
+
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const query = String(formData.get("query") ?? "").trim();
+    const actionResult = await checkInByLookup({ eventId, query }, { tenantIdHint: tenantHint });
+
+    if (!actionResult.ok) {
+      const errorMessage = actionResult.error ?? "Failed to check in attendee";
+      if (tenantHint) {
+        redirectWithActiveTenant(
+          tenantHint,
+          `/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`
+        );
+      }
+      redirect(`/dashboard/events/${eventId}/registrations?error=${encodeURIComponent(errorMessage)}`);
+    }
+
+    if (tenantHint) {
+      redirectWithActiveTenant(
+        tenantHint,
+        `/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Attendee checked in")}`
+      );
+    }
+    redirect(`/dashboard/events/${eventId}/registrations?success=${encodeURIComponent("Attendee checked in")}`);
+  }
+
   async function noShowRegistrationAction(formData: FormData) {
     "use server";
 
@@ -238,6 +267,8 @@ export default async function EventRegistrationsPage({
 
       {query.error && <Alert variant="error">{query.error}</Alert>}
       {query.success && <Alert variant="success">{query.success}</Alert>}
+
+      {tenant && <QrCheckinPanel tenantId={tenant.id} action={checkInByLookupAction} />}
 
       <p className="text-sm text-muted-foreground">
         Each row should also appear under{" "}

@@ -7,13 +7,19 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
   const filters = parsed.success ? parsed.data : {};
   const where = buildContactListWhere(tenantId, filters);
 
-  const contacts = await prisma.contact.findMany({
-    where,
-    orderBy: [{ createdAt: "desc" }, { email: "asc" }],
-    include: {
-      _count: { select: { registrations: true } },
-    },
-  });
+  const [contacts, customFieldDefinitions] = await Promise.all([
+    prisma.contact.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { email: "asc" }],
+      include: {
+        _count: { select: { registrations: true } },
+      },
+    }),
+    prisma.customFieldDefinition.findMany({
+      where: { tenantId, active: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
 
   const headers = [
     "createdAt",
@@ -27,6 +33,7 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
     "tags",
     "registrationCount",
     "notes",
+    ...customFieldDefinitions.map((def) => def.label),
   ];
 
   const rows = contacts.map((c) => [
@@ -41,6 +48,10 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
     c.tags.join("; "),
     c._count.registrations,
     c.notes,
+    ...customFieldDefinitions.map((def) => {
+      const value = (c.customFieldValues as Record<string, unknown> | null)?.[def.key];
+      return value === undefined || value === null ? "" : String(value);
+    }),
   ]);
 
   return rowsToCsv(headers, rows);

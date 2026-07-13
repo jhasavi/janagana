@@ -40,6 +40,7 @@ function activeQuickFilter(params: {
   if (params.preset === "leads") return "leads";
   if (params.preset === "no-email") return "no-email";
   if (params.preset === "recent") return "recent";
+  if (params.preset === "no-household") return "no-household";
   if (params.source === "dashboard_raklet_import") return "raklet";
   if (params.source === "dashboard_csv_import") return "imported";
   if (!params.preset && !params.source && !params.interestType && !params.tag && !params.q) return "all";
@@ -85,7 +86,15 @@ export default async function ContactsPage({
     source: params.success === "import" ? "" : (params.source ?? ""),
     interestType: params.interestType ?? "",
     tag: params.tag ?? "",
-    preset: (params.preset ?? "") as "" | "members" | "volunteers" | "donors" | "leads" | "no-email" | "recent",
+    preset: (params.preset ?? "") as
+      | ""
+      | "members"
+      | "volunteers"
+      | "donors"
+      | "leads"
+      | "no-email"
+      | "recent"
+      | "no-household",
   };
 
   const requestedPage = Number.parseInt(params.page ?? "1", 10);

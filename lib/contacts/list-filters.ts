@@ -8,7 +8,7 @@ export const ContactListFilterSchema = z
     interestType: z.string().trim().max(80).optional().or(z.literal("")),
     tag: z.string().trim().max(80).optional().or(z.literal("")),
     preset: z
-      .enum(["members", "volunteers", "donors", "leads", "no-email", "recent"])
+      .enum(["members", "volunteers", "donors", "leads", "no-email", "recent", "no-household"])
       .optional()
       .or(z.literal("")),
   })
@@ -66,6 +66,8 @@ export function buildContactListWhere(tenantId: string, filters: ContactListFilt
     const since = new Date();
     since.setDate(since.getDate() - 7);
     and.push({ lastActivityAt: { gte: since } });
+  } else if (filters.preset === "no-household") {
+    and.push({ householdId: null });
   }
 
   return and.length === 1 ? and[0]! : { AND: and };

@@ -1,8 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { configuredAppUrl } from "@/lib/environment";
+import { ButtonLink } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
 type ActiveMembership = {
@@ -16,13 +15,18 @@ type ActiveMembership = {
 export function DigitalMembershipCard({
   contactName,
   membership,
+  verifyUrl,
+  qrDataUrl,
+  appleWalletHref,
+  googleWalletHref,
 }: {
   contactName: string;
   membership: ActiveMembership;
+  verifyUrl: string;
+  qrDataUrl: string;
+  appleWalletHref: string | null;
+  googleWalletHref: string | null;
 }) {
-  const verifyUrl = `${configuredAppUrl()}/api/membership-verify?membershipId=${membership.id}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(verifyUrl)}`;
-
   return (
     <Card>
       <CardBody className="space-y-4">
@@ -55,22 +59,30 @@ export function DigitalMembershipCard({
         </dl>
 
         <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 sm:flex-row sm:items-start">
-          <Image
-            src={qrUrl}
-            alt="Membership QR code"
-            width={160}
-            height={160}
-            unoptimized
-            className="rounded-lg bg-white p-2"
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element -- locally generated data: URI, not an optimizable remote image */}
+          <img src={qrDataUrl} alt="Membership QR code" width={160} height={160} className="rounded-lg bg-white p-2" />
           <div className="text-center sm:text-left">
             <p className="text-sm font-medium text-foreground">Scan at check-in</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Event staff can verify this member without Apple Wallet — Phase 1 card for demos.
+              Generated locally — no third-party service sees this member&apos;s data.
             </p>
             <Link href={verifyUrl} className="mt-2 inline-block text-xs font-semibold text-primary hover:text-foreground">
               Open verify link
             </Link>
+            {(appleWalletHref || googleWalletHref) && (
+              <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+                {appleWalletHref && (
+                  <ButtonLink href={appleWalletHref} variant="secondary" size="sm">
+                    Add to Apple Wallet
+                  </ButtonLink>
+                )}
+                {googleWalletHref && (
+                  <ButtonLink href={googleWalletHref} variant="secondary" size="sm">
+                    Add to Google Wallet
+                  </ButtonLink>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </CardBody>
