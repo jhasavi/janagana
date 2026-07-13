@@ -9,9 +9,11 @@ test("health route responds", async ({ request }) => {
   expect(body.database).toBe("ok");
 });
 
-test("home page loads", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/(sign-in|dashboard|select-organization|onboarding\/create-organization)/);
+test("home page loads as the public marketing landing page for logged-out visitors", async ({ page }) => {
+  const response = await page.goto("/");
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveURL(/:\d+\/$/);
+  await expect(page.getByRole("heading", { name: /Keep your website/i })).toBeVisible();
 });
 
 test("dashboard placeholder loads or redirects predictably", async ({ page }) => {

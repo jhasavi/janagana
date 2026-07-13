@@ -15,22 +15,15 @@ function parseLocation(base, locationHeader) {
   return new URL(locationHeader, base);
 }
 
-async function checkRootRedirect() {
+async function checkRootLandingPage() {
+  // "/" is the public marketing landing page for logged-out visitors (no longer a redirect).
   const response = await fetch(`${baseUrl}/`, { redirect: "manual" });
-  assert(response.status >= 300 && response.status < 400, `Expected redirect for /, got ${response.status}`);
+  assert(response.status === 200, `Expected 200 for public landing page /, got ${response.status}`);
 
-  const location = parseLocation(baseUrl, response.headers.get("location"));
-  assert(location, "Missing redirect location for /");
-  assert(location.pathname === "/sign-in", `Expected / to redirect to /sign-in, got ${location.pathname}`);
+  const body = await response.text();
+  assert(body.includes("Keep your website"), "Expected landing page hero copy on /");
 
-  const redirectUrl = location.searchParams.get("redirect_url");
-  assert(!!redirectUrl, "Expected redirect_url query param on / redirect");
-  assert(
-    redirectUrl.startsWith(`${baseUrl}/`),
-    `Expected redirect_url to start with ${baseUrl}/, got ${redirectUrl}`,
-  );
-
-  return location.toString();
+  return `${baseUrl}/ (200, landing page)`;
 }
 
 async function checkSignOutRedirect() {
@@ -51,8 +44,8 @@ async function checkSignOutRedirect() {
 async function main() {
   console.log(`Running local redirect smoke checks against ${baseUrl}`);
 
-  const rootLocation = await checkRootRedirect();
-  console.log(`- / redirect: ${rootLocation}`);
+  const rootLocation = await checkRootLandingPage();
+  console.log(`- / : ${rootLocation}`);
 
   const signOutLocation = await checkSignOutRedirect();
   console.log(`- /api/sign-out redirect: ${signOutLocation}`);

@@ -19,9 +19,9 @@ Do not pass dashboard cookies into public portal resolution.
 
 ## Platform surfaces
 
-**Live:** Admin membership tiers and enrollments; renewals desk with failed-payment/dunning visibility; Stripe subscriptions (`autoRenew`); renewal reminder job; public join (side-by-side tier comparison)/donate/event checkout; donor-covered processing fee toggle; digital membership card + verify API; contact CRM (edit, type/role, tags, filters, export, unified activity timeline); payments ledger; printable receipts + year-end giving summary export; communications admin UI (outbox with retry); transactional communication outbox (queue + Resend delivery); event registration with paid Stripe checkout; contact import; embed API; authenticated member self-service portal (magic-link sign-in, profile edit, renew, activity timeline at `/portal/{slug}/account`).
+**Live:** Public marketing landing page (`/`) and pricing page (`/pricing`); self-serve signup (`ENABLE_SELF_SERVE_ONBOARDING`); admin membership tiers and enrollments; renewals desk with failed-payment/dunning visibility; Stripe subscriptions (`autoRenew`); renewal reminder job; public join (side-by-side tier comparison)/donate/event checkout; donor-covered processing fee toggle; digital membership card with locally-generated QR + opaque verify token + optional Apple/Google Wallet buttons (gated on tenant-supplied credentials); camera QR scan / paste-code quick check-in on event registrations; contact CRM (edit, type/role, tags, filters, export, unified activity timeline); households (group contacts, set payer); public member directory (tenant + per-contact opt-in, name/type/tags only); admin-defined custom fields (up to 3 per tenant); multi-admin RBAC (view-only banner for non-admin Clerk roles); payments ledger; printable receipts + year-end giving summary export; communications admin UI (outbox with retry); transactional communication outbox (queue + Resend delivery); event registration with paid Stripe checkout; contact import; embed API; authenticated member self-service portal (magic-link sign-in, profile edit, renew, activity timeline at `/portal/{slug}/account`).
 
-**Deferred (post-pilot):** CRM pipeline automation; refunds UI; payout reporting; households / group membership; member directory; custom contact fields; Apple/Google Wallet passes; campaigns; analytics.
+**Deferred (post-pilot):** CRM pipeline automation; refunds UI; payout reporting; campaigns; analytics.
 
 Payment policy: JanaGana platform fee is **0 bps**. Stripe processor fees are disclosed; optional payer contribution is built on donate, join, and paid events.
 
@@ -37,9 +37,8 @@ Do not expand until NB/TPW pilot sign-off unless listed in [18-JOIN-IT-ZEFFY-DEM
 
 ### Other deferred modules
 
-- Families / households (`/dashboard/families` placeholder)
 - Volunteers, sponsors dedicated dashboard modules (placeholders — volunteers/donors are usable today as Contact types, see above)
-- Custom portal domains, full dark mode, self-serve onboarding polish
+- Custom portal domains, full dark mode
 
 ## Product workflow principles
 

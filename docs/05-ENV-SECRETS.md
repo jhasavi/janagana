@@ -65,8 +65,24 @@
 | `PRODUCTION_DATABASE_URL` | Local-only override when running pilot scripts against prod Neon (not exposed by `vercel env run`). |
 | `PILOT_TPW_CLERK_ORG_ID` | Clerk org ID for `npm run pilot:seed` (purple-wings). |
 | `PILOT_NB_CLERK_ORG_ID` | Clerk org ID for `npm run pilot:seed` (namaste-boston). |
-| `ENABLE_SELF_SERVE_ONBOARDING` | Default off. When `true`, UI allows creating new Clerk orgs (not for production pilot). |
+| `ENABLE_SELF_SERVE_ONBOARDING` | Recommended `true` for public launch — lets a new Clerk sign-up create their own org/tenant from `/onboarding/create-organization`. Set `false` to restrict onboarding to admin-invited orgs only. |
 | `ENABLE_EXISTING_ORG_SETUP` | Default off. When `true`, UI allows mapping an existing Clerk org to a tenant. |
+
+### Apple / Google Wallet (optional)
+
+Both are gated by `lib/wallet/config.ts`; "Add to Wallet" buttons on the digital membership card stay hidden unless every required variable below is set. JanaGana never generates or holds these credentials — they come from the tenant owner's own Apple Developer / Google Cloud accounts.
+
+| Variable | Description |
+|---|---|
+| `APPLE_WALLET_CERT_BASE64` | Base64-encoded Apple pass-type certificate (PEM) |
+| `APPLE_WALLET_KEY_BASE64` | Base64-encoded signing key (PEM) |
+| `APPLE_WALLET_KEY_PASSPHRASE` | Passphrase for the signing key, if any |
+| `APPLE_WALLET_WWDR_BASE64` | Base64-encoded Apple WWDR intermediate certificate |
+| `APPLE_WALLET_PASS_TYPE_ID` | Apple pass type identifier (e.g. `pass.com.yourdomain.membership`) |
+| `APPLE_WALLET_TEAM_ID` | Apple Developer team id |
+| `APPLE_WALLET_ICON_BASE64` | Optional base64 PNG for the pass icon; falls back to a generated placeholder |
+| `GOOGLE_WALLET_ISSUER_ID` | Google Wallet issuer id |
+| `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` | Full Google Cloud service account JSON (stringified) with Wallet API access |
 
 ### JanaGana API keys
 

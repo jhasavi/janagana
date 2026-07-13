@@ -65,7 +65,7 @@ Automated gate: `npm run verify:pilot-demo -- --base-url=https://janagana.namast
 
 **Optional +2 min:** Switch to `namaste-boston` for multi-tenant isolation.
 
-**Do not show:** CLI-only imports, localhost, placeholder Families page.
+**Do not show:** CLI-only imports, localhost.
 
 ---
 
@@ -117,10 +117,8 @@ npm run verify:pilot-demo -- --base-url=https://janagana.namasteneedham.com
 ## Known limitations (do not over-promise)
 
 1. Import max 5 MB / 2,500 rows; Raklet membership columns in metadata only (not auto-enrolled).
-2. No authenticated member self-service portal yet — operators manage every contact from the dashboard today; self-service login is the next major build (deliberately sequenced, see battlecard).
-3. No households / group membership yet — deferred rather than rushed in before a demo; next sprint candidate.
-4. No member directory or Apple/Google Wallet passes yet (explicit Phase 2 roadmap items).
-5. NB live CRM sync is CLI (`npm run import:nb-crm`), not dashboard upload.
+2. Apple/Google Wallet buttons are code-complete but gated on the tenant owner's own Apple Developer / Google Cloud credentials — hidden until configured, and not yet exercised against real credentials (see docs/05-ENV-SECRETS.md).
+3. NB live CRM sync is CLI (`npm run import:nb-crm`), not dashboard upload.
 
 ---
 

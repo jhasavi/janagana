@@ -8,20 +8,24 @@ Local dev: http://localhost:3020
 
 ## What works
 
-- Admin events, ticket quantities, check-in/no-show, paid Stripe checkout for tickets.
+- Public marketing landing page (`/`) and pricing page (`/pricing`) for logged-out visitors; self-serve signup (`ENABLE_SELF_SERVE_ONBOARDING`).
+- Admin events, ticket quantities, check-in/no-show (manual button + camera QR scan / paste-code quick check-in), paid Stripe checkout for tickets.
 - Admin membership tiers, enrollment, renewals desk (including failed-payment / dunning visibility), Stripe subscriptions, renewal reminder job.
-- Contact CRM: profiles, tags, filters, import, CSV export, unified per-contact activity timeline.
+- Contact CRM: profiles, tags, filters, import, CSV export (including custom fields), unified per-contact activity timeline.
+- Households: group contacts into families, set a payer, filter contacts with no household.
+- Public member directory (tenant opt-in + per-contact opt-in; name/type/tags only, never email/phone).
+- Admin-defined custom fields (up to 3 per tenant) on contact profiles, forms, and CSV export.
 - Public join (side-by-side tier comparison), donate (one-time + recurring), and event registration flows with Stripe webhooks.
 - Donor-covered processing fee toggle on donate, join, and paid events.
-- Digital membership card + verify API on contact profiles.
+- Digital membership card: locally-generated QR (no third-party service), opaque verify token, optional Apple/Google Wallet "Add to Wallet" buttons (gated on the tenant owner's own Apple/Google credentials — see [docs/05-ENV-SECRETS.md](./docs/05-ENV-SECRETS.md)).
 - Payments ledger and receipts (printable receipt view + year-end giving summary CSV export).
 - Communications admin UI — outbox with queued/sent/failed visibility and retry.
 - Public portal for `purple-wings` and `namaste-boston`; embed events API.
-- Multi-tenant isolation; owner onboarding; website CTAs on NB + TPW.
+- Multi-tenant isolation; multi-admin RBAC (view-only banner for non-admin Clerk roles); website CTAs on NB + TPW.
 
 ## Intentionally deferred
 
-See [docs/07-ARCHITECTURE.md](./docs/07-ARCHITECTURE.md): households / group membership, authenticated member self-service portal, member directory, campaigns, refunds UI, analytics.
+See [docs/07-ARCHITECTURE.md](./docs/07-ARCHITECTURE.md): CRM pipeline automation, campaigns, refunds UI, payout reporting, analytics.
 
 ## Local start
 

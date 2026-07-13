@@ -32,4 +32,5 @@ curl https://janagana.namasteneedham.com/api/health/ready
 
 ## Phase 2 (not prod blockers)
 
-- Households / group membership
+- ~~Households / group membership~~ — done, see `/dashboard/families`
+- CRM pipeline automation, campaigns, refunds UI, payout reporting, analytics
