@@ -2,12 +2,12 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveTenantForDashboard } from "@/lib/tenant";
 import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
+import { LandingPage } from "@/components/marketing/landing-page";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
   if (!user) {
-    console.info("NO_AUTH");
-    redirect("/sign-in");
+    return <LandingPage />;
   }
 
   const resolution = await resolveTenantForDashboard();

@@ -304,12 +304,18 @@ export default async function CreateOrganizationPage({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <p className="text-sm font-medium text-blue-700">JanaGana pilot</p>
+      <p className="text-sm font-medium text-blue-700">JanaGana</p>
       <h1 className="mt-1 text-2xl font-semibold">Community access</h1>
-      <p className="mt-2 max-w-2xl text-sm text-gray-600">
-        Production pilot supports <strong>Namaste Boston</strong> and <strong>The Purple Wings</strong> only. If you
-        already have access, open the operator dashboard. New community setup requires administrator approval.
-      </p>
+      {selfServeEnabled ? (
+        <p className="mt-2 max-w-2xl text-sm text-gray-600">
+          Create a new organization below, or open the operator dashboard if you already have access.
+        </p>
+      ) : (
+        <p className="mt-2 max-w-2xl text-sm text-gray-600">
+          If you already have access, open the operator dashboard. New community setup requires administrator
+          approval.
+        </p>
+      )}
 
       {mappedTenants.length > 0 && (
         <div className="mt-6">

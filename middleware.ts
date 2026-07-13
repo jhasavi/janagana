@@ -12,7 +12,6 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 const isProtectedRoute = createRouteMatcher([
-  "/",
   "/dashboard(.*)",
   "/select-organization(.*)",
   "/onboarding/create-organization(.*)",
