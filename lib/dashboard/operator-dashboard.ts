@@ -23,6 +23,7 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     lastContact,
     lastRegistration,
     recentDonations,
+    recentCommunications,
     membershipRenewals,
   ] = await Promise.all([
     getTenantDashboardSummary(tenantId),
@@ -128,6 +129,19 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
         contact: { select: { firstName: true, lastName: true, email: true } },
       },
     }),
+    prisma.communicationMessage.findMany({
+      where: { tenantId, status: "SENT" },
+      orderBy: [{ sentAt: "desc" }, { createdAt: "desc" }],
+      take: 5,
+      select: {
+        id: true,
+        subject: true,
+        recipientName: true,
+        recipientEmail: true,
+        sentAt: true,
+        createdAt: true,
+      },
+    }),
     getMembershipRenewalsSummaryForDashboard(tenantId),
   ]);
 
@@ -213,6 +227,7 @@ export async function getOperatorDashboard(tenantId: string, tenantSlug: string)
     recentContacts,
     recentRegistrations,
     recentDonations,
+    recentCommunications,
     membershipRenewals,
     operationalWarnings,
     activity: {

@@ -4,6 +4,7 @@ import { slugify } from "@/lib/utils";
 import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
+import { FREE_LIMITS, isPro } from "@/lib/plans/gate";
 
 export const EventCreateSchema = z
   .object({
@@ -31,6 +32,19 @@ export async function createEvent(input: unknown, options?: TenantActionOptions)
   const parsed = EventCreateSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid event input" };
+  }
+
+  if (parsed.data.status === "PUBLISHED" && !isPro(context.tenant)) {
+    const publishedCount = await prisma.event.count({
+      where: { tenantId: context.tenant.id, status: "PUBLISHED" },
+    });
+    if (publishedCount >= FREE_LIMITS.publishedEvents) {
+      return {
+        ok: false as const,
+        error: `Free plan is limited to ${FREE_LIMITS.publishedEvents} published events. Upgrade to Pro for unlimited events.`,
+        upgradeRequired: true as const,
+      };
+    }
   }
 
   const baseSlug = parsed.data.slug && parsed.data.slug.length > 0 ? parsed.data.slug : slugify(parsed.data.title);

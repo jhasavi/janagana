@@ -10,14 +10,14 @@
     --card-foreground: 248 37% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 248 37% 16%;
-    --primary: 245 85% 62%;
+    --primary: 28 88% 44%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 257 70% 96%;
-    --secondary-foreground: 245 66% 40%;
-    --muted: 257 60% 97%;
+    --secondary: 28 70% 96%;
+    --secondary-foreground: 28 66% 34%;
+    --muted: 28 60% 97%;
     --muted-foreground: 250 14% 43%;
-    --accent: 11 100% 65%;
-    --accent-foreground: 12 76% 20%;
+    --accent: 168 42% 26%;
+    --accent-foreground: 0 0% 100%;
     --success: 155 73% 35%;
     --success-foreground: 0 0% 100%;
     --warning: 37 91% 44%;
@@ -26,10 +26,10 @@
     --destructive-foreground: 0 0% 100%;
     --border: 256 54% 93%;
     --input: 256 54% 93%;
-    --ring: 245 85% 62%;
+    --ring: 28 88% 44%;
     --radius: 0.9rem;
-    --chart-1: 245 85% 62%;
-    --chart-2: 11 100% 65%;
+    --chart-1: 28 88% 44%;
+    --chart-2: 168 42% 26%;
     --chart-3: 155 73% 35%;
     --chart-4: 199 89% 45%;
     --chart-5: 336 67% 55%;
@@ -42,14 +42,14 @@
     --card-foreground: 257 30% 96%;
     --popover: 248 26% 11%;
     --popover-foreground: 257 30% 96%;
-    --primary: 245 85% 72%;
-    --primary-foreground: 248 32% 10%;
-    --secondary: 248 18% 16%;
-    --secondary-foreground: 257 30% 96%;
+    --primary: 28 90% 58%;
+    --primary-foreground: 28 40% 10%;
+    --secondary: 28 24% 16%;
+    --secondary-foreground: 28 60% 90%;
     --muted: 248 18% 16%;
     --muted-foreground: 250 10% 68%;
-    --accent: 11 90% 66%;
-    --accent-foreground: 12 76% 12%;
+    --accent: 168 40% 45%;
+    --accent-foreground: 168 40% 10%;
     --success: 155 55% 55%;
     --success-foreground: 155 60% 10%;
     --warning: 37 85% 62%;
@@ -58,7 +58,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 248 16% 20%;
     --input: 248 16% 20%;
-    --ring: 245 85% 72%;
+    --ring: 28 90% 58%;
   }
 }
 
@@ -141,7 +141,7 @@
   }
 
   .jg-portal-gradient {
-    background: radial-gradient(120% 140% at 100% 0%, hsl(11 100% 65% / 0.55) 0%, transparent 45%),
-      linear-gradient(135deg, hsl(245 85% 62%) 0%, hsl(252 70% 48%) 100%);
+    background: radial-gradient(120% 140% at 100% 0%, hsl(45 95% 65% / 0.45) 0%, transparent 45%),
+      linear-gradient(135deg, hsl(28 90% 50%) 0%, hsl(20 85% 38%) 100%);
   }
 }

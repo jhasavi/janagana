@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ExternalLink, Link2, Settings } from "lucide-react";
-import { CopyTextButton } from "@/components/dashboard/copy-text-button";
+import { LinkChip } from "@/components/dashboard/link-chip";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody } from "@/components/ui/card";
 import { communityLabel } from "@/lib/pilot/portal-links";
@@ -45,9 +45,8 @@ export function TenantIdentityCard({
             <Link2 className="h-4 w-4" />
             Member portal
           </p>
-          <p className="mt-3 break-all text-sm font-medium text-foreground">{portalUrl}</p>
+          <LinkChip href={portalUrl} className="mt-3" />
           <div className="mt-4 grid gap-2">
-            <CopyTextButton text={portalUrl} label="Copy portal link" className="w-full" />
             <a
               href={portalUrl}
               target="_blank"

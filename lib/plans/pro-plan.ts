@@ -1,0 +1,1 @@
+export const PRO_PLAN_MONTHLY_CENTS = 1900;

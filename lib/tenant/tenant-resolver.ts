@@ -1,4 +1,4 @@
-import type { TenantStatus } from "@prisma/client";
+import type { TenantPlan, TenantStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getUserClerkOrganizations } from "@/lib/auth/clerk-orgs";
 import {
@@ -11,6 +11,7 @@ export type MappedTenant = {
   slug: string;
   clerkOrgId: string;
   status: TenantStatus;
+  plan: TenantPlan;
 };
 
 export type TenantResolutionSource = "active-cookie" | "single-tenant";
@@ -43,6 +44,7 @@ export async function findMappedTenantsForUser(): Promise<MappedTenant[]> {
       slug: true,
       clerkOrgId: true,
       status: true,
+      plan: true,
     },
     orderBy: { name: "asc" },
   });

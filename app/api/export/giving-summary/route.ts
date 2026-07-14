@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildGivingSummaryCsv } from "@/lib/export/giving-summary-csv";
 import { requireExportTenant } from "@/lib/export/require-export-auth";
+import { isPro } from "@/lib/plans/gate";
 
 export const runtime = "nodejs";
 
@@ -8,6 +9,12 @@ export async function GET(request: NextRequest) {
   const auth = await requireExportTenant();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+  if (!isPro(auth.tenant)) {
+    return NextResponse.json(
+      { error: "Year-end giving summary export is a Pro feature. Upgrade to unlock it." },
+      { status: 403 },
+    );
   }
 
   const yearParam = request.nextUrl.searchParams.get("year");

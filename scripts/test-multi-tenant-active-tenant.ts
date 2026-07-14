@@ -15,6 +15,7 @@ function tenant(id: string, slug: string): MappedTenant {
     slug,
     clerkOrgId: `org_${slug}`,
     status: "ACTIVE",
+    plan: "PRO",
   };
 }
 

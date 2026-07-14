@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdminAccessForTenant, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
+import { isPro, UPGRADE_REQUIRED_ERROR } from "@/lib/plans/gate";
 
 const HouseholdCreateSchema = z
   .object({
@@ -102,6 +103,9 @@ export async function createHousehold(input: unknown, options?: TenantActionOpti
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
   }
+  if (!isPro(auth.context.tenant)) {
+    return { ok: false as const, error: UPGRADE_REQUIRED_ERROR, upgradeRequired: true as const };
+  }
 
   const parsed = HouseholdCreateSchema.safeParse(input);
   if (!parsed.success) {
@@ -158,6 +162,9 @@ export async function addHouseholdMember(input: unknown, options?: TenantActionO
   const auth = await requireActiveTenantForWriteActions(options);
   if (!auth.ok) {
     return { ok: false as const, error: auth.error };
+  }
+  if (!isPro(auth.context.tenant)) {
+    return { ok: false as const, error: UPGRADE_REQUIRED_ERROR, upgradeRequired: true as const };
   }
 
   const parsed = HouseholdMemberSchema.safeParse(input);

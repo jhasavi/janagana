@@ -137,6 +137,33 @@ export async function createStripeSubscriptionCheckoutSession(input: {
   return postStripeCheckout(params);
 }
 
+export async function createBillingPortalSession(input: { customerId: string; returnUrl: string }) {
+  const secretKey = stripeSecretKey();
+  if (!secretKey) {
+    return { ok: false as const, error: "Stripe is not configured" };
+  }
+
+  const params = new URLSearchParams();
+  append(params, "customer", input.customerId);
+  append(params, "return_url", input.returnUrl);
+
+  const response = await fetch(`${STRIPE_API_BASE}/billing_portal/sessions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params,
+  });
+
+  const body = (await response.json()) as { id?: string; url?: string; error?: { message?: string } };
+  if (!response.ok || !body.url) {
+    return { ok: false as const, error: body.error?.message ?? "Failed to create billing portal session" };
+  }
+
+  return { ok: true as const, url: body.url };
+}
+
 export function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string | null, secret: string) {
   if (!signatureHeader || !secret) return false;
 

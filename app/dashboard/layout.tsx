@@ -1,12 +1,12 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ExternalLink, LogOut, Shuffle } from "lucide-react";
+import { ExternalLink, LogOut } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardWorkflowNav } from "@/components/dashboard/dashboard-workflow-nav";
+import { OrgSwitcher } from "@/components/dashboard/org-switcher";
 import { getCurrentUser, getDashboardAccessForTenant } from "@/lib/auth";
 import { publicPortalUrl } from "@/lib/environment";
-import { getVisibleCommunityOsNav } from "@/lib/pilot/dashboard-nav";
+import { getVisibleCommunityOsNav, selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { communityLabel } from "@/lib/pilot/portal-links";
 import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
 import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
@@ -25,7 +25,13 @@ export default async function DashboardLayout({
     resolveTenantForDashboard(),
     findMappedTenantsForUser(),
   ]);
-  const canSwitchCommunity = mappedTenants.length > 1;
+  const switcherTenants = mappedTenants.map((t) => ({
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    label: communityLabel(t.slug),
+  }));
+  const canCreateOrg = selfServeOnboardingEnabled();
 
   if (resolution.staleCookieIgnored) {
     redirect("/api/select-tenant?reason=stale-cookie");
@@ -47,15 +53,14 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen bg-muted/40">
       {/* Desktop sidebar */}
       <aside className="hidden w-[248px] shrink-0 flex-col border-r border-border/80 bg-card px-3 py-4 lg:flex">
-        <Link href="/dashboard" className="mb-2 flex items-center gap-2.5 rounded-xl px-2 py-1.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-extrabold text-primary-foreground shadow-sm">
-            JG
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-[13.5px] font-bold text-foreground">{community}</p>
-            <p className="truncate text-[11px] font-semibold text-muted-foreground">Operator workspace</p>
-          </div>
-        </Link>
+        <div className="mb-2">
+          <OrgSwitcher
+            tenants={switcherTenants}
+            currentTenantId={tenant.id}
+            currentLabel={community}
+            canCreateNew={canCreateOrg}
+          />
+        </div>
 
         <div className="flex-1 overflow-y-auto py-1">
           <DashboardNav groups={navGroups} />
@@ -73,12 +78,6 @@ export default async function DashboardLayout({
               Member portal
             </span>
           </a>
-          {canSwitchCommunity && (
-            <Link href="/api/select-tenant?reason=prepare-switch" className="jg-nav-link">
-              <Shuffle className="h-4 w-4 shrink-0" />
-              Switch community
-            </Link>
-          )}
           <form action="/api/sign-out" method="POST">
             <button type="submit" className="jg-nav-link w-full text-left">
               <LogOut className="h-4 w-4 shrink-0" />
@@ -92,12 +91,15 @@ export default async function DashboardLayout({
         {/* Top bar */}
         <header className="sticky top-0 z-50 border-b border-border/80 bg-card/95 backdrop-blur-md">
           <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 lg:hidden">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[11px] font-extrabold text-primary-foreground shadow-sm">
-                JG
-              </span>
-              <p className="truncate text-sm font-bold text-foreground">{community}</p>
-            </Link>
+            <div className="min-w-0 flex-1 lg:hidden">
+              <OrgSwitcher
+                tenants={switcherTenants}
+                currentTenantId={tenant.id}
+                currentLabel={community}
+                canCreateNew={canCreateOrg}
+                compact
+              />
+            </div>
             <div className="hidden text-sm font-semibold text-muted-foreground lg:block">Operator workspace</div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <CopyTextButton text={portalUrl} label="Copy portal" className="hidden sm:inline-flex" />
@@ -110,15 +112,6 @@ export default async function DashboardLayout({
                 Member portal
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
-              {canSwitchCommunity && (
-                <Link
-                  href="/api/select-tenant?reason=prepare-switch"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-                >
-                  <Shuffle className="h-3.5 w-3.5" />
-                  Switch
-                </Link>
-              )}
               <form action="/api/sign-out" method="POST" className="lg:hidden">
                 <button
                   type="submit"

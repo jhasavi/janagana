@@ -8,23 +8,20 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { NextStepsPanel } from "@/components/dashboard/next-steps-panel";
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { LinkChip } from "@/components/dashboard/link-chip";
 import { OperatorWarningsPanel } from "@/components/dashboard/operator-warnings-panel";
-import { buildPriorityItems, PriorityQueue } from "@/components/dashboard/priority-queue";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { buildTodoItems, TodoList } from "@/components/dashboard/todo-list";
 import { TenantIdentityCard } from "@/components/dashboard/tenant-identity-card";
 import { Card, CardBody } from "@/components/ui/card";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getUserClerkOrganizations } from "@/lib/auth";
+import { buildActivityFeed } from "@/lib/dashboard/activity-feed";
 import { getTenantFinancialSummary } from "@/lib/dashboard/financial-summary";
 import { getOperatorDashboard } from "@/lib/dashboard/operator-dashboard";
 import { buildMappingWarnings, mergeOperatorWarnings } from "@/lib/dashboard/operator-warnings";
 import { publicPortalUrl } from "@/lib/environment";
-import {
-  contactInterestLabel,
-  contactSourceLabel,
-  pilotContactKindLabel,
-} from "@/lib/pilot/contact-labels";
 import { portalLinksForTenant } from "@/lib/pilot/portal-links";
 import { tenantMappingStatusLabel } from "@/lib/tenant/mapping-labels";
 import { resolveTenantForDashboard } from "@/lib/tenant";
@@ -75,13 +72,20 @@ export default async function DashboardPage() {
         ? "border-warning/20 bg-warning/10 text-warning"
         : "border-border bg-card text-foreground";
 
-  const priorities = buildPriorityItems({
+  const todoItems = buildTodoItems({
     expiringThisMonth: dashboard.membershipRenewals.expiringThisMonth,
     expiredMembers: dashboard.membershipRenewals.expiredMembers,
     draftEvents: dashboard.draftEvents,
     contactsTotal: dashboard.summary.contactsTotal,
     publishedEvents: dashboard.publishedEvents,
     hasRegistrations: dashboard.summary.eventRegistrationsConfirmed > 0,
+  });
+
+  const activityItems = buildActivityFeed({
+    recentContacts: dashboard.recentContacts,
+    recentRegistrations: dashboard.recentRegistrations,
+    recentPayments: financial.recentPayments,
+    recentCommunications: dashboard.recentCommunications,
   });
 
   console.info("DASHBOARD_COUNTS", { tenantId: tenant.id, ...dashboard.summary, signal: activity.signal });
@@ -96,7 +100,7 @@ export default async function DashboardPage() {
 
       <QuickActions portalUrl={portalUrl} />
 
-      <PriorityQueue items={priorities} />
+      <TodoList items={todoItems} />
 
       <TenantIdentityCard
         tenant={tenant}
@@ -207,222 +211,22 @@ export default async function DashboardPage() {
         </p>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
-          <div className="flex items-center justify-between gap-4 border-b border-border/70 px-5 py-4 sm:px-6">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Recent contacts & leads</h2>
-              <p className="mt-0.5 text-sm text-muted-foreground">Who reached out and why.</p>
-            </div>
-            <Link href="/dashboard/members" className="shrink-0 text-sm font-semibold text-primary hover:text-foreground">
-              All contacts
-            </Link>
-          </div>
-          <CardBody className="pt-4">
-            {dashboard.recentContacts.length === 0 ? (
-              <EmptyPilotState tenantSlug={tenant.slug} portalUrl={portalUrl} kind="contacts" />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="py-2 pr-4">When</th>
-                      <th className="py-2 pr-4">Person</th>
-                      <th className="py-2 pr-4">Intent</th>
-                      <th className="py-2 pr-4">Source</th>
-                      <th className="py-2 pr-4">Activity</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboard.recentContacts.map((contact) => (
-                      <tr key={contact.id} className="border-b border-border/60">
-                        <td className="whitespace-nowrap py-3 pr-4 text-muted-foreground">
-                          <span title={formatDate(contact.createdAt)}>{formatRelativeTime(contact.createdAt)}</span>
-                        </td>
-                        <td className="py-3 pr-4">
-                          <Link href={`/dashboard/members/${contact.id}`} className="block">
-                            <p className="font-medium text-foreground hover:text-primary">
-                              {contact.firstName} {contact.lastName}
-                            </p>
-                            <p className="text-muted-foreground">{contact.email}</p>
-                          </Link>
-                        </td>
-                        <td className="py-3 pr-4">
-                          <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
-                            {pilotContactKindLabel(contact)}
-                          </span>
-                        </td>
-                        <td className="py-3 pr-4 text-foreground/80">{contactSourceLabel(contact.source)}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {contact.lastActivitySummary ?? "—"}
-                          {contact._count.registrations > 0 && (
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              {contact._count.registrations} event registration
-                              {contact._count.registrations === 1 ? "" : "s"}
-                            </p>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        <div className="space-y-4">
-          <NextStepsPanel
-            tenantSlug={tenant.slug}
-            portalUrl={portalUrl}
-            hasContacts={dashboard.summary.contactsTotal > 0}
-            hasPublishedEvents={dashboard.publishedEvents > 0}
-            hasRegistrations={dashboard.summary.eventRegistrationsConfirmed > 0}
-          />
-
-          <Card>
-            <CardBody>
-              <h2 className="text-sm font-semibold text-foreground">Website links</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Add these to your public website.</p>
-              <ul className="mt-3 space-y-2 text-sm">
-                {portalLinksForTenant(tenant.slug).slice(0, 4).map((link) => (
-                  <li key={link.href}>
-                    <p className="font-medium text-foreground/90">{link.label}</p>
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="break-all text-xs text-primary hover:text-foreground"
-                    >
-                      {link.href}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/dashboard/settings" className="mt-3 inline-block text-xs font-semibold text-primary hover:text-foreground">
-                All links in settings
-              </Link>
-            </CardBody>
-          </Card>
-        </div>
-      </section>
+      <ActivityFeed items={activityItems} />
 
       <Card>
-        <div className="flex items-center justify-between gap-4 border-b border-border/70 px-5 py-4 sm:px-6">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Recent event registrations</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">Completed registrations from your portal.</p>
+        <CardBody>
+          <h2 className="text-sm font-semibold text-foreground">Website links</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Add these to your public website.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {portalLinksForTenant(tenant.slug).slice(0, 4).map((link) => (
+              <LinkChip key={link.href} href={link.href} label={link.label} />
+            ))}
           </div>
-          <Link href="/dashboard/events" className="shrink-0 text-sm font-semibold text-primary hover:text-foreground">
-            Events
+          <Link href="/dashboard/settings" className="mt-3 inline-block text-xs font-semibold text-primary hover:text-foreground">
+            All links in settings
           </Link>
-        </div>
-        <CardBody className="pt-4">
-          {dashboard.recentRegistrations.length === 0 ? (
-            <EmptyPilotState tenantSlug={tenant.slug} portalUrl={portalUrl} kind="registrations" />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="py-2 pr-4">When</th>
-                    <th className="py-2 pr-4">Registrant</th>
-                    <th className="py-2 pr-4">Event</th>
-                    <th className="py-2 pr-4">Status</th>
-                    <th className="py-2 pr-4">Source / intent</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.recentRegistrations.map((registration) => (
-                    <tr key={registration.id} className="border-b border-border/60">
-                      <td className="whitespace-nowrap py-3 pr-4 text-muted-foreground">
-                        <span title={formatDate(registration.createdAt)}>{formatRelativeTime(registration.createdAt)}</span>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <p className="font-medium text-foreground">
-                          {registration.contact.firstName} {registration.contact.lastName}
-                        </p>
-                        <p className="text-muted-foreground">{registration.contact.email}</p>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <p className="font-medium text-foreground">{registration.event.title}</p>
-                        <p className="font-mono text-xs text-muted-foreground">/register/{registration.event.slug}</p>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
-                          {registration.status}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4 text-foreground/80">
-                        {contactSourceLabel(registration.contact.source)}
-                        {registration.contact.interestType && (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            · {contactInterestLabel(registration.contact.interestType)}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </CardBody>
       </Card>
-
-      {financial.recentPayments.length > 0 && (
-        <Card>
-          <div className="flex items-center justify-between gap-4 border-b border-border/70 px-5 py-4 sm:px-6">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Recent payments</h2>
-              <p className="mt-0.5 text-sm text-muted-foreground">Membership, event, and donation transactions.</p>
-            </div>
-            <Link href="/dashboard/payments" className="shrink-0 text-sm font-semibold text-primary hover:text-foreground">
-              All payments
-            </Link>
-          </div>
-          <CardBody className="pt-4">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="py-2 pr-4">When</th>
-                    <th className="py-2 pr-4">Person</th>
-                    <th className="py-2 pr-4">Purpose</th>
-                    <th className="py-2 pr-4">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {financial.recentPayments.map((payment) => (
-                    <tr key={payment.id} className="border-b border-border/60">
-                      <td className="whitespace-nowrap py-3 pr-4 text-muted-foreground">
-                        <span title={formatDate(payment.paidAt ?? payment.createdAt)}>
-                          {formatRelativeTime(payment.paidAt ?? payment.createdAt)}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4">
-                        {payment.contact ? (
-                          <>
-                            <p className="font-medium text-foreground">
-                              {payment.contact.firstName} {payment.contact.lastName}
-                            </p>
-                            <p className="text-muted-foreground">{payment.contact.email}</p>
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 pr-4 text-foreground/80">{payment.purpose}</td>
-                      <td className="py-3 pr-4 font-medium text-foreground">{formatCents(payment.amountCents)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardBody>
-        </Card>
-      )}
 
       {dashboard.upcomingEvents.length > 0 && (
         <details className="jg-card p-4">
@@ -487,49 +291,3 @@ function MetricCard({
   );
 }
 
-function EmptyPilotState({
-  tenantSlug,
-  portalUrl,
-  kind,
-}: {
-  tenantSlug: string;
-  portalUrl: string;
-  kind: "contacts" | "registrations";
-}) {
-  const contactPath = `${portalUrl}/contact`;
-  const eventsPath = `${portalUrl}/events`;
-
-  if (kind === "contacts") {
-    return (
-      <div className="jg-surface-muted p-5 text-sm text-muted-foreground">
-        <p className="font-medium text-foreground">No contacts for {tenantSlug} yet</p>
-        <p className="mt-2">
-          Test that website traffic is reaching JanaGana: open your portal contact form in an incognito window, submit a
-          unique email, then refresh this page.
-        </p>
-        <ul className="mt-3 list-disc space-y-1 pl-5">
-          <li>
-            Portal contact:{" "}
-            <a href={contactPath} className="break-all font-medium text-primary hover:text-foreground">
-              {contactPath}
-            </a>
-          </li>
-          <li>Wrong site (e.g. TPW newsletter only) will not appear here.</li>
-        </ul>
-      </div>
-    );
-  }
-
-  return (
-    <div className="jg-surface-muted p-5 text-sm text-muted-foreground">
-      <p className="font-medium text-foreground">No event registrations yet</p>
-      <p className="mt-2">
-        Publish an event, then register in incognito via{" "}
-        <a href={eventsPath} className="font-medium text-primary hover:text-foreground">
-          {eventsPath}
-        </a>
-        .
-      </p>
-    </div>
-  );
-}

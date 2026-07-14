@@ -111,6 +111,13 @@ enum CustomFieldType {
   SELECT
 }
 
+/// JanaGana's own SaaS plan for the tenant organization (distinct from a
+/// tenant's own MembershipTier, which is that org's dues plan for ITS members).
+enum TenantPlan {
+  FREE
+  PRO
+}
+
 // ─── MODELS ───────────────────────────────────────────────────────────────────
 
 /// An organization admin account.
@@ -128,6 +135,11 @@ model Tenant {
   logoUrl            String?
   /// Public member directory on the portal is opt-in per tenant, off by default.
   directoryEnabled   Boolean      @default(false)
+  /// JanaGana's own SaaS plan for this tenant — see TenantPlan doc comment.
+  plan               TenantPlan   @default(FREE)
+  stripeCustomerId     String?    @unique
+  stripeSubscriptionId String?    @unique
+  planRenewsAt         DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 

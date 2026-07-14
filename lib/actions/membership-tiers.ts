@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
+import { FREE_LIMITS, isPro } from "@/lib/plans/gate";
 
 const MembershipStatusSchema = z.enum(["PENDING", "ACTIVE", "INACTIVE", "EXPIRED", "CANCELED"]);
 const PaymentStatusSchema = z.enum(["PENDING", "PAID", "FAILED", "REFUNDED", "WAIVED"]);
@@ -27,6 +28,19 @@ export async function createMembershipTier(input: unknown, options?: TenantActio
   const parsed = MembershipTierCreateSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid tier input" };
+  }
+
+  if (parsed.data.active && !isPro(context.tenant)) {
+    const activeTierCount = await prisma.membershipTier.count({
+      where: { tenantId: context.tenant.id, active: true },
+    });
+    if (activeTierCount >= FREE_LIMITS.membershipTiers) {
+      return {
+        ok: false as const,
+        error: `Free plan is limited to ${FREE_LIMITS.membershipTiers} active membership tier. Upgrade to Pro for more.`,
+        upgradeRequired: true as const,
+      };
+    }
   }
 
   try {

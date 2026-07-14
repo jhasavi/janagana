@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Home, Users } from "lucide-react";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
+import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -14,7 +15,7 @@ import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDas
 export default async function FamiliesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; upgrade?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
@@ -34,10 +35,11 @@ export default async function FamiliesPage({
       { tenantIdHint: tenantHint },
     );
     if (!result.ok) {
+      const upgradeParam = "upgradeRequired" in result && result.upgradeRequired ? "&upgrade=1" : "";
       if (tenantHint) {
-        redirectWithActiveTenant(tenantHint, `/dashboard/families?error=${encodeURIComponent(result.error)}`);
+        redirectWithActiveTenant(tenantHint, `/dashboard/families?error=${encodeURIComponent(result.error)}${upgradeParam}`);
       }
-      redirect(`/dashboard/families?error=${encodeURIComponent(result.error)}`);
+      redirect(`/dashboard/families?error=${encodeURIComponent(result.error)}${upgradeParam}`);
     }
     redirectWithActiveTenant(result.data.id, `/dashboard/families/${result.data.id}`);
   }
@@ -50,11 +52,13 @@ export default async function FamiliesPage({
         description="Group contacts into households so renewals, RSVPs, and outreach can be seen per family, not just per person."
       />
 
-      {query.error && (
+      {query.error && query.upgrade === "1" ? (
+        <UpgradePrompt message={query.error} />
+      ) : query.error ? (
         <div className="jg-surface-muted border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           {query.error}
         </div>
-      )}
+      ) : null}
 
       <Card>
         <CardBody>

@@ -37,6 +37,7 @@ import { formatCents, formatDate, formatRelativeTime } from "@/lib/utils";
 import { configuredAppUrl } from "@/lib/environment";
 import { ensureMembershipVerifyToken } from "@/lib/memberships/verify-token";
 import { appleWalletConfigured, googleWalletConfigured } from "@/lib/wallet/config";
+import { isPro } from "@/lib/plans/gate";
 
 function statusBadgeVariant(status: string): "success" | "warning" | "danger" | "default" {
   if (status === "ACTIVE" || status === "CONFIRMED" || status === "ATTENDED" || status === "PAID") return "success";
@@ -147,8 +148,8 @@ export default async function ContactProfilePage({
     membershipCardProps = {
       verifyUrl,
       qrDataUrl,
-      appleWalletHref: appleWalletConfigured() ? `/api/wallet/apple?token=${token}` : null,
-      googleWalletHref: googleWalletConfigured() ? `/api/wallet/google?token=${token}` : null,
+      appleWalletHref: appleWalletConfigured() && tenant && isPro(tenant) ? `/api/wallet/apple?token=${token}` : null,
+      googleWalletHref: googleWalletConfigured() && tenant && isPro(tenant) ? `/api/wallet/google?token=${token}` : null,
     };
   }
 

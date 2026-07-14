@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 import { MAX_CUSTOM_FIELDS } from "@/lib/custom-fields/shared";
+import { FREE_LIMITS, isPro } from "@/lib/plans/gate";
 
 const CustomFieldTypeSchema = z.enum(["TEXT", "NUMBER", "DATE", "BOOLEAN", "SELECT"]);
 
@@ -42,11 +43,19 @@ export async function createCustomFieldDefinition(input: unknown, options?: Tena
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid field input" };
   }
 
+  const maxAllowed = isPro(auth.context.tenant) ? MAX_CUSTOM_FIELDS : FREE_LIMITS.customFields;
   const activeCount = await prisma.customFieldDefinition.count({
     where: { tenantId: auth.context.tenant.id, active: true },
   });
-  if (activeCount >= MAX_CUSTOM_FIELDS) {
-    return { ok: false as const, error: `You can have at most ${MAX_CUSTOM_FIELDS} custom fields. Deactivate one first.` };
+  if (activeCount >= maxAllowed) {
+    return {
+      ok: false as const,
+      error:
+        activeCount >= FREE_LIMITS.customFields && maxAllowed === FREE_LIMITS.customFields
+          ? `Free plan is limited to ${FREE_LIMITS.customFields} custom field. Upgrade to Pro for up to ${MAX_CUSTOM_FIELDS}.`
+          : `You can have at most ${maxAllowed} custom fields. Deactivate one first.`,
+      upgradeRequired: maxAllowed === FREE_LIMITS.customFields,
+    };
   }
 
   const baseKey = slugify(parsed.data.label).replace(/-/g, "_") || "field";
@@ -101,11 +110,16 @@ export async function setCustomFieldDefinitionActive(
   }
 
   if (active) {
+    const maxAllowed = isPro(auth.context.tenant) ? MAX_CUSTOM_FIELDS : FREE_LIMITS.customFields;
     const activeCount = await prisma.customFieldDefinition.count({
       where: { tenantId: auth.context.tenant.id, active: true },
     });
-    if (activeCount >= MAX_CUSTOM_FIELDS) {
-      return { ok: false as const, error: `You can have at most ${MAX_CUSTOM_FIELDS} active custom fields.` };
+    if (activeCount >= maxAllowed) {
+      return {
+        ok: false as const,
+        error: `You can have at most ${maxAllowed} active custom fields.`,
+        upgradeRequired: maxAllowed === FREE_LIMITS.customFields,
+      };
     }
   }
 

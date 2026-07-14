@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
+import { LinkChip } from "@/components/dashboard/link-chip";
 import { TenantScopeHiddenFields } from "@/components/dashboard/tenant-scope-hidden-fields";
+import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,13 +30,21 @@ import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mappin
 import { findMappedTenantsForUser, readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { getTenantBranding, updateTenantBranding } from "@/lib/actions/tenant-branding";
 import { updateDirectoryEnabled } from "@/lib/actions/directory-settings";
+import { createManageBillingSession, createProUpgradeCheckout } from "@/lib/actions/billing";
+import { isPro } from "@/lib/plans/gate";
+import { PRO_PLAN_MONTHLY_CENTS } from "@/lib/plans/pro-plan";
 import { prisma } from "@/lib/prisma";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string; upgrade?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/sign-in");
   }
+  const query = await searchParams;
 
   const [resolution, clerkOrgs, mappedTenants] = await Promise.all([
     resolveTenantForDashboard(),
@@ -55,6 +65,12 @@ export default async function SettingsPage() {
   const canSwitchCommunity = mappedTenants.length > 1;
   const customFieldsResult = activeTenant ? await listCustomFieldDefinitions() : null;
   const customFieldDefinitions = customFieldsResult?.ok ? customFieldsResult.data : [];
+  const planInfo = activeTenant
+    ? await prisma.tenant.findUnique({
+        where: { id: activeTenant.id },
+        select: { plan: true, planRenewsAt: true, stripeCustomerId: true },
+      })
+    : null;
 
   async function updateBrandingAction(formData: FormData) {
     "use server";
@@ -84,10 +100,11 @@ export default async function SettingsPage() {
       tenantIdHint: tenantHint,
     });
     if (!result.ok) {
+      const upgradeParam = "upgradeRequired" in result && result.upgradeRequired ? "&upgrade=1" : "";
       if (tenantHint) {
-        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}${upgradeParam}`);
       }
-      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}${upgradeParam}`);
     }
     redirectWithActiveTenant(result.data.id, "/dashboard/settings?success=directory");
   }
@@ -104,10 +121,11 @@ export default async function SettingsPage() {
       { tenantIdHint: tenantHint },
     );
     if (!result.ok) {
+      const upgradeParam = "upgradeRequired" in result && result.upgradeRequired ? "&upgrade=1" : "";
       if (tenantHint) {
-        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}${upgradeParam}`);
       }
-      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}${upgradeParam}`);
     }
     redirectWithActiveTenant(result.data.tenantId, "/dashboard/settings?success=field-added");
   }
@@ -119,10 +137,11 @@ export default async function SettingsPage() {
     const active = formData.get("active") === "1";
     const result = await setCustomFieldDefinitionActive(definitionId, active, { tenantIdHint: tenantHint });
     if (!result.ok) {
+      const upgradeParam = "upgradeRequired" in result && result.upgradeRequired ? "&upgrade=1" : "";
       if (tenantHint) {
-        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}${upgradeParam}`);
       }
-      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}`);
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}${upgradeParam}`);
     }
     if (tenantHint) {
       redirectWithActiveTenant(tenantHint, "/dashboard/settings?success=field-updated");
@@ -145,6 +164,32 @@ export default async function SettingsPage() {
       redirectWithActiveTenant(tenantHint, "/dashboard/settings?success=field-deleted");
     }
     redirect("/dashboard/settings?success=field-deleted");
+  }
+
+  async function upgradeToProAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await createProUpgradeCheckout({ tenantIdHint: tenantHint });
+    if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
+      }
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
+    }
+    redirect(result.checkoutUrl);
+  }
+
+  async function manageBillingAction(formData: FormData) {
+    "use server";
+    const tenantHint = readTenantIdHintFromForm(formData);
+    const result = await createManageBillingSession({ tenantIdHint: tenantHint });
+    if (!result.ok) {
+      if (tenantHint) {
+        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
+      }
+      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
+    }
+    redirect(result.portalUrl);
   }
 
   const engineeringFlags = {
@@ -172,6 +217,14 @@ export default async function SettingsPage() {
         title="Portal & setup"
         description={`Operator setup for ${activeTenant ? communityLabel(activeTenant.slug) : "your community"}: public portal URL, website links, and whether your Clerk login maps to this tenant. Access is enforced by Clerk org membership, not a separate admin table.`}
       />
+
+      {query.error && query.upgrade === "1" ? (
+        <UpgradePrompt message={query.error} />
+      ) : query.error ? (
+        <Alert variant="error">{query.error}</Alert>
+      ) : query.success ? (
+        <Alert variant="success">Saved.</Alert>
+      ) : null}
 
       {activeTenant && (
         <Card>
@@ -225,6 +278,50 @@ export default async function SettingsPage() {
                 Save
               </Button>
             </form>
+          </CardBody>
+        </Card>
+      )}
+
+      {activeTenant && planInfo && (
+        <Card id="plan">
+          <CardBody>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Plan</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {isPro(planInfo)
+                    ? "Households, member directory, unlimited custom fields, wallet passes, unlimited tiers and events."
+                    : "Core CRM, 1 membership tier, up to 3 live events, donations, and payments — all free forever."}
+                </p>
+              </div>
+              <Badge variant={isPro(planInfo) ? "brand" : "default"}>{isPro(planInfo) ? "Pro" : "Free"}</Badge>
+            </div>
+            <div className="mt-4">
+              {isPro(planInfo) ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  {planInfo.planRenewsAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Renews {planInfo.planRenewsAt.toLocaleDateString()}
+                    </p>
+                  )}
+                  {planInfo.stripeCustomerId && (
+                    <form action={manageBillingAction}>
+                      <TenantScopeHiddenFields tenantId={activeTenant.id} />
+                      <Button type="submit" variant="secondary" size="sm">
+                        Manage subscription
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              ) : (
+                <form action={upgradeToProAction}>
+                  <TenantScopeHiddenFields tenantId={activeTenant.id} />
+                  <Button type="submit" size="sm">
+                    Upgrade to Pro — ${(PRO_PLAN_MONTHLY_CENTS / 100).toFixed(0)}/mo
+                  </Button>
+                </form>
+              )}
+            </div>
           </CardBody>
         </Card>
       )}
@@ -311,9 +408,7 @@ export default async function SettingsPage() {
                 <span className="font-mono">{activeTenant.slug}</span>
               </Row>
               <Row label="Public portal URL">
-                <a href={portalUrl} target="_blank" rel="noreferrer" className="break-all text-primary underline">
-                  {portalUrl}
-                </a>
+                <LinkChip href={portalUrl} className="max-w-sm" />
               </Row>
               <Row label="Clerk org ID">
                 <span className="break-all font-mono text-xs">{activeTenant.clerkOrgId}</span>
@@ -444,17 +539,14 @@ export default async function SettingsPage() {
               Point your website CTAs here for {activeTenant ? communityLabel(activeTenant.slug) : "this community"}.
               Visitors do not sign in with Clerk.
             </p>
-            <ul className="mt-3 space-y-3 text-sm text-foreground">
+            <div className="mt-3 space-y-3">
               {tenantLinks.map((link) => (
-                <li key={link.href}>
-                  <p className="font-medium">{link.label}</p>
-                  {link.hint && <p className="text-xs text-muted-foreground">{link.hint}</p>}
-                  <a href={link.href} target="_blank" rel="noreferrer" className="mt-1 block break-all font-mono text-primary underline">
-                    {link.href}
-                  </a>
-                </li>
+                <div key={link.href}>
+                  {link.hint && <p className="mb-1 text-xs text-muted-foreground">{link.hint}</p>}
+                  <LinkChip href={link.href} label={link.label} />
+                </div>
               ))}
-            </ul>
+            </div>
           </CardBody>
         </Card>
       )}
