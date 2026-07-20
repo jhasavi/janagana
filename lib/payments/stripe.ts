@@ -164,6 +164,112 @@ export async function createBillingPortalSession(input: { customerId: string; re
   return { ok: true as const, url: body.url };
 }
 
+async function postStripe(path: string, params: URLSearchParams) {
+  const secretKey = stripeSecretKey();
+  if (!secretKey) {
+    return { ok: false as const, error: "Stripe is not configured" };
+  }
+
+  const response = await fetch(`${STRIPE_API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params,
+  });
+
+  const body = (await response.json()) as Record<string, unknown> & {
+    id?: string;
+    error?: { message?: string };
+  };
+
+  if (!response.ok || !body.id) {
+    return {
+      ok: false as const,
+      error: body.error?.message ?? `Stripe request to ${path} failed`,
+    };
+  }
+
+  return { ok: true as const, body };
+}
+
+function appendMetadata(params: URLSearchParams, metadata?: Record<string, string>) {
+  for (const [key, value] of Object.entries(metadata ?? {})) {
+    append(params, `metadata[${key}]`, value);
+  }
+}
+
+export async function createStripeCustomer(input: {
+  email: string;
+  name?: string;
+  metadata?: Record<string, string>;
+}) {
+  const params = new URLSearchParams();
+  append(params, "email", input.email);
+  append(params, "name", input.name);
+  appendMetadata(params, input.metadata);
+
+  const result = await postStripe("/customers", params);
+  if (!result.ok) return result;
+  return { ok: true as const, customerId: String(result.body.id) };
+}
+
+export async function createStripeInvoiceItem(input: {
+  customerId: string;
+  amountCents: number;
+  currency?: string;
+  description: string;
+  metadata?: Record<string, string>;
+}) {
+  const params = new URLSearchParams();
+  append(params, "customer", input.customerId);
+  append(params, "amount", input.amountCents);
+  append(params, "currency", (input.currency ?? "USD").toLowerCase());
+  append(params, "description", input.description);
+  appendMetadata(params, input.metadata);
+
+  const result = await postStripe("/invoiceitems", params);
+  if (!result.ok) return result;
+  return { ok: true as const, invoiceItemId: String(result.body.id) };
+}
+
+export async function createStripeInvoice(input: {
+  customerId: string;
+  daysUntilDue?: number;
+  metadata?: Record<string, string>;
+}) {
+  const params = new URLSearchParams();
+  append(params, "customer", input.customerId);
+  append(params, "collection_method", "send_invoice");
+  append(params, "days_until_due", input.daysUntilDue ?? 30);
+  appendMetadata(params, input.metadata);
+
+  const result = await postStripe("/invoices", params);
+  if (!result.ok) return result;
+  return { ok: true as const, invoiceId: String(result.body.id) };
+}
+
+export async function finalizeAndSendStripeInvoice(invoiceId: string) {
+  const finalizeResult = await postStripe(`/invoices/${invoiceId}/finalize`, new URLSearchParams());
+  if (!finalizeResult.ok) return finalizeResult;
+
+  const sendResult = await postStripe(`/invoices/${invoiceId}/send`, new URLSearchParams());
+  if (!sendResult.ok) return sendResult;
+
+  const hostedInvoiceUrl = sendResult.body.hosted_invoice_url ?? finalizeResult.body.hosted_invoice_url;
+  return {
+    ok: true as const,
+    hostedInvoiceUrl: typeof hostedInvoiceUrl === "string" ? hostedInvoiceUrl : null,
+  };
+}
+
+export async function voidStripeInvoice(invoiceId: string) {
+  const result = await postStripe(`/invoices/${invoiceId}/void`, new URLSearchParams());
+  if (!result.ok) return result;
+  return { ok: true as const };
+}
+
 export function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string | null, secret: string) {
   if (!signatureHeader || !secret) return false;
 

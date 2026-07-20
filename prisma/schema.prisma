@@ -59,7 +59,15 @@ enum PaymentPurpose {
   MEMBERSHIP
   EVENT
   DONATION
+  SPONSORSHIP
   OTHER
+}
+
+enum SponsorInvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  VOID
 }
 
 enum CommunicationStatus {
@@ -159,6 +167,8 @@ model Tenant {
   auditLogs     AuditLog[]
   contactLoginTokens ContactLoginToken[]
   contactSessions    ContactSession[]
+  sponsors        Sponsor[]
+  sponsorInvoices SponsorInvoice[]
 }
 
 /// Cache of which Clerk users are admins of which Tenants.
@@ -358,6 +368,7 @@ model PaymentRecord {
   membershipId   String?
   eventId        String?
   registrationId String?
+  sponsorInvoiceId String?
   amountCents    Int
   currency       String         @default("USD")
   status         PaymentStatus  @default(PAID)
@@ -376,6 +387,7 @@ model PaymentRecord {
   membership Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
   event      Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
   registration EventRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  sponsorInvoice SponsorInvoice? @relation(fields: [sponsorInvoiceId], references: [id], onDelete: SetNull)
   receipt    PaymentReceipt?
 
   @@index([tenantId])
@@ -385,6 +397,7 @@ model PaymentRecord {
   @@index([membershipId])
   @@index([eventId])
   @@index([registrationId])
+  @@index([sponsorInvoiceId])
   @@index([paidAt])
   @@index([stripeSubscriptionId])
   @@unique([provider, providerRef])
@@ -453,6 +466,7 @@ model Event {
   registrations EventRegistration[]
   payments      PaymentRecord[]
   communications CommunicationMessage[]
+  sponsors      Sponsor[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -562,4 +576,60 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([createdAt])
+}
+
+/// A sponsor of the tenant's events/programs (e.g. a gala sponsor) — distinct
+/// from Contact, which models people, not organizations.
+model Sponsor {
+  id               String    @id @default(cuid())
+  tenantId         String
+  name             String
+  /// Freeform, e.g. "Gold" — tenants define their own tier names.
+  tier             String?
+  contactName      String?
+  contactEmail     String?
+  contactPhone     String?
+  website          String?
+  notes            String?
+  eventId          String?
+  stripeCustomerId String?   @unique
+  archivedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event    Event?           @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  invoices SponsorInvoice[]
+
+  @@index([tenantId])
+  @@index([eventId])
+}
+
+/// A one-off invoice billed to a Sponsor. Drafts stay local until sent —
+/// sending pushes it to Stripe (collection_method=send_invoice), which emails
+/// the sponsor a hosted payment link.
+model SponsorInvoice {
+  id               String               @id @default(cuid())
+  tenantId         String
+  sponsorId        String
+  description      String
+  amountCents      Int
+  currency         String               @default("USD")
+  status           SponsorInvoiceStatus @default(DRAFT)
+  dueDate          DateTime?
+  stripeInvoiceId  String?              @unique
+  hostedInvoiceUrl String?
+  sentAt           DateTime?
+  paidAt           DateTime?
+  voidedAt         DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sponsor  Sponsor         @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  payments PaymentRecord[]
+
+  @@index([tenantId])
+  @@index([sponsorId])
+  @@index([tenantId, status])
 }

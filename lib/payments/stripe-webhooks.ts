@@ -34,6 +34,7 @@ type StripeInvoice = {
   amount_paid?: number;
   currency?: string | null;
   billing_reason?: string | null;
+  metadata?: Record<string, string | undefined> | null;
 };
 
 type StripeEvent = {
@@ -195,6 +196,68 @@ async function processSubscriptionRenewalInvoice(invoice: StripeInvoice, event: 
 
   await issueReceiptForPayment(payment.id);
   return { ok: true as const, duplicate: false, processed: true, tenantId: anchor.tenantId };
+}
+
+async function processSponsorInvoicePaid(invoice: StripeInvoice, event: StripeEvent) {
+  const sponsorInvoice = await prisma.sponsorInvoice.findUnique({
+    where: { stripeInvoiceId: invoice.id },
+    select: { id: true, tenantId: true, sponsorId: true, status: true, description: true },
+  });
+  if (!sponsorInvoice) {
+    return { ok: true as const, duplicate: false, processed: false };
+  }
+
+  const existingPayment = await prisma.paymentRecord.findFirst({
+    where: { provider: "stripe", providerRef: invoice.id },
+    select: { id: true },
+  });
+  if (existingPayment || sponsorInvoice.status === "PAID") {
+    return { ok: true as const, duplicate: true, processed: false, tenantId: sponsorInvoice.tenantId };
+  }
+
+  const now = new Date();
+  const amountCents = invoice.amount_paid ?? 0;
+  const currency = (invoice.currency ?? "usd").toUpperCase();
+
+  const payment = await prisma.paymentRecord.create({
+    data: {
+      tenantId: sponsorInvoice.tenantId,
+      sponsorInvoiceId: sponsorInvoice.id,
+      amountCents,
+      currency,
+      status: "PAID",
+      method: "STRIPE",
+      purpose: "SPONSORSHIP",
+      provider: "stripe",
+      providerRef: invoice.id,
+      paidAt: now,
+      notes: sponsorInvoice.description,
+    },
+  });
+
+  await prisma.sponsorInvoice.update({
+    where: { id: sponsorInvoice.id },
+    data: { status: "PAID", paidAt: now },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: sponsorInvoice.tenantId,
+      actorUserId: null,
+      action: "UPDATE",
+      metadata: {
+        entity: "SponsorInvoice",
+        source: "stripe_invoice",
+        stripeEventId: event.id,
+        stripeInvoiceId: invoice.id,
+        sponsorInvoiceId: sponsorInvoice.id,
+        sponsorId: sponsorInvoice.sponsorId,
+        paymentId: payment.id,
+      },
+    },
+  });
+
+  return { ok: true as const, duplicate: false, processed: true, tenantId: sponsorInvoice.tenantId };
 }
 
 function isCheckoutSession(value: unknown): value is StripeCheckoutSession {
@@ -459,7 +522,10 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
     if (!isStripeInvoice(event.data.object)) {
       return { ok: false as const, error: "Webhook event object is not an Invoice" };
     }
-    const result = await processSubscriptionRenewalInvoice(event.data.object, event);
+    const result =
+      event.data.object.metadata?.purpose === "sponsor_invoice"
+        ? await processSponsorInvoicePaid(event.data.object, event)
+        : await processSubscriptionRenewalInvoice(event.data.object, event);
     await prisma.stripeWebhookEvent.create({
       data: {
         tenantId: "tenantId" in result && typeof result.tenantId === "string" ? result.tenantId : null,

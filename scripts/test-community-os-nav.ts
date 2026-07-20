@@ -32,10 +32,14 @@ assert(PILOT_DASHBOARD_NAV.length === flat.length, "PILOT_DASHBOARD_NAV should m
 
 const comingSoon = flat.filter((item) => item.status === "coming-soon");
 assert(hrefs.includes("/dashboard/donations"), "Nav must include donations");
-assert(comingSoon.length >= 3, "Expected at least 3 coming-soon modules");
+assert(comingSoon.length >= 1, "Expected at least 1 coming-soon module");
 assert(
   flat.find((item) => item.label === "Communications")?.status === "live",
   "Communications should be live now that the outbox UI is built",
+);
+assert(
+  flat.find((item) => item.label === "Sponsors")?.status === "live",
+  "Sponsors should be live now that the CRM + Stripe invoicing UI is built",
 );
 
 console.log("Community OS navigation checks passed:");

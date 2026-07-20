@@ -32,6 +32,8 @@ function purposeLabel(purpose: string) {
       return "Event";
     case "DONATION":
       return "Donation";
+    case "SPONSORSHIP":
+      return "Sponsorship";
     default:
       return "Other";
   }
