@@ -59,6 +59,11 @@
     --border: 248 16% 20%;
     --input: 248 16% 20%;
     --ring: 28 90% 58%;
+    --chart-1: 28 90% 58%;
+    --chart-2: 168 40% 45%;
+    --chart-3: 155 55% 55%;
+    --chart-4: 199 80% 60%;
+    --chart-5: 336 65% 65%;
   }
 }
 
@@ -143,5 +148,23 @@
   .jg-portal-gradient {
     background: radial-gradient(120% 140% at 100% 0%, hsl(45 95% 65% / 0.45) 0%, transparent 45%),
       linear-gradient(135deg, hsl(28 90% 50%) 0%, hsl(20 85% 38%) 100%);
+  }
+
+  /* Dashboard page header — soft multi-hue wash so every internal page reads as designed, not bare text-on-white. */
+  .jg-page-header {
+    @apply relative overflow-hidden rounded-2xl border border-border/70 bg-card px-5 py-5 shadow-sm sm:px-7 sm:py-6;
+  }
+
+  .jg-page-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(130% 160% at 100% -20%, hsl(var(--accent) / 0.16) 0%, transparent 55%),
+      radial-gradient(130% 160% at -10% 120%, hsl(var(--primary) / 0.18) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .jg-page-header > * {
+    position: relative;
   }
 }

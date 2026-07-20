@@ -24,7 +24,20 @@ export async function getActiveTenantCookie(): Promise<string | null> {
 
 export async function setActiveTenantCookie(tenantId: string): Promise<void> {
   const store = await cookies();
-  store.set(ACTIVE_TENANT_COOKIE, tenantId, activeTenantCookieOptions());
+  try {
+    store.set(ACTIVE_TENANT_COOKIE, tenantId, activeTenantCookieOptions());
+  } catch (error) {
+    // Next.js forbids cookie writes during Server Component render (only
+    // Server Actions/Route Handlers may mutate cookies). requireActiveTenantForActions()
+    // is called from both; from render this write is best-effort only — the
+    // resolved tenant is still correct, and an explicit tenant switch always
+    // goes through /api/select-tenant (a real Route Handler) where the write
+    // succeeds for real.
+    console.info("ACTIVE_TENANT_COOKIE_WRITE_SKIPPED", {
+      tenantId,
+      reason: error instanceof Error ? error.message : "unknown",
+    });
+  }
 }
 
 export function applyActiveTenantCookieToResponse(response: NextResponse, tenantId: string): NextResponse {

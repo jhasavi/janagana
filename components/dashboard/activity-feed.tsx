@@ -15,7 +15,7 @@ const TONE: Record<ActivityItemType, string> = {
   contact: "bg-primary/10 text-primary",
   registration: "bg-accent/10 text-accent",
   payment: "bg-success/10 text-success",
-  communication: "bg-muted text-muted-foreground",
+  communication: "bg-chart-4/10 text-chart-4",
 };
 
 export function ActivityFeed({ items }: { items: ActivityItem[] }) {

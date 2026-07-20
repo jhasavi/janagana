@@ -22,8 +22,11 @@ export type TenantActionOptions = {
 };
 
 /**
- * Server actions and mutations: require signed-in user + exactly one resolved tenant.
- * Pages/layouts should use resolveTenantForDashboard() directly for redirects.
+ * Server actions, mutations, and page-render reads: require signed-in user +
+ * exactly one resolved tenant. Safe to call from a Server Component render —
+ * the active-tenant cookie write inside is best-effort (see setActiveTenantCookie).
+ * Pages/layouts that need redirect-on-stale-cookie/multi-tenant behavior should
+ * still use resolveTenantForDashboard() directly for that purpose.
  */
 export async function requireActiveTenantForActions(
   options?: TenantActionOptions

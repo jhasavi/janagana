@@ -67,9 +67,9 @@ export default async function DashboardPage() {
 
   const signalClass =
     activity.signal === "healthy"
-      ? "border-success/20 bg-success/10 text-success"
+      ? "border-success/25 bg-success/10 text-success"
       : activity.signal === "watch"
-        ? "border-warning/20 bg-warning/10 text-warning"
+        ? "border-warning/25 bg-warning/10 text-warning"
         : "border-border bg-card text-foreground";
 
   const todoItems = buildTodoItems({
@@ -100,31 +100,18 @@ export default async function DashboardPage() {
 
       <QuickActions portalUrl={portalUrl} />
 
-      <TodoList items={todoItems} />
-
-      <TenantIdentityCard
-        tenant={tenant}
-        portalUrl={portalUrl}
-        mappingStatus={mappingStatus}
-        hasClerkMembership={Boolean(activeClerkOrg)}
-      />
-
-      <OperatorWarningsPanel warnings={warnings} />
-
-      <section className={`rounded-xl border p-4 shadow-sm ${signalClass}`}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold">{signalLabel}</p>
-            <p className="mt-1 text-sm opacity-90">
-              Last {activity.windowDays} days:{" "}
-              <strong>{activity.contactsLast7Days}</strong> new contact
-              {activity.contactsLast7Days === 1 ? "" : "s"}
-              {" · "}
-              <strong>{activity.registrationsLast7Days}</strong> new registration
-              {activity.registrationsLast7Days === 1 ? "" : "s"}
-            </p>
-          </div>
-          <dl className="grid gap-1 text-sm sm:text-right">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TodoList items={todoItems} />
+        </div>
+        <section className={`rounded-xl border p-4 shadow-sm ${signalClass}`}>
+          <p className="text-sm font-semibold">{signalLabel}</p>
+          <p className="mt-1.5 text-sm opacity-90">
+            Last {activity.windowDays}d: <strong>{activity.contactsLast7Days}</strong> new contact
+            {activity.contactsLast7Days === 1 ? "" : "s"} · <strong>{activity.registrationsLast7Days}</strong>{" "}
+            registration{activity.registrationsLast7Days === 1 ? "" : "s"}
+          </p>
+          <dl className="mt-2.5 space-y-0.5 text-xs">
             <div>
               <dt className="inline font-medium opacity-80">Last contact: </dt>
               <dd className="inline">
@@ -138,12 +125,21 @@ export default async function DashboardPage() {
               </dd>
             </div>
           </dl>
-        </div>
-      </section>
+        </section>
+      </div>
+
+      <TenantIdentityCard
+        tenant={tenant}
+        portalUrl={portalUrl}
+        mappingStatus={mappingStatus}
+        hasClerkMembership={Boolean(activeClerkOrg)}
+      />
+
+      <OperatorWarningsPanel warnings={warnings} />
 
       <section className="space-y-4">
         <SectionHeader eyebrow="Overview" title="Community health" />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <MetricCard
             icon={Users}
             label="Total contacts"
@@ -151,6 +147,7 @@ export default async function DashboardPage() {
             detail={`${activity.contactsLast7Days} new in ${activity.windowDays}d`}
             href="/dashboard/members"
             highlight={dashboard.summary.contactsTotal > 0}
+            tone="primary"
           />
           <MetricCard
             icon={CreditCard}
@@ -159,6 +156,7 @@ export default async function DashboardPage() {
             detail={`${dashboard.summary.membershipTiers} membership plan${dashboard.summary.membershipTiers === 1 ? "" : "s"}`}
             href="/dashboard/tiers"
             highlight={dashboard.summary.activeMemberships > 0}
+            tone="accent"
           />
           <MetricCard
             icon={CalendarClock}
@@ -167,6 +165,7 @@ export default async function DashboardPage() {
             detail={`${dashboard.membershipRenewals.expiringIn30Days} in next 30 days`}
             href="/dashboard/memberships/renewals?filter=expiring_30"
             highlight={dashboard.membershipRenewals.expiringThisMonth > 0}
+            tone="warning"
           />
           <MetricCard
             icon={UserPlus}
@@ -179,6 +178,7 @@ export default async function DashboardPage() {
             }
             href="/dashboard/memberships/renewals?filter=expired"
             highlight={dashboard.membershipRenewals.expiredMembers > 0}
+            tone="destructive"
           />
           <MetricCard
             icon={CalendarDays}
@@ -187,6 +187,7 @@ export default async function DashboardPage() {
             detail={`${dashboard.publishedEvents} published · ${dashboard.draftEvents} draft`}
             href="/dashboard/events"
             highlight={dashboard.upcomingEventsCount > 0}
+            tone="chart-4"
           />
           <MetricCard
             icon={Wallet}
@@ -195,6 +196,7 @@ export default async function DashboardPage() {
             detail={formatCents(financial.totalRevenueCents) + " total received"}
             href="/dashboard/payments"
             highlight={financial.totalRevenueCents > 0}
+            tone="success"
           />
         </div>
         <p className="text-sm text-muted-foreground">
@@ -258,6 +260,24 @@ export default async function DashboardPage() {
   );
 }
 
+const METRIC_TONE_CLASS = {
+  primary: "bg-primary/15 text-primary group-hover:bg-primary/25",
+  accent: "bg-accent/15 text-accent group-hover:bg-accent/25",
+  warning: "bg-warning/15 text-warning group-hover:bg-warning/25",
+  destructive: "bg-destructive/15 text-destructive group-hover:bg-destructive/25",
+  success: "bg-success/15 text-success group-hover:bg-success/25",
+  "chart-4": "bg-chart-4/15 text-chart-4 group-hover:bg-chart-4/25",
+} as const;
+
+const METRIC_BORDER_CLASS = {
+  primary: "border-t-primary",
+  accent: "border-t-accent",
+  warning: "border-t-warning",
+  destructive: "border-t-destructive",
+  success: "border-t-success",
+  "chart-4": "border-t-chart-4",
+} as const;
+
 function MetricCard({
   label,
   value,
@@ -265,6 +285,7 @@ function MetricCard({
   href,
   highlight,
   icon: Icon,
+  tone,
 }: {
   label: string;
   value: number | string;
@@ -272,12 +293,18 @@ function MetricCard({
   href: string;
   highlight: boolean;
   icon: LucideIcon;
+  tone: keyof typeof METRIC_TONE_CLASS;
 }) {
   return (
-    <Link href={href} className={highlight ? "jg-metric group" : "jg-metric-muted group"}>
+    <Link
+      href={href}
+      className={`${highlight ? "jg-metric group" : "jg-metric-muted group"} border-t-2 p-4 ${
+        highlight ? METRIC_BORDER_CLASS[tone] : "border-t-border"
+      }`}
+    >
       <div
-        className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
-          highlight ? "bg-primary/10 text-primary group-hover:bg-primary/15" : "bg-muted text-muted-foreground"
+        className={`mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+          highlight ? METRIC_TONE_CLASS[tone] : "bg-muted text-muted-foreground"
         }`}
       >
         <Icon className="h-4 w-4" />
@@ -285,8 +312,8 @@ function MetricCard({
       <div className={`text-2xl font-bold tracking-tight ${highlight ? "text-foreground" : "text-muted-foreground"}`}>
         {value}
       </div>
-      <div className="mt-1.5 text-sm font-bold text-foreground/90">{label}</div>
-      <div className="mt-1 text-xs leading-5 font-medium text-muted-foreground">{detail}</div>
+      <div className="mt-1 text-sm font-bold text-foreground/90">{label}</div>
+      <div className="mt-0.5 text-xs leading-5 font-medium text-muted-foreground">{detail}</div>
     </Link>
   );
 }

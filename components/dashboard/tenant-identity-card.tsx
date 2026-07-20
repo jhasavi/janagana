@@ -40,7 +40,7 @@ export function TenantIdentityCard({
           </p>
         </CardBody>
 
-        <div className="border-t border-border/70 bg-muted/30 p-5 sm:p-6 lg:border-l lg:border-t-0">
+        <div className="border-t border-border/70 bg-gradient-to-br from-primary/[0.06] via-transparent to-accent/[0.08] p-5 sm:p-6 lg:border-l lg:border-t-0">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
             <Link2 className="h-4 w-4" />
             Member portal

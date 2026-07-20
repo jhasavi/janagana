@@ -283,7 +283,10 @@ export default async function SettingsPage({
       )}
 
       {activeTenant && planInfo && (
-        <Card id="plan">
+        <Card
+          id="plan"
+          className={isPro(planInfo) ? "border-success/30 bg-success/[0.03]" : "border-primary/30 bg-primary/[0.03]"}
+        >
           <CardBody>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
