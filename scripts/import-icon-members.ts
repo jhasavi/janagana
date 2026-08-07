@@ -86,6 +86,21 @@ async function main() {
   console.log(`Target: ${tenant.name} (${tenant.slug}, ${tenant.id})`);
   console.log(dryRun ? "Mode: DRY RUN (no writes)" : "Mode: APPLY");
 
+  if (!dryRun) {
+    // Custom fields make spouse/children data visible on the contact detail page —
+    // originalMetadata alone is stored but never rendered in the dashboard UI.
+    await prisma.customFieldDefinition.upsert({
+      where: { tenantId_key: { tenantId: tenant.id, key: "spouse_name" } },
+      create: { tenantId: tenant.id, key: "spouse_name", label: "Spouse / Partner", type: "TEXT", sortOrder: 0, active: true },
+      update: { label: "Spouse / Partner", active: true },
+    });
+    await prisma.customFieldDefinition.upsert({
+      where: { tenantId_key: { tenantId: tenant.id, key: "children" } },
+      create: { tenantId: tenant.id, key: "children", label: "Children (name, age)", type: "TEXT", sortOrder: 1, active: true },
+      update: { label: "Children (name, age)", active: true },
+    });
+  }
+
   const text = fs.readFileSync(filePath, "utf8");
   const rows = rowsFromCsvText(text);
   console.log(`Rows read: ${rows.length}`);
@@ -124,6 +139,14 @@ async function main() {
       children: children.length ? children : null,
     };
 
+    // Mirrored into customFieldValues (not just originalMetadata) so it's actually
+    // visible on the contact detail page — see spouse_name/children CustomFieldDefinitions above.
+    const customFieldValues: Record<string, string> = {};
+    if (hasSpouse) customFieldValues.spouse_name = spouseName.trim();
+    if (children.length) {
+      customFieldValues.children = children.map((k) => (k.age ? `${k.name} (${k.age})` : k.name)).join(", ");
+    }
+
     const tags = ["imported", "icon-roster-2026-08-06", isFamily ? "family-household" : "individual"];
     if (status === "Frozen") tags.push("frozen");
 
@@ -157,6 +180,7 @@ async function main() {
           externalSource: "icon_roster_csv",
           importedAt: new Date(),
           originalMetadata,
+          customFieldValues: Object.keys(customFieldValues).length ? customFieldValues : undefined,
           lastActivityAt: new Date(),
           lastActivitySummary: "Updated from ICON roster import",
           tags: mergedTags,
@@ -172,6 +196,7 @@ async function main() {
           externalSource: "icon_roster_csv",
           importedAt: new Date(),
           originalMetadata,
+          customFieldValues: Object.keys(customFieldValues).length ? customFieldValues : undefined,
           lastActivityAt: new Date(),
           lastActivitySummary: "Imported from ICON roster",
           tags: mergedTags,
