@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { CalendarClock, LogOut, ShieldCheck, User } from "lucide-react";
+import { CalendarClock, LogOut, ShieldCheck, User, Users, UserPlus, X } from "lucide-react";
 import { ContactTimeline } from "@/components/dashboard/contact-timeline";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { FormField, FormGrid, Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { getCurrentMemberContact, signOutMember, updateMemberProfile } from "@/lib/actions/member-auth";
+import { cancelHouseholdInvite, getMyHousehold, inviteHouseholdMember } from "@/lib/actions/household-invites";
 import { getMemberAccountData } from "@/lib/portal/member-account";
 import { formatCents, formatDate } from "@/lib/utils";
 
@@ -24,7 +25,7 @@ export default async function MemberAccountPage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; error?: string }>;
 }) {
   const { tenantSlug } = await params;
   const query = await searchParams;
@@ -38,6 +39,8 @@ export default async function MemberAccountPage({
   if (!account) {
     redirect(`/portal/${tenantSlug}/account/sign-in`);
   }
+
+  const household = await getMyHousehold(tenantSlug);
 
   async function updateProfileAction(formData: FormData) {
     "use server";
@@ -56,6 +59,25 @@ export default async function MemberAccountPage({
     "use server";
     await signOutMember(tenantSlug);
     redirect(`/portal/${tenantSlug}`);
+  }
+
+  async function inviteAction(formData: FormData) {
+    "use server";
+    const result = await inviteHouseholdMember({
+      tenantSlug,
+      email: String(formData.get("email") ?? ""),
+    });
+    if (!result.ok) {
+      redirect(`/portal/${tenantSlug}/account?error=${encodeURIComponent(result.error)}#household`);
+    }
+    redirect(`/portal/${tenantSlug}/account?status=invite-sent#household`);
+  }
+
+  async function cancelInviteAction(formData: FormData) {
+    "use server";
+    const inviteId = String(formData.get("inviteId") ?? "");
+    await cancelHouseholdInvite({ tenantSlug, inviteId });
+    redirect(`/portal/${tenantSlug}/account?status=invite-canceled#household`);
   }
 
   const { contact, activeMembership, timeline } = account;
@@ -84,6 +106,10 @@ export default async function MemberAccountPage({
       </div>
 
       {query.status === "profile-updated" && <Alert variant="success">Your profile has been updated.</Alert>}
+      {query.status === "household-joined" && <Alert variant="success">You&apos;ve joined the household.</Alert>}
+      {query.status === "invite-sent" && <Alert variant="success">Invite sent — they&apos;ll get an email to confirm.</Alert>}
+      {query.status === "invite-canceled" && <Alert variant="success">Invite canceled.</Alert>}
+      {query.error && <Alert variant="error">{query.error}</Alert>}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
@@ -164,6 +190,72 @@ export default async function MemberAccountPage({
               Save changes
             </Button>
           </form>
+        </CardBody>
+      </Card>
+
+      <Card id="household">
+        <CardHeader>
+          <h2 className="text-base font-bold text-foreground">Household</h2>
+        </CardHeader>
+        <CardBody className="space-y-5">
+          {household.ok && household.data ? (
+            <>
+              <div>
+                <p className="text-sm font-medium text-foreground">{household.data.name}</p>
+                <ul className="mt-2 divide-y divide-border/70">
+                  {household.data.members.map((member) => (
+                    <li key={member.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                      <span className="text-foreground">
+                        {member.firstName} {member.lastName}
+                        {household.data!.payerContactId === member.id && (
+                          <Badge variant="brand" className="ml-2">Payer</Badge>
+                        )}
+                        {member.id === contact.id && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {household.data.invites.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pending invites</p>
+                  <ul className="mt-2 divide-y divide-border/70">
+                    {household.data.invites.map((invite) => (
+                      <li key={invite.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                        <span className="text-muted-foreground">
+                          {invite.inviteeEmail} · expires {formatDate(invite.expiresAt)}
+                        </span>
+                        <form action={cancelInviteAction}>
+                          <input type="hidden" name="inviteId" value={invite.id} />
+                          <Button type="submit" variant="ghost" size="sm">
+                            <X className="h-4 w-4" />
+                            Cancel
+                          </Button>
+                        </form>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">You&apos;re not part of a household yet.</p>
+          )}
+
+          <form action={inviteAction} className="flex flex-wrap items-end gap-2 border-t border-border/70 pt-4">
+            <FormField label="Add a family member" className="flex-1 min-w-[220px]">
+              <Input type="email" name="email" placeholder="their@email.com" required />
+            </FormField>
+            <Button type="submit" variant="secondary">
+              <UserPlus className="h-4 w-4" />
+              Send invite
+            </Button>
+          </form>
+          <p className="text-xs text-muted-foreground">
+            <Users className="mr-1 inline h-3 w-3" />
+            We&apos;ll email them a link to confirm — nothing changes until they accept.
+          </p>
         </CardBody>
       </Card>
 

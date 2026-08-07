@@ -13,6 +13,7 @@
  */
 import { config as loadEnv } from "dotenv";
 import * as fs from "fs";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { rowsFromCsvText, type CsvRow } from "@/lib/import/contact-roster";
 
@@ -131,7 +132,7 @@ async function main() {
     const children = collectChildren(row);
     const isFamily = hasSpouse || children.length > 0;
 
-    const originalMetadata: Record<string, unknown> = {
+    const originalMetadata: Prisma.JsonObject = {
       importSource: "icon_roster_csv",
       rosterStatus: status || null,
       address,

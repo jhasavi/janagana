@@ -17,6 +17,6 @@ export function Alert({
   children: React.ReactNode;
 }) {
   return (
-    <p className={cn("rounded-2xl border px-4 py-3 text-sm leading-6", variants[variant], className)}>{children}</p>
+    <div className={cn("rounded-2xl border px-4 py-3 text-sm leading-6", variants[variant], className)}>{children}</div>
   );
 }

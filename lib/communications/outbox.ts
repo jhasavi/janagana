@@ -164,3 +164,31 @@ export async function queueRenewalReminderCommunication(membershipId: string) {
     ].join("\n"),
   });
 }
+
+export async function queueHouseholdInviteCommunication(params: {
+  tenantId: string;
+  tenantName: string;
+  inviteeEmail: string;
+  inviterName: string;
+  householdName: string;
+  acceptUrl: string;
+}) {
+  return queueAndDeliver({
+    tenantId: params.tenantId,
+    purpose: "HOUSEHOLD_INVITE",
+    recipientEmail: params.inviteeEmail,
+    recipientName: null,
+    subject: `${params.inviterName} added you to ${params.householdName} on ${params.tenantName}`,
+    body: [
+      `Hello,`,
+      "",
+      `${params.inviterName} would like to add you to the ${params.householdName} household on ${params.tenantName}.`,
+      "",
+      `Confirm below. This link expires in 7 days and can only be used once:`,
+      "",
+      params.acceptUrl,
+      "",
+      "If you weren't expecting this, you can safely ignore this email — nothing happens until you click the link.",
+    ].join("\n"),
+  });
+}

@@ -83,7 +83,16 @@ enum CommunicationPurpose {
   EVENT_REMINDER
   RENEWAL_REMINDER
   MEMBER_SIGN_IN
+  HOUSEHOLD_INVITE
   GENERAL
+}
+
+enum HouseholdInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELED
 }
 
 enum EventStatus {
@@ -169,6 +178,7 @@ model Tenant {
   contactSessions    ContactSession[]
   sponsors        Sponsor[]
   sponsorInvoices SponsorInvoice[]
+  householdInvites HouseholdInvite[]
 }
 
 /// Cache of which Clerk users are admins of which Tenants.
@@ -227,6 +237,7 @@ model Contact {
   communications CommunicationMessage[]
   loginTokens   ContactLoginToken[]
   sessions      ContactSession[]
+  sentHouseholdInvites HouseholdInvite[] @relation("HouseholdInvitesSent")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -250,9 +261,38 @@ model Household {
   tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   members Contact[] @relation("HouseholdMembers")
   payer   Contact?  @relation("HouseholdPayer", fields: [payerContactId], references: [id], onDelete: SetNull)
+  invites HouseholdInvite[]
 
   @@index([tenantId])
   @@index([payerContactId])
+}
+
+/// A member-initiated invite to join their household, confirmed by the invitee's
+/// own click-through — NOT a unilateral admin-style link. Prevents one member from
+/// silently attaching another person's existing account to their household by email.
+/// INVARIANT: Never stores the raw token — only its SHA-256 hash (see ContactLoginToken).
+model HouseholdInvite {
+  id                String                @id @default(cuid())
+  tenantId          String
+  householdId       String
+  invitedByContactId String
+  inviteeEmail      String
+  tokenHash         String                @unique
+  status            HouseholdInviteStatus @default(PENDING)
+  expiresAt         DateTime
+  respondedAt       DateTime?
+  /// Set once accepted — the contact (existing or newly created) that actually joined.
+  acceptedContactId String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  invitedBy Contact @relation("HouseholdInvitesSent", fields: [invitedByContactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([householdId])
+  @@index([tenantId, inviteeEmail])
 }
 
 /// Up to 3 active admin-defined fields per tenant (enforced in app code).
