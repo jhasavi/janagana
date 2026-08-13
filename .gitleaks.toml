@@ -1,0 +1,28 @@
+title = "janagana gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "db-connection-string-password"
+description = "Database connection string with embedded password"
+regex = '''(postgres|postgresql|mysql|mongodb(\+srv)?):\/\/[^:\/\s"']+:[^@\/\s"']{6,}@'''
+tags = ["database", "connection-string"]
+
+[[rules]]
+id = "clerk-secret-key"
+description = "Clerk secret key"
+regex = '''sk_(test|live)_[A-Za-z0-9]{20,}'''
+tags = ["clerk"]
+
+[[rules]]
+id = "janagana-plugin-api-key"
+description = "JanaGana plugin API key"
+regex = '''jg_live_[A-Za-z0-9]{32,}'''
+tags = ["janagana"]
+
+[[rules]]
+id = "upstash-redis-token"
+description = "Upstash Redis REST token"
+regex = '''UPSTASH_REDIS_REST_TOKEN\s*[:=]\s*["']?[A-Za-z0-9]{30,}["']?'''
+tags = ["upstash"]
