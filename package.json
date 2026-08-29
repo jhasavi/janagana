@@ -61,6 +61,7 @@
     "test:community-os:nav": "tsx scripts/test-community-os-nav.ts",
     "test:membership-renewals": "tsx scripts/test-membership-renewals.ts",
     "test:donations": "tsx scripts/test-donations.ts",
+    "test:lead-scoring": "tsx scripts/test-lead-scoring.ts",
     "smoke:renewals-desk": "tsx scripts/smoke-renewals-desk.ts",
     "test:tenant:contract": "tsx scripts/test-tenant-resolution-contract.ts",
     "test:multi-tenant": "tsx scripts/test-multi-tenant-active-tenant.ts",

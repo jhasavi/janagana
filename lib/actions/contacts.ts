@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/list-filters";
 import { parseContactTags } from "@/lib/contacts/tags";
 import { requireAdminAccessForTenant, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
+import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 
 const CustomFieldValuesSchema = z.record(z.union([z.string(), z.number(), z.boolean()])).optional();
 
@@ -80,6 +81,8 @@ export async function createContact(input: unknown, options?: TenantActionOption
       },
     });
 
+    await recomputeLeadScore(contact.id);
+
     return { ok: true as const, data: contact };
   } catch (error: any) {
     if (error?.code === "P2002") {
@@ -130,6 +133,8 @@ export async function updateContact(input: unknown, options?: TenantActionOption
       metadata: { entity: "Contact", contactId: contact.id },
     },
   });
+
+  await recomputeLeadScore(contact.id);
 
   return { ok: true as const, data: contact };
 }
@@ -209,6 +214,8 @@ export async function listContacts(input: unknown = {}, page = 1) {
       tags: true,
       importedAt: true,
       createdAt: true,
+      leadScore: true,
+      lifecycleStage: true,
       memberships: {
         where: { status: "ACTIVE" },
         take: 1,

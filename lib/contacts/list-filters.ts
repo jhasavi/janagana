@@ -7,6 +7,10 @@ export const ContactListFilterSchema = z
     source: z.string().trim().max(80).optional().or(z.literal("")),
     interestType: z.string().trim().max(80).optional().or(z.literal("")),
     tag: z.string().trim().max(80).optional().or(z.literal("")),
+    lifecycleStage: z
+      .enum(["NEW", "ENGAGED", "QUALIFIED", "CONVERTED", "LOST"])
+      .optional()
+      .or(z.literal("")),
     preset: z
       .enum(["members", "volunteers", "donors", "leads", "no-email", "recent", "no-household"])
       .optional()
@@ -42,6 +46,10 @@ export function buildContactListWhere(tenantId: string, filters: ContactListFilt
 
   if (filters.tag) {
     and.push({ tags: { has: filters.tag } });
+  }
+
+  if (filters.lifecycleStage) {
+    and.push({ lifecycleStage: filters.lifecycleStage });
   }
 
   if (filters.preset === "members") {
@@ -87,5 +95,7 @@ export function contactExportHref(filters: Partial<ContactListFilters>): string 
 }
 
 export function hasActiveContactFilters(filters: Partial<ContactListFilters>): boolean {
-  return Boolean(filters.q || filters.source || filters.interestType || filters.tag || filters.preset);
+  return Boolean(
+    filters.q || filters.source || filters.interestType || filters.tag || filters.lifecycleStage || filters.preset,
+  );
 }

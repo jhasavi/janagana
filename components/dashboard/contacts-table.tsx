@@ -3,6 +3,8 @@ import {
   contactSourceLabel,
   pilotContactKindLabel,
 } from "@/lib/pilot/contact-labels";
+import { categoryForScore, gradeForScore } from "@/lib/leads/scoring";
+import { leadCategoryBadgeVariant, lifecycleStageLabel } from "@/lib/leads/labels";
 import { formatRelativeTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +27,7 @@ const typeBadgeVariant: Record<string, "brand" | "accent" | "success" | "warning
   lead: "warning",
 };
 
+
 export type ContactListRow = {
   id: string;
   firstName: string;
@@ -39,6 +42,8 @@ export type ContactListRow = {
   tags: string[];
   importedAt: Date | null;
   createdAt: Date;
+  leadScore: number;
+  lifecycleStage: string;
   memberships: Array<{
     status: string;
     expiresAt: Date | null;
@@ -97,6 +102,8 @@ export function ContactsCrmTable({ contacts }: { contacts: ContactListRow[] }) {
         <DataTableHeaderCell>Type</DataTableHeaderCell>
         <DataTableHeaderCell>Source</DataTableHeaderCell>
         <DataTableHeaderCell>Membership</DataTableHeaderCell>
+        <DataTableHeaderCell>Lead score</DataTableHeaderCell>
+        <DataTableHeaderCell>Stage</DataTableHeaderCell>
         <DataTableHeaderCell>Last activity</DataTableHeaderCell>
         <DataTableHeaderCell>Tags</DataTableHeaderCell>
         <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
@@ -125,6 +132,14 @@ export function ContactsCrmTable({ contacts }: { contacts: ContactListRow[] }) {
             </DataTableCell>
             <DataTableCell className="whitespace-nowrap text-xs">{contactSourceLabel(contact.source)}</DataTableCell>
             <DataTableCell className="whitespace-nowrap text-xs">{membershipLabel(contact)}</DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-xs">
+              <Badge variant={leadCategoryBadgeVariant[categoryForScore(contact.leadScore)]}>
+                {contact.leadScore} · {gradeForScore(contact.leadScore)}
+              </Badge>
+            </DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-xs text-muted-foreground">
+              {lifecycleStageLabel[contact.lifecycleStage] ?? contact.lifecycleStage}
+            </DataTableCell>
             <DataTableCell className="max-w-[140px] truncate text-xs text-muted-foreground" title={contact.lastActivitySummary ?? undefined}>
               {activityLabel(contact)}
             </DataTableCell>

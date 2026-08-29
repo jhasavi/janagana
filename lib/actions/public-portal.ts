@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
 import { createStripeCheckoutSession, stripeCheckoutConfigured } from "@/lib/payments/stripe";
+import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 
 const PublicRegistrationSchema = z
   .object({
@@ -397,6 +398,8 @@ export async function registerPublicEvent(input: unknown) {
         },
       });
 
+      await recomputeLeadScore(result.contact.id);
+
       if (result.payment && result.payment.amountCents > 0 && stripeCheckoutConfigured()) {
         const amounts = calculateCheckoutAmount({
           baseCents: result.payment.amountCents,
@@ -557,6 +560,8 @@ export async function capturePublicLead(input: unknown) {
       },
     },
   });
+
+  await recomputeLeadScore(contact.id);
 
   return {
     ok: true as const,

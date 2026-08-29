@@ -63,6 +63,7 @@ export default async function ContactsPage({
     source?: string;
     interestType?: string;
     tag?: string;
+    lifecycleStage?: string;
     preset?: string;
     page?: string;
   }>;
@@ -86,6 +87,13 @@ export default async function ContactsPage({
     source: params.success === "import" ? "" : (params.source ?? ""),
     interestType: params.interestType ?? "",
     tag: params.tag ?? "",
+    lifecycleStage: (params.lifecycleStage ?? "") as
+      | ""
+      | "NEW"
+      | "ENGAGED"
+      | "QUALIFIED"
+      | "CONVERTED"
+      | "LOST",
     preset: (params.preset ?? "") as
       | ""
       | "members"
@@ -216,6 +224,9 @@ export default async function ContactsPage({
           {filters.interestType && (
             <span className="text-muted-foreground">{contactInterestLabel(filters.interestType)}</span>
           )}
+          {filters.lifecycleStage && (
+            <span className="text-muted-foreground">Stage: {filters.lifecycleStage}</span>
+          )}
           {filters.preset && <span className="text-muted-foreground">Preset: {filters.preset}</span>}
           <Link href="/dashboard/members" className="ml-auto text-xs font-semibold text-primary hover:text-foreground">
             Clear all
@@ -258,6 +269,14 @@ export default async function ContactsPage({
                   {tag}
                 </option>
               ))}
+            </Select>
+            <Select name="lifecycleStage" defaultValue={filters.lifecycleStage} className="sm:w-44">
+              <option value="">All stages</option>
+              <option value="NEW">New</option>
+              <option value="ENGAGED">Engaged</option>
+              <option value="QUALIFIED">Qualified</option>
+              <option value="CONVERTED">Converted</option>
+              <option value="LOST">Lost</option>
             </Select>
             {filters.preset && <input type="hidden" name="preset" value={filters.preset} />}
             <Button type="submit" size="sm">

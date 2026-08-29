@@ -24,6 +24,8 @@ import {
   DataTableRow,
 } from "@/components/ui/data-table";
 import { deleteContact, getContactProfile, updateContact } from "@/lib/actions/contacts";
+import { categoryForScore, gradeForScore } from "@/lib/leads/scoring";
+import { leadCategoryBadgeVariant, lifecycleStageLabel } from "@/lib/leads/labels";
 import { listCustomFieldDefinitions } from "@/lib/actions/custom-fields";
 import { parseCustomFieldValuesFromForm } from "@/lib/custom-fields/shared";
 import { buildContactTimeline } from "@/lib/contacts/timeline";
@@ -192,10 +194,14 @@ export default async function ContactProfilePage({
                   )}
                 </div>
               </div>
-              <div className="grid gap-2 sm:grid-cols-3 md:min-w-[420px]">
+              <div className="grid gap-2 sm:grid-cols-4 md:min-w-[520px]">
                 <StatCard label="Active memberships" value={String(activeMemberships.length)} />
                 <StatCard label="Paid / waived" value={formatCents(paidTotal)} />
                 <StatCard label="Pending" value={formatCents(pendingTotal)} />
+                <StatCard
+                  label="Lead score"
+                  value={`${contact.leadScore} · ${gradeForScore(contact.leadScore)}`}
+                />
               </div>
             </div>
 
@@ -205,6 +211,17 @@ export default async function ContactProfilePage({
               <ProfileRow label="Last activity">
                 {contact.lastActivityAt ? formatRelativeTime(contact.lastActivityAt) : "None"}
               </ProfileRow>
+              <ProfileRow label="Lifecycle stage">
+                <Badge variant={leadCategoryBadgeVariant[categoryForScore(contact.leadScore)]}>
+                  {lifecycleStageLabel[contact.lifecycleStage] ?? contact.lifecycleStage}
+                </Badge>
+                <span className="ml-2 text-muted-foreground">{categoryForScore(contact.leadScore)} lead</span>
+              </ProfileRow>
+              {(contact.utmSource || contact.utmMedium || contact.utmCampaign) && (
+                <ProfileRow label="First-touch attribution">
+                  {[contact.utmSource, contact.utmMedium, contact.utmCampaign].filter(Boolean).join(" / ")}
+                </ProfileRow>
+              )}
               <ProfileRow label="Community">{contact.tenant.slug}</ProfileRow>
               <ProfileRow label="Tags">
                 <ContactTagBadges tags={contact.tags} />

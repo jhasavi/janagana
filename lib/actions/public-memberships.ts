@@ -11,6 +11,7 @@ import {
 } from "@/lib/payments/stripe";
 import { addMembershipInterval } from "@/lib/memberships/subscription-renewal";
 import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 
 const PublicMembershipCheckoutSchema = z
   .object({
@@ -173,6 +174,8 @@ export async function createPublicMembershipCheckout(input: unknown) {
         },
       },
     });
+
+    await recomputeLeadScore(result.contact.id);
 
     return {
       ok: true as const,

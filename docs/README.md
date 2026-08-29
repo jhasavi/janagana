@@ -18,6 +18,7 @@ Canonical docs for the NB/TPW pilot. Product improvement backlog: [../Todos.md](
 | 11 | [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md) | TPW integration success criteria |
 | 12 | [12-PILOT-RESET.md](./12-PILOT-RESET.md) | Pilot testing: reset, reseed, bootstrap |
 | 13 | [13-TENANT-WEBSITE-INTEGRATION.md](./13-TENANT-WEBSITE-INTEGRATION.md) | Tenant deployment checklist; embed levels |
+| 16 | [16-LEAD-INTELLIGENCE-PLAN.md](./16-LEAD-INTELLIGENCE-PLAN.md) | Lead scoring/segmentation/UTM plan (TPW parity gap) |
 
 ## Product & GTM
 

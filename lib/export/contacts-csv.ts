@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { rowsToCsv } from "@/lib/export/csv";
 import { buildContactListWhere, ContactListFilterSchema } from "@/lib/contacts/list-filters";
+import { categoryForScore, gradeForScore } from "@/lib/leads/scoring";
 
 export async function buildContactsCsv(tenantId: string, filtersInput: unknown = {}) {
   const parsed = ContactListFilterSchema.safeParse(filtersInput);
@@ -32,6 +33,13 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
     "interestType",
     "tags",
     "registrationCount",
+    "leadScore",
+    "leadGrade",
+    "leadCategory",
+    "lifecycleStage",
+    "utmSource",
+    "utmMedium",
+    "utmCampaign",
     "notes",
     ...customFieldDefinitions.map((def) => def.label),
   ];
@@ -47,6 +55,13 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
     c.interestType,
     c.tags.join("; "),
     c._count.registrations,
+    c.leadScore,
+    gradeForScore(c.leadScore),
+    categoryForScore(c.leadScore),
+    c.lifecycleStage,
+    c.utmSource,
+    c.utmMedium,
+    c.utmCampaign,
     c.notes,
     ...customFieldDefinitions.map((def) => {
       const value = (c.customFieldValues as Record<string, unknown> | null)?.[def.key];

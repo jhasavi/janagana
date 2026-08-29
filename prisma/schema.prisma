@@ -23,6 +23,14 @@ enum ContactType {
   OTHER
 }
 
+enum LifecycleStage {
+  NEW
+  ENGAGED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
 enum MembershipStatus {
   PENDING
   ACTIVE
@@ -224,6 +232,14 @@ model Contact {
   directoryOptIn      Boolean     @default(false)
   /// Values for the tenant's CustomFieldDefinitions, keyed by CustomFieldDefinition.key.
   customFieldValues   Json?
+  /// First-touch attribution — set only on create, never overwritten by later activity.
+  utmSource           String?
+  utmMedium           String?
+  utmCampaign         String?
+  referrerUrl         String?
+  lifecycleStage      LifecycleStage @default(NEW)
+  leadScore           Int            @default(0)
+  leadScoreUpdatedAt  DateTime?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -245,6 +261,8 @@ model Contact {
   @@index([tenantId, interestType])
   @@index([tenantId, lastActivityAt])
   @@index([householdId])
+  @@index([tenantId, lifecycleStage])
+  @@index([tenantId, leadScore])
 }
 
 /// Groups multiple Contacts into a family/household for CRM visibility —

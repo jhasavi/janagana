@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 import { extendMembershipExpiration } from "@/lib/memberships/subscription-renewal";
+import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 
 type StripeCheckoutSession = {
   id: string;
@@ -345,7 +346,10 @@ async function finalizeDonationPayment(
   });
 
   if (paid) {
-    await issueReceiptForPayment(payment.id);
+    await Promise.all([
+      issueReceiptForPayment(payment.id),
+      payment.contact ? recomputeLeadScore(payment.contact.id) : Promise.resolve(null),
+    ]);
   }
 }
 
@@ -429,7 +433,7 @@ async function finalizeMembershipPayment(
   });
 
   if (paid) {
-    await issueReceiptForPayment(payment.id);
+    await Promise.all([issueReceiptForPayment(payment.id), recomputeLeadScore(contact.id)]);
   }
 }
 
@@ -502,10 +506,11 @@ async function finalizeEventPayment(
   });
 
   if (paid) {
-    await issueReceiptForPayment(payment.id);
-    if (payment.registrationId) {
-      await queueEventRegistrationCommunication(payment.registrationId);
-    }
+    await Promise.all([
+      issueReceiptForPayment(payment.id),
+      payment.registrationId ? queueEventRegistrationCommunication(payment.registrationId) : Promise.resolve(null),
+      payment.contact ? recomputeLeadScore(payment.contact.id) : Promise.resolve(null),
+    ]);
   }
 }
 
