@@ -24,6 +24,10 @@ const PublicDonationCheckoutSchema = z
     dedication: z.string().trim().max(500).optional().or(z.literal("")),
     coverProcessingFee: z.boolean().optional().default(false),
     recurringMonthly: z.boolean().optional().default(false),
+    utmSource: z.string().trim().max(120).optional().or(z.literal("")),
+    utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
+    utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
+    referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
   })
   .strict();
 
@@ -97,6 +101,10 @@ export async function createPublicDonationCheckout(input: unknown) {
         lastActivityAt: now,
         lastActivitySummary: "Started donation checkout",
         tags: ["donor"],
+        utmSource: parsed.data.utmSource || null,
+        utmMedium: parsed.data.utmMedium || null,
+        utmCampaign: parsed.data.utmCampaign || null,
+        referrerUrl: parsed.data.referrerUrl || null,
       },
     });
 

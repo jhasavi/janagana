@@ -23,6 +23,10 @@ const PublicMembershipCheckoutSchema = z
     phone: z.string().trim().max(30).optional().or(z.literal("")),
     coverProcessingFee: z.boolean().optional().default(false),
     autoRenew: z.boolean().optional().default(false),
+    utmSource: z.string().trim().max(120).optional().or(z.literal("")),
+    utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
+    utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
+    referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
   })
   .strict();
 
@@ -118,6 +122,10 @@ export async function createPublicMembershipCheckout(input: unknown) {
         lastActivitySummary:
           tier.amountCents > 0 ? `Started checkout for ${tier.name}` : `Joined ${tier.name}`,
         tags: ["membership-checkout"],
+        utmSource: parsed.data.utmSource || null,
+        utmMedium: parsed.data.utmMedium || null,
+        utmCampaign: parsed.data.utmCampaign || null,
+        referrerUrl: parsed.data.referrerUrl || null,
       },
     });
 

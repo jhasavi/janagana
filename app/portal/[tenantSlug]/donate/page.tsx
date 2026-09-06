@@ -17,6 +17,7 @@ import {
   readSafeReturnUrl,
   visitorReturnUrlWithStatus,
 } from "@/lib/portal/safe-return-url";
+import { readUtmParams, UTM_FORM_FIELDS } from "@/lib/portal/utm";
 import { formatCents } from "@/lib/utils";
 
 const RETURN_TO_FIELD = "returnTo";
@@ -35,7 +36,14 @@ export default async function PublicDonatePage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ status?: string; error?: string; returnTo?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    error?: string;
+    returnTo?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>;
 }) {
   const { tenantSlug } = await params;
   const query = await searchParams;
@@ -46,6 +54,7 @@ export default async function PublicDonatePage({
   }
 
   const safeReturnTo = readSafeReturnUrl(query.returnTo);
+  const utm = readUtmParams(query);
   const backUrl = safeReturnTo ?? defaultVisitorReturnUrl(tenantSlug);
   const message = statusMessage(query.status, query.error);
 
@@ -82,6 +91,9 @@ export default async function PublicDonatePage({
         <form action="/api/public/donate" method="post" className="mt-4 space-y-4">
           <input type="hidden" name="tenantSlug" value={tenantSlug} />
           {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
+          {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
+          {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}
+          {utm.utmCampaign ? <input type="hidden" name={UTM_FORM_FIELDS.campaign} value={utm.utmCampaign} /> : null}
 
           <fieldset>
             <legend className="text-sm font-medium text-foreground">Gift amount</legend>

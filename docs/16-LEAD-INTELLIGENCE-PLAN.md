@@ -1,6 +1,6 @@
 # Lead intelligence (scoring, segmentation, UTM/lifecycle fields)
 
-**Status:** proposed, not started. Written after comparing JanaGana's Contact/lead model against `~/tpw`'s `crm-fields.ts` / `lead-scoring.ts` / `crm-segmentation.ts` / `crm-workflows.ts` (2026-08-28 review).
+**Status:** implemented (2026-09-06). Schema, scoring engine, segmentation, UTM/referrer first-touch capture (all 4 public forms: contact, register, join, donate), nightly stale-lead reconciliation cron, and dashboard/CSV surfacing are all live. Written after comparing JanaGana's Contact/lead model against `~/tpw`'s `crm-fields.ts` / `lead-scoring.ts` / `crm-segmentation.ts` / `crm-workflows.ts` (2026-08-28 review).
 
 **Scope guard:** this plan covers scoring, segmentation, and attribution fields only. Full workflow automation (trigger → send_email / create_task / create_deal) stays out of scope — it's already an explicit post-pilot deferral in [07-ARCHITECTURE.md](./07-ARCHITECTURE.md#L24). Don't expand into that without a separate sign-off.
 
@@ -46,9 +46,15 @@ Grade (A–F) and category (Hot/Warm/Cool/Cold) are **derived from `leadScore`**
 
 Migration: `npx prisma migrate dev --name add_lead_intelligence_fields`. Backfill is a no-op (`leadScore` defaults to 0, `lifecycleStage` to `NEW`) — existing contacts don't need historical scores computed retroactively; scores accrue from new activity going forward. Optional one-time backfill script if you want a baseline (`scripts/backfill-lead-scores.ts`) — see step 5.
 
-## 2. Attribution capture
+## 2. Attribution capture — implemented
 
-Extend `PublicLeadCaptureSchema` and the public registration/join/donate schemas in `lib/actions/public-portal.ts` (and equivalents in `lib/actions/public-donations.ts` if separate) with optional `utmSource` / `utmMedium` / `utmCampaign` / `referrerUrl`. These come from the client (portal pages read `?utm_source=...` from `useSearchParams()` and `document.referrer`, pass them through the existing form POST). Store on both `create` and `update` in `capturePublicLead` — first-touch attribution: only set on `create`, never overwritten on `update`, matching standard marketing-attribution practice (first source that brought them in, not the last).
+`PublicLeadCaptureSchema`, `PublicRegistrationSchema`, and the membership/donation checkout schemas (`lib/actions/public-portal.ts`, `public-memberships.ts`, `public-donations.ts`) all accept optional `utmSource` / `utmMedium` / `utmCampaign` / `referrerUrl`.
+
+Capture is entirely server-side, no client JS needed — `?utm_source=` etc. arrive in each portal page's own `searchParams` (Next.js Server Component prop), read once via `readUtmParams()` (`lib/portal/utm.ts`) and threaded through as hidden `<input>` fields into the existing form POST/server-action, mirroring the pre-existing `returnTo` hidden-field pattern. The referrer comes from the HTTP `Referer` header (`readRefererHeader()`, best-effort, mirrors the existing `headers()` usage in `registerPublicEvent`) rather than `document.referrer`.
+
+Wired into all 4 public entry points: contact/lead capture, event registration, membership join, and donation checkout (`app/portal/[tenantSlug]/{contact,register/[eventSlug],join,donate}/page.tsx` + `app/api/public/donate/route.ts`).
+
+First-touch only: set on `create`, never overwritten on `update` — verified by a manual check where a second capture with different UTM values left the contact's original attribution untouched.
 
 ## 3. Scoring engine — `lib/leads/scoring.ts` (new file)
 
@@ -65,7 +71,7 @@ export interface ScoringInputs {
   interestType: string | null;
   source: string | null;
   utmSource: string | null;
-  activityCount: number;       // count of AuditLog rows for this contact
+  activityCount: number;       // count of EventRegistration + CommunicationMessage rows for this contact
   lastActivityAt: Date | null;
   hasMembership: boolean;
   hasDonation: boolean;
@@ -83,23 +89,23 @@ Rubric (mirrors TPW's four factor groups — engagement, behavior, source, recen
 | `interestType = NEWSLETTER` | +5 |
 | Has an existing `Membership` row | +30 |
 | Has at least one `Donation`/payment | +25 |
-| `activityCount` (AuditLog rows) | +5 per event, capped at +20 |
+| `activityCount` (event registrations + communications) | +5 per event, capped at +20 |
 | `source` known/trusted (`portal_contact`, `tpw_class_import`, etc.) vs unknown | +5 / 0 |
 | Recency: `lastActivityAt` within 7 days | +10; within 30 days +5; over 90 days stale, −10 |
 
 Exact weights are a starting point — tune after looking at real distribution once it's wired up. Keep the table in this doc in sync if weights change.
 
-## 4. Where scoring runs
+## 4. Where scoring runs — implemented
 
-Call `recomputeLeadScore(contactId)` (new function in `lib/leads/scoring-actions.ts`, wraps `computeLeadScore` + a `prisma.contact.update`) after any action that changes a contact's engagement signal:
+`recomputeLeadScore(contactId)` (`lib/leads/scoring-actions.ts`, row-locked via `SELECT ... FOR UPDATE` inside a transaction so concurrent triggers on the same contact can't race) is called from:
 
 - `capturePublicLead` (lib/actions/public-portal.ts)
-- `registerForEvent` / public event registration success path
-- Donation success webhook (`lib/actions/public-donations.ts` or its webhook handler)
-- Membership enrollment/renewal success
-- Manual admin edits to a contact (so re-tagging shows up immediately)
+- `registerPublicEvent` (lib/actions/public-portal.ts)
+- Free-tier membership signup (`lib/actions/public-memberships.ts`)
+- Donation, membership, and event Stripe webhook finalize functions (`lib/payments/stripe-webhooks.ts`) — parallelized with receipt issuance via `Promise.all` so it doesn't add to the webhook's sequential critical path
+- Manual admin contact create/update (`lib/actions/contacts.ts`)
 
-Keep this call **fire-and-forget within the same transaction** where the action already writes `lastActivityAt` — no new cron needed for the common case. Only add a nightly recompute job if the recency-decay factor (the −10 for staleness) needs to apply to contacts with no new activity; that's a small addition to the existing renewal-reminder cron pattern in `app/api/cron/`.
+Plus a nightly cron (`app/api/cron/recompute-stale-leads`, `lib/jobs/recompute-stale-leads.ts`) that re-evaluates contacts gone quiet for 90+ days — needed because every call site above sets `lastActivityAt` to "now" right before scoring runs, so the recency-decay/`LOST` transition can never fire from those call sites alone.
 
 ## 5. Segmentation — `lib/leads/segmentation.ts` (new file)
 

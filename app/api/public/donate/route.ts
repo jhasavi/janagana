@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicDonationCheckout } from "@/lib/actions/public-donations";
 import { readSafeReturnUrl } from "@/lib/portal/safe-return-url";
+import { utmFromFormData } from "@/lib/portal/utm";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
   const customDollars = String(form.get("customAmountDollars") ?? "").trim();
   const amountCents =
     preset === "custom" ? Math.round(Number(customDollars) * 100) : Number(preset);
+  const utm = utmFromFormData(form);
+  const referrerUrl = req.headers.get("referer") ?? undefined;
 
   const checkout = await createPublicDonationCheckout({
     tenantSlug,
@@ -28,6 +31,10 @@ export async function POST(req: NextRequest) {
     dedication: String(form.get("dedication") ?? ""),
     coverProcessingFee: form.get("coverProcessingFee") === "1",
     recurringMonthly: form.get("recurringMonthly") === "1",
+    utmSource: utm.utmSource ?? undefined,
+    utmMedium: utm.utmMedium ?? undefined,
+    utmCampaign: utm.utmCampaign ?? undefined,
+    referrerUrl,
   });
 
   if (!checkout.ok || !checkout.checkoutUrl) {

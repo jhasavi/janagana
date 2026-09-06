@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FormField, FormGrid, Input } from "@/components/ui/input";
 import { createPublicMembershipCheckout, listPublicMembershipTiers } from "@/lib/actions/public-memberships";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
+import { readRefererHeader, readUtmParams, UTM_FORM_FIELDS, utmFromFormData } from "@/lib/portal/utm";
 import { formatCents } from "@/lib/utils";
 
 function statusMessage(status?: string, error?: string) {
@@ -37,7 +38,14 @@ export default async function PublicMembershipJoinPage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ status?: string; error?: string; tierId?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    error?: string;
+    tierId?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>;
 }) {
   const { tenantSlug } = await params;
   const query = await searchParams;
@@ -47,8 +55,13 @@ export default async function PublicMembershipJoinPage({
     redirect(`/portal/${tenantSlug}`);
   }
 
+  const utm = readUtmParams(query);
+
   async function checkoutAction(formData: FormData) {
     "use server";
+
+    const utmFields = utmFromFormData(formData);
+    const referrerUrl = await readRefererHeader();
 
     const checkout = await createPublicMembershipCheckout({
       tenantSlug,
@@ -59,6 +72,10 @@ export default async function PublicMembershipJoinPage({
       phone: String(formData.get("phone") ?? ""),
       coverProcessingFee: formData.get("coverProcessingFee") === "1",
       autoRenew: formData.get("autoRenew") === "1",
+      utmSource: utmFields.utmSource ?? undefined,
+      utmMedium: utmFields.utmMedium ?? undefined,
+      utmCampaign: utmFields.utmCampaign ?? undefined,
+      referrerUrl: referrerUrl ?? undefined,
     });
 
     if (!checkout.ok || !checkout.checkoutUrl) {
@@ -98,6 +115,9 @@ export default async function PublicMembershipJoinPage({
         <EmptyState title="Memberships not open yet" description="Please check back soon." />
       ) : (
         <form action={checkoutAction} className="mt-6 space-y-8">
+          {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
+          {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}
+          {utm.utmCampaign ? <input type="hidden" name={UTM_FORM_FIELDS.campaign} value={utm.utmCampaign} /> : null}
           <div>
             <h2 className="text-lg font-bold text-foreground">Compare plans</h2>
             <p className="mt-1 text-sm text-muted-foreground">Select the plan that is right for you.</p>

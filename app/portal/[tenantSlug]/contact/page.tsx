@@ -10,6 +10,7 @@ import {
   readSafeReturnUrl,
   visitorReturnUrlWithStatus,
 } from "@/lib/portal/safe-return-url";
+import { readRefererHeader, readUtmParams, UTM_FORM_FIELDS, utmFromFormData } from "@/lib/portal/utm";
 
 const RETURN_TO_FIELD = "returnTo";
 
@@ -61,7 +62,15 @@ export default async function PublicContactCapturePage({
   searchParams,
 }: {
   params: Promise<{ tenantSlug: string }>;
-  searchParams: Promise<{ interest?: string; status?: string; error?: string; returnTo?: string }>;
+  searchParams: Promise<{
+    interest?: string;
+    status?: string;
+    error?: string;
+    returnTo?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>;
 }) {
   const { tenantSlug } = await params;
   const query = await searchParams;
@@ -73,12 +82,15 @@ export default async function PublicContactCapturePage({
   }
 
   const initialInterest = normalizeInterest(query.interest);
+  const utm = readUtmParams(query);
 
   async function captureAction(formData: FormData) {
     "use server";
 
     const interest = normalizeInterest(String(formData.get("interestType") ?? "NEWSLETTER"));
     const returnTo = readSafeReturnUrl(String(formData.get(RETURN_TO_FIELD) ?? ""));
+    const utmFields = utmFromFormData(formData);
+    const referrerUrl = await readRefererHeader();
 
     const result = await capturePublicLead({
       tenantSlug,
@@ -89,6 +101,10 @@ export default async function PublicContactCapturePage({
       phone: String(formData.get("phone") ?? ""),
       message: String(formData.get("message") ?? ""),
       source: "portal_contact_page",
+      utmSource: utmFields.utmSource ?? undefined,
+      utmMedium: utmFields.utmMedium ?? undefined,
+      utmCampaign: utmFields.utmCampaign ?? undefined,
+      referrerUrl: referrerUrl ?? undefined,
     });
 
     if (!result.ok) {
@@ -136,6 +152,9 @@ export default async function PublicContactCapturePage({
         <form action={captureAction} className="mt-4 space-y-4">
           <input type="hidden" name="interestType" value={initialInterest} />
           {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
+          {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
+          {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}
+          {utm.utmCampaign ? <input type="hidden" name={UTM_FORM_FIELDS.campaign} value={utm.utmCampaign} /> : null}
 
           <FormGrid>
             <FormField label="First name">

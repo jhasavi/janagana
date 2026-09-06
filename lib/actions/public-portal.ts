@@ -21,6 +21,10 @@ const PublicRegistrationSchema = z
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
     coverProcessingFee: z.boolean().optional().default(false),
+    utmSource: z.string().trim().max(120).optional().or(z.literal("")),
+    utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
+    utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
+    referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
   })
   .strict();
 
@@ -53,6 +57,10 @@ const PublicLeadCaptureSchema = z
     message: z.string().trim().max(1000).optional().or(z.literal("")),
     interestType: z.enum(["NEWSLETTER", "CLASS_INTEREST", "MEMBERSHIP_INTEREST", "INVESTMENT_ANALYSIS"]),
     source: z.string().trim().max(120).optional().or(z.literal("")),
+    utmSource: z.string().trim().max(120).optional().or(z.literal("")),
+    utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
+    utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
+    referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
   })
   .strict();
 
@@ -297,6 +305,10 @@ export async function registerPublicEvent(input: unknown) {
               lastActivityAt: new Date(),
               lastActivitySummary: `Registered for ${event.title}`,
               tags: ["event"],
+              utmSource: parsed.data.utmSource || null,
+              utmMedium: parsed.data.utmMedium || null,
+              utmCampaign: parsed.data.utmCampaign || null,
+              referrerUrl: parsed.data.referrerUrl || null,
             },
           });
 
@@ -543,6 +555,10 @@ export async function capturePublicLead(input: unknown) {
       lastActivityAt: new Date(),
       lastActivitySummary: `Submitted ${parsed.data.interestType.toLowerCase().replace(/_/g, " ")} form`,
       tags: [parsed.data.interestType.toLowerCase().replace(/_/g, "-")],
+      utmSource: parsed.data.utmSource || null,
+      utmMedium: parsed.data.utmMedium || null,
+      utmCampaign: parsed.data.utmCampaign || null,
+      referrerUrl: parsed.data.referrerUrl || null,
     },
   });
 
