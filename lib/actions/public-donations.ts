@@ -8,6 +8,7 @@ import {
   createStripeSubscriptionCheckoutSession,
   stripeCheckoutConfigured,
 } from "@/lib/payments/stripe";
+import { recordReferralRedemption, resolveActiveReferralCode } from "@/lib/actions/referrals";
 
 export const DONATION_PRESET_CENTS = [2500, 5000, 10000, 25000, 50000] as const;
 export const MIN_DONATION_CENTS = 100;
@@ -28,6 +29,7 @@ const PublicDonationCheckoutSchema = z
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
+    ref: z.string().trim().max(40).optional().or(z.literal("")),
   })
   .strict();
 
@@ -76,6 +78,12 @@ export async function createPublicDonationCheckout(input: unknown) {
     coverProcessingFee: parsed.data.coverProcessingFee,
   });
   const useSubscription = parsed.data.recurringMonthly;
+  const refCode = (parsed.data.ref || "").trim().toUpperCase() || null;
+  const referralCode = refCode ? await resolveActiveReferralCode(tenant.id, refCode) : null;
+  const existingContact = await prisma.contact.findUnique({
+    where: { tenantId_email: { tenantId: tenant.id, email } },
+    select: { id: true },
+  });
 
   const result = await prisma.$transaction(async (tx) => {
     const contact = await tx.contact.upsert({
@@ -105,6 +113,7 @@ export async function createPublicDonationCheckout(input: unknown) {
         utmMedium: parsed.data.utmMedium || null,
         utmCampaign: parsed.data.utmCampaign || null,
         referrerUrl: parsed.data.referrerUrl || null,
+        referredByCode: referralCode?.code ?? null,
       },
     });
 
@@ -128,6 +137,10 @@ export async function createPublicDonationCheckout(input: unknown) {
 
     return { contact, payment };
   });
+
+  if (!existingContact && referralCode) {
+    await recordReferralRedemption(tenant.id, referralCode.id, result.contact.id);
+  }
 
   const successUrl = `${configuredAppUrl()}/portal/${tenant.slug}/donate?status=thankyou&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${configuredAppUrl()}/portal/${tenant.slug}/donate?status=canceled`;

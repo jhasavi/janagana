@@ -10,6 +10,7 @@ import { FormField, FormGrid, Input } from "@/components/ui/input";
 import { createPublicMembershipCheckout, listPublicMembershipTiers } from "@/lib/actions/public-memberships";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import { readRefererHeader, readUtmParams, UTM_FORM_FIELDS, utmFromFormData } from "@/lib/portal/utm";
+import { readReferralCode, referralCodeFromFormData, REFERRAL_FORM_FIELD } from "@/lib/portal/referral";
 import { formatCents } from "@/lib/utils";
 
 function statusMessage(status?: string, error?: string) {
@@ -45,6 +46,7 @@ export default async function PublicMembershipJoinPage({
     utm_source?: string;
     utm_medium?: string;
     utm_campaign?: string;
+    ref?: string;
   }>;
 }) {
   const { tenantSlug } = await params;
@@ -56,12 +58,14 @@ export default async function PublicMembershipJoinPage({
   }
 
   const utm = readUtmParams(query);
+  const referralCode = readReferralCode(query);
 
   async function checkoutAction(formData: FormData) {
     "use server";
 
     const utmFields = utmFromFormData(formData);
     const referrerUrl = await readRefererHeader();
+    const ref = referralCodeFromFormData(formData);
 
     const checkout = await createPublicMembershipCheckout({
       tenantSlug,
@@ -76,6 +80,7 @@ export default async function PublicMembershipJoinPage({
       utmMedium: utmFields.utmMedium ?? undefined,
       utmCampaign: utmFields.utmCampaign ?? undefined,
       referrerUrl: referrerUrl ?? undefined,
+      ref: ref ?? undefined,
     });
 
     if (!checkout.ok || !checkout.checkoutUrl) {
@@ -118,6 +123,7 @@ export default async function PublicMembershipJoinPage({
           {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
           {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}
           {utm.utmCampaign ? <input type="hidden" name={UTM_FORM_FIELDS.campaign} value={utm.utmCampaign} /> : null}
+          {referralCode ? <input type="hidden" name={REFERRAL_FORM_FIELD} value={referralCode} /> : null}
           <div>
             <h2 className="text-lg font-bold text-foreground">Compare plans</h2>
             <p className="mt-1 text-sm text-muted-foreground">Select the plan that is right for you.</p>

@@ -12,6 +12,7 @@ import {
 import { addMembershipInterval } from "@/lib/memberships/subscription-renewal";
 import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
 import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
+import { recordReferralRedemption, resolveActiveReferralCode } from "@/lib/actions/referrals";
 
 const PublicMembershipCheckoutSchema = z
   .object({
@@ -27,6 +28,7 @@ const PublicMembershipCheckoutSchema = z
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
+    ref: z.string().trim().max(40).optional().or(z.literal("")),
   })
   .strict();
 
@@ -95,6 +97,12 @@ export async function createPublicMembershipCheckout(input: unknown) {
   });
   const stripeInterval = membershipIntervalToStripe(tier.interval);
   const useSubscription = Boolean(stripeInterval && parsed.data.autoRenew);
+  const refCode = (parsed.data.ref || "").trim().toUpperCase() || null;
+  const referralCode = refCode ? await resolveActiveReferralCode(tenant.id, refCode) : null;
+  const existingContact = await prisma.contact.findUnique({
+    where: { tenantId_email: { tenantId: tenant.id, email } },
+    select: { id: true },
+  });
 
   const result = await prisma.$transaction(async (tx) => {
     const contact = await tx.contact.upsert({
@@ -126,6 +134,7 @@ export async function createPublicMembershipCheckout(input: unknown) {
         utmMedium: parsed.data.utmMedium || null,
         utmCampaign: parsed.data.utmCampaign || null,
         referrerUrl: parsed.data.referrerUrl || null,
+        referredByCode: referralCode?.code ?? null,
       },
     });
 
@@ -165,6 +174,10 @@ export async function createPublicMembershipCheckout(input: unknown) {
 
     return { contact, membership, payment };
   });
+
+  if (!existingContact && referralCode) {
+    await recordReferralRedemption(tenant.id, referralCode.id, result.contact.id);
+  }
 
   if (tier.amountCents === 0) {
     await issueReceiptForPayment(result.payment.id);

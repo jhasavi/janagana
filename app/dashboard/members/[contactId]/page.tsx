@@ -222,6 +222,13 @@ export default async function ContactProfilePage({
                   {[contact.utmSource, contact.utmMedium, contact.utmCampaign].filter(Boolean).join(" / ")}
                 </ProfileRow>
               )}
+              {contact.referredByCode && (
+                <ProfileRow label="Referred by">
+                  <Link href="/dashboard/referrals" className="font-medium text-primary hover:text-foreground">
+                    {contact.referredByCode}
+                  </Link>
+                </ProfileRow>
+              )}
               <ProfileRow label="Community">{contact.tenant.slug}</ProfileRow>
               <ProfileRow label="Tags">
                 <ContactTagBadges tags={contact.tags} />

@@ -37,6 +37,7 @@ export async function recomputeLeadScore(contactId: string): Promise<RecomputedL
           _count: { select: { registrations: true, communications: true } },
           memberships: { where: { status: "ACTIVE" }, select: { id: true }, take: 1 },
           payments: { where: { purpose: "DONATION", status: "PAID" }, select: { id: true }, take: 1 },
+          referralRedemption: { select: { id: true, converted: true } },
         },
       });
       if (!contact) return null;
@@ -44,6 +45,16 @@ export async function recomputeLeadScore(contactId: string): Promise<RecomputedL
       const hasMembership = contact.memberships.length > 0;
       const hasDonation = contact.payments.length > 0;
       const activityCount = contact._count.registrations + contact._count.communications;
+
+      // A referred contact who becomes a paying member/donor converts — this is
+      // the only writer of that transition, reusing every trigger already wired
+      // into recomputeLeadScore instead of adding new call sites.
+      if ((hasMembership || hasDonation) && contact.referralRedemption && !contact.referralRedemption.converted) {
+        await tx.referralRedemption.update({
+          where: { id: contact.referralRedemption.id },
+          data: { converted: true, convertedAt: new Date() },
+        });
+      }
 
       const score = computeLeadScore({
         interestType: contact.interestType,

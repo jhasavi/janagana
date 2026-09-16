@@ -149,44 +149,46 @@ enum TenantPlan {
 /// INVARIANT: One Tenant ←→ One Clerk Organization (clerkOrgId is unique).
 /// Created ONLY during explicit admin onboarding — never from public registration.
 model Tenant {
-  id                 String       @id @default(cuid())
-  name               String
-  slug               String       @unique
-  clerkOrgId         String       @unique
-  status             TenantStatus @default(ACTIVE)
-  publicTagline      String?
-  publicContactEmail String?
-  publicContactPhone String?
-  logoUrl            String?
+  id                   String       @id @default(cuid())
+  name                 String
+  slug                 String       @unique
+  clerkOrgId           String       @unique
+  status               TenantStatus @default(ACTIVE)
+  publicTagline        String?
+  publicContactEmail   String?
+  publicContactPhone   String?
+  logoUrl              String?
   /// Public member directory on the portal is opt-in per tenant, off by default.
-  directoryEnabled   Boolean      @default(false)
+  directoryEnabled     Boolean      @default(false)
   /// JanaGana's own SaaS plan for this tenant — see TenantPlan doc comment.
-  plan               TenantPlan   @default(FREE)
-  stripeCustomerId     String?    @unique
-  stripeSubscriptionId String?    @unique
+  plan                 TenantPlan   @default(FREE)
+  stripeCustomerId     String?      @unique
+  stripeSubscriptionId String?      @unique
   planRenewsAt         DateTime?
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
-  tenantAdmins  TenantAdmin[]
-  contacts      Contact[]
-  households    Household[]
+  tenantAdmins           TenantAdmin[]
+  contacts               Contact[]
+  households             Household[]
   customFieldDefinitions CustomFieldDefinition[]
-  tiers         MembershipTier[]
-  memberships   Membership[]
-  eventTicketTypes EventTicketType[]
-  payments      PaymentRecord[]
-  receipts      PaymentReceipt[]
-  stripeEvents  StripeWebhookEvent[]
-  communications CommunicationMessage[]
-  events        Event[]
-  registrations EventRegistration[]
-  auditLogs     AuditLog[]
-  contactLoginTokens ContactLoginToken[]
-  contactSessions    ContactSession[]
-  sponsors        Sponsor[]
-  sponsorInvoices SponsorInvoice[]
-  householdInvites HouseholdInvite[]
+  tiers                  MembershipTier[]
+  memberships            Membership[]
+  eventTicketTypes       EventTicketType[]
+  payments               PaymentRecord[]
+  receipts               PaymentReceipt[]
+  stripeEvents           StripeWebhookEvent[]
+  communications         CommunicationMessage[]
+  events                 Event[]
+  registrations          EventRegistration[]
+  auditLogs              AuditLog[]
+  contactLoginTokens     ContactLoginToken[]
+  contactSessions        ContactSession[]
+  sponsors               Sponsor[]
+  sponsorInvoices        SponsorInvoice[]
+  householdInvites       HouseholdInvite[]
+  referralCodes          ReferralCode[]
+  referralRedemptions    ReferralRedemption[]
 }
 
 /// Cache of which Clerk users are admins of which Tenants.
@@ -209,19 +211,19 @@ model TenantAdmin {
 /// INVARIANT: Contacts are NEVER Clerk users.
 ///            Creating a Contact MUST NEVER create a Clerk Organization.
 model Contact {
-  id                  String      @id @default(cuid())
+  id                  String         @id @default(cuid())
   tenantId            String
   firstName           String
   lastName            String
   email               String
   phone               String?
-  type                ContactType @default(REGISTRANT)
+  type                ContactType    @default(REGISTRANT)
   source              String?
   interestType        String?
   lastActivityAt      DateTime?
   lastActivitySummary String?
   notes               String?
-  tags                String[]    @default([])
+  tags                String[]       @default([])
   externalSource      String?
   externalId          String?
   importedAt          DateTime?
@@ -229,7 +231,7 @@ model Contact {
   householdId         String?
   /// Contact has opted in to being listed on the tenant's public directory.
   /// Defaults off — the directory only ever shows name + type/tags, never email/phone.
-  directoryOptIn      Boolean     @default(false)
+  directoryOptIn      Boolean        @default(false)
   /// Values for the tenant's CustomFieldDefinitions, keyed by CustomFieldDefinition.key.
   customFieldValues   Json?
   /// First-touch attribution — set only on create, never overwritten by later activity.
@@ -240,20 +242,24 @@ model Contact {
   lifecycleStage      LifecycleStage @default(NEW)
   leadScore           Int            @default(0)
   leadScoreUpdatedAt  DateTime?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  /// First-touch: the ReferralCode.code that brought this contact in, if any.
+  referredByCode      String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
-  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  household     Household?          @relation("HouseholdMembers", fields: [householdId], references: [id], onDelete: SetNull)
-  payerFor      Household[]         @relation("HouseholdPayer")
-  memberships   Membership[]
-  registrations EventRegistration[]
-  payments      PaymentRecord[]
-  receipts      PaymentReceipt[]
-  communications CommunicationMessage[]
-  loginTokens   ContactLoginToken[]
-  sessions      ContactSession[]
-  sentHouseholdInvites HouseholdInvite[] @relation("HouseholdInvitesSent")
+  tenant               Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  household            Household?             @relation("HouseholdMembers", fields: [householdId], references: [id], onDelete: SetNull)
+  payerFor             Household[]            @relation("HouseholdPayer")
+  memberships          Membership[]
+  registrations        EventRegistration[]
+  payments             PaymentRecord[]
+  receipts             PaymentReceipt[]
+  communications       CommunicationMessage[]
+  loginTokens          ContactLoginToken[]
+  sessions             ContactSession[]
+  sentHouseholdInvites HouseholdInvite[]      @relation("HouseholdInvitesSent")
+  referralCodesOwned   ReferralCode[]         @relation("ReferralCodeOwner")
+  referralRedemption   ReferralRedemption?    @relation("ReferralRedemptionContact")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -269,16 +275,16 @@ model Contact {
 /// e.g. renewal reminders and event RSVPs shown per household, not just per person.
 /// Deliberately NOT a shared-billing entity: Membership stays 1:1 with the paying Contact.
 model Household {
-  id            String   @id @default(cuid())
-  tenantId      String
-  name          String
+  id             String   @id @default(cuid())
+  tenantId       String
+  name           String
   payerContactId String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  members Contact[] @relation("HouseholdMembers")
-  payer   Contact?  @relation("HouseholdPayer", fields: [payerContactId], references: [id], onDelete: SetNull)
+  tenant  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members Contact[]         @relation("HouseholdMembers")
+  payer   Contact?          @relation("HouseholdPayer", fields: [payerContactId], references: [id], onDelete: SetNull)
   invites HouseholdInvite[]
 
   @@index([tenantId])
@@ -290,23 +296,23 @@ model Household {
 /// silently attaching another person's existing account to their household by email.
 /// INVARIANT: Never stores the raw token — only its SHA-256 hash (see ContactLoginToken).
 model HouseholdInvite {
-  id                String                @id @default(cuid())
-  tenantId          String
-  householdId       String
+  id                 String                @id @default(cuid())
+  tenantId           String
+  householdId        String
   invitedByContactId String
-  inviteeEmail      String
-  tokenHash         String                @unique
-  status            HouseholdInviteStatus @default(PENDING)
-  expiresAt         DateTime
-  respondedAt       DateTime?
+  inviteeEmail       String
+  tokenHash          String                @unique
+  status             HouseholdInviteStatus @default(PENDING)
+  expiresAt          DateTime
+  respondedAt        DateTime?
   /// Set once accepted — the contact (existing or newly created) that actually joined.
-  acceptedContactId String?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
+  acceptedContactId  String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 
-  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  invitedBy Contact @relation("HouseholdInvitesSent", fields: [invitedByContactId], references: [id], onDelete: Cascade)
+  invitedBy Contact   @relation("HouseholdInvitesSent", fields: [invitedByContactId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([householdId])
@@ -353,13 +359,13 @@ model ContactLoginToken {
 /// A long-lived portal session for a signed-in Contact.
 /// INVARIANT: Never stores the raw token — only its SHA-256 hash.
 model ContactSession {
-  id         String    @id @default(cuid())
-  tenantId   String
-  contactId  String
-  tokenHash  String    @unique
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(cuid())
+  tenantId  String
+  contactId String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
@@ -388,28 +394,28 @@ model MembershipTier {
 
 /// A contact's enrollment in a membership tier.
 model Membership {
-  id        String           @id @default(cuid())
-  tenantId  String
-  contactId String
-  tierId    String
-  status    MembershipStatus @default(ACTIVE)
-  startsAt  DateTime         @default(now())
-  expiresAt DateTime?
-  autoRenew Boolean          @default(false)
-  source    String           @default("admin")
-  notes     String?
-  stripeSubscriptionId String? @unique
+  id                   String           @id @default(cuid())
+  tenantId             String
+  contactId            String
+  tierId               String
+  status               MembershipStatus @default(ACTIVE)
+  startsAt             DateTime         @default(now())
+  expiresAt            DateTime?
+  autoRenew            Boolean          @default(false)
+  source               String           @default("admin")
+  notes                String?
+  stripeSubscriptionId String?          @unique
   /// Opaque token used by the public /api/membership-verify endpoint and QR/wallet
   /// passes instead of the raw membership id, so a guessable cuid can't be scanned.
-  verifyToken String? @unique
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  verifyToken          String?          @unique
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
-  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  tier    MembershipTier @relation(fields: [tierId], references: [id])
-  payments PaymentRecord[]
-  receipts PaymentReceipt[]
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact        Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tier           MembershipTier         @relation(fields: [tierId], references: [id])
+  payments       PaymentRecord[]
+  receipts       PaymentReceipt[]
   communications CommunicationMessage[]
 
   @@index([tenantId])
@@ -420,34 +426,35 @@ model Membership {
 
 /// Tenant-scoped money ledger. Stripe/offline/donation/event payments all land here.
 model PaymentRecord {
-  id             String         @id @default(cuid())
-  tenantId       String
-  contactId      String?
-  membershipId   String?
-  eventId        String?
-  registrationId String?
-  sponsorInvoiceId String?
-  amountCents    Int
-  currency       String         @default("USD")
-  status         PaymentStatus  @default(PAID)
-  method         PaymentMethod  @default(OFFLINE)
-  purpose        PaymentPurpose @default(MEMBERSHIP)
-  provider       String?
-  providerRef    String?
+  id                   String         @id @default(cuid())
+  tenantId             String
+  contactId            String?
+  membershipId         String?
+  eventId              String?
+  registrationId       String?
+  sponsorInvoiceId     String?
+  amountCents          Int
+  currency             String         @default("USD")
+  status               PaymentStatus  @default(PAID)
+  method               PaymentMethod  @default(OFFLINE)
+  purpose              PaymentPurpose @default(MEMBERSHIP)
+  provider             String?
+  providerRef          String?
   stripeSubscriptionId String?
-  paidAt         DateTime?
-  notes          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  paidAt               DateTime?
+  notes                String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact    Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
-  event      Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  registration EventRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
-  sponsorInvoice SponsorInvoice? @relation(fields: [sponsorInvoiceId], references: [id], onDelete: SetNull)
-  receipt    PaymentReceipt?
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact        Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  membership     Membership?        @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  event          Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  registration   EventRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+  sponsorInvoice SponsorInvoice?    @relation(fields: [sponsorInvoiceId], references: [id], onDelete: SetNull)
+  receipt        PaymentReceipt?
 
+  @@unique([provider, providerRef])
   @@index([tenantId])
   @@index([tenantId, purpose])
   @@index([tenantId, status])
@@ -458,7 +465,6 @@ model PaymentRecord {
   @@index([sponsorInvoiceId])
   @@index([paidAt])
   @@index([stripeSubscriptionId])
-  @@unique([provider, providerRef])
 }
 
 /// Issued proof of payment for a completed transaction.
@@ -477,10 +483,10 @@ model PaymentReceipt {
   issuedAt       DateTime @default(now())
   createdAt      DateTime @default(now())
 
-  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  payment    PaymentRecord @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  contact    Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  membership Membership?   @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payment        PaymentRecord          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  contact        Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  membership     Membership?            @relation(fields: [membershipId], references: [id], onDelete: SetNull)
   communications CommunicationMessage[]
 
   @@index([tenantId])
@@ -519,12 +525,12 @@ model Event {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  ticketTypes   EventTicketType[]
-  registrations EventRegistration[]
-  payments      PaymentRecord[]
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketTypes    EventTicketType[]
+  registrations  EventRegistration[]
+  payments       PaymentRecord[]
   communications CommunicationMessage[]
-  sponsors      Sponsor[]
+  sponsors       Sponsor[]
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -556,23 +562,23 @@ model EventTicketType {
 /// A public visitor's registration for an event.
 /// INVARIANT: Creating an EventRegistration MUST NEVER create a Clerk Organization.
 model EventRegistration {
-  id        String             @id @default(cuid())
-  tenantId  String
-  eventId   String
-  contactId String
+  id           String             @id @default(cuid())
+  tenantId     String
+  eventId      String
+  contactId    String
   ticketTypeId String?
-  quantity  Int                @default(1)
-  amountCents Int              @default(0)
-  status    RegistrationStatus @default(CONFIRMED)
-  checkedInAt DateTime?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  quantity     Int                @default(1)
+  amountCents  Int                @default(0)
+  status       RegistrationStatus @default(CONFIRMED)
+  checkedInAt  DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  ticketType EventTicketType? @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
-  payments PaymentRecord[]
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event          Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  contact        Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  ticketType     EventTicketType?       @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
+  payments       PaymentRecord[]
   communications CommunicationMessage[]
 
   @@unique([eventId, contactId])
@@ -690,4 +696,48 @@ model SponsorInvoice {
   @@index([tenantId])
   @@index([sponsorId])
   @@index([tenantId, status])
+}
+
+/// A trackable "?ref=CODE" link an ambassador shares — e.g. TPW's referral
+/// program links to the public join flow with a ref code appended.
+model ReferralCode {
+  id             String    @id @default(cuid())
+  tenantId       String
+  code           String
+  /// Freeform display name for the code, e.g. an ambassador's name or campaign.
+  label          String?
+  ownerContactId String?
+  active         Boolean   @default(true)
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       Contact?             @relation("ReferralCodeOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
+  redemptions ReferralRedemption[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([ownerContactId])
+}
+
+/// First-touch record of a contact landing via a ReferralCode link.
+/// One row per contact (a contact keeps whichever code referred them first).
+/// `converted` flips true once the contact becomes a paying member/donor —
+/// see recomputeLeadScore, which is the only writer of that transition.
+model ReferralRedemption {
+  id             String    @id @default(cuid())
+  tenantId       String
+  referralCodeId String
+  contactId      String    @unique
+  converted      Boolean   @default(false)
+  convertedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  referralCode ReferralCode @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation("ReferralRedemptionContact", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, referralCodeId])
+  @@index([tenantId])
 }

@@ -9,6 +9,7 @@ import { queueEventRegistrationCommunication } from "@/lib/communications/outbox
 import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
 import { createStripeCheckoutSession, stripeCheckoutConfigured } from "@/lib/payments/stripe";
 import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
+import { recordReferralRedemption, resolveActiveReferralCode } from "@/lib/actions/referrals";
 
 const PublicRegistrationSchema = z
   .object({
@@ -25,6 +26,7 @@ const PublicRegistrationSchema = z
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
+    ref: z.string().trim().max(40).optional().or(z.literal("")),
   })
   .strict();
 
@@ -61,6 +63,7 @@ const PublicLeadCaptureSchema = z
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
+    ref: z.string().trim().max(40).optional().or(z.literal("")),
   })
   .strict();
 
@@ -171,6 +174,8 @@ export async function registerPublicEvent(input: unknown) {
   }
 
   const quantity = parsed.data.quantity;
+  const refCode = (parsed.data.ref || "").trim().toUpperCase() || null;
+  const referralCode = refCode ? await resolveActiveReferralCode(tenant.id, refCode) : null;
 
   // Lightweight anti-abuse guard for repeated submit attempts.
   // Falls back to non-request scope when called outside HTTP request context.
@@ -309,6 +314,7 @@ export async function registerPublicEvent(input: unknown) {
               utmMedium: parsed.data.utmMedium || null,
               utmCampaign: parsed.data.utmCampaign || null,
               referrerUrl: parsed.data.referrerUrl || null,
+              referredByCode: referralCode?.code ?? null,
             },
           });
 
@@ -409,6 +415,10 @@ export async function registerPublicEvent(input: unknown) {
           },
         },
       });
+
+      if (!existingContact && referralCode) {
+        await recordReferralRedemption(tenant.id, referralCode.id, result.contact.id);
+      }
 
       await recomputeLeadScore(result.contact.id);
 
@@ -517,6 +527,8 @@ export async function capturePublicLead(input: unknown) {
   const phone = parsed.data.phone || null;
   const message = parsed.data.message || null;
   const source = parsed.data.source || "portal_contact";
+  const refCode = (parsed.data.ref || "").trim().toUpperCase() || null;
+  const referralCode = refCode ? await resolveActiveReferralCode(tenant.id, refCode) : null;
 
   const existing = await prisma.contact.findUnique({
     where: { tenantId_email: { tenantId: tenant.id, email } },
@@ -559,8 +571,13 @@ export async function capturePublicLead(input: unknown) {
       utmMedium: parsed.data.utmMedium || null,
       utmCampaign: parsed.data.utmCampaign || null,
       referrerUrl: parsed.data.referrerUrl || null,
+      referredByCode: referralCode?.code ?? null,
     },
   });
+
+  if (!existing && referralCode) {
+    await recordReferralRedemption(tenant.id, referralCode.id, contact.id);
+  }
 
   await prisma.auditLog.create({
     data: {

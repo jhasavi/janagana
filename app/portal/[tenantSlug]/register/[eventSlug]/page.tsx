@@ -14,6 +14,7 @@ import {
   visitorReturnUrlWithStatus,
 } from "@/lib/portal/safe-return-url";
 import { readRefererHeader, readUtmParams, UTM_FORM_FIELDS, utmFromFormData } from "@/lib/portal/utm";
+import { readReferralCode, referralCodeFromFormData, REFERRAL_FORM_FIELD } from "@/lib/portal/referral";
 
 const RETURN_TO_FIELD = "returnTo";
 
@@ -29,6 +30,7 @@ export default async function EventRegistrationPage({
     utm_source?: string;
     utm_medium?: string;
     utm_campaign?: string;
+    ref?: string;
   }>;
 }) {
   const { tenantSlug, eventSlug } = await params;
@@ -36,6 +38,7 @@ export default async function EventRegistrationPage({
   const query = await searchParams;
   const safeReturnTo = readSafeReturnUrl(query.returnTo);
   const utm = readUtmParams(query);
+  const referralCode = readReferralCode(query);
 
   if (!eventResult.ok || !eventResult.tenant || !eventResult.data) {
     redirect(`/portal/${tenantSlug}/events/${eventSlug}`);
@@ -47,6 +50,7 @@ export default async function EventRegistrationPage({
     const returnTo = readSafeReturnUrl(String(formData.get(RETURN_TO_FIELD) ?? ""));
     const utmFields = utmFromFormData(formData);
     const referrerUrl = await readRefererHeader();
+    const ref = referralCodeFromFormData(formData);
 
     const result = await registerPublicEvent({
       tenantSlug,
@@ -62,6 +66,7 @@ export default async function EventRegistrationPage({
       utmMedium: utmFields.utmMedium ?? undefined,
       utmCampaign: utmFields.utmCampaign ?? undefined,
       referrerUrl: referrerUrl ?? undefined,
+      ref: ref ?? undefined,
     });
 
     if (!result.ok) {
@@ -142,6 +147,7 @@ export default async function EventRegistrationPage({
           {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
           {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}
           {utm.utmCampaign ? <input type="hidden" name={UTM_FORM_FIELDS.campaign} value={utm.utmCampaign} /> : null}
+          {referralCode ? <input type="hidden" name={REFERRAL_FORM_FIELD} value={referralCode} /> : null}
           {eventResult.data.ticketTypes.length > 0 && (
             <FormField label="Ticket">
               <Select name="ticketTypeId" required>

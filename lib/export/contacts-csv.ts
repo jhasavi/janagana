@@ -40,6 +40,7 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
     "utmSource",
     "utmMedium",
     "utmCampaign",
+    "referredByCode",
     "notes",
     ...customFieldDefinitions.map((def) => def.label),
   ];
@@ -62,6 +63,7 @@ export async function buildContactsCsv(tenantId: string, filtersInput: unknown =
     c.utmSource,
     c.utmMedium,
     c.utmCampaign,
+    c.referredByCode,
     c.notes,
     ...customFieldDefinitions.map((def) => {
       const value = (c.customFieldValues as Record<string, unknown> | null)?.[def.key];

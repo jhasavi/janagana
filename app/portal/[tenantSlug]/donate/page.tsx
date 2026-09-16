@@ -18,6 +18,7 @@ import {
   visitorReturnUrlWithStatus,
 } from "@/lib/portal/safe-return-url";
 import { readUtmParams, UTM_FORM_FIELDS } from "@/lib/portal/utm";
+import { readReferralCode, REFERRAL_FORM_FIELD } from "@/lib/portal/referral";
 import { formatCents } from "@/lib/utils";
 
 const RETURN_TO_FIELD = "returnTo";
@@ -43,6 +44,7 @@ export default async function PublicDonatePage({
     utm_source?: string;
     utm_medium?: string;
     utm_campaign?: string;
+    ref?: string;
   }>;
 }) {
   const { tenantSlug } = await params;
@@ -55,6 +57,7 @@ export default async function PublicDonatePage({
 
   const safeReturnTo = readSafeReturnUrl(query.returnTo);
   const utm = readUtmParams(query);
+  const referralCode = readReferralCode(query);
   const backUrl = safeReturnTo ?? defaultVisitorReturnUrl(tenantSlug);
   const message = statusMessage(query.status, query.error);
 
@@ -94,6 +97,7 @@ export default async function PublicDonatePage({
           {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
           {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}
           {utm.utmCampaign ? <input type="hidden" name={UTM_FORM_FIELDS.campaign} value={utm.utmCampaign} /> : null}
+          {referralCode ? <input type="hidden" name={REFERRAL_FORM_FIELD} value={referralCode} /> : null}
 
           <fieldset>
             <legend className="text-sm font-medium text-foreground">Gift amount</legend>
