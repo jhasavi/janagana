@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { categoryForScore, computeLeadScore, gradeForScore, type LeadCategory, type LeadGrade } from "@/lib/leads/scoring";
 import { applySegmentationRules } from "@/lib/leads/segmentation";
+import { checkReferralTierUnlock, type ReferralTierUnlock } from "@/lib/leads/referral-tier-unlock";
+import { queueReferralTierUnlockedCommunication } from "@/lib/communications/outbox";
+import { publicPortalUrl } from "@/lib/environment";
 
 const STALE_AFTER_DAYS = 90;
 
@@ -19,7 +22,7 @@ export interface RecomputedLeadScore {
  */
 export async function recomputeLeadScore(contactId: string): Promise<RecomputedLeadScore | null> {
   try {
-    return await prisma.$transaction(async (tx) => {
+    const outcome = await prisma.$transaction(async (tx) => {
       // Row-lock so two near-simultaneous triggers on the same contact (e.g. a
       // donation and an event registration landing close together) serialize
       // instead of racing on the tags/lifecycleStage read-modify-write below.
@@ -40,7 +43,7 @@ export async function recomputeLeadScore(contactId: string): Promise<RecomputedL
           referralRedemption: { select: { id: true, converted: true } },
         },
       });
-      if (!contact) return null;
+      if (!contact) return { score: null, tierUnlock: null };
 
       const hasMembership = contact.memberships.length > 0;
       const hasDonation = contact.payments.length > 0;
@@ -49,11 +52,13 @@ export async function recomputeLeadScore(contactId: string): Promise<RecomputedL
       // A referred contact who becomes a paying member/donor converts — this is
       // the only writer of that transition, reusing every trigger already wired
       // into recomputeLeadScore instead of adding new call sites.
+      let tierUnlock: ReferralTierUnlock | null = null;
       if ((hasMembership || hasDonation) && contact.referralRedemption && !contact.referralRedemption.converted) {
         await tx.referralRedemption.update({
           where: { id: contact.referralRedemption.id },
           data: { converted: true, convertedAt: new Date() },
         });
+        tierUnlock = await checkReferralTierUnlock(tx, contact.referralRedemption.id);
       }
 
       const score = computeLeadScore({
@@ -94,12 +99,32 @@ export async function recomputeLeadScore(contactId: string): Promise<RecomputedL
       });
 
       return {
-        score,
-        grade: gradeForScore(score),
-        category: categoryForScore(score),
-        lifecycleStage: segmentation.lifecycleStage,
+        score: {
+          score,
+          grade: gradeForScore(score),
+          category: categoryForScore(score),
+          lifecycleStage: segmentation.lifecycleStage,
+        },
+        tierUnlock,
       };
     });
+
+    // Notification is real network I/O — queued after the transaction commits,
+    // never inside it, same as every other queue*Communication call site.
+    if (outcome.tierUnlock) {
+      const tierUnlock = outcome.tierUnlock;
+      await queueReferralTierUnlockedCommunication({
+        tenantId: tierUnlock.tenantId,
+        contactId: tierUnlock.ownerContactId,
+        tenantName: tierUnlock.tenantName,
+        recipientEmail: tierUnlock.recipientEmail,
+        recipientName: tierUnlock.recipientName,
+        tierLabel: tierUnlock.tier.label,
+        accountUrl: `${publicPortalUrl(tierUnlock.tenantSlug)}/account`,
+      });
+    }
+
+    return outcome.score;
   } catch (error) {
     console.error("recomputeLeadScore failed", { contactId, error });
     return null;

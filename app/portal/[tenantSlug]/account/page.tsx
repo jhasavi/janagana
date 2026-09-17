@@ -274,6 +274,23 @@ export default async function MemberAccountPage({
               Share your link — everyone who joins through it is tracked here, and we&apos;ll show you when they
               become a member or donor.
             </p>
+
+            {myReferralCodes.ok && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-sm font-bold text-foreground">
+                  {myReferralCodes.tier ? myReferralCodes.tier.label : "Not yet at a reward tier"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {myReferralCodes.totalConverted} successful referral{myReferralCodes.totalConverted === 1 ? "" : "s"}
+                  {myReferralCodes.nextTier
+                    ? ` · ${myReferralCodes.nextTier.threshold - myReferralCodes.totalConverted} more to reach ${myReferralCodes.nextTier.label}`
+                    : myReferralCodes.tier
+                      ? " · you've reached the top tier!"
+                      : ""}
+                </p>
+              </div>
+            )}
+
             {referralCodes.map((code) => {
               const joinLink = `${publicPortalUrl(tenantSlug)}/join?ref=${code.code}`;
               return (

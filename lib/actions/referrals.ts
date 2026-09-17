@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
 import { getCurrentMemberContact } from "@/lib/actions/member-auth";
+import { currentReferralTier, nextReferralTier } from "@/lib/leads/referral-tiers";
 
 const CODE_RE = /^[A-Z0-9-]+$/;
 
@@ -144,12 +145,28 @@ export async function getReferralCodeDetail(referralCodeId: string) {
   });
   if (!referralCode) return { ok: false as const, error: "Referral code not found", data: null as any };
 
+  // Tier is ambassador-wide (every code the owner holds), not just this one.
+  let ownerTotalConverted: number | null = null;
+  if (referralCode.ownerContactId) {
+    const ownerCodes = await prisma.referralCode.findMany({
+      where: { ownerContactId: referralCode.ownerContactId },
+      select: { redemptions: { select: { converted: true } } },
+    });
+    ownerTotalConverted = ownerCodes.reduce(
+      (sum, code) => sum + code.redemptions.filter((r) => r.converted).length,
+      0,
+    );
+  }
+
   return {
     ok: true as const,
     data: {
       ...referralCode,
       redemptionCount: referralCode.redemptions.length,
       convertedCount: referralCode.redemptions.filter((r) => r.converted).length,
+      ownerTotalConverted,
+      ownerTier: ownerTotalConverted !== null ? currentReferralTier(ownerTotalConverted) : null,
+      ownerNextTier: ownerTotalConverted !== null ? nextReferralTier(ownerTotalConverted) : null,
     },
   };
 }
@@ -189,7 +206,9 @@ export async function recordReferralRedemption(tenantId: string, referralCodeId:
  */
 export async function getMyReferralCodes(tenantSlug: string) {
   const current = await getCurrentMemberContact(tenantSlug);
-  if (!current) return { ok: false as const, error: "Not signed in", data: [] as any[] };
+  if (!current) {
+    return { ok: false as const, error: "Not signed in", data: [] as any[], totalConverted: 0, tier: null, nextTier: null };
+  }
 
   const codes = await prisma.referralCode.findMany({
     where: { tenantId: current.tenant.id, ownerContactId: current.contact.id },
@@ -205,5 +224,13 @@ export async function getMyReferralCodes(tenantSlug: string) {
     convertedCount: referralCode.redemptions.filter((r) => r.converted).length,
   }));
 
-  return { ok: true as const, data };
+  const totalConverted = data.reduce((sum, code) => sum + code.convertedCount, 0);
+
+  return {
+    ok: true as const,
+    data,
+    totalConverted,
+    tier: currentReferralTier(totalConverted),
+    nextTier: nextReferralTier(totalConverted),
+  };
 }

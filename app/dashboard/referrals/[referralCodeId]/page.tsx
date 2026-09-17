@@ -84,6 +84,12 @@ export default async function ReferralCodeDetailPage({
               <p className="mt-1 text-sm text-muted-foreground">
                 Status: <Badge variant={referralCode.active ? "brand" : "default"}>{referralCode.active ? "Active" : "Archived"}</Badge>
               </p>
+              {referralCode.ownerTier && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Ambassador tier: <Badge variant="success">{referralCode.ownerTier.label}</Badge>{" "}
+                  <span className="text-xs">({referralCode.ownerTotalConverted} total conversions across their codes)</span>
+                </p>
+              )}
             </div>
             {referralCode.active && (
               <form action={archiveAction}>

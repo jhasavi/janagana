@@ -34,6 +34,14 @@ An ambassador doesn't need admin access to see their own numbers. `getMyReferral
 
 A "Referral program" card appears on the member account page only when the signed-in contact owns at least one code — same conditional pattern as the existing "Household" section. Shows the copyable join link and live redemption/conversion counts per code.
 
+## Reward-tier automation — implemented (2026-09-17)
+
+Real backend for TPW's "Financial Friend (3) / Community Builder (10) / Movement Maker (25)" concept — [lib/leads/referral-tiers.ts](../lib/leads/referral-tiers.ts) defines the thresholds as a plain array (edit there to change them; not tenant-configurable, matching the "hardcoded is fine for v1" philosophy in [16-LEAD-INTELLIGENCE-PLAN.md](./16-LEAD-INTELLIGENCE-PLAN.md)'s segmentation section).
+
+Tiers are **ambassador-wide** — the sum of `converted` redemptions across every code a Contact owns, not per-code. [lib/leads/referral-tier-unlock.ts](../lib/leads/referral-tier-unlock.ts)'s `checkReferralTierUnlock` runs inside `recomputeLeadScore`'s existing transaction right after a redemption flips to `converted`: it row-locks the ambassador's Contact (a second, distinct lock from the referred contact's — prevents two conversions landing for the same ambassador from racing on the tag check), aggregates their total conversions, and tags the Contact (`referral-tier-<key>`) the first time a new tier is crossed. A notification email is queued (`queueReferralTierUnlockedCommunication`) after the transaction commits — never inside it, consistent with every other `queue*Communication` call site.
+
+Surfaced in the self-serve account card (current tier + progress to next) and the admin code-detail page (ambassador's tier badge).
+
 ## Explicitly out of scope
 
-- Reward/tier automation (TPW's "Financial Friend / Community Builder / Movement Maker" tiers) — that's a fulfillment/rewards workflow, not tracking, and belongs with the already-deferred workflow-automation scope in [07-ARCHITECTURE.md](./07-ARCHITECTURE.md#L24).
+- Tenant-configurable reward thresholds or a rules UI — same reasoning as segmentation.ts.

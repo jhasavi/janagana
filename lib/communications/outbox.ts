@@ -192,3 +192,33 @@ export async function queueHouseholdInviteCommunication(params: {
     ].join("\n"),
   });
 }
+
+export async function queueReferralTierUnlockedCommunication(params: {
+  tenantId: string;
+  contactId: string;
+  tenantName: string;
+  recipientEmail: string;
+  recipientName: string | null;
+  tierLabel: string;
+  accountUrl: string;
+}) {
+  return queueAndDeliver({
+    tenantId: params.tenantId,
+    contactId: params.contactId,
+    purpose: "REFERRAL_TIER_UNLOCKED",
+    recipientEmail: params.recipientEmail,
+    recipientName: params.recipientName,
+    subject: `You've reached ${params.tierLabel} — ${params.tenantName} referrals`,
+    body: [
+      `Hello${params.recipientName ? ` ${params.recipientName}` : ""},`,
+      "",
+      `Thanks to your referrals, you've reached the ${params.tierLabel} tier at ${params.tenantName}!`,
+      "",
+      `See your referral link and stats here:`,
+      "",
+      params.accountUrl,
+      "",
+      `— ${params.tenantName}`,
+    ].join("\n"),
+  });
+}
