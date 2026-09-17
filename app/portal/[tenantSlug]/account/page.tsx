@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { CalendarClock, LogOut, ShieldCheck, User, Users, UserPlus, X } from "lucide-react";
 import { ContactTimeline } from "@/components/dashboard/contact-timeline";
+import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -9,7 +10,9 @@ import { FormField, FormGrid, Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { getCurrentMemberContact, signOutMember, updateMemberProfile } from "@/lib/actions/member-auth";
 import { cancelHouseholdInvite, getMyHousehold, inviteHouseholdMember } from "@/lib/actions/household-invites";
+import { getMyReferralCodes } from "@/lib/actions/referrals";
 import { getMemberAccountData } from "@/lib/portal/member-account";
+import { publicPortalUrl } from "@/lib/environment";
 import { formatCents, formatDate } from "@/lib/utils";
 
 const MEMBERSHIP_TONE: Record<string, "success" | "warning" | "danger" | "default"> = {
@@ -41,6 +44,8 @@ export default async function MemberAccountPage({
   }
 
   const household = await getMyHousehold(tenantSlug);
+  const myReferralCodes = await getMyReferralCodes(tenantSlug);
+  const referralCodes = myReferralCodes.ok ? myReferralCodes.data : [];
 
   async function updateProfileAction(formData: FormData) {
     "use server";
@@ -258,6 +263,48 @@ export default async function MemberAccountPage({
           </p>
         </CardBody>
       </Card>
+
+      {referralCodes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-bold text-foreground">Referral program</h2>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Share your link — everyone who joins through it is tracked here, and we&apos;ll show you when they
+              become a member or donor.
+            </p>
+            {referralCodes.map((code) => {
+              const joinLink = `${publicPortalUrl(tenantSlug)}/join?ref=${code.code}`;
+              return (
+                <div key={code.id} className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-foreground">{code.code}</p>
+                      {code.label && <p className="text-xs text-muted-foreground">{code.label}</p>}
+                    </div>
+                    {!code.active && <Badge variant="default">Archived</Badge>}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <code className="rounded-lg bg-card px-3 py-1.5 text-xs text-foreground">{joinLink}</code>
+                    <CopyTextButton text={joinLink} label="Copy link" />
+                  </div>
+                  <div className="flex gap-4 text-sm">
+                    <span>
+                      <span className="font-bold text-foreground">{code.redemptionCount}</span>{" "}
+                      <span className="text-muted-foreground">joined</span>
+                    </span>
+                    <span>
+                      <span className="font-bold text-foreground">{code.convertedCount}</span>{" "}
+                      <span className="text-muted-foreground">became members/donors</span>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </CardBody>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

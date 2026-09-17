@@ -28,7 +28,12 @@ No new call sites: `recomputeLeadScore` ([lib/leads/scoring-actions.ts](../lib/l
 - `/dashboard/referrals/[id]` — per-code detail: copyable join link, conversion rate, and the list of redeeming contacts with converted status.
 - Contact detail page shows "Referred by" when set; CSV export includes `referredByCode`.
 
+## Self-serve ambassador view — implemented (2026-09-17)
+
+An ambassador doesn't need admin access to see their own numbers. `getMyReferralCodes` (`lib/actions/referrals.ts`) reuses the existing magic-link member session (`getCurrentMemberContact`, the same one powering `/portal/{tenantSlug}/account`) instead of a new auth mechanism — no new sign-in flow, no new session model. It scopes to `ReferralCode.ownerContactId === current contact`, so it's a plain reuse of infrastructure already built for member self-service.
+
+A "Referral program" card appears on the member account page only when the signed-in contact owns at least one code — same conditional pattern as the existing "Household" section. Shows the copyable join link and live redemption/conversion counts per code.
+
 ## Explicitly out of scope
 
 - Reward/tier automation (TPW's "Financial Friend / Community Builder / Movement Maker" tiers) — that's a fulfillment/rewards workflow, not tracking, and belongs with the already-deferred workflow-automation scope in [07-ARCHITECTURE.md](./07-ARCHITECTURE.md#L24).
-- Self-serve ambassador dashboard (an owner viewing their own stats without admin access) — today only tenant admins can view `/dashboard/referrals`.

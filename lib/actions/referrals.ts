@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveTenantForActions, requireActiveTenantForWriteActions, type TenantActionOptions } from "@/lib/tenant";
+import { getCurrentMemberContact } from "@/lib/actions/member-auth";
 
 const CODE_RE = /^[A-Z0-9-]+$/;
 
@@ -179,4 +180,30 @@ export async function recordReferralRedemption(tenantId: string, referralCodeId:
   } catch (error: any) {
     if (error?.code !== "P2002") throw error;
   }
+}
+
+/**
+ * Self-service: referral codes owned by the currently signed-in member
+ * (magic-link Contact session, not admin auth) — powers the "Referral
+ * program" card on /portal/{tenantSlug}/account.
+ */
+export async function getMyReferralCodes(tenantSlug: string) {
+  const current = await getCurrentMemberContact(tenantSlug);
+  if (!current) return { ok: false as const, error: "Not signed in", data: [] as any[] };
+
+  const codes = await prisma.referralCode.findMany({
+    where: { tenantId: current.tenant.id, ownerContactId: current.contact.id },
+    include: {
+      redemptions: { select: { id: true, converted: true } },
+    },
+    orderBy: [{ active: "desc" }, { createdAt: "desc" }],
+  });
+
+  const data = codes.map((referralCode) => ({
+    ...referralCode,
+    redemptionCount: referralCode.redemptions.length,
+    convertedCount: referralCode.redemptions.filter((r) => r.converted).length,
+  }));
+
+  return { ok: true as const, data };
 }
