@@ -546,73 +546,6 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
     return { ok: true as const, duplicate: result.duplicate, processed: result.processed };
   }
 
-  if (event.type === "customer.subscription.deleted") {
-    if (!isStripeSubscription(event.data.object)) {
-      return { ok: false as const, error: "Webhook event object is not a Subscription" };
-    }
-    const subscription = event.data.object;
-    const tenant = await prisma.tenant.findFirst({
-      where: { stripeSubscriptionId: subscription.id },
-      select: { id: true },
-    });
-    if (tenant) {
-      await prisma.tenant.update({
-        where: { id: tenant.id },
-        data: { plan: "FREE", stripeSubscriptionId: null, planRenewsAt: null },
-      });
-      await prisma.auditLog.create({
-        data: {
-          tenantId: tenant.id,
-          actorUserId: null,
-          action: "UPDATE",
-          metadata: {
-            entity: "Tenant",
-            source: "stripe_webhook",
-            change: "plan_downgraded_to_free",
-            stripeEventId: event.id,
-          },
-        },
-      });
-    }
-    await prisma.stripeWebhookEvent.create({
-      data: {
-        tenantId: tenant?.id ?? null,
-        stripeEventId: event.id,
-        eventType: event.type,
-        metadata: jsonMetadata({ subscriptionId: subscription.id, tenantFound: Boolean(tenant) }),
-      },
-    });
-    return { ok: true as const, duplicate: false, processed: Boolean(tenant) };
-  }
-
-  if (event.type === "customer.subscription.updated") {
-    if (!isStripeSubscription(event.data.object)) {
-      return { ok: false as const, error: "Webhook event object is not a Subscription" };
-    }
-    const subscription = event.data.object;
-    const tenant = await prisma.tenant.findFirst({
-      where: { stripeSubscriptionId: subscription.id },
-      select: { id: true },
-    });
-    if (tenant) {
-      await prisma.tenant.update({
-        where: { id: tenant.id },
-        data: {
-          planRenewsAt: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
-        },
-      });
-    }
-    await prisma.stripeWebhookEvent.create({
-      data: {
-        tenantId: tenant?.id ?? null,
-        stripeEventId: event.id,
-        eventType: event.type,
-        metadata: jsonMetadata({ subscriptionId: subscription.id, status: subscription.status ?? null }),
-      },
-    });
-    return { ok: true as const, duplicate: false, processed: Boolean(tenant) };
-  }
-
   if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {
     await prisma.stripeWebhookEvent.create({
       data: {
@@ -629,46 +562,6 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
   }
 
   const session = event.data.object;
-
-  if (session.metadata?.purpose === "platform_subscription") {
-    const tenantId = session.metadata?.tenantId ?? session.client_reference_id ?? null;
-    if (!tenantId) {
-      return { ok: false as const, error: "Platform subscription checkout is missing tenantId metadata" };
-    }
-    const paid = session.payment_status === "paid" || event.type === "checkout.session.async_payment_succeeded";
-    if (paid && session.subscription && session.customer) {
-      await prisma.tenant.update({
-        where: { id: tenantId },
-        data: {
-          plan: "PRO",
-          stripeCustomerId: session.customer,
-          stripeSubscriptionId: session.subscription,
-        },
-      });
-      await prisma.auditLog.create({
-        data: {
-          tenantId,
-          actorUserId: null,
-          action: "UPDATE",
-          metadata: {
-            entity: "Tenant",
-            source: "stripe_webhook",
-            change: "plan_upgraded_to_pro",
-            stripeEventId: event.id,
-          },
-        },
-      });
-    }
-    await prisma.stripeWebhookEvent.create({
-      data: {
-        tenantId,
-        stripeEventId: event.id,
-        eventType: event.type,
-        metadata: jsonMetadata({ purpose: "platform_subscription", paid, checkoutSessionId: session.id }),
-      },
-    });
-    return { ok: true as const, duplicate: false, processed: paid };
-  }
 
   const paymentRecordId = session.metadata?.paymentRecordId ?? session.client_reference_id ?? null;
   if (!paymentRecordId) {

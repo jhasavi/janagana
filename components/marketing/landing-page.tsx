@@ -29,8 +29,8 @@ const FEATURES = [
   },
   {
     icon: Repeat,
-    title: "Donations",
-    text: "One-time and recurring donations, with an optional donor-covered processing fee.",
+    title: "Donations & peer-to-peer fundraising",
+    text: "One-time and recurring donations, plus supporter fundraising pages that roll up to a shared campaign goal.",
   },
   {
     icon: Receipt,
@@ -56,9 +56,9 @@ const COMPARISON = [
     answer: "0% JanaGana platform fee. Stripe's processing rate is disclosed, and it's your own Stripe account.",
   },
   {
-    pain: '"100% free" donations, donations only',
+    pain: "Donations only, no dues or memberships",
     who: "Zeffy",
-    answer: "Same 0% fee, but one unified ledger for dues, events, and donations — not a separate tool.",
+    answer: "Same 100% free model, but one unified ledger for dues, events, donations, and peer-to-peer fundraising.",
   },
   {
     pain: "No migration story",
@@ -92,11 +92,11 @@ export function LandingPage() {
                   <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
                 <ButtonLink
-                  href="/pricing"
+                  href="#features"
                   size="lg"
                   className="border border-white/30 bg-white/10 text-white hover:bg-white/20"
                 >
-                  See pricing
+                  See what&apos;s included
                 </ButtonLink>
               </div>
               <p className="mt-6 flex items-center gap-2 text-sm text-white/80">
@@ -107,7 +107,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-6 pb-16">
+        <section id="features" className="mx-auto max-w-6xl px-6 pb-16">
           <div className="max-w-2xl">
             <p className="jg-eyebrow">What you get</p>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

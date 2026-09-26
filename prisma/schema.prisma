@@ -111,6 +111,12 @@ enum EventStatus {
   COMPLETED
 }
 
+enum CampaignStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 enum RegistrationStatus {
   PENDING_PAYMENT
   CONFIRMED
@@ -190,6 +196,8 @@ model Tenant {
   householdInvites       HouseholdInvite[]
   referralCodes          ReferralCode[]
   referralRedemptions    ReferralRedemption[]
+  campaigns              Campaign[]
+  peerFundraisers        PeerFundraiser[]
 }
 
 /// Cache of which Clerk users are admins of which Tenants.
@@ -261,6 +269,7 @@ model Contact {
   sentHouseholdInvites HouseholdInvite[]      @relation("HouseholdInvitesSent")
   referralCodesOwned   ReferralCode[]         @relation("ReferralCodeOwner")
   referralRedemption   ReferralRedemption?    @relation("ReferralRedemptionContact")
+  peerFundraisersOwned PeerFundraiser[]       @relation("PeerFundraiserOwner")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -434,6 +443,8 @@ model PaymentRecord {
   eventId              String?
   registrationId       String?
   sponsorInvoiceId     String?
+  campaignId           String?
+  peerFundraiserId     String?
   amountCents          Int
   currency             String         @default("USD")
   status               PaymentStatus  @default(PAID)
@@ -453,6 +464,8 @@ model PaymentRecord {
   event          Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
   registration   EventRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
   sponsorInvoice SponsorInvoice?    @relation(fields: [sponsorInvoiceId], references: [id], onDelete: SetNull)
+  campaign       Campaign?          @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  peerFundraiser PeerFundraiser?    @relation(fields: [peerFundraiserId], references: [id], onDelete: SetNull)
   receipt        PaymentReceipt?
 
   @@unique([provider, providerRef])
@@ -464,6 +477,8 @@ model PaymentRecord {
   @@index([eventId])
   @@index([registrationId])
   @@index([sponsorInvoiceId])
+  @@index([campaignId])
+  @@index([peerFundraiserId])
   @@index([paidAt])
   @@index([stripeSubscriptionId])
 }
@@ -535,6 +550,57 @@ model Event {
 
   @@unique([tenantId, slug])
   @@index([tenantId])
+}
+
+/// A fundraising campaign with a goal that donations and peer-to-peer
+/// fundraiser pages roll up into. Raised totals are computed live from
+/// PAID PaymentRecords, never cached, matching the rest of the ledger.
+model Campaign {
+  id          String         @id @default(cuid())
+  tenantId    String
+  title       String
+  slug        String
+  description String?
+  goalCents   Int?
+  status      CampaignStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fundraisers PeerFundraiser[]
+  payments    PaymentRecord[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+/// A supporter's personal fundraising page for a Campaign — Zeffy-style
+/// peer-to-peer fundraising. Owned by a Contact, shareable via its own slug,
+/// with donations attributed to it via PaymentRecord.peerFundraiserId.
+model PeerFundraiser {
+  id             String    @id @default(cuid())
+  tenantId       String
+  campaignId     String
+  ownerContactId String
+  slug           String
+  title          String?
+  story          String?
+  goalCents      Int?
+  active         Boolean   @default(true)
+  archivedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  owner    Contact         @relation("PeerFundraiserOwner", fields: [ownerContactId], references: [id], onDelete: Cascade)
+  payments PaymentRecord[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([campaignId])
+  @@index([ownerContactId])
 }
 
 /// A purchasable or free ticket option for a tenant event.

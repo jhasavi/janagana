@@ -30,6 +30,8 @@ const PublicDonationCheckoutSchema = z
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
     ref: z.string().trim().max(40).optional().or(z.literal("")),
+    campaignSlug: z.string().trim().max(120).optional().or(z.literal("")),
+    fundraiserSlug: z.string().trim().max(120).optional().or(z.literal("")),
   })
   .strict();
 
@@ -85,6 +87,22 @@ export async function createPublicDonationCheckout(input: unknown) {
     select: { id: true },
   });
 
+  let peerFundraiser: { id: string; campaignId: string; slug: string } | null = null;
+  if (parsed.data.fundraiserSlug) {
+    peerFundraiser = await prisma.peerFundraiser.findFirst({
+      where: { tenantId: tenant.id, slug: parsed.data.fundraiserSlug, active: true },
+      select: { id: true, campaignId: true, slug: true },
+    });
+  }
+  let campaignId = peerFundraiser?.campaignId ?? null;
+  if (!campaignId && parsed.data.campaignSlug) {
+    const campaign = await prisma.campaign.findFirst({
+      where: { tenantId: tenant.id, slug: parsed.data.campaignSlug, status: "PUBLISHED" },
+      select: { id: true },
+    });
+    campaignId = campaign?.id ?? null;
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     const contact = await tx.contact.upsert({
       where: { tenantId_email: { tenantId: tenant.id, email } },
@@ -121,6 +139,8 @@ export async function createPublicDonationCheckout(input: unknown) {
       data: {
         tenantId: tenant.id,
         contactId: contact.id,
+        campaignId,
+        peerFundraiserId: peerFundraiser?.id ?? null,
         amountCents: amounts.totalCents,
         currency: "USD",
         status: "PENDING",
@@ -142,14 +162,19 @@ export async function createPublicDonationCheckout(input: unknown) {
     await recordReferralRedemption(tenant.id, referralCode.id, result.contact.id);
   }
 
-  const successUrl = `${configuredAppUrl()}/portal/${tenant.slug}/donate?status=thankyou&session_id={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = `${configuredAppUrl()}/portal/${tenant.slug}/donate?status=canceled`;
+  const returnBase = peerFundraiser
+    ? `${configuredAppUrl()}/portal/${tenant.slug}/fundraise/${peerFundraiser.slug}`
+    : `${configuredAppUrl()}/portal/${tenant.slug}/donate`;
+  const successUrl = `${returnBase}?status=thankyou&session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = `${returnBase}?status=canceled`;
   const checkoutMetadata = {
     paymentRecordId: result.payment.id,
     tenantId: tenant.id,
     tenantSlug: tenant.slug,
     contactId: result.contact.id,
     purpose: "DONATION",
+    campaignId: campaignId ?? "",
+    peerFundraiserId: peerFundraiser?.id ?? "",
     baseAmountCents: String(amounts.baseCents),
     processingFeeCents: String(amounts.processingFeeCents),
     coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
@@ -158,13 +183,17 @@ export async function createPublicDonationCheckout(input: unknown) {
     janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),
   };
 
+  const donationLabel = peerFundraiser
+    ? `${tenant.name} via a supporter's fundraising page`
+    : tenant.name;
+
   const checkout = useSubscription
     ? await createStripeSubscriptionCheckoutSession({
         unitAmountCents: amounts.totalCents,
         currency: "USD",
         interval: "month",
         customerEmail: email,
-        productName: `Monthly donation to ${tenant.name}`,
+        productName: `Monthly donation to ${donationLabel}`,
         successUrl,
         cancelUrl,
         clientReferenceId: result.payment.id,
@@ -174,7 +203,7 @@ export async function createPublicDonationCheckout(input: unknown) {
         amountCents: amounts.totalCents,
         currency: "USD",
         customerEmail: email,
-        productName: `Donation to ${tenant.name}`,
+        productName: `Donation to ${donationLabel}`,
         successUrl,
         cancelUrl,
         clientReferenceId: result.payment.id,

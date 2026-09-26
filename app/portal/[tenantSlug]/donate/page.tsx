@@ -45,6 +45,7 @@ export default async function PublicDonatePage({
     utm_medium?: string;
     utm_campaign?: string;
     ref?: string;
+    campaignSlug?: string;
   }>;
 }) {
   const { tenantSlug } = await params;
@@ -93,6 +94,7 @@ export default async function PublicDonatePage({
       {query.status !== "thankyou" && ctx.stripeEnabled && (
         <form action="/api/public/donate" method="post" className="mt-4 space-y-4">
           <input type="hidden" name="tenantSlug" value={tenantSlug} />
+          {query.campaignSlug ? <input type="hidden" name="campaignSlug" value={query.campaignSlug} /> : null}
           {safeReturnTo ? <input type="hidden" name={RETURN_TO_FIELD} value={safeReturnTo} /> : null}
           {utm.utmSource ? <input type="hidden" name={UTM_FORM_FIELDS.source} value={utm.utmSource} /> : null}
           {utm.utmMedium ? <input type="hidden" name={UTM_FORM_FIELDS.medium} value={utm.utmMedium} /> : null}

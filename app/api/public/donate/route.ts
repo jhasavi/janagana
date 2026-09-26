@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
   const utm = utmFromFormData(form);
   const referrerUrl = req.headers.get("referer") ?? undefined;
   const ref = referralCodeFromFormData(form);
+  const campaignSlug = String(form.get("campaignSlug") ?? "").trim();
+  const fundraiserSlug = String(form.get("fundraiserSlug") ?? "").trim();
 
   const checkout = await createPublicDonationCheckout({
     tenantSlug,
@@ -38,12 +40,17 @@ export async function POST(req: NextRequest) {
     utmCampaign: utm.utmCampaign ?? undefined,
     referrerUrl,
     ref: ref ?? undefined,
+    campaignSlug: campaignSlug || undefined,
+    fundraiserSlug: fundraiserSlug || undefined,
   });
 
   if (!checkout.ok || !checkout.checkoutUrl) {
     const errorParams = new URLSearchParams({ error: checkout.error ?? "Checkout failed" });
     if (returnTo) errorParams.set("returnTo", returnTo);
-    return NextResponse.redirect(new URL(`/portal/${tenantSlug}/donate?${errorParams.toString()}`, req.url));
+    const fallbackPath = fundraiserSlug
+      ? `/portal/${tenantSlug}/fundraise/${fundraiserSlug}`
+      : `/portal/${tenantSlug}/donate`;
+    return NextResponse.redirect(new URL(`${fallbackPath}?${errorParams.toString()}`, req.url));
   }
 
   return NextResponse.redirect(checkout.checkoutUrl);

@@ -11,6 +11,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { getCurrentMemberContact, signOutMember, updateMemberProfile } from "@/lib/actions/member-auth";
 import { cancelHouseholdInvite, getMyHousehold, inviteHouseholdMember } from "@/lib/actions/household-invites";
 import { getMyReferralCodes } from "@/lib/actions/referrals";
+import { getMyPeerFundraisers } from "@/lib/actions/peer-fundraisers";
 import { getMemberAccountData } from "@/lib/portal/member-account";
 import { publicPortalUrl } from "@/lib/environment";
 import { formatCents, formatDate } from "@/lib/utils";
@@ -46,6 +47,8 @@ export default async function MemberAccountPage({
   const household = await getMyHousehold(tenantSlug);
   const myReferralCodes = await getMyReferralCodes(tenantSlug);
   const referralCodes = myReferralCodes.ok ? myReferralCodes.data : [];
+  const myFundraisers = await getMyPeerFundraisers(tenantSlug);
+  const fundraisers = myFundraisers.ok ? myFundraisers.data : [];
 
   async function updateProfileAction(formData: FormData) {
     "use server";
@@ -315,6 +318,34 @@ export default async function MemberAccountPage({
                       <span className="font-bold text-foreground">{code.convertedCount}</span>{" "}
                       <span className="text-muted-foreground">became members/donors</span>
                     </span>
+                  </div>
+                </div>
+              );
+            })}
+          </CardBody>
+        </Card>
+      )}
+
+      {fundraisers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-base font-bold text-foreground">My fundraising pages</h2>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            {fundraisers.map((fundraiser) => {
+              const link = `${publicPortalUrl(tenantSlug)}/fundraise/${fundraiser.slug}`;
+              return (
+                <div key={fundraiser.id} className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-foreground">{fundraiser.title || fundraiser.campaign.title}</p>
+                      <p className="text-xs text-muted-foreground">{fundraiser.campaign.title}</p>
+                    </div>
+                    <span className="text-sm font-bold text-foreground">{formatCents(fundraiser.raisedCents)} raised</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <code className="rounded-lg bg-card px-3 py-1.5 text-xs text-foreground">{link}</code>
+                    <CopyTextButton text={link} label="Copy link" />
                   </div>
                 </div>
               );

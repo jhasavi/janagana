@@ -9,12 +9,9 @@ export function MarketingNav() {
           JanaGana
         </Link>
         <nav className="flex items-center gap-2 sm:gap-4">
-          <Link
-            href="/pricing"
-            className="hidden text-sm font-semibold text-muted-foreground hover:text-foreground sm:inline-block"
-          >
-            Pricing
-          </Link>
+          <span className="hidden text-sm font-semibold text-muted-foreground sm:inline-block">
+            100% free, forever
+          </span>
           <ButtonLink href="/sign-in" variant="ghost" size="sm">
             Sign in
           </ButtonLink>
@@ -33,9 +30,6 @@ export function MarketingFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} JanaGana. Built for community organizations.</p>
         <div className="flex items-center gap-5">
-          <Link href="/pricing" className="hover:text-foreground">
-            Pricing
-          </Link>
           <Link href="/sign-in" className="hover:text-foreground">
             Sign in
           </Link>

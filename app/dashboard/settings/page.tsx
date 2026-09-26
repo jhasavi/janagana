@@ -30,9 +30,6 @@ import { tenantMappingStatusLabel, tenantStatusLabel } from "@/lib/tenant/mappin
 import { findMappedTenantsForUser, readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { getTenantBranding, updateTenantBranding } from "@/lib/actions/tenant-branding";
 import { updateDirectoryEnabled } from "@/lib/actions/directory-settings";
-import { createManageBillingSession, createProUpgradeCheckout } from "@/lib/actions/billing";
-import { isPro } from "@/lib/plans/gate";
-import { PRO_PLAN_MONTHLY_CENTS } from "@/lib/plans/pro-plan";
 import { prisma } from "@/lib/prisma";
 
 export default async function SettingsPage({
@@ -65,13 +62,6 @@ export default async function SettingsPage({
   const canSwitchCommunity = mappedTenants.length > 1;
   const customFieldsResult = activeTenant ? await listCustomFieldDefinitions() : null;
   const customFieldDefinitions = customFieldsResult?.ok ? customFieldsResult.data : [];
-  const planInfo = activeTenant
-    ? await prisma.tenant.findUnique({
-        where: { id: activeTenant.id },
-        select: { plan: true, planRenewsAt: true, stripeCustomerId: true },
-      })
-    : null;
-
   async function updateBrandingAction(formData: FormData) {
     "use server";
     const tenantHint = readTenantIdHintFromForm(formData);
@@ -166,32 +156,6 @@ export default async function SettingsPage({
     redirect("/dashboard/settings?success=field-deleted");
   }
 
-  async function upgradeToProAction(formData: FormData) {
-    "use server";
-    const tenantHint = readTenantIdHintFromForm(formData);
-    const result = await createProUpgradeCheckout({ tenantIdHint: tenantHint });
-    if (!result.ok) {
-      if (tenantHint) {
-        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
-      }
-      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
-    }
-    redirect(result.checkoutUrl);
-  }
-
-  async function manageBillingAction(formData: FormData) {
-    "use server";
-    const tenantHint = readTenantIdHintFromForm(formData);
-    const result = await createManageBillingSession({ tenantIdHint: tenantHint });
-    if (!result.ok) {
-      if (tenantHint) {
-        redirectWithActiveTenant(tenantHint, `/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
-      }
-      redirect(`/dashboard/settings?error=${encodeURIComponent(result.error)}#plan`);
-    }
-    redirect(result.portalUrl);
-  }
-
   const engineeringFlags = {
     existingOrgSetup: process.env.ENABLE_EXISTING_ORG_SETUP === "true",
     databaseUrlConfigured: Boolean(process.env.DATABASE_URL?.trim()),
@@ -282,48 +246,18 @@ export default async function SettingsPage({
         </Card>
       )}
 
-      {activeTenant && planInfo && (
-        <Card
-          id="plan"
-          className={isPro(planInfo) ? "border-success/30 bg-success/[0.03]" : "border-primary/30 bg-primary/[0.03]"}
-        >
+      {activeTenant && (
+        <Card id="plan" className="border-success/30 bg-success/[0.03]">
           <CardBody>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">Plan</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {isPro(planInfo)
-                    ? "Households, member directory, unlimited custom fields, wallet passes, unlimited tiers and events."
-                    : "Core CRM, 1 membership tier, up to 3 live events, donations, and payments — all free forever."}
+                  Every feature is included, free — households, member directory, unlimited custom fields, wallet
+                  passes, unlimited tiers, events, and peer-to-peer fundraising.
                 </p>
               </div>
-              <Badge variant={isPro(planInfo) ? "brand" : "default"}>{isPro(planInfo) ? "Pro" : "Free"}</Badge>
-            </div>
-            <div className="mt-4">
-              {isPro(planInfo) ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  {planInfo.planRenewsAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Renews {planInfo.planRenewsAt.toLocaleDateString()}
-                    </p>
-                  )}
-                  {planInfo.stripeCustomerId && (
-                    <form action={manageBillingAction}>
-                      <TenantScopeHiddenFields tenantId={activeTenant.id} />
-                      <Button type="submit" variant="secondary" size="sm">
-                        Manage subscription
-                      </Button>
-                    </form>
-                  )}
-                </div>
-              ) : (
-                <form action={upgradeToProAction}>
-                  <TenantScopeHiddenFields tenantId={activeTenant.id} />
-                  <Button type="submit" size="sm">
-                    Upgrade to Pro — ${(PRO_PLAN_MONTHLY_CENTS / 100).toFixed(0)}/mo
-                  </Button>
-                </form>
-              )}
+              <Badge variant="brand">Free — all features</Badge>
             </div>
           </CardBody>
         </Card>
