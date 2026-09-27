@@ -77,6 +77,8 @@ export async function listPublishedPortalEvents(tenantSlug: string) {
     where: {
       tenantId: tenant.id,
       status: "PUBLISHED",
+      // "Browse what is open now" — don't surface events that have already happened.
+      startsAt: { gte: new Date() },
     },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
