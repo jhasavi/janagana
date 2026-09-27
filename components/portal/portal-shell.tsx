@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CalendarDays, Gift, HeartHandshake, Home, Mail, UserCircle, Users } from "lucide-react";
+import { CalendarDays, Gift, HeartHandshake, Home, Mail, Trophy, UserCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PortalShellTenant = {
@@ -28,6 +28,7 @@ const baseNavItems: Array<{
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/join", label: "Join", icon: HeartHandshake },
   { href: "/donate", label: "Donate", icon: Gift },
+  { href: "/campaigns", label: "Campaigns", icon: Trophy },
   { href: "/contact", label: "Stay updated", icon: Mail, cta: true },
 ];
 

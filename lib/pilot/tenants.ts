@@ -52,6 +52,7 @@ const COMMON_LINKS = (root: string, slug: string): PortalLink[] => [
   { label: "Events listing", href: `${root}/events`, hint: "Or render events on your site via embed API (see Portal & setup)" },
   { label: "Membership join", href: `${root}/join` },
   { label: "Donate", href: `${root}/donate`, hint: "One-time gifts via Stripe Checkout" },
+  { label: "Fundraising campaigns", href: `${root}/campaigns`, hint: "Supporters can start their own peer-to-peer fundraising page from here" },
   {
     label: "Newsletter / community updates",
     href: `${root}/contact?interest=newsletter`,

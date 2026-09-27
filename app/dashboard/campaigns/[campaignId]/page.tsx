@@ -242,13 +242,9 @@ export default async function CampaignDetailPage({
                       {formatMoneyCents(donation.amountCents)}
                     </DataTableCell>
                     <DataTableCell className="text-muted-foreground">
-                      {donation.peerFundraiser ? (
-                        <a href={`/dashboard/campaigns/${campaign.id}`} className="hover:text-primary">
-                          {donation.peerFundraiser.title || donation.peerFundraiser.slug}
-                        </a>
-                      ) : (
-                        "Direct to campaign"
-                      )}
+                      {donation.peerFundraiser
+                        ? `Fundraiser: ${donation.peerFundraiser.title || donation.peerFundraiser.slug}`
+                        : "Direct to campaign"}
                     </DataTableCell>
                     <DataTableCell>
                       <Badge variant={donation.status === "PAID" ? "success" : donation.status === "PENDING" ? "warning" : "default"}>
