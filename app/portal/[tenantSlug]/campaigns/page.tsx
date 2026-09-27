@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { HeartHandshake } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getPublicCampaigns } from "@/lib/actions/campaigns";
-import { formatCents } from "@/lib/utils";
+import { formatMoneyCents } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ tenantSlug: string }>;
@@ -39,13 +39,13 @@ export default async function PortalCampaignsPage({ params }: Props) {
                   <HeartHandshake className="h-5 w-5" />
                 </div>
                 <p className="mt-3 font-bold text-foreground">{campaign.title}</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{formatCents(campaign.raisedCents)} raised</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{formatMoneyCents(campaign.raisedCents)} raised</p>
                 {campaign.goalCents ? (
                   <>
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">of {formatCents(campaign.goalCents)} goal</p>
+                    <p className="mt-1 text-xs text-muted-foreground">of {formatMoneyCents(campaign.goalCents)} goal</p>
                   </>
                 ) : null}
               </Link>

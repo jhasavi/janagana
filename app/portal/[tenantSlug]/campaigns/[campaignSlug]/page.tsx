@@ -4,7 +4,7 @@ import { HeartHandshake, Users } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getPublicCampaign } from "@/lib/actions/campaigns";
-import { formatCents } from "@/lib/utils";
+import { formatMoneyCents } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ tenantSlug: string; campaignSlug: string }>;
@@ -32,13 +32,13 @@ export default async function PortalCampaignPage({ params }: Props) {
       </div>
 
       <div className="jg-card p-5 sm:p-6">
-        <p className="text-2xl font-extrabold text-foreground">{formatCents(campaign.raisedCents)} raised</p>
+        <p className="text-2xl font-extrabold text-foreground">{formatMoneyCents(campaign.raisedCents)} raised</p>
         {campaign.goalCents ? (
           <>
             <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">of {formatCents(campaign.goalCents)} goal · {pct}%</p>
+            <p className="mt-1 text-xs text-muted-foreground">of {formatMoneyCents(campaign.goalCents)} goal · {pct}%</p>
           </>
         ) : null}
         <div className="mt-5 flex flex-wrap gap-3">
@@ -78,7 +78,7 @@ export default async function PortalCampaignPage({ params }: Props) {
                   <p className="mt-3 font-bold text-foreground">
                     {fundraiser.title || `${fundraiser.owner.firstName} ${fundraiser.owner.lastName}`}
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">{formatCents(fundraiser.raisedCents)} raised</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">{formatMoneyCents(fundraiser.raisedCents)} raised</p>
                   {fundraiser.goalCents ? (
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-accent" style={{ width: `${fundraiserPct}%` }} />

@@ -10,7 +10,7 @@ import { DONATION_PRESET_CENTS } from "@/lib/actions/public-donations";
 import { getPublicPeerFundraiser } from "@/lib/actions/peer-fundraisers";
 import { publicPortalUrl } from "@/lib/environment";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
-import { formatCents } from "@/lib/utils";
+import { formatMoneyCents } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ tenantSlug: string; fundraiserSlug: string }>;
@@ -60,13 +60,13 @@ export default async function PeerFundraiserPage({ params, searchParams }: Props
       )}
 
       <div className="jg-card p-5 sm:p-6">
-        <p className="text-2xl font-extrabold text-foreground">{formatCents(fundraiser.raisedCents)} raised</p>
+        <p className="text-2xl font-extrabold text-foreground">{formatMoneyCents(fundraiser.raisedCents)} raised</p>
         {fundraiser.goalCents ? (
           <>
             <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">of {formatCents(fundraiser.goalCents)} goal · {pct}%</p>
+            <p className="mt-1 text-xs text-muted-foreground">of {formatMoneyCents(fundraiser.goalCents)} goal · {pct}%</p>
           </>
         ) : null}
         <div className="mt-4">
@@ -92,7 +92,7 @@ export default async function PeerFundraiserPage({ params, searchParams }: Props
                     className="flex cursor-pointer items-center justify-center rounded-xl border border-input px-3 py-2 text-sm font-semibold text-foreground has-[:checked]:border-primary/40 has-[:checked]:bg-primary/5"
                   >
                     <input type="radio" name="amountPreset" value={cents} defaultChecked={cents === 5000} className="sr-only" />
-                    {formatCents(cents)}
+                    {formatMoneyCents(cents)}
                   </label>
                 ))}
                 <label className="flex cursor-pointer items-center justify-center rounded-xl border border-input px-3 py-2 text-sm font-semibold text-foreground has-[:checked]:border-primary/40 has-[:checked]:bg-primary/5 sm:col-span-1">

@@ -14,7 +14,7 @@ import { getMyReferralCodes } from "@/lib/actions/referrals";
 import { getMyPeerFundraisers } from "@/lib/actions/peer-fundraisers";
 import { getMemberAccountData } from "@/lib/portal/member-account";
 import { publicPortalUrl } from "@/lib/environment";
-import { formatCents, formatDate } from "@/lib/utils";
+import { formatCents, formatDate, formatMoneyCents } from "@/lib/utils";
 
 const MEMBERSHIP_TONE: Record<string, "success" | "warning" | "danger" | "default"> = {
   ACTIVE: "success",
@@ -341,7 +341,7 @@ export default async function MemberAccountPage({
                       <p className="font-bold text-foreground">{fundraiser.title || fundraiser.campaign.title}</p>
                       <p className="text-xs text-muted-foreground">{fundraiser.campaign.title}</p>
                     </div>
-                    <span className="text-sm font-bold text-foreground">{formatCents(fundraiser.raisedCents)} raised</span>
+                    <span className="text-sm font-bold text-foreground">{formatMoneyCents(fundraiser.raisedCents)} raised</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <code className="rounded-lg bg-card px-3 py-1.5 text-xs text-foreground">{link}</code>

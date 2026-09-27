@@ -29,6 +29,17 @@ export function formatCents(cents: number): string {
 }
 
 /**
+ * Format cents as a dollar amount, always — never "Free". For sums like a
+ * fundraising total, where $0 raised is a real amount, not a free price.
+ */
+export function formatMoneyCents(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+}
+
+/**
  * Format a date for display.
  */
 export function formatRelativeTime(date: Date | string): string {

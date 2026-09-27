@@ -22,7 +22,7 @@ import {
 import { createCampaign, listCampaigns, updateCampaignStatus } from "@/lib/actions/campaigns";
 import { publicPortalUrl } from "@/lib/environment";
 import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
-import { formatCents } from "@/lib/utils";
+import { formatMoneyCents } from "@/lib/utils";
 
 export default async function CampaignsPage({
   searchParams,
@@ -98,7 +98,7 @@ export default async function CampaignsPage({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard icon={HeartHandshake} tone="primary" label="Published campaigns" value={String(publishedCount)} />
-        <StatCard icon={TrendingUp} tone="success" label="Total raised" value={formatCents(totalRaised)} />
+        <StatCard icon={TrendingUp} tone="success" label="Total raised" value={formatMoneyCents(totalRaised)} />
         <StatCard icon={Users} tone="accent" label="Supporter fundraising pages" value={String(totalFundraisers)} />
       </div>
 
@@ -154,10 +154,10 @@ export default async function CampaignsPage({
                         {campaign.title}
                       </Link>
                       {campaign.goalCents ? (
-                        <span className="ml-2 text-xs text-muted-foreground">goal {formatCents(campaign.goalCents)}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">goal {formatMoneyCents(campaign.goalCents)}</span>
                       ) : null}
                     </DataTableCell>
-                    <DataTableCell>{formatCents(campaign.raisedCents)}</DataTableCell>
+                    <DataTableCell>{formatMoneyCents(campaign.raisedCents)}</DataTableCell>
                     <DataTableCell>{campaign.fundraiserCount}</DataTableCell>
                     <DataTableCell>
                       <Badge variant={campaign.status === "PUBLISHED" ? "brand" : "default"}>{campaign.status}</Badge>
