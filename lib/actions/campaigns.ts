@@ -172,9 +172,10 @@ export async function getCampaignDetail(campaignId: string) {
 
   if (!campaign) return { ok: false as const, error: "Campaign not found", data: null as any };
 
-  const [campaignRaised, fundraiserRaised] = await Promise.all([
+  const [campaignRaised, fundraiserRaised, donations] = await Promise.all([
     raisedCentsForCampaigns([campaign.id]),
     raisedCentsForFundraisers(campaign.fundraisers.map((f) => f.id)),
+    getCampaignDonationRows(campaign.id),
   ]);
 
   const fundraisers = campaign.fundraisers
@@ -190,8 +191,29 @@ export async function getCampaignDetail(campaignId: string) {
       raisedCents: campaignRaised.get(campaign.id) ?? 0,
       directRaisedCents: Math.max(0, directRaisedCents),
       fundraisers,
+      donations,
     },
   };
+}
+
+/** Every payment tied to a campaign (direct or via a fundraiser), newest first. Shared by the admin detail page and the CSV export. */
+export async function getCampaignDonationRows(campaignId: string) {
+  return prisma.paymentRecord.findMany({
+    where: { campaignId },
+    include: {
+      contact: { select: { id: true, firstName: true, lastName: true, email: true } },
+      peerFundraiser: { select: { id: true, slug: true, title: true } },
+    },
+    orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+  });
+}
+
+/** Tenant-scoped export helper — verifies the campaign belongs to the tenant before returning its donation rows. */
+export async function getCampaignDonationsForExport(tenantId: string, campaignId: string) {
+  const campaign = await prisma.campaign.findFirst({ where: { id: campaignId, tenantId }, select: { id: true, title: true, slug: true } });
+  if (!campaign) return null;
+  const donations = await getCampaignDonationRows(campaign.id);
+  return { campaign, donations };
 }
 
 /**

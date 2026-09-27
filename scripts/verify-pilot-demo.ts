@@ -167,25 +167,49 @@ async function main() {
   ];
   if (parserChecks.some((ok) => !ok)) failed = true;
 
-  // 6–8. Dashboard routes exist
+  // 6–11. Dashboard routes exist (the whole Pilot Demo v1 admin workflow)
   for (const [path, label] of [
     ["/dashboard/members", "route /dashboard/members"],
+    ["/dashboard/members/import", "route /dashboard/members/import"],
     ["/dashboard/memberships/renewals", "route /dashboard/memberships/renewals"],
+    ["/dashboard/events", "route /dashboard/events"],
+    ["/dashboard/donations", "route /dashboard/donations"],
     ["/dashboard/payments", "route /dashboard/payments"],
+    ["/dashboard/campaigns", "route /dashboard/campaigns"],
   ] as const) {
     const result = await checkDashboardRoute(baseUrl, path, label);
     if (!result.ok) failed = true;
   }
 
-  // 9. Portal events
-  const portalEvents = await checkHttp(
-    `${baseUrl}/portal/${PILOT_SLUG}/events`,
-    `portal /portal/${PILOT_SLUG}/events`,
-    { expectedStatuses: [200, 302, 307, 308] },
+  // 12. Filtered contact export — gated (401/403 JSON in production; local dev
+  // may 307 to Clerk's dev-browser sign-in sync first). A 404/500 would mean
+  // the route or its filter parsing is broken.
+  const filteredExport = await checkHttp(
+    `${baseUrl}/api/export/contacts?preset=recent&lifecycleStage=ENGAGED`,
+    "route /api/export/contacts (filtered)",
+    { expectedStatuses: [200, 302, 307, 308, 401, 403] },
   );
-  if (!portalEvents.ok) failed = true;
+  if (!filteredExport.ok) failed = true;
 
-  // 10. Nav hide coming soon
+  // 13–15. Public portal routes (visitor-facing, no login)
+  for (const [path, label] of [
+    [`/portal/${PILOT_SLUG}/events`, `portal /portal/${PILOT_SLUG}/events`],
+    [`/portal/${PILOT_SLUG}/donate`, `portal /portal/${PILOT_SLUG}/donate`],
+    [`/portal/${PILOT_SLUG}/campaigns`, `portal /portal/${PILOT_SLUG}/campaigns`],
+  ] as const) {
+    const result = await checkHttp(`${baseUrl}${path}`, label, { expectedStatuses: [200, 302, 307, 308] });
+    if (!result.ok) failed = true;
+  }
+
+  // 16. Public embed API (external website widget)
+  const embedEvents = await checkHttp(
+    `${baseUrl}/api/embed/events?tenantSlug=${PILOT_SLUG}`,
+    "route /api/embed/events",
+    { expectedStatuses: [200] },
+  );
+  if (!embedEvents.ok) failed = true;
+
+  // 17. Nav hide coming soon
   if (!checkNavHideComingSoon()) failed = true;
 
   console.log("");

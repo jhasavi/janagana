@@ -64,6 +64,7 @@ export default async function ContactsPage({
     interestType?: string;
     tag?: string;
     lifecycleStage?: string;
+    membershipStatus?: string;
     preset?: string;
     page?: string;
   }>;
@@ -94,6 +95,13 @@ export default async function ContactsPage({
       | "QUALIFIED"
       | "CONVERTED"
       | "LOST",
+    membershipStatus: (params.membershipStatus ?? "") as
+      | ""
+      | "PENDING"
+      | "ACTIVE"
+      | "INACTIVE"
+      | "EXPIRED"
+      | "CANCELED",
     preset: (params.preset ?? "") as
       | ""
       | "members"
@@ -227,6 +235,9 @@ export default async function ContactsPage({
           {filters.lifecycleStage && (
             <span className="text-muted-foreground">Stage: {filters.lifecycleStage}</span>
           )}
+          {filters.membershipStatus && (
+            <span className="text-muted-foreground">Membership: {filters.membershipStatus}</span>
+          )}
           {filters.preset && <span className="text-muted-foreground">Preset: {filters.preset}</span>}
           <Link href="/dashboard/members" className="ml-auto text-xs font-semibold text-primary hover:text-foreground">
             Clear all
@@ -278,6 +289,14 @@ export default async function ContactsPage({
               <option value="CONVERTED">Converted</option>
               <option value="LOST">Lost</option>
             </Select>
+            <Select name="membershipStatus" defaultValue={filters.membershipStatus} className="sm:w-44">
+              <option value="">All membership statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PENDING">Pending</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="CANCELED">Canceled</option>
+              <option value="INACTIVE">Inactive</option>
+            </Select>
             {filters.preset && <input type="hidden" name="preset" value={filters.preset} />}
             <Button type="submit" size="sm">
               Search
@@ -306,18 +325,14 @@ export default async function ContactsPage({
 
           {contacts.length === 0 ? (
             <EmptyState
-              title={
-                filters.q || filters.source || filters.interestType || filters.tag || filters.preset
-                  ? "No contacts match these filters"
-                  : `No contacts for ${tenant?.slug ?? "this community"} yet`
-              }
+              title={filtersActive ? "No contacts match these filters" : `No contacts for ${tenant?.slug ?? "this community"} yet`}
               description={
-                !filters.q && !filters.source && !filters.interestType && !filters.tag && !filters.preset
+                !filtersActive
                   ? "Import a spreadsheet or test your portal contact form to capture the first lead."
                   : undefined
               }
               action={
-                !filters.q && !filters.source && !filters.interestType && !filters.tag && !filters.preset ? (
+                !filtersActive ? (
                   <ButtonLink href="/dashboard/members/import" size="sm">
                     Import spreadsheet
                   </ButtonLink>

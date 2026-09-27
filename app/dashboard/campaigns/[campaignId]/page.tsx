@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/data-table";
 import { getCampaignDetail, updateCampaignStatus } from "@/lib/actions/campaigns";
 import { publicPortalUrl } from "@/lib/environment";
+import { portalEmbedUrl } from "@/lib/pilot/tenant-integration";
 import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatDate, formatMoneyCents } from "@/lib/utils";
 
@@ -56,6 +57,7 @@ export default async function CampaignDetailPage({
 
   const pct = campaign.goalCents ? Math.min(100, Math.round((campaign.raisedCents / campaign.goalCents) * 100)) : null;
   const publicUrl = tenant ? `${publicPortalUrl(tenant.slug)}/campaigns/${campaign.slug}` : null;
+  const embedUrl = tenant ? portalEmbedUrl(`/portal/${tenant.slug}/campaigns/${campaign.slug}`) : null;
   const activeFundraiserCount = campaign.fundraisers.filter((f) => f.active).length;
 
   return (
@@ -65,9 +67,19 @@ export default async function CampaignDetailPage({
         title={campaign.title}
         description={campaign.description ?? undefined}
         actions={
-          <ButtonLink href="/dashboard/campaigns" variant="secondary" size="sm">
-            Back to campaigns
-          </ButtonLink>
+          <>
+            {campaign.donations.length > 0 && (
+              <a
+                href={`/api/export/campaigns/${campaign.id}/donations`}
+                className="inline-flex h-8 items-center rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted/60"
+              >
+                Export donations CSV
+              </a>
+            )}
+            <ButtonLink href="/dashboard/campaigns" variant="secondary" size="sm">
+              Back to campaigns
+            </ButtonLink>
+          </>
         }
       />
 
@@ -119,7 +131,8 @@ export default async function CampaignDetailPage({
           {publicUrl && campaign.status === "PUBLISHED" && (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
               <code className="text-sm text-foreground">{publicUrl}</code>
-              <CopyTextButton text={publicUrl} label="Copy link" />
+              <CopyTextButton text={publicUrl} label="Copy public link" />
+              {embedUrl && <CopyTextButton text={embedUrl} label="Copy embed link" />}
             </div>
           )}
           {campaign.goalCents && (
@@ -187,6 +200,63 @@ export default async function CampaignDetailPage({
                     </DataTableRow>
                   );
                 })}
+              </DataTableBody>
+            </DataTable>
+          )}
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardBody>
+          <h2 className="mb-4 text-base font-semibold text-foreground">Donations</h2>
+          {campaign.donations.length === 0 ? (
+            <EmptyState
+              title="No donations yet"
+              description="Donations, direct or via a fundraiser, will show up here as they come in."
+            />
+          ) : (
+            <DataTable>
+              <DataTableHead>
+                <DataTableHeaderCell>Date</DataTableHeaderCell>
+                <DataTableHeaderCell>Donor</DataTableHeaderCell>
+                <DataTableHeaderCell>Amount</DataTableHeaderCell>
+                <DataTableHeaderCell>Via</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+              </DataTableHead>
+              <DataTableBody>
+                {campaign.donations.map((donation) => (
+                  <DataTableRow key={donation.id}>
+                    <DataTableCell className="text-muted-foreground">
+                      {donation.paidAt ? formatDate(donation.paidAt) : formatDate(donation.createdAt)}
+                    </DataTableCell>
+                    <DataTableCell className="font-medium">
+                      {donation.contact ? (
+                        <a href={`/dashboard/members/${donation.contact.id}`} className="text-foreground hover:text-primary">
+                          {donation.contact.firstName} {donation.contact.lastName}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">Unknown</span>
+                      )}
+                    </DataTableCell>
+                    <DataTableCell className="font-semibold text-foreground">
+                      {formatMoneyCents(donation.amountCents)}
+                    </DataTableCell>
+                    <DataTableCell className="text-muted-foreground">
+                      {donation.peerFundraiser ? (
+                        <a href={`/dashboard/campaigns/${campaign.id}`} className="hover:text-primary">
+                          {donation.peerFundraiser.title || donation.peerFundraiser.slug}
+                        </a>
+                      ) : (
+                        "Direct to campaign"
+                      )}
+                    </DataTableCell>
+                    <DataTableCell>
+                      <Badge variant={donation.status === "PAID" ? "success" : donation.status === "PENDING" ? "warning" : "default"}>
+                        {donation.status}
+                      </Badge>
+                    </DataTableCell>
+                  </DataTableRow>
+                ))}
               </DataTableBody>
             </DataTable>
           )}

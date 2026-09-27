@@ -207,6 +207,28 @@ export default async function ContactProfilePage({
 
             <dl className="grid gap-3 text-sm md:grid-cols-3">
               <ProfileRow label="Source">{contactSourceLabel(contact.source)}</ProfileRow>
+              {(contact.externalSource || contact.externalId || contact.importedAt) && (
+                <ProfileRow label="Import record">
+                  {contact.externalSource && <span>{contact.externalSource}</span>}
+                  {contact.externalId && (
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">id: {contact.externalId}</span>
+                  )}
+                  {contact.importedAt && (
+                    <span className="ml-2 text-muted-foreground">imported {formatDate(contact.importedAt)}</span>
+                  )}
+                </ProfileRow>
+              )}
+              {contact.originalMetadata != null && Object.keys(contact.originalMetadata as object).length > 0 && (
+                <ProfileRow label="Original import fields">
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-muted/30 p-2 font-mono text-xs leading-5 text-muted-foreground">
+                    {Object.entries(contact.originalMetadata as Record<string, unknown>).map(([key, value]) => (
+                      <div key={key} className="truncate">
+                        <span className="text-foreground">{key}</span>: {String(value)}
+                      </div>
+                    ))}
+                  </div>
+                </ProfileRow>
+              )}
               <ProfileRow label="First seen">{formatDate(contact.createdAt)}</ProfileRow>
               <ProfileRow label="Last activity">
                 {contact.lastActivityAt ? formatRelativeTime(contact.lastActivityAt) : "None"}
