@@ -148,7 +148,7 @@ export default async function CampaignsPage({
                   <DataTableRow key={campaign.id}>
                     <DataTableCell className="whitespace-nowrap font-medium">
                       <Link
-                        href={`/portal/${tenant?.slug}/campaigns/${campaign.slug}`}
+                        href={`/dashboard/campaigns/${campaign.id}`}
                         className="font-bold text-foreground hover:text-primary"
                       >
                         {campaign.title}

@@ -152,6 +152,49 @@ export async function listCampaigns() {
 }
 
 /**
+ * Admin campaign detail — includes every fundraiser (active or not) with its
+ * owner and live raised total, sorted as a leaderboard (highest raised first).
+ */
+export async function getCampaignDetail(campaignId: string) {
+  const auth = await requireActiveTenantForActions();
+  if (!auth.ok) return { ok: false as const, error: auth.error, data: null as any };
+  const context = auth.context;
+
+  const campaign = await prisma.campaign.findFirst({
+    where: { id: campaignId, tenantId: context.tenant.id },
+    include: {
+      fundraisers: {
+        include: { owner: { select: { id: true, firstName: true, lastName: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+
+  if (!campaign) return { ok: false as const, error: "Campaign not found", data: null as any };
+
+  const [campaignRaised, fundraiserRaised] = await Promise.all([
+    raisedCentsForCampaigns([campaign.id]),
+    raisedCentsForFundraisers(campaign.fundraisers.map((f) => f.id)),
+  ]);
+
+  const fundraisers = campaign.fundraisers
+    .map((fundraiser) => ({ ...fundraiser, raisedCents: fundraiserRaised.get(fundraiser.id) ?? 0 }))
+    .sort((a, b) => b.raisedCents - a.raisedCents);
+
+  const directRaisedCents = (campaignRaised.get(campaign.id) ?? 0) - fundraisers.reduce((sum, f) => sum + f.raisedCents, 0);
+
+  return {
+    ok: true as const,
+    data: {
+      ...campaign,
+      raisedCents: campaignRaised.get(campaign.id) ?? 0,
+      directRaisedCents: Math.max(0, directRaisedCents),
+      fundraisers,
+    },
+  };
+}
+
+/**
  * Public-safe campaign lookup by tenant slug + campaign slug — no auth.
  * Only ever returns a PUBLISHED campaign, with live raised totals and its
  * fundraiser leaderboard (each with their own live raised total).
