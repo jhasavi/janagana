@@ -70,8 +70,8 @@ if (strict || isProdHost) {
     errors.push("STRIPE_WEBHOOK_SECRET required for paid checkout in production");
   }
 
-  if (!process.env.ZEPTOMAIL_TOKEN?.trim() || !process.env.ZEPTOMAIL_FROM?.trim()) {
-    warnings.push("ZEPTOMAIL_TOKEN/ZEPTOMAIL_FROM missing — emails will queue but not deliver");
+  if (!process.env.RESEND_API_KEY?.trim() || !process.env.EMAIL_FROM?.trim()) {
+    warnings.push("RESEND_API_KEY/EMAIL_FROM missing — emails will queue but not deliver");
   }
   if (!process.env.CRON_SECRET?.trim()) {
     warnings.push("CRON_SECRET missing — Vercel cron renewal job will reject requests");

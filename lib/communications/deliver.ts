@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { emitOpsAlert } from "@/lib/ops/alert";
 
-const ZEPTOMAIL_ENDPOINT = "https://api.zeptomail.com/v1.1/email";
+const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
 function escapeHtml(value: string): string {
   return value
@@ -32,33 +32,33 @@ export async function deliverCommunicationMessage(messageId: string) {
     return { ok: true as const, skipped: true };
   }
 
-  const token = process.env.ZEPTOMAIL_TOKEN?.trim();
-  const fromAddress = process.env.ZEPTOMAIL_FROM?.trim();
-  if (!token || !fromAddress) {
-    return { ok: true as const, skipped: true, reason: "ZEPTOMAIL_TOKEN/ZEPTOMAIL_FROM not configured" };
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const fromAddress = process.env.EMAIL_FROM?.trim();
+  if (!apiKey || !fromAddress) {
+    return { ok: true as const, skipped: true, reason: "RESEND_API_KEY/EMAIL_FROM not configured" };
   }
 
-  const response = await fetch(ZEPTOMAIL_ENDPOINT, {
+  const fromName = process.env.EMAIL_FROM_NAME?.trim() || "JanaGana";
+  const from = fromAddress.includes("<") ? fromAddress : `${fromName} <${fromAddress}>`;
+
+  const response = await fetch(RESEND_ENDPOINT, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      Authorization: token,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      from: {
-        address: fromAddress,
-        name: process.env.ZEPTOMAIL_FROM_NAME?.trim() || "JanaGana",
-      },
-      to: [{ email_address: { address: message.recipientEmail } }],
+      from,
+      to: [message.recipientEmail],
       subject: message.subject,
-      htmlbody: textToHtml(message.body),
-      textbody: message.body,
+      html: textToHtml(message.body),
+      text: message.body,
     }),
   });
 
   const responseText = await response.text();
-  let parsed: { request_id?: string; message?: string; error?: { message?: string } } = {};
+  let parsed: { id?: string; message?: string } = {};
   try {
     parsed = responseText ? JSON.parse(responseText) : {};
   } catch {
@@ -66,17 +66,17 @@ export async function deliverCommunicationMessage(messageId: string) {
   }
 
   if (!response.ok) {
-    const errorMessage = parsed.error?.message || parsed.message || responseText.slice(0, 500) || `HTTP ${response.status}`;
+    const errorMessage = parsed.message || responseText.slice(0, 500) || `HTTP ${response.status}`;
     await prisma.communicationMessage.update({
       where: { id: message.id },
       data: {
         status: "FAILED",
-        error: `ZeptoMail ${response.status}: ${errorMessage}`,
+        error: `Resend ${response.status}: ${errorMessage}`,
       },
     });
     await emitOpsAlert({
       kind: "email-delivery",
-      message: `ZeptoMail ${response.status} for message ${message.id}`,
+      message: `Resend ${response.status} for message ${message.id}`,
       metadata: { messageId: message.id, recipient: message.recipientEmail },
     });
     return { ok: false as const, error: errorMessage };
@@ -87,11 +87,11 @@ export async function deliverCommunicationMessage(messageId: string) {
     data: {
       status: "SENT",
       sentAt: new Date(),
-      provider: "zeptomail",
-      providerRef: parsed.request_id ?? null,
+      provider: "resend",
+      providerRef: parsed.id ?? null,
       error: null,
     },
   });
 
-  return { ok: true as const, sent: true, providerRef: parsed.request_id ?? null };
+  return { ok: true as const, sent: true, providerRef: parsed.id ?? null };
 }
