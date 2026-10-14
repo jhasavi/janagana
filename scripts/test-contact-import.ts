@@ -100,7 +100,11 @@ async function upsertTenant(suffix: "a" | "b") {
   });
 }
 
-function mockAuth(tenantId: string, userId = "import-test-user"): ContactImportAuth {
+function mockAuth(
+  tenantId: string,
+  userId = "import-test-user",
+  canWrite = true,
+): ContactImportAuth {
   return async (_options?) => ({
     ok: true,
     context: {
@@ -113,8 +117,8 @@ function mockAuth(tenantId: string, userId = "import-test-user"): ContactImportA
         plan: "PRO",
       },
       user: { id: userId, email: "import@test.local", name: "Import Tester" },
-      orgRole: "org:admin",
-      canWrite: true,
+      orgRole: canWrite ? "org:admin" : "org:member",
+      canWrite,
     },
   });
 }
@@ -511,6 +515,19 @@ function testContentLengthHelper() {
   console.log("PASS Content-Length helper");
 }
 
+/** DB-free: non-admin members must get 403 before the upload is read or imported. */
+async function testNonAdminImportForbidden() {
+  const file = new File(["email\nnobody@import.test\n"], "member.csv", { type: "text/csv" });
+  const res = await handleContactImportPost(
+    buildImportRequest(file, { mode: "import", jgTenantId: "tenant-non-admin" }),
+    mockAuth("tenant-non-admin", "member-user", false),
+  );
+  assert(res.status === 403, `Non-admin import should return 403, got ${res.status}`);
+  const body = await res.json();
+  assert(body.ok === false, "403 body should have ok: false");
+  console.log("PASS non-admin (canWrite:false) import rejected with 403");
+}
+
 async function main() {
   console.log("Contact import regression\n");
   ensureSafeDb();
@@ -518,6 +535,7 @@ async function main() {
   await testUiFormContract();
   await testRouteMethods();
   testContentLengthHelper();
+  await testNonAdminImportForbidden();
 
   await cleanup();
   const tenantA = await upsertTenant("a");

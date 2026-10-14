@@ -139,6 +139,17 @@ function authFailureRedirect(
   return redirectImport(req, tenantHint ?? null, { error: message });
 }
 
+/**
+ * Import writes contacts (PII) — restricted to org admins/owners, same as
+ * exports (see lib/export/require-export-auth.ts).
+ */
+function forbiddenImportResponse() {
+  return NextResponse.json(
+    { ok: false, error: "Contact import is restricted to org admins" },
+    { status: 403 },
+  );
+}
+
 async function processImportForm(
   req: NextRequest,
   form: FormData,
@@ -251,7 +262,7 @@ async function processImportForm(
  * Core POST handler for dashboard spreadsheet import.
  * Extracted for regression tests (injectable auth).
  *
- * Order: same-origin → Content-Length guard → auth → formData (never before auth).
+ * Order: same-origin → Content-Length guard → auth → admin role (403) → formData (never before auth).
  */
 export async function handleContactImportPost(
   req: NextRequest,
@@ -287,8 +298,15 @@ export async function handleContactImportPost(
       }
       return authFailureRedirect(req, hintedAuth, tenantHint);
     }
+    if (!hintedAuth.context.canWrite) {
+      return forbiddenImportResponse();
+    }
 
     return processImportForm(req, parsed.form, hintedAuth.context);
+  }
+
+  if (!initialAuth.context.canWrite) {
+    return forbiddenImportResponse();
   }
 
   const parsed = await parseImportForm(req);
