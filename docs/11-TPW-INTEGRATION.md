@@ -62,7 +62,7 @@ NEXT_PUBLIC_JANAGANA_TENANT_SLUG=purple-wings
 
 ## Class roster import
 
-CSV paths: `data/tpw-class1.csv` (in repo) or `~/tpw/class1.csv` (local).
+CSV paths: `data/tpw-class1.csv` (local only — gitignored, real PII; never commit) or `~/tpw/class1.csv` (local).
 
 Production import ran on deploy `e314e67` (11 contacts updated). Re-run manually:
 

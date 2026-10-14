@@ -52,3 +52,6 @@ tmp/
 
 # Claude Code local machine settings (permissions etc.) — not shared
 .claude/settings.local.json
+
+# Real roster/contact exports — PII, never commit (use fixtures/ for synthetic data)
+data/*.csv

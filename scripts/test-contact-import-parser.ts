@@ -4,7 +4,7 @@ import { join } from "path";
 import { pickField, rowsFromCsvText } from "@/lib/import/contact-roster";
 
 async function main() {
-  const csvPath = join(process.cwd(), "data", "tpw-class1.csv");
+  const csvPath = join(process.cwd(), "fixtures", "contact-import-sample.csv");
   const rows = rowsFromCsvText(readFileSync(csvPath, "utf8"));
   const withEmail = rows.filter((row) => pickField(row, ["Email Address", "email"]));
 
