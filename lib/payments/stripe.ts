@@ -225,10 +225,10 @@ export async function createBillingPortalSession(input: { customerId: string; re
   return { ok: true as const, url: body.url };
 }
 
-async function postStripe(path: string, params: URLSearchParams) {
+async function postStripe(path: string, params: URLSearchParams, options?: { idempotencyKey?: string }) {
   const secretKey = stripeSecretKey();
   if (!secretKey) {
-    return { ok: false as const, error: "Stripe is not configured" };
+    return { ok: false as const, error: "Stripe is not configured", code: null };
   }
 
   const response = await fetch(`${STRIPE_API_BASE}${path}`, {
@@ -236,19 +236,21 @@ async function postStripe(path: string, params: URLSearchParams) {
     headers: {
       Authorization: `Bearer ${secretKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
+      ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
     },
     body: params,
   });
 
   const body = (await response.json()) as Record<string, unknown> & {
     id?: string;
-    error?: { message?: string };
+    error?: { message?: string; code?: string };
   };
 
   if (!response.ok || !body.id) {
     return {
       ok: false as const,
       error: body.error?.message ?? `Stripe request to ${path} failed`,
+      code: body.error?.code ?? null,
     };
   }
 
@@ -360,7 +362,7 @@ async function getStripe(path: string) {
     headers: { Authorization: `Bearer ${secretKey}` },
   });
   const body = (await response.json()) as Record<string, unknown> & { id?: string; error?: { message?: string } };
-  if (!response.ok || !body.id) {
+  if (!response.ok || (!body.id && body.object !== "list")) {
     return { ok: false as const, error: body.error?.message ?? `Stripe request to ${path} failed` };
   }
   return { ok: true as const, body };
@@ -433,6 +435,66 @@ export async function createStripeExpressLoginLink(accountId: string) {
     return { ok: false as const, error: body.error?.message ?? "Failed to open Stripe Express dashboard" };
   }
   return { ok: true as const, url: body.url };
+}
+
+// ─── Refunds ─────────────────────────────────────────────────────────────────
+
+/**
+ * Full refund of a PaymentIntent. For a destination charge (`connected`), Stripe
+ * pulls the transferred amount back from the org's connected account and returns
+ * JanaGana's application fee (tip + processing recovery), so the donor gets the
+ * whole charge back and neither side keeps money. Legacy platform charges get a
+ * plain refund.
+ */
+export function buildStripeRefundParams(input: {
+  paymentIntentId: string;
+  connected: boolean;
+  paymentRecordId: string;
+  tenantId: string;
+}) {
+  const params = new URLSearchParams();
+  append(params, "payment_intent", input.paymentIntentId);
+  if (input.connected) {
+    append(params, "reverse_transfer", true);
+    append(params, "refund_application_fee", true);
+  }
+  append(params, "metadata[paymentRecordId]", input.paymentRecordId);
+  append(params, "metadata[tenantId]", input.tenantId);
+  return params;
+}
+
+/** Keyed per payment so a double-submitted dashboard form cannot refund twice. */
+export function stripeRefundIdempotencyKey(paymentRecordId: string) {
+  return `janagana-refund-${paymentRecordId}`;
+}
+
+export async function createStripeRefund(input: Parameters<typeof buildStripeRefundParams>[0]) {
+  const result = await postStripe("/refunds", buildStripeRefundParams(input), {
+    idempotencyKey: stripeRefundIdempotencyKey(input.paymentRecordId),
+  });
+  if (!result.ok) return result;
+  return {
+    ok: true as const,
+    refundId: String(result.body.id),
+    status: typeof result.body.status === "string" ? result.body.status : null,
+  };
+}
+
+export async function retrieveStripeCheckoutSession(sessionId: string) {
+  return getStripe(`/checkout/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+export async function retrieveStripeInvoice(invoiceId: string, options?: { expandPayments?: boolean }) {
+  const query = options?.expandPayments ? "?expand[]=payments" : "";
+  return getStripe(`/invoices/${encodeURIComponent(invoiceId)}${query}`);
+}
+
+export async function retrieveStripePaymentIntent(paymentIntentId: string) {
+  return getStripe(`/payment_intents/${encodeURIComponent(paymentIntentId)}`);
+}
+
+export async function listStripeCheckoutSessionsForPaymentIntent(paymentIntentId: string) {
+  return getStripe(`/checkout/sessions?payment_intent=${encodeURIComponent(paymentIntentId)}&limit=1`);
 }
 
 export function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string | null, secret: string) {

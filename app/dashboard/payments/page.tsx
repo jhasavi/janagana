@@ -109,7 +109,7 @@ export default async function PaymentsPage({
       />
 
       {params.error && <Alert variant="error">{params.error}</Alert>}
-      {params.refunded && <Alert variant="success">Payment marked as refunded.</Alert>}
+      {params.refunded && <Alert variant="success">Payment refunded.</Alert>}
 
       {financial && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -223,7 +223,7 @@ export default async function PaymentsPage({
                             <input type="hidden" name="paymentId" value={payment.id} />
                             <Input name="notes" placeholder="Refund note" className="h-8 text-xs" />
                             <Button type="submit" variant="secondary" className="h-8 px-2 text-xs">
-                              Mark refunded
+                              {payment.method === "STRIPE" ? "Refund via Stripe" : "Mark refunded"}
                             </Button>
                           </form>
                         )}

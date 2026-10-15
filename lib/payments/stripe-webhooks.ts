@@ -5,7 +5,20 @@ import { queueEventRegistrationCommunication } from "@/lib/communications/outbox
 import { extendMembershipExpiration } from "@/lib/memberships/subscription-renewal";
 import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 import { applyConnectAccountUpdate, markConnectAccountDeauthorized } from "@/lib/payments/connect";
-import type { StripeConnectAccount } from "@/lib/payments/stripe";
+import {
+  listStripeCheckoutSessionsForPaymentIntent,
+  retrieveStripePaymentIntent,
+  type StripeConnectAccount,
+} from "@/lib/payments/stripe";
+import {
+  appendPaymentNote,
+  isStripeCharge,
+  localChargePaymentLookup,
+  planChargeRefund,
+  remoteChargePaymentLookup,
+  type ChargePaymentLookup,
+  type StripeChargeObject,
+} from "@/lib/payments/refunds";
 
 type StripeCheckoutSession = {
   id: string;
@@ -550,6 +563,76 @@ async function finalizeEventPayment(
   }
 }
 
+async function findStripePaymentForCharge(lookup: ChargePaymentLookup) {
+  const or: Prisma.PaymentRecordWhereInput[] = [];
+  if (lookup.paymentRecordIds.length) or.push({ id: { in: lookup.paymentRecordIds } });
+  if (lookup.providerRefs.length) or.push({ providerRef: { in: lookup.providerRefs } });
+  if (!or.length) return null;
+  return prisma.paymentRecord.findFirst({
+    where: { provider: "stripe", OR: or },
+    select: { id: true, tenantId: true, status: true, notes: true },
+  });
+}
+
+/**
+ * Fires for dashboard refunds (already marked REFUNDED, so a no-op) and for
+ * refunds issued directly in Stripe. Only a full refund flips the record;
+ * partial refunds are audit-logged because PaymentStatus has no partial state.
+ */
+async function processChargeRefunded(charge: StripeChargeObject, event: StripeEvent) {
+  let payment = await findStripePaymentForCharge(localChargePaymentLookup(charge));
+  if (!payment) {
+    const remote = await remoteChargePaymentLookup(charge, {
+      retrievePaymentIntent: retrieveStripePaymentIntent,
+      listCheckoutSessionsForPaymentIntent: listStripeCheckoutSessionsForPaymentIntent,
+    });
+    if (!remote.ok) return { ok: false as const, error: `charge.refunded lookup failed: ${remote.error}` };
+    payment = await findStripePaymentForCharge(remote);
+  }
+  if (!payment) {
+    return { ok: true as const, duplicate: false, processed: false, plan: "unmatched" as const, payment: null };
+  }
+
+  const plan = planChargeRefund(payment, charge);
+  if (plan === "already_refunded" || plan === "status_not_refundable") {
+    return { ok: true as const, duplicate: plan === "already_refunded", processed: false, plan, payment };
+  }
+
+  if (plan === "mark_refunded") {
+    // Status guard makes a concurrent dashboard refund and this webhook converge on one update.
+    const updated = await prisma.paymentRecord.updateMany({
+      where: { id: payment.id, status: { in: ["PAID", "PENDING"] } },
+      data: {
+        status: "REFUNDED",
+        notes: appendPaymentNote(payment.notes, `Refunded in Stripe (charge ${charge.id})`),
+      },
+    });
+    if (updated.count === 0) {
+      return { ok: true as const, duplicate: true, processed: false, plan: "already_refunded" as const, payment };
+    }
+  }
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: payment.tenantId,
+      actorUserId: null,
+      action: "UPDATE",
+      metadata: {
+        entity: "PaymentRecord",
+        source: "stripe_webhook",
+        stripeEventId: event.id,
+        stripeChargeId: charge.id,
+        paymentId: payment.id,
+        refundPlan: plan,
+        amountRefundedCents: charge.amount_refunded ?? null,
+        chargeAmountCents: charge.amount ?? null,
+      },
+    },
+  });
+
+  return { ok: true as const, duplicate: false, processed: plan === "mark_refunded", plan, payment };
+}
+
 export async function processStripeWebhookEvent(event: StripeEvent) {
   const existing = await prisma.stripeWebhookEvent.findUnique({
     where: { stripeEventId: event.id },
@@ -576,6 +659,28 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
           processed: result.processed,
           duplicate: result.duplicate,
           invoiceId: event.data.object.id,
+        }),
+      },
+    });
+    return { ok: true as const, duplicate: result.duplicate, processed: result.processed };
+  }
+
+  if (event.type === "charge.refunded") {
+    if (!isStripeCharge(event.data.object)) {
+      return { ok: false as const, error: "Webhook event object is not a Charge" };
+    }
+    const result = await processChargeRefunded(event.data.object, event);
+    if (!result.ok) return result;
+    await prisma.stripeWebhookEvent.create({
+      data: {
+        tenantId: result.payment?.tenantId ?? null,
+        stripeEventId: event.id,
+        eventType: event.type,
+        metadata: jsonMetadata({
+          chargeId: event.data.object.id,
+          paymentRecordId: result.payment?.id ?? null,
+          plan: result.plan,
+          processed: result.processed,
         }),
       },
     });
