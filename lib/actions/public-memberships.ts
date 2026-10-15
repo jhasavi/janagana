@@ -25,7 +25,6 @@ const PublicMembershipCheckoutSchema = z
     lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
-    coverProcessingFee: z.boolean().optional().default(false),
     autoRenew: z.boolean().optional().default(false),
     utmSource: z.string().trim().max(120).optional().or(z.literal("")),
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
@@ -109,7 +108,6 @@ export async function createPublicMembershipCheckout(input: unknown) {
   const amounts = checkoutAmountsForRouting({
     routing,
     baseCents: tier.amountCents,
-    coverProcessingFee: parsed.data.coverProcessingFee,
     platformTipChoice: parsed.data.platformTipChoice,
     platformTipCustomCents: parsed.data.platformTipCustomCents,
   });
@@ -183,9 +181,7 @@ export async function createPublicMembershipCheckout(input: unknown) {
         paidAt: tier.amountCents > 0 ? null : now,
         notes:
           tier.amountCents > 0
-            ? amounts.processingFeeCents
-              ? `Checkout started · member covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
-              : "Public membership checkout started"
+            ? "Public membership checkout started"
             : "Free membership checkout",
       },
     });
@@ -234,8 +230,6 @@ export async function createPublicMembershipCheckout(input: unknown) {
     tierId: tier.id,
     purpose: "MEMBERSHIP",
     baseAmountCents: String(amounts.baseCents),
-    processingFeeCents: String(amounts.processingFeeCents),
-    coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
     recurring: useSubscription ? "true" : "false",
     janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
     janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),

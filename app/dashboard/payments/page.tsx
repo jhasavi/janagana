@@ -98,7 +98,7 @@ export default async function PaymentsPage({
       <PageHeader
         eyebrow="Money"
         title="Payments"
-        description="Membership dues, event fees, and donations. 0% JanaGana platform fee — card processor fees are separate (donors can cover them at checkout)."
+        description="Membership dues, event fees, and donations. 0% JanaGana platform fee. Donors pay exactly what they choose; standard card processing is deducted from each payment before payout."
         actions={
           access?.canWrite ? (
             <Link href="/dashboard/tiers" className="text-sm font-semibold text-primary hover:text-foreground">

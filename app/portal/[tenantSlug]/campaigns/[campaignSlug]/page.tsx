@@ -93,7 +93,7 @@ export default async function PortalCampaignPage({ params }: Props) {
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <HeartHandshake className="h-4 w-4" />
-        100% of every donation goes to {result.tenant.name} — JanaGana charges no platform fee.
+        Every donation goes to {result.tenant.name} — JanaGana charges no platform fee, and you pay only the amount you choose.
       </p>
     </section>
   );

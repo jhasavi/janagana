@@ -89,7 +89,7 @@ function appendCheckoutMetadata(
   }
 }
 
-export const PLATFORM_TIP_LINE_ITEM_NAME = "Optional tip to support JanaGana (free software for this organization)";
+export const PLATFORM_TIP_LINE_ITEM_NAME = "Optional donation to JanaGana (free software this organization uses)";
 
 function appendPlatformTipLineItem(
   params: URLSearchParams,

@@ -70,7 +70,7 @@ function testRouting() {
 }
 
 function testDestinationChargeParams() {
-  const amounts = calculateCheckoutAmount({ baseCents: 5000, coverProcessingFee: false, platformTipCents: 500 });
+  const amounts = calculateCheckoutAmount({ baseCents: 5000, platformTipCents: 500 });
   const base = {
     currency: "USD",
     customerEmail: "donor@example.org",

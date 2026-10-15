@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, HeartHandshake } from "lucide-react";
-import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
 import { PlatformTipField } from "@/components/portal/platform-tip-field";
 import { RecurringDonationField } from "@/components/portal/recurring-billing-fields";
 import { PortalFlowLayout } from "@/components/portal/portal-flow-layout";
@@ -145,7 +144,6 @@ export default async function PublicDonatePage({
             <Textarea name="dedication" rows={3} />
           </FormField>
 
-          <CoverProcessingFeeField baseCents={5000} />
           {ctx.tipsEnabled && <PlatformTipField />}
           <RecurringDonationField />
 

@@ -38,7 +38,6 @@ export type CheckoutRoutable = Exclude<PaymentRouting, { mode: "blocked" }>;
 export function checkoutAmountsForRouting(input: {
   routing: PaymentRouting;
   baseCents: number;
-  coverProcessingFee: boolean;
   platformTipChoice: PlatformTipChoice;
   platformTipCustomCents?: number;
 }) {
@@ -49,11 +48,7 @@ export function checkoutAmountsForRouting(input: {
         customCents: input.platformTipCustomCents,
       })
     : 0;
-  const amounts = calculateCheckoutAmount({
-    baseCents: input.baseCents,
-    coverProcessingFee: input.coverProcessingFee,
-    platformTipCents,
-  });
+  const amounts = calculateCheckoutAmount({ baseCents: input.baseCents, platformTipCents });
   if (input.routing.mode !== "connect") {
     // Legacy platform charges have no application fee: everything lands on one account.
     return { ...amounts, processingRecoveryCents: 0, applicationFeeCents: 0 };

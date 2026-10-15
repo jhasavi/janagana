@@ -27,7 +27,6 @@ const PublicRegistrationSchema = z
     lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().email(),
     phone: z.string().trim().max(30).optional().or(z.literal("")),
-    coverProcessingFee: z.boolean().optional().default(false),
     utmSource: z.string().trim().max(120).optional().or(z.literal("")),
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
@@ -447,7 +446,6 @@ export async function registerPublicEvent(input: unknown) {
         const amounts = checkoutAmountsForRouting({
           routing,
           baseCents: result.payment.amountCents,
-          coverProcessingFee: parsed.data.coverProcessingFee,
           platformTipChoice: parsed.data.platformTipChoice,
           platformTipCustomCents: parsed.data.platformTipCustomCents,
         });
@@ -456,9 +454,7 @@ export async function registerPublicEvent(input: unknown) {
           where: { id: result.payment.id },
           data: {
             ...paymentRecordConnectFields(routing, amounts),
-            notes: amounts.processingFeeCents
-              ? `Stripe checkout · registrant covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
-              : "Stripe checkout session pending",
+            notes: "Stripe checkout session pending",
           },
         });
 
@@ -483,8 +479,6 @@ export async function registerPublicEvent(input: unknown) {
             registrationId: result.registration.id,
             purpose: "EVENT",
             baseAmountCents: String(amounts.baseCents),
-            processingFeeCents: String(amounts.processingFeeCents),
-            coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
             janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
             janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),
           },

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, HeartHandshake } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
-import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
 import { PlatformTipField } from "@/components/portal/platform-tip-field";
 import { getPublicDonationContext } from "@/lib/actions/public-donations";
 import { PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE } from "@/lib/payments/connect-routing";
@@ -132,7 +131,6 @@ export default async function PeerFundraiserPage({ params, searchParams }: Props
               <Textarea name="dedication" rows={3} />
             </FormField>
 
-            <CoverProcessingFeeField baseCents={5000} />
             {donationCtx.tipsEnabled && <PlatformTipField />}
 
             <Button type="submit">
@@ -145,7 +143,7 @@ export default async function PeerFundraiserPage({ params, searchParams }: Props
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <HeartHandshake className="h-4 w-4" />
-        100% of every donation goes to the organization — JanaGana charges no platform fee.
+        Every donation goes to the organization — JanaGana charges no platform fee, and you pay only the amount you choose.
       </p>
     </section>
   );

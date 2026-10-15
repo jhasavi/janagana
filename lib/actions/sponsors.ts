@@ -333,11 +333,7 @@ export async function sendSponsorInvoice(input: unknown, options?: TenantActionO
       routing.mode === "connect"
         ? {
             destinationAccountId: routing.destinationAccountId,
-            applicationFeeCents: processingRecoveryCents({
-              orgAmountCents: invoice.amountCents,
-              baseCents: invoice.amountCents,
-              coverProcessingFee: false,
-            }),
+            applicationFeeCents: processingRecoveryCents(invoice.amountCents),
           }
         : null,
   });

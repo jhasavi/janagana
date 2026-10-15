@@ -26,7 +26,6 @@ const PublicDonationCheckoutSchema = z
     phone: z.string().trim().max(30).optional().or(z.literal("")),
     amountCents: z.number().int().min(MIN_DONATION_CENTS).max(MAX_DONATION_CENTS),
     dedication: z.string().trim().max(500).optional().or(z.literal("")),
-    coverProcessingFee: z.boolean().optional().default(false),
     recurringMonthly: z.boolean().optional().default(false),
     utmSource: z.string().trim().max(120).optional().or(z.literal("")),
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
@@ -81,7 +80,6 @@ export async function createPublicDonationCheckout(input: unknown) {
   const amounts = checkoutAmountsForRouting({
     routing,
     baseCents: parsed.data.amountCents,
-    coverProcessingFee: parsed.data.coverProcessingFee,
     platformTipChoice: parsed.data.platformTipChoice,
     platformTipCustomCents: parsed.data.platformTipCustomCents,
   });
@@ -153,11 +151,7 @@ export async function createPublicDonationCheckout(input: unknown) {
         method: "STRIPE",
         purpose: "DONATION",
         provider: "stripe",
-        notes: dedication
-          ? `Dedication: ${dedication}${amounts.processingFeeCents ? ` · Donor covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing` : ""}`
-          : amounts.processingFeeCents
-            ? `Donor covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
-            : "Public donation checkout started",
+        notes: dedication ? `Dedication: ${dedication}` : "Public donation checkout started",
       },
     });
 
@@ -182,8 +176,6 @@ export async function createPublicDonationCheckout(input: unknown) {
     campaignId: campaignId ?? "",
     peerFundraiserId: peerFundraiser?.id ?? "",
     baseAmountCents: String(amounts.baseCents),
-    processingFeeCents: String(amounts.processingFeeCents),
-    coverProcessingFee: amounts.processingFeeCents > 0 ? "true" : "false",
     recurring: useSubscription ? "true" : "false",
     janaganaPlatformFeeBps: String(JANAGANA_PLATFORM_FEE_BPS),
     janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),

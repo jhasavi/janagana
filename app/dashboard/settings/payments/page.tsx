@@ -14,7 +14,7 @@ import {
 } from "@/lib/actions/stripe-connect";
 import { loadPaymentRoutingForTenant } from "@/lib/payments/connect";
 import { adminPaymentRoutingMessage, PAYMENTS_SETTINGS_PATH } from "@/lib/payments/connect-routing";
-import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
+import { platformFeeLabel } from "@/lib/payments/fee-policy";
 import { prisma } from "@/lib/prisma";
 import { readTenantIdHintFromForm, redirectWithActiveTenant, resolveTenantForDashboard } from "@/lib/tenant";
 import { formatRelativeTime } from "@/lib/utils";
@@ -97,7 +97,7 @@ export default async function PaymentSettingsPage({
     <section className="space-y-6">
       <PageHeader
         title="Payments"
-        description={`Connect ${tenant.name}'s own Stripe account so donations, dues, event tickets, and sponsor invoices are paid out directly to your bank. ${paymentFeeDisclosure()}`}
+        description={`Connect ${tenant.name}'s own Stripe account so donations, dues, event tickets, and sponsor invoices are paid out directly to your bank. ${platformFeeLabel()}.`}
       />
 
       <p className="text-sm">
@@ -168,9 +168,10 @@ export default async function PaymentSettingsPage({
         <CardBody>
           <h2 className="text-sm font-semibold text-foreground">How JanaGana stays free</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            JanaGana takes no platform fee from your organization. At checkout, donors and members may add an optional
-            tip to support JanaGana; it is shown as its own line and never reduces what you receive. Standard card
-            processing (about 2.9% + 30¢) is deducted from each payment unless the donor chooses to cover it.
+            JanaGana takes no platform fee from your organization. Donors and members pay exactly the price or gift
+            they choose — they are never asked to cover card fees. Standard card processing (about 2.9% + 30¢) is
+            deducted from each payment before payout, like any card reader. Donors may optionally add a separate small
+            donation to JanaGana; it is opt-in, shown as its own line, and never reduces what you receive.
           </p>
         </CardBody>
       </Card>

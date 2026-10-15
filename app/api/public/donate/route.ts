@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
     phone: String(form.get("phone") ?? ""),
     amountCents,
     dedication: String(form.get("dedication") ?? ""),
-    coverProcessingFee: form.get("coverProcessingFee") === "1",
     recurringMonthly: form.get("recurringMonthly") === "1",
     ...platformTipFromForm(form),
     utmSource: utm.utmSource ?? undefined,
