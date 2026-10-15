@@ -27,6 +27,7 @@ Canonical docs for the NB/TPW pilot. Product improvement backlog: [../Todos.md](
 |-----|----------|
 | [14-PRODUCT-SHOWCASE.md](./14-PRODUCT-SHOWCASE.md) | Positioning, 15-min demo script, go/no-go |
 | [18-JOIN-IT-ZEFFY-DEMO-PLAN.md](./18-JOIN-IT-ZEFFY-DEMO-PLAN.md) | Beat Join It + Zeffy — competitive backlog |
+| [19-NEXT-STEPS-TOP-TIER-PLAN.md](./19-NEXT-STEPS-TOP-TIER-PLAN.md) | Next steps: monetization, look & feel, feature roadmap to a paid top-tier product |
 
 **Code contract:** `lib/tenant/contract.ts`  
 **Pilot tenants:** `lib/pilot/tenants.ts` (`namaste-boston`, `purple-wings`)
