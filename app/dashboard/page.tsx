@@ -12,6 +12,8 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { LinkChip } from "@/components/dashboard/link-chip";
 import { OperatorWarningsPanel } from "@/components/dashboard/operator-warnings-panel";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { buildSetupSteps, SetupChecklist } from "@/components/dashboard/setup-checklist";
+import { prisma } from "@/lib/prisma";
 import { buildTodoItems, TodoList } from "@/components/dashboard/todo-list";
 import { TenantIdentityCard } from "@/components/dashboard/tenant-identity-card";
 import { Card, CardBody } from "@/components/ui/card";
@@ -36,11 +38,24 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const [dashboard, clerkOrgs, financial] = await Promise.all([
+  const [dashboard, clerkOrgs, financial, tierCount, setupTenant] = await Promise.all([
     getOperatorDashboard(tenant.id, tenant.slug),
     getUserClerkOrganizations(),
     getTenantFinancialSummary(tenant.id),
+    prisma.membershipTier.count({ where: { tenantId: tenant.id } }),
+    prisma.tenant.findUnique({
+      where: { id: tenant.id },
+      select: { logoUrl: true, stripeConnectChargesEnabled: true },
+    }),
   ]);
+
+  const setupSteps = buildSetupSteps({
+    hasLogo: Boolean(setupTenant?.logoUrl),
+    stripeConnected: Boolean(setupTenant?.stripeConnectChargesEnabled),
+    contactsTotal: dashboard.summary.contactsTotal,
+    tierCount,
+    publishedEvents: dashboard.publishedEvents,
+  });
 
   const portalUrl = publicPortalUrl(tenant.slug);
   const activeClerkOrg = clerkOrgs.find((org) => org.clerkOrgId === tenant.clerkOrgId) ?? null;
@@ -97,6 +112,8 @@ export default async function DashboardPage() {
         title="Today at a glance"
         description="What needs your attention, and how your community is doing."
       />
+
+      <SetupChecklist steps={setupSteps} />
 
       <QuickActions portalUrl={portalUrl} />
 
