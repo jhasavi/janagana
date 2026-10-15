@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Send, Ticket } from "lucide-react";
 import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
+import { PlatformTipField } from "@/components/portal/platform-tip-field";
+import { platformTipFromForm } from "@/lib/payments/tenant-checkout";
 import { PortalFlowLayout } from "@/components/portal/portal-flow-layout";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,7 @@ export default async function EventRegistrationPage({
       email: String(formData.get("email") ?? ""),
       phone: String(formData.get("phone") ?? ""),
       coverProcessingFee: formData.get("coverProcessingFee") === "1",
+      ...platformTipFromForm(formData),
       utmSource: utmFields.utmSource ?? undefined,
       utmMedium: utmFields.utmMedium ?? undefined,
       utmCampaign: utmFields.utmCampaign ?? undefined,
@@ -177,7 +180,8 @@ export default async function EventRegistrationPage({
           <FormField label="Phone">
             <Input name="phone" type="tel" />
           </FormField>
-          {hasPaidTickets && <CoverProcessingFeeField baseCents={defaultTicketCents} />}
+          {hasPaidTickets && eventResult.paymentsEnabled && <CoverProcessingFeeField baseCents={defaultTicketCents} />}
+          {hasPaidTickets && eventResult.tipsEnabled && <PlatformTipField />}
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit">
               Complete registration

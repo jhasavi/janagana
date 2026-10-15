@@ -3,6 +3,7 @@ import { createPublicDonationCheckout } from "@/lib/actions/public-donations";
 import { readSafeReturnUrl } from "@/lib/portal/safe-return-url";
 import { utmFromFormData } from "@/lib/portal/utm";
 import { referralCodeFromFormData } from "@/lib/portal/referral";
+import { platformTipFromForm } from "@/lib/payments/tenant-checkout";
 
 export const runtime = "nodejs";
 
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     dedication: String(form.get("dedication") ?? ""),
     coverProcessingFee: form.get("coverProcessingFee") === "1",
     recurringMonthly: form.get("recurringMonthly") === "1",
+    ...platformTipFromForm(form),
     utmSource: utm.utmSource ?? undefined,
     utmMedium: utm.utmMedium ?? undefined,
     utmCampaign: utm.utmCampaign ?? undefined,

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { emitOpsAlert } from "@/lib/ops/alert";
 import { processStripeWebhookEvent } from "@/lib/payments/stripe-webhooks";
-import { stripeWebhookConfigured, stripeWebhookSecret, verifyStripeWebhookSignature } from "@/lib/payments/stripe";
+import {
+  stripeConnectWebhookSecret,
+  stripeWebhookConfigured,
+  stripeWebhookSecret,
+  verifyStripeWebhookSignature,
+} from "@/lib/payments/stripe";
 
 export const runtime = "nodejs";
 
@@ -23,6 +28,10 @@ export async function GET() {
  *
  * Stripe is the source of truth for online payments. This route verifies the
  * raw webhook payload, then activates paid memberships/donations and issues receipts.
+ *
+ * The same URL can serve two Stripe endpoints: the platform endpoint
+ * (STRIPE_WEBHOOK_SECRET — checkout, invoices) and the Connect endpoint for
+ * events on connected accounts (STRIPE_CONNECT_WEBHOOK_SECRET — account.updated).
  */
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -33,7 +42,11 @@ export async function POST(req: NextRequest) {
   }
 
   const signature = req.headers.get("stripe-signature");
-  if (!verifyStripeWebhookSignature(rawBody, signature, secret)) {
+  const connectSecret = stripeConnectWebhookSecret();
+  const verified =
+    verifyStripeWebhookSignature(rawBody, signature, secret) ||
+    (Boolean(connectSecret) && verifyStripeWebhookSignature(rawBody, signature, connectSecret));
+  if (!verified) {
     return NextResponse.json({ error: "Invalid Stripe signature" }, { status: 400 });
   }
 
@@ -48,6 +61,7 @@ export async function POST(req: NextRequest) {
     event as {
       id: string;
       type: string;
+      account?: string | null;
       data: { object: unknown };
     },
   );

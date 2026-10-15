@@ -193,6 +193,24 @@ export default async function SettingsPage({
       {activeTenant && (
         <Card>
           <CardBody>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Payments</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Connect your organization&apos;s Stripe account so payments are paid out directly to you.
+                </p>
+              </div>
+              <Link href="/dashboard/settings/payments" className="text-sm font-semibold text-primary hover:text-foreground">
+                Manage payments →
+              </Link>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {activeTenant && (
+        <Card>
+          <CardBody>
             <h2 className="text-sm font-semibold text-foreground">Public portal branding</h2>
             <p className="mt-1 text-sm text-muted-foreground">Shown on your public portal header.</p>
             <form action={updateBrandingAction} className="mt-4 grid gap-3 md:grid-cols-2">

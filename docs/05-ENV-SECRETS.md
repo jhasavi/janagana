@@ -40,6 +40,9 @@
 |---|---|
 | `STRIPE_SECRET_KEY` | Stripe backend key used to create Checkout Sessions |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret used by `/api/webhooks/stripe` |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | Signing secret of the Connect ("events on connected accounts") endpoint, same URL; handles `account.updated` |
+| `STRIPE_CONNECT_LEGACY_TENANT_SLUGS` | Tenants that may still charge on the shared platform account until onboarded to Connect. Unset = `namaste-boston,purple-wings`; empty = Connect required for all |
+| `JANAGANA_PLATFORM_ADMIN_EMAILS` | Comma-separated emails allowed to view `/dashboard/platform/tips` |
 
 ### Email (production receipts + renewal reminders)
 

@@ -150,30 +150,47 @@ enum TenantPlan {
   PRO
 }
 
+/// Where a tenant is in Stripe Connect (Express) onboarding. Tenant payments are
+/// routed to their own connected account only once this is ACTIVE.
+enum StripeConnectStatus {
+  NOT_STARTED
+  PENDING
+  RESTRICTED
+  ACTIVE
+}
+
 // ─── MODELS ───────────────────────────────────────────────────────────────────
 
 /// An organization admin account.
 /// INVARIANT: One Tenant ←→ One Clerk Organization (clerkOrgId is unique).
 /// Created ONLY during explicit admin onboarding — never from public registration.
 model Tenant {
-  id                   String       @id @default(cuid())
-  name                 String
-  slug                 String       @unique
-  clerkOrgId           String       @unique
-  status               TenantStatus @default(ACTIVE)
-  publicTagline        String?
-  publicContactEmail   String?
-  publicContactPhone   String?
-  logoUrl              String?
+  id                            String              @id @default(cuid())
+  name                          String
+  slug                          String              @unique
+  clerkOrgId                    String              @unique
+  status                        TenantStatus        @default(ACTIVE)
+  publicTagline                 String?
+  publicContactEmail            String?
+  publicContactPhone            String?
+  logoUrl                       String?
   /// Public member directory on the portal is opt-in per tenant, off by default.
-  directoryEnabled     Boolean      @default(false)
+  directoryEnabled              Boolean             @default(false)
   /// JanaGana's own SaaS plan for this tenant — see TenantPlan doc comment.
-  plan                 TenantPlan   @default(FREE)
-  stripeCustomerId     String?      @unique
-  stripeSubscriptionId String?      @unique
-  planRenewsAt         DateTime?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  plan                          TenantPlan          @default(FREE)
+  stripeCustomerId              String?             @unique
+  stripeSubscriptionId          String?             @unique
+  planRenewsAt                  DateTime?
+  /// Stripe Connect Express account that receives this tenant's payments (destination charges).
+  stripeConnectAccountId        String?             @unique
+  stripeConnectStatus           StripeConnectStatus @default(NOT_STARTED)
+  /// True only when Stripe reports charges_enabled AND the transfers capability is active.
+  stripeConnectChargesEnabled   Boolean             @default(false)
+  stripeConnectPayoutsEnabled   Boolean             @default(false)
+  stripeConnectDetailsSubmitted Boolean             @default(false)
+  stripeConnectSyncedAt         DateTime?
+  createdAt                     DateTime            @default(now())
+  updatedAt                     DateTime            @updatedAt
 
   tenantAdmins           TenantAdmin[]
   contacts               Contact[]
@@ -436,27 +453,33 @@ model Membership {
 
 /// Tenant-scoped money ledger. Stripe/offline/donation/event payments all land here.
 model PaymentRecord {
-  id                   String         @id @default(cuid())
-  tenantId             String
-  contactId            String?
-  membershipId         String?
-  eventId              String?
-  registrationId       String?
-  sponsorInvoiceId     String?
-  campaignId           String?
-  peerFundraiserId     String?
-  amountCents          Int
-  currency             String         @default("USD")
-  status               PaymentStatus  @default(PAID)
-  method               PaymentMethod  @default(OFFLINE)
-  purpose              PaymentPurpose @default(MEMBERSHIP)
-  provider             String?
-  providerRef          String?
-  stripeSubscriptionId String?
-  paidAt               DateTime?
-  notes                String?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                     String         @id @default(cuid())
+  tenantId               String
+  contactId              String?
+  membershipId           String?
+  eventId                String?
+  registrationId         String?
+  sponsorInvoiceId       String?
+  campaignId             String?
+  peerFundraiserId       String?
+  amountCents            Int
+  currency               String         @default("USD")
+  status                 PaymentStatus  @default(PAID)
+  method                 PaymentMethod  @default(OFFLINE)
+  purpose                PaymentPurpose @default(MEMBERSHIP)
+  provider               String?
+  providerRef            String?
+  stripeSubscriptionId   String?
+  /// Optional donor tip to JanaGana, charged on top of amountCents (amountCents is the org's share).
+  platformTipCents       Int            @default(0)
+  /// Stripe application_fee_amount kept by JanaGana: tip + estimated processing recovery.
+  applicationFeeCents    Int            @default(0)
+  /// Connected account the charge was routed to; null for legacy platform-account charges.
+  stripeConnectAccountId String?
+  paidAt                 DateTime?
+  notes                  String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact        Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)

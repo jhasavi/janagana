@@ -6,8 +6,14 @@ import { configuredAppUrl } from "@/lib/environment";
 import { getTenantBySlug } from "@/lib/tenant";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
-import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
-import { createStripeCheckoutSession, stripeCheckoutConfigured } from "@/lib/payments/stripe";
+import { calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { loadPaymentRoutingForTenant } from "@/lib/payments/connect";
+import {
+  checkoutAmountsForRouting,
+  createTenantCheckoutSession,
+  paymentRecordConnectFields,
+  platformTipInputSchema,
+} from "@/lib/payments/tenant-checkout";
 import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 import { recordReferralRedemption, resolveActiveReferralCode } from "@/lib/actions/referrals";
 
@@ -27,6 +33,7 @@ const PublicRegistrationSchema = z
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
     ref: z.string().trim().max(40).optional().or(z.literal("")),
+    ...platformTipInputSchema,
   })
   .strict();
 
@@ -133,7 +140,14 @@ export async function getPublishedPortalEvent(tenantSlug: string, eventSlug: str
     return { ok: false as const, error: "Event not found", tenant, data: null as any };
   }
 
-  return { ok: true as const, tenant, data: event };
+  const routing = await loadPaymentRoutingForTenant(tenant.id);
+  return {
+    ok: true as const,
+    tenant,
+    data: event,
+    paymentsEnabled: routing.mode !== "blocked",
+    tipsEnabled: routing.tipsEnabled,
+  };
 }
 
 export async function registerPublicEvent(input: unknown) {
@@ -146,6 +160,11 @@ export async function registerPublicEvent(input: unknown) {
   if (!tenant) {
     return { ok: false as const, alreadyRegistered: false, error: "Tenant not found" };
   }
+
+  // Paid tickets go through Stripe only when this tenant's payments are routable
+  // (own Connect account, or pilot fallback). Otherwise they're recorded as payment due.
+  const routing = await loadPaymentRoutingForTenant(tenant.id);
+  const onlinePayments = routing.mode !== "blocked";
 
   const event = await prisma.event.findFirst({
     where: {
@@ -375,10 +394,10 @@ export async function registerPublicEvent(input: unknown) {
                     registrationId: registration.id,
                     amountCents,
                     status: "PENDING",
-                    method: stripeCheckoutConfigured() ? "STRIPE" : "OFFLINE",
+                    method: onlinePayments ? "STRIPE" : "OFFLINE",
                     purpose: "EVENT",
-                    provider: stripeCheckoutConfigured() ? "stripe" : null,
-                    notes: stripeCheckoutConfigured()
+                    provider: onlinePayments ? "stripe" : null,
+                    notes: onlinePayments
                       ? "Event ticket checkout started"
                       : "Event ticket payment due",
                   },
@@ -424,16 +443,19 @@ export async function registerPublicEvent(input: unknown) {
 
       await recomputeLeadScore(result.contact.id);
 
-      if (result.payment && result.payment.amountCents > 0 && stripeCheckoutConfigured()) {
-        const amounts = calculateCheckoutAmount({
+      if (result.payment && result.payment.amountCents > 0 && routing.mode !== "blocked") {
+        const amounts = checkoutAmountsForRouting({
+          routing,
           baseCents: result.payment.amountCents,
           coverProcessingFee: parsed.data.coverProcessingFee,
+          platformTipChoice: parsed.data.platformTipChoice,
+          platformTipCustomCents: parsed.data.platformTipCustomCents,
         });
 
         await prisma.paymentRecord.update({
           where: { id: result.payment.id },
           data: {
-            amountCents: amounts.totalCents,
+            ...paymentRecordConnectFields(routing, amounts),
             notes: amounts.processingFeeCents
               ? `Stripe checkout · registrant covered $${(amounts.processingFeeCents / 100).toFixed(2)} processing`
               : "Stripe checkout session pending",
@@ -443,8 +465,9 @@ export async function registerPublicEvent(input: unknown) {
         const successUrl = `${configuredAppUrl()}/portal/${tenant.slug}/register/${event.slug}?status=processing&session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${configuredAppUrl()}/portal/${tenant.slug}/register/${event.slug}?status=canceled`;
 
-        const checkout = await createStripeCheckoutSession({
-          amountCents: amounts.totalCents,
+        const checkout = await createTenantCheckoutSession({
+          routing,
+          amounts,
           currency: "USD",
           customerEmail: result.contact.email,
           productName: `${event.title} — event ticket`,

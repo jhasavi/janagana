@@ -9,6 +9,8 @@ import { publicPortalUrl } from "@/lib/environment";
 import { getVisibleCommunityOsNav, selfServeOnboardingEnabled } from "@/lib/pilot/dashboard-nav";
 import { communityLabel } from "@/lib/pilot/portal-links";
 import { findMappedTenantsForUser, resolveTenantForDashboard } from "@/lib/tenant";
+import { loadPaymentRoutingForTenant } from "@/lib/payments/connect";
+import { adminPaymentRoutingMessage, PAYMENTS_SETTINGS_PATH } from "@/lib/payments/connect-routing";
 import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
 
 export default async function DashboardLayout({
@@ -47,7 +49,11 @@ export default async function DashboardLayout({
   const portalUrl = publicPortalUrl(tenant.slug);
   const community = communityLabel(tenant.slug);
   const navGroups = getVisibleCommunityOsNav();
-  const access = await getDashboardAccessForTenant(tenant);
+  const [access, paymentRouting] = await Promise.all([
+    getDashboardAccessForTenant(tenant),
+    loadPaymentRoutingForTenant(tenant.id),
+  ]);
+  const paymentRoutingMessage = adminPaymentRoutingMessage(paymentRouting);
 
   return (
     <div className="flex min-h-screen bg-muted/40">
@@ -134,6 +140,20 @@ export default async function DashboardLayout({
             <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <span className="font-semibold">View-only ({access.roleLabel}).</span> You can browse the command center but
               cannot import contacts, edit records, or take payments actions. Ask an org admin to upgrade your Clerk role.
+            </div>
+          )}
+          {paymentRoutingMessage && (
+            <div
+              className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
+                paymentRouting.mode === "blocked"
+                  ? "border-destructive/20 bg-destructive/10 text-destructive"
+                  : "border-amber-200 bg-amber-50 text-amber-950"
+              }`}
+            >
+              {paymentRoutingMessage}{" "}
+              <a href={PAYMENTS_SETTINGS_PATH} className="font-semibold underline">
+                Set up payments
+              </a>
             </div>
           )}
           {children}

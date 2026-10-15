@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { ArrowRight, Check, CreditCard, HeartHandshake } from "lucide-react";
 import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
+import { PlatformTipField } from "@/components/portal/platform-tip-field";
+import { platformTipFromForm } from "@/lib/payments/tenant-checkout";
 import { AutoRenewField } from "@/components/portal/recurring-billing-fields";
 import { PortalFlowLayout } from "@/components/portal/portal-flow-layout";
 import { Alert } from "@/components/ui/alert";
@@ -76,6 +78,7 @@ export default async function PublicMembershipJoinPage({
       phone: String(formData.get("phone") ?? ""),
       coverProcessingFee: formData.get("coverProcessingFee") === "1",
       autoRenew: formData.get("autoRenew") === "1",
+      ...platformTipFromForm(formData),
       utmSource: utmFields.utmSource ?? undefined,
       utmMedium: utmFields.utmMedium ?? undefined,
       utmCampaign: utmFields.utmCampaign ?? undefined,
@@ -194,6 +197,7 @@ export default async function PublicMembershipJoinPage({
             </FormField>
 
             <CoverProcessingFeeField baseCents={result.data[0]?.amountCents ?? 0} />
+            {result.tipsEnabled && result.data.some((tier) => tier.amountCents > 0) && <PlatformTipField />}
             <AutoRenewField defaultChecked />
 
             <Button type="submit">

@@ -81,6 +81,9 @@ if (stripeSecret || stripeWebhookSecret) {
   console.log(`- STRIPE_WEBHOOK_SECRET: ${stripeWebhookSecret ? `present (fp=${fingerprint(stripeWebhookSecret)})` : "missing"}`);
   if (!stripeSecret) warnings.push("Stripe webhook secret is configured but STRIPE_SECRET_KEY is missing");
   if (!stripeWebhookSecret) warnings.push("Stripe checkout key is configured but STRIPE_WEBHOOK_SECRET is missing");
+  const connectWebhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET?.trim() ?? "";
+  console.log(`- STRIPE_CONNECT_WEBHOOK_SECRET: ${connectWebhookSecret ? `present (fp=${fingerprint(connectWebhookSecret)})` : "missing"}`);
+  if (!connectWebhookSecret) warnings.push("STRIPE_CONNECT_WEBHOOK_SECRET is missing — Connect onboarding status will only refresh when admins return from Stripe");
   if (stripeSecret && stripeWebhookSecret && keyModeFromPrefix(stripeSecret) !== keyModeFromPrefix(stripeWebhookSecret)) {
     warnings.push("Stripe key modes may differ between secret key and webhook secret");
   }

@@ -8,6 +8,9 @@ import {
   finalizeAndSendStripeInvoice,
   voidStripeInvoice,
 } from "@/lib/payments/stripe";
+import { loadPaymentRoutingForTenant } from "@/lib/payments/connect";
+import { adminPaymentRoutingMessage } from "@/lib/payments/connect-routing";
+import { processingRecoveryCents } from "@/lib/payments/fee-policy";
 
 export const SponsorCreateSchema = z
   .object({
@@ -292,6 +295,11 @@ export async function sendSponsorInvoice(input: unknown, options?: TenantActionO
     return { ok: false as const, error: "Add a contact email for this sponsor before sending an invoice" };
   }
 
+  const routing = await loadPaymentRoutingForTenant(context.tenant.id);
+  if (routing.mode === "blocked") {
+    return { ok: false as const, error: adminPaymentRoutingMessage(routing) ?? "Online payments are off" };
+  }
+
   let stripeCustomerId = invoice.sponsor.stripeCustomerId;
   if (!stripeCustomerId) {
     const customerResult = await createStripeCustomer({
@@ -321,6 +329,17 @@ export async function sendSponsorInvoice(input: unknown, options?: TenantActionO
     customerId: stripeCustomerId,
     daysUntilDue,
     metadata: { tenantId: context.tenant.id, sponsorInvoiceId: invoice.id, purpose: "sponsor_invoice" },
+    connect:
+      routing.mode === "connect"
+        ? {
+            destinationAccountId: routing.destinationAccountId,
+            applicationFeeCents: processingRecoveryCents({
+              orgAmountCents: invoice.amountCents,
+              baseCents: invoice.amountCents,
+              coverProcessingFee: false,
+            }),
+          }
+        : null,
   });
   if (!invoiceResult.ok) return { ok: false as const, error: invoiceResult.error };
 

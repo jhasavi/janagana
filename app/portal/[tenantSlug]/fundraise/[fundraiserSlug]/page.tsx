@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { ArrowRight, HeartHandshake } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { CoverProcessingFeeField } from "@/components/portal/cover-processing-fee-field";
+import { PlatformTipField } from "@/components/portal/platform-tip-field";
+import { getPublicDonationContext } from "@/lib/actions/public-donations";
+import { PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE } from "@/lib/payments/connect-routing";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FormField, FormGrid, Input, Textarea } from "@/components/ui/input";
@@ -29,7 +32,10 @@ function statusMessage(status?: string, error?: string) {
 export default async function PeerFundraiserPage({ params, searchParams }: Props) {
   const { tenantSlug, fundraiserSlug } = await params;
   const query = await searchParams;
-  const result = await getPublicPeerFundraiser(tenantSlug, fundraiserSlug);
+  const [result, donationCtx] = await Promise.all([
+    getPublicPeerFundraiser(tenantSlug, fundraiserSlug),
+    getPublicDonationContext(tenantSlug),
+  ]);
 
   if (!result.ok || !result.data) {
     notFound();
@@ -76,7 +82,11 @@ export default async function PeerFundraiserPage({ params, searchParams }: Props
 
       {message && <Alert variant={query.error ? "error" : "success"}>{message}</Alert>}
 
-      {query.status !== "thankyou" && (
+      {!donationCtx.stripeEnabled && query.status !== "thankyou" && (
+        <Alert variant="warning">{PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE}</Alert>
+      )}
+
+      {query.status !== "thankyou" && donationCtx.stripeEnabled && (
         <div className="jg-card p-5 sm:p-6">
           <h3 className="text-base font-semibold text-foreground">Give to {fundraiser.owner.firstName}&apos;s page</h3>
           <form action="/api/public/donate" method="post" className="mt-4 space-y-4">
@@ -123,6 +133,7 @@ export default async function PeerFundraiserPage({ params, searchParams }: Props
             </FormField>
 
             <CoverProcessingFeeField baseCents={5000} />
+            {donationCtx.tipsEnabled && <PlatformTipField />}
 
             <Button type="submit">
               Continue to secure checkout

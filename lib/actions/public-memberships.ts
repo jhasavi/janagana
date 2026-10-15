@@ -3,14 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { configuredAppUrl, publicPortalUrl } from "@/lib/environment";
 import { getTenantBySlug } from "@/lib/tenant";
 import { issueReceiptForPayment } from "@/lib/payments/receipts";
-import {
-  createStripeCheckoutSession,
-  createStripeSubscriptionCheckoutSession,
-  membershipIntervalToStripe,
-  stripeCheckoutConfigured,
-} from "@/lib/payments/stripe";
+import { membershipIntervalToStripe } from "@/lib/payments/stripe";
 import { addMembershipInterval } from "@/lib/memberships/subscription-renewal";
-import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { loadPaymentRoutingForTenant } from "@/lib/payments/connect";
+import { PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE } from "@/lib/payments/connect-routing";
+import {
+  checkoutAmountsForRouting,
+  createTenantCheckoutSession,
+  paymentRecordConnectFields,
+  platformTipInputSchema,
+} from "@/lib/payments/tenant-checkout";
 import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
 import { recordReferralRedemption, resolveActiveReferralCode } from "@/lib/actions/referrals";
 
@@ -29,6 +32,7 @@ const PublicMembershipCheckoutSchema = z
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
     referrerUrl: z.string().trim().max(500).optional().or(z.literal("")),
     ref: z.string().trim().max(40).optional().or(z.literal("")),
+    ...platformTipInputSchema,
   })
   .strict();
 
@@ -39,8 +43,16 @@ function addInterval(date: Date, interval: "MONTHLY" | "ANNUAL" | "ONE_TIME") {
 export async function listPublicMembershipTiers(tenantSlug: string) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) {
-    return { ok: false as const, tenant: null, data: [] as any[], error: "Community not found" };
+    return {
+      ok: false as const,
+      tenant: null,
+      data: [] as any[],
+      paymentsEnabled: false,
+      tipsEnabled: false,
+      error: "Community not found",
+    };
   }
+  const routing = await loadPaymentRoutingForTenant(tenant.id);
 
   const tiers = await prisma.membershipTier.findMany({
     where: {
@@ -50,7 +62,13 @@ export async function listPublicMembershipTiers(tenantSlug: string) {
     orderBy: [{ amountCents: "asc" }, { name: "asc" }],
   });
 
-  return { ok: true as const, tenant, data: tiers };
+  return {
+    ok: true as const,
+    tenant,
+    data: tiers,
+    paymentsEnabled: routing.mode !== "blocked",
+    tipsEnabled: routing.tipsEnabled,
+  };
 }
 
 export async function createPublicMembershipCheckout(input: unknown) {
@@ -79,21 +97,21 @@ export async function createPublicMembershipCheckout(input: unknown) {
     return { ok: false as const, checkoutUrl: null, error: "Membership tier not found" };
   }
 
-  if (tier.amountCents > 0 && !stripeCheckoutConfigured()) {
-    return {
-      ok: false as const,
-      checkoutUrl: null,
-      error: "Online membership checkout is not configured yet. Please contact the organizer.",
-    };
+  const routing = await loadPaymentRoutingForTenant(tenant.id);
+  if (tier.amountCents > 0 && routing.mode === "blocked") {
+    return { ok: false as const, checkoutUrl: null, error: PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE };
   }
 
   const now = new Date();
   const email = parsed.data.email.toLowerCase();
   const phone = parsed.data.phone || null;
   const expiresAt = addInterval(now, tier.interval);
-  const amounts = calculateCheckoutAmount({
+  const amounts = checkoutAmountsForRouting({
+    routing,
     baseCents: tier.amountCents,
     coverProcessingFee: parsed.data.coverProcessingFee,
+    platformTipChoice: parsed.data.platformTipChoice,
+    platformTipCustomCents: parsed.data.platformTipCustomCents,
   });
   const stripeInterval = membershipIntervalToStripe(tier.interval);
   const useSubscription = Boolean(stripeInterval && parsed.data.autoRenew);
@@ -156,7 +174,7 @@ export async function createPublicMembershipCheckout(input: unknown) {
         tenantId: tenant.id,
         contactId: contact.id,
         membershipId: membership.id,
-        amountCents: tier.amountCents > 0 ? amounts.totalCents : 0,
+        ...(tier.amountCents > 0 ? paymentRecordConnectFields(routing, amounts) : { amountCents: 0 }),
         currency: "USD",
         status: tier.amountCents > 0 ? "PENDING" : "WAIVED",
         method: tier.amountCents > 0 ? "STRIPE" : "OTHER",
@@ -223,28 +241,23 @@ export async function createPublicMembershipCheckout(input: unknown) {
     janaganaPlatformFeeCents: String(calculatePlatformFeeCents(amounts.baseCents)),
   };
 
-  const checkout = useSubscription && stripeInterval
-    ? await createStripeSubscriptionCheckoutSession({
-        unitAmountCents: amounts.totalCents,
-        currency: "USD",
-        interval: stripeInterval,
-        customerEmail: email,
-        productName: `${tenant.name} - ${tier.name}`,
-        successUrl,
-        cancelUrl,
-        clientReferenceId: result.payment.id,
-        metadata: checkoutMetadata,
-      })
-    : await createStripeCheckoutSession({
-        amountCents: amounts.totalCents,
-        currency: "USD",
-        customerEmail: email,
-        productName: `${tenant.name} - ${tier.name}`,
-        successUrl,
-        cancelUrl,
-        clientReferenceId: result.payment.id,
-        metadata: checkoutMetadata,
-      });
+  if (routing.mode === "blocked") {
+    // Unreachable: paid tiers are rejected above when payments are blocked.
+    return { ok: false as const, checkoutUrl: null, error: PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE };
+  }
+
+  const checkout = await createTenantCheckoutSession({
+    routing,
+    amounts,
+    recurringInterval: useSubscription ? stripeInterval : null,
+    currency: "USD",
+    customerEmail: email,
+    productName: `${tenant.name} - ${tier.name}`,
+    successUrl,
+    cancelUrl,
+    clientReferenceId: result.payment.id,
+    metadata: checkoutMetadata,
+  });
 
   if (!checkout.ok) {
     await prisma.paymentRecord.update({

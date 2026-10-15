@@ -44,8 +44,10 @@ function testStaticWiring() {
   assert(joinPage.includes("AutoRenewField"), "join page must offer auto-renew");
   assert(joinPage.includes("autoRenew"), "join checkout must pass autoRenew");
   assert(donatePage.includes("RecurringDonationField"), "donate page must offer monthly giving");
-  assert(memberships.includes("createStripeSubscriptionCheckoutSession"), "membership checkout supports subscriptions");
-  assert(donations.includes("createStripeSubscriptionCheckoutSession"), "donation checkout supports subscriptions");
+  const tenantCheckout = readFileSync(join(ROOT, "lib/payments/tenant-checkout.ts"), "utf8");
+  assert(tenantCheckout.includes("createStripeSubscriptionCheckoutSession"), "routed checkout supports subscriptions");
+  assert(memberships.includes("recurringInterval: useSubscription"), "membership checkout supports subscriptions");
+  assert(donations.includes("recurringInterval: useSubscription"), "donation checkout supports subscriptions");
   assert(webhooks.includes("invoice.paid"), "webhooks must handle invoice.paid renewals");
   assert(webhooks.includes("stripeSubscriptionId"), "webhooks must persist subscription id");
   assert(profile.includes("DigitalMembershipCard"), "contact profile must show digital card");

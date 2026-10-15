@@ -4,6 +4,8 @@ import { issueReceiptForPayment } from "@/lib/payments/receipts";
 import { queueEventRegistrationCommunication } from "@/lib/communications/outbox";
 import { extendMembershipExpiration } from "@/lib/memberships/subscription-renewal";
 import { recomputeLeadScore } from "@/lib/leads/scoring-actions";
+import { applyConnectAccountUpdate, markConnectAccountDeauthorized } from "@/lib/payments/connect";
+import type { StripeConnectAccount } from "@/lib/payments/stripe";
 
 type StripeCheckoutSession = {
   id: string;
@@ -35,12 +37,16 @@ type StripeInvoice = {
   amount_paid?: number;
   currency?: string | null;
   billing_reason?: string | null;
+  application_fee_amount?: number | null;
+  transfer_data?: { destination?: string | null } | null;
   metadata?: Record<string, string | undefined> | null;
 };
 
 type StripeEvent = {
   id: string;
   type: string;
+  /** Present on events delivered from connected accounts (Connect webhook endpoint). */
+  account?: string | null;
   data: {
     object: unknown;
   };
@@ -72,6 +78,31 @@ async function attachStripeSubscription(input: {
   }
 }
 
+/**
+ * Subscription invoices repeat the first checkout's line items, so the tip and
+ * routing recorded on the subscription's first payment apply to every renewal.
+ */
+async function renewalConnectFields(subscriptionId: string, amountPaidCents: number) {
+  const first = await prisma.paymentRecord.findFirst({
+    where: { stripeSubscriptionId: subscriptionId },
+    orderBy: { createdAt: "asc" },
+    select: { platformTipCents: true, applicationFeeCents: true, stripeConnectAccountId: true },
+  });
+  const platformTipCents = Math.min(first?.platformTipCents ?? 0, amountPaidCents);
+  return {
+    amountCents: amountPaidCents - platformTipCents,
+    platformTipCents,
+    applicationFeeCents: first?.applicationFeeCents ?? 0,
+    stripeConnectAccountId: first?.stripeConnectAccountId ?? null,
+  };
+}
+
+/** Checkout charges the org share plus any JanaGana tip; PaymentRecord.amountCents is the org share only. */
+function orgAmountFromSession(session: StripeCheckoutSession, payment: { amountCents: number; platformTipCents: number }) {
+  if (session.amount_total === null || session.amount_total === undefined) return payment.amountCents;
+  return Math.max(0, session.amount_total - payment.platformTipCents);
+}
+
 async function processSubscriptionRenewalInvoice(invoice: StripeInvoice, event: StripeEvent) {
   const subscriptionId = invoice.subscription;
   if (!subscriptionId || invoice.billing_reason !== "subscription_cycle") {
@@ -87,8 +118,8 @@ async function processSubscriptionRenewalInvoice(invoice: StripeInvoice, event: 
   }
 
   const now = new Date();
-  const amountCents = invoice.amount_paid ?? 0;
   const currency = (invoice.currency ?? "usd").toUpperCase();
+  const connectFields = await renewalConnectFields(subscriptionId, invoice.amount_paid ?? 0);
 
   const membership = await prisma.membership.findFirst({
     where: { stripeSubscriptionId: subscriptionId },
@@ -104,7 +135,7 @@ async function processSubscriptionRenewalInvoice(invoice: StripeInvoice, event: 
         tenantId: membership.tenantId,
         contactId: membership.contactId,
         membershipId: membership.id,
-        amountCents,
+        ...connectFields,
         currency,
         status: "PAID",
         method: "STRIPE",
@@ -166,7 +197,7 @@ async function processSubscriptionRenewalInvoice(invoice: StripeInvoice, event: 
     data: {
       tenantId: anchor.tenantId,
       contactId: anchor.contactId,
-      amountCents,
+      ...connectFields,
       currency,
       status: "PAID",
       method: "STRIPE",
@@ -231,6 +262,8 @@ async function processSponsorInvoicePaid(invoice: StripeInvoice, event: StripeEv
       purpose: "SPONSORSHIP",
       provider: "stripe",
       providerRef: invoice.id,
+      applicationFeeCents: invoice.application_fee_amount ?? 0,
+      stripeConnectAccountId: invoice.transfer_data?.destination ?? null,
       paidAt: now,
       notes: sponsorInvoice.description,
     },
@@ -290,6 +323,7 @@ async function finalizeDonationPayment(
     tenantId: string;
     contactId: string | null;
     amountCents: number;
+    platformTipCents: number;
     currency: string;
     paidAt: Date | null;
     contact: { id: string } | null;
@@ -309,7 +343,7 @@ async function finalizeDonationPayment(
         method: "STRIPE",
         provider: "stripe",
         providerRef: session.id,
-        amountCents: session.amount_total ?? payment.amountCents,
+        amountCents: orgAmountFromSession(session, payment),
         currency: (session.currency ?? payment.currency).toUpperCase(),
         paidAt: paid ? now : payment.paidAt,
         notes: paid ? "Stripe donation payment confirmed" : "Stripe Checkout completed; payment not marked paid",
@@ -358,6 +392,7 @@ async function finalizeMembershipPayment(
     id: string;
     tenantId: string;
     amountCents: number;
+    platformTipCents: number;
     currency: string;
     paidAt: Date | null;
     contact: { id: string } | null;
@@ -388,7 +423,7 @@ async function finalizeMembershipPayment(
         method: "STRIPE",
         provider: "stripe",
         providerRef: session.id,
-        amountCents: session.amount_total ?? payment.amountCents,
+        amountCents: orgAmountFromSession(session, payment),
         currency: (session.currency ?? payment.currency).toUpperCase(),
         paidAt: paid ? now : payment.paidAt,
         notes: paid ? "Stripe Checkout payment confirmed" : "Stripe Checkout completed; payment not marked paid",
@@ -442,6 +477,7 @@ async function finalizeEventPayment(
     id: string;
     tenantId: string;
     amountCents: number;
+    platformTipCents: number;
     currency: string;
     paidAt: Date | null;
     registrationId: string | null;
@@ -462,7 +498,7 @@ async function finalizeEventPayment(
         method: "STRIPE",
         provider: "stripe",
         providerRef: session.id,
-        amountCents: session.amount_total ?? payment.amountCents,
+        amountCents: orgAmountFromSession(session, payment),
         currency: (session.currency ?? payment.currency).toUpperCase(),
         paidAt: paid ? now : payment.paidAt,
         notes: paid ? "Stripe event ticket payment confirmed" : "Stripe Checkout completed; payment not marked paid",
@@ -544,6 +580,31 @@ export async function processStripeWebhookEvent(event: StripeEvent) {
       },
     });
     return { ok: true as const, duplicate: result.duplicate, processed: result.processed };
+  }
+
+  if (event.type === "account.updated" || event.type === "account.application.deauthorized") {
+    const accountId =
+      event.type === "account.updated" ? (event.data.object as { id?: string } | null)?.id ?? null : event.account ?? null;
+    if (!accountId) {
+      return { ok: false as const, error: `${event.type} event is missing the connected account id` };
+    }
+    const result =
+      event.type === "account.updated"
+        ? await applyConnectAccountUpdate(event.data.object as StripeConnectAccount)
+        : await markConnectAccountDeauthorized(accountId);
+    await prisma.stripeWebhookEvent.create({
+      data: {
+        tenantId: result?.tenantId ?? null,
+        stripeEventId: event.id,
+        eventType: event.type,
+        metadata: jsonMetadata({
+          stripeConnectAccountId: accountId,
+          processed: Boolean(result),
+          status: result && "status" in result ? result.status : null,
+        }),
+      },
+    });
+    return { ok: true as const, duplicate: false, processed: Boolean(result) };
   }
 
   if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {

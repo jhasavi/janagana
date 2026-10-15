@@ -11,6 +11,11 @@ export function stripeWebhookSecret() {
   return process.env.STRIPE_WEBHOOK_SECRET?.trim() || "";
 }
 
+/** Signing secret for the Connect webhook endpoint ("Events on connected accounts"), e.g. account.updated. */
+export function stripeConnectWebhookSecret() {
+  return process.env.STRIPE_CONNECT_WEBHOOK_SECRET?.trim() || "";
+}
+
 export function stripeCheckoutConfigured() {
   return Boolean(stripeSecretKey());
 }
@@ -84,8 +89,34 @@ function appendCheckoutMetadata(
   }
 }
 
-export async function createStripeCheckoutSession(input: {
+export const PLATFORM_TIP_LINE_ITEM_NAME = "Optional tip to support JanaGana (free software for this organization)";
+
+function appendPlatformTipLineItem(
+  params: URLSearchParams,
+  input: { platformTipCents?: number; currency?: string; interval?: StripeRecurringInterval },
+) {
+  if (!input.platformTipCents || input.platformTipCents <= 0) return;
+  append(params, "line_items[1][quantity]", 1);
+  append(params, "line_items[1][price_data][currency]", (input.currency ?? "USD").toLowerCase());
+  append(params, "line_items[1][price_data][unit_amount]", input.platformTipCents);
+  append(params, "line_items[1][price_data][product_data][name]", PLATFORM_TIP_LINE_ITEM_NAME);
+  if (input.interval) {
+    append(params, "line_items[1][price_data][recurring][interval]", input.interval);
+  }
+}
+
+/**
+ * Destination charge: the payment settles on the tenant's connected account and
+ * JanaGana keeps `applicationFeeCents` (tip + processing recovery).
+ */
+export type StripeConnectDestination = {
+  destinationAccountId: string;
+  applicationFeeCents: number;
+};
+
+export function buildStripeCheckoutSessionParams(input: {
   amountCents: number;
+  platformTipCents?: number;
   currency?: string;
   customerEmail: string;
   productName: string;
@@ -93,6 +124,7 @@ export async function createStripeCheckoutSession(input: {
   cancelUrl: string;
   clientReferenceId: string;
   metadata: Record<string, string>;
+  connect?: StripeConnectDestination | null;
 }) {
   const params = new URLSearchParams();
   append(params, "mode", "payment");
@@ -104,14 +136,25 @@ export async function createStripeCheckoutSession(input: {
   append(params, "line_items[0][price_data][currency]", (input.currency ?? "USD").toLowerCase());
   append(params, "line_items[0][price_data][unit_amount]", input.amountCents);
   append(params, "line_items[0][price_data][product_data][name]", input.productName);
+  appendPlatformTipLineItem(params, { platformTipCents: input.platformTipCents, currency: input.currency });
   append(params, "payment_intent_data[metadata][paymentRecordId]", input.clientReferenceId);
+  if (input.connect) {
+    append(params, "payment_intent_data[transfer_data][destination]", input.connect.destinationAccountId);
+    if (input.connect.applicationFeeCents > 0) {
+      append(params, "payment_intent_data[application_fee_amount]", input.connect.applicationFeeCents);
+    }
+  }
   appendCheckoutMetadata(params, input.metadata);
-
-  return postStripeCheckout(params);
+  return params;
 }
 
-export async function createStripeSubscriptionCheckoutSession(input: {
+export async function createStripeCheckoutSession(input: Parameters<typeof buildStripeCheckoutSessionParams>[0]) {
+  return postStripeCheckout(buildStripeCheckoutSessionParams(input));
+}
+
+export function buildStripeSubscriptionCheckoutSessionParams(input: {
   unitAmountCents: number;
+  platformTipCents?: number;
   currency?: string;
   interval: StripeRecurringInterval;
   customerEmail: string;
@@ -120,6 +163,8 @@ export async function createStripeSubscriptionCheckoutSession(input: {
   cancelUrl: string;
   clientReferenceId: string;
   metadata: Record<string, string>;
+  /** Subscriptions take the application fee as a percent of every invoice. */
+  connect?: { destinationAccountId: string; applicationFeePercent: number } | null;
 }) {
   const params = new URLSearchParams();
   append(params, "mode", "subscription");
@@ -132,9 +177,25 @@ export async function createStripeSubscriptionCheckoutSession(input: {
   append(params, "line_items[0][price_data][unit_amount]", input.unitAmountCents);
   append(params, "line_items[0][price_data][product_data][name]", input.productName);
   append(params, "line_items[0][price_data][recurring][interval]", input.interval);
+  appendPlatformTipLineItem(params, {
+    platformTipCents: input.platformTipCents,
+    currency: input.currency,
+    interval: input.interval,
+  });
+  if (input.connect) {
+    append(params, "subscription_data[transfer_data][destination]", input.connect.destinationAccountId);
+    if (input.connect.applicationFeePercent > 0) {
+      append(params, "subscription_data[application_fee_percent]", input.connect.applicationFeePercent);
+    }
+  }
   appendCheckoutMetadata(params, input.metadata, { subscription: true });
+  return params;
+}
 
-  return postStripeCheckout(params);
+export async function createStripeSubscriptionCheckoutSession(
+  input: Parameters<typeof buildStripeSubscriptionCheckoutSessionParams>[0],
+) {
+  return postStripeCheckout(buildStripeSubscriptionCheckoutSessionParams(input));
 }
 
 export async function createBillingPortalSession(input: { customerId: string; returnUrl: string }) {
@@ -238,11 +299,18 @@ export async function createStripeInvoice(input: {
   customerId: string;
   daysUntilDue?: number;
   metadata?: Record<string, string>;
+  connect?: StripeConnectDestination | null;
 }) {
   const params = new URLSearchParams();
   append(params, "customer", input.customerId);
   append(params, "collection_method", "send_invoice");
   append(params, "days_until_due", input.daysUntilDue ?? 30);
+  if (input.connect) {
+    append(params, "transfer_data[destination]", input.connect.destinationAccountId);
+    if (input.connect.applicationFeeCents > 0) {
+      append(params, "application_fee_amount", input.connect.applicationFeeCents);
+    }
+  }
   appendMetadata(params, input.metadata);
 
   const result = await postStripe("/invoices", params);
@@ -268,6 +336,103 @@ export async function voidStripeInvoice(invoiceId: string) {
   const result = await postStripe(`/invoices/${invoiceId}/void`, new URLSearchParams());
   if (!result.ok) return result;
   return { ok: true as const };
+}
+
+// ─── Stripe Connect (Express) ────────────────────────────────────────────────
+
+export type StripeConnectAccount = {
+  id: string;
+  object?: "account";
+  charges_enabled?: boolean;
+  payouts_enabled?: boolean;
+  details_submitted?: boolean;
+  capabilities?: Record<string, string | undefined> | null;
+  requirements?: { currently_due?: string[] | null; disabled_reason?: string | null } | null;
+  metadata?: Record<string, string | undefined> | null;
+};
+
+async function getStripe(path: string) {
+  const secretKey = stripeSecretKey();
+  if (!secretKey) {
+    return { ok: false as const, error: "Stripe is not configured" };
+  }
+  const response = await fetch(`${STRIPE_API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${secretKey}` },
+  });
+  const body = (await response.json()) as Record<string, unknown> & { id?: string; error?: { message?: string } };
+  if (!response.ok || !body.id) {
+    return { ok: false as const, error: body.error?.message ?? `Stripe request to ${path} failed` };
+  }
+  return { ok: true as const, body };
+}
+
+export async function createStripeExpressAccount(input: {
+  email?: string | null;
+  businessName: string;
+  tenantId: string;
+  tenantSlug: string;
+}) {
+  const params = new URLSearchParams();
+  append(params, "type", "express");
+  append(params, "country", "US");
+  append(params, "email", input.email ?? undefined);
+  append(params, "business_profile[name]", input.businessName);
+  append(params, "capabilities[card_payments][requested]", true);
+  append(params, "capabilities[transfers][requested]", true);
+  append(params, "metadata[tenantId]", input.tenantId);
+  append(params, "metadata[tenantSlug]", input.tenantSlug);
+
+  const result = await postStripe("/accounts", params);
+  if (!result.ok) return result;
+  return { ok: true as const, account: result.body as unknown as StripeConnectAccount };
+}
+
+export async function retrieveStripeConnectAccount(accountId: string) {
+  const result = await getStripe(`/accounts/${encodeURIComponent(accountId)}`);
+  if (!result.ok) return result;
+  return { ok: true as const, account: result.body as unknown as StripeConnectAccount };
+}
+
+export async function createStripeAccountLink(input: { accountId: string; refreshUrl: string; returnUrl: string }) {
+  const secretKey = stripeSecretKey();
+  if (!secretKey) {
+    return { ok: false as const, error: "Stripe is not configured" };
+  }
+  const params = new URLSearchParams();
+  append(params, "account", input.accountId);
+  append(params, "refresh_url", input.refreshUrl);
+  append(params, "return_url", input.returnUrl);
+  append(params, "type", "account_onboarding");
+
+  const response = await fetch(`${STRIPE_API_BASE}/account_links`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params,
+  });
+  const body = (await response.json()) as { url?: string; error?: { message?: string } };
+  if (!response.ok || !body.url) {
+    return { ok: false as const, error: body.error?.message ?? "Failed to create Stripe onboarding link" };
+  }
+  return { ok: true as const, url: body.url };
+}
+
+export async function createStripeExpressLoginLink(accountId: string) {
+  const secretKey = stripeSecretKey();
+  if (!secretKey) {
+    return { ok: false as const, error: "Stripe is not configured" };
+  }
+  const response = await fetch(`${STRIPE_API_BASE}/accounts/${encodeURIComponent(accountId)}/login_links`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secretKey}` },
+  });
+  const body = (await response.json()) as { url?: string; error?: { message?: string } };
+  if (!response.ok || !body.url) {
+    return { ok: false as const, error: body.error?.message ?? "Failed to open Stripe Express dashboard" };
+  }
+  return { ok: true as const, url: body.url };
 }
 
 export function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string | null, secret: string) {

@@ -2,12 +2,15 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { configuredAppUrl } from "@/lib/environment";
 import { getTenantBySlug } from "@/lib/tenant";
-import { calculateCheckoutAmount, calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { calculatePlatformFeeCents, JANAGANA_PLATFORM_FEE_BPS } from "@/lib/payments/fee-policy";
+import { loadPaymentRoutingForTenant } from "@/lib/payments/connect";
+import { PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE } from "@/lib/payments/connect-routing";
 import {
-  createStripeCheckoutSession,
-  createStripeSubscriptionCheckoutSession,
-  stripeCheckoutConfigured,
-} from "@/lib/payments/stripe";
+  checkoutAmountsForRouting,
+  createTenantCheckoutSession,
+  paymentRecordConnectFields,
+  platformTipInputSchema,
+} from "@/lib/payments/tenant-checkout";
 import { recordReferralRedemption, resolveActiveReferralCode } from "@/lib/actions/referrals";
 
 export const DONATION_PRESET_CENTS = [2500, 5000, 10000, 25000, 50000] as const;
@@ -32,18 +35,21 @@ const PublicDonationCheckoutSchema = z
     ref: z.string().trim().max(40).optional().or(z.literal("")),
     campaignSlug: z.string().trim().max(120).optional().or(z.literal("")),
     fundraiserSlug: z.string().trim().max(120).optional().or(z.literal("")),
+    ...platformTipInputSchema,
   })
   .strict();
 
 export async function getPublicDonationContext(tenantSlug: string) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) {
-    return { ok: false as const, tenant: null, stripeEnabled: false };
+    return { ok: false as const, tenant: null, stripeEnabled: false, tipsEnabled: false };
   }
+  const routing = await loadPaymentRoutingForTenant(tenant.id);
   return {
     ok: true as const,
     tenant,
-    stripeEnabled: stripeCheckoutConfigured(),
+    stripeEnabled: routing.mode !== "blocked",
+    tipsEnabled: routing.tipsEnabled,
     presets: DONATION_PRESET_CENTS,
   };
 }
@@ -63,21 +69,21 @@ export async function createPublicDonationCheckout(input: unknown) {
     return { ok: false as const, checkoutUrl: null, error: "Community not found" };
   }
 
-  if (!stripeCheckoutConfigured()) {
-    return {
-      ok: false as const,
-      checkoutUrl: null,
-      error: "Online donations are not configured yet. Please contact the organizer.",
-    };
+  const routing = await loadPaymentRoutingForTenant(tenant.id);
+  if (routing.mode === "blocked") {
+    return { ok: false as const, checkoutUrl: null, error: PUBLIC_PAYMENTS_UNAVAILABLE_MESSAGE };
   }
 
   const now = new Date();
   const email = parsed.data.email.toLowerCase();
   const phone = parsed.data.phone || null;
   const dedication = parsed.data.dedication?.trim() || null;
-  const amounts = calculateCheckoutAmount({
+  const amounts = checkoutAmountsForRouting({
+    routing,
     baseCents: parsed.data.amountCents,
     coverProcessingFee: parsed.data.coverProcessingFee,
+    platformTipChoice: parsed.data.platformTipChoice,
+    platformTipCustomCents: parsed.data.platformTipCustomCents,
   });
   const useSubscription = parsed.data.recurringMonthly;
   const refCode = (parsed.data.ref || "").trim().toUpperCase() || null;
@@ -141,7 +147,7 @@ export async function createPublicDonationCheckout(input: unknown) {
         contactId: contact.id,
         campaignId,
         peerFundraiserId: peerFundraiser?.id ?? null,
-        amountCents: amounts.totalCents,
+        ...paymentRecordConnectFields(routing, amounts),
         currency: "USD",
         status: "PENDING",
         method: "STRIPE",
@@ -187,28 +193,18 @@ export async function createPublicDonationCheckout(input: unknown) {
     ? `${tenant.name} via a supporter's fundraising page`
     : tenant.name;
 
-  const checkout = useSubscription
-    ? await createStripeSubscriptionCheckoutSession({
-        unitAmountCents: amounts.totalCents,
-        currency: "USD",
-        interval: "month",
-        customerEmail: email,
-        productName: `Monthly donation to ${donationLabel}`,
-        successUrl,
-        cancelUrl,
-        clientReferenceId: result.payment.id,
-        metadata: checkoutMetadata,
-      })
-    : await createStripeCheckoutSession({
-        amountCents: amounts.totalCents,
-        currency: "USD",
-        customerEmail: email,
-        productName: `Donation to ${donationLabel}`,
-        successUrl,
-        cancelUrl,
-        clientReferenceId: result.payment.id,
-        metadata: checkoutMetadata,
-      });
+  const checkout = await createTenantCheckoutSession({
+    routing,
+    amounts,
+    recurringInterval: useSubscription ? "month" : null,
+    currency: "USD",
+    customerEmail: email,
+    productName: useSubscription ? `Monthly donation to ${donationLabel}` : `Donation to ${donationLabel}`,
+    successUrl,
+    cancelUrl,
+    clientReferenceId: result.payment.id,
+    metadata: checkoutMetadata,
+  });
 
   if (!checkout.ok) {
     await prisma.paymentRecord.update({
@@ -239,6 +235,8 @@ export async function createPublicDonationCheckout(input: unknown) {
         contactId: result.contact.id,
         paymentId: result.payment.id,
         amountCents: parsed.data.amountCents,
+        platformTipCents: amounts.platformTipCents,
+        paymentRouting: routing.mode,
         stripeCheckoutSessionId: checkout.sessionId,
       },
     },
