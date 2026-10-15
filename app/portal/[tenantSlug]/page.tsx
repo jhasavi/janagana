@@ -126,7 +126,7 @@ export default async function PortalHomePage({ params }: Props) {
                 <div className="flex flex-1 flex-col p-5">
                   <h4 className="text-xl font-bold leading-snug text-foreground">{event.title}</h4>
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                    {event.description ?? "Details are coming soon."}
+                    {event.description ?? "More details to be announced."}
                   </p>
                   <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />

@@ -381,6 +381,9 @@ export async function createStripeExpressAccount(input: {
   append(params, "business_profile[name]", input.businessName);
   append(params, "capabilities[card_payments][requested]", true);
   append(params, "capabilities[transfers][requested]", true);
+  // Monthly payouts keep Stripe's per-payout fee (0.25% + $0.25) negligible; orgs can change it in their Stripe dashboard.
+  append(params, "settings[payouts][schedule][interval]", "monthly");
+  append(params, "settings[payouts][schedule][monthly_anchor]", 1);
   append(params, "metadata[tenantId]", input.tenantId);
   append(params, "metadata[tenantSlug]", input.tenantSlug);
 

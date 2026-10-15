@@ -508,21 +508,6 @@ export default async function SettingsPage({
 
       <Card>
         <CardBody>
-          <h2 className="text-sm font-semibold text-foreground">Pilot scope</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This release is{" "}
-            <strong>
-              contacts, portal leads, event tickets, registrations, check-in, memberships, public membership checkout, and
-              receipts
-            </strong>{" "}
-            for this community. Not included yet: online event checkout, refund operations, automated email campaigns, or
-            Raklet-style website builder. Donations and membership checkout are live.
-          </p>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardBody>
           <h2 className="font-semibold text-foreground">How access works</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             <li>Clerk sign-in proves who you are.</li>

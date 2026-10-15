@@ -52,7 +52,7 @@ export default async function TenantEventsPage({
                   </div>
                   <h2 className="mt-3 text-xl font-semibold text-foreground">{event.title}</h2>
                   <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
-                    {event.description ?? "Details are coming soon."}
+                    {event.description ?? "More details to be announced."}
                   </p>
                 </div>
                 <ButtonLink href={`/portal/${result.tenant.slug}/events/${event.slug}`}>

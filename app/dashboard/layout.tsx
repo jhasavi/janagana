@@ -3,6 +3,7 @@ import { ExternalLink, LogOut } from "lucide-react";
 import { CopyTextButton } from "@/components/dashboard/copy-text-button";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardWorkflowNav } from "@/components/dashboard/dashboard-workflow-nav";
+import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { OrgSwitcher } from "@/components/dashboard/org-switcher";
 import { getCurrentUser, getDashboardAccessForTenant } from "@/lib/auth";
 import { publicPortalUrl } from "@/lib/environment";
@@ -108,6 +109,7 @@ export default async function DashboardLayout({
             </div>
             <div className="hidden text-sm font-semibold text-muted-foreground lg:block">Operator workspace</div>
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <ThemeToggle />
               <CopyTextButton text={portalUrl} label="Copy portal" className="hidden sm:inline-flex" />
               <a
                 href={portalUrl}

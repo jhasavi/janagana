@@ -24,7 +24,7 @@ export default async function EventDetailPage({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/75">{result.tenant.name}</p>
           <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">{result.data.title}</h1>
           <p className="mt-4 max-w-3xl text-sm leading-6 text-white/80">
-            {result.data.description ?? "Details are coming soon."}
+            {result.data.description ?? "More details to be announced."}
           </p>
         </div>
 
