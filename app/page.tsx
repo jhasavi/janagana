@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveTenantForDashboard } from "@/lib/tenant";
 import { redirectForZeroTenantAccess } from "@/lib/tenant/onboarding-redirect";
 import { LandingPage } from "@/components/marketing/landing-page";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const user = await getCurrentUser();
