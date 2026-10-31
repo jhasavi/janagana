@@ -4,7 +4,7 @@ const email = process.env.E2E_CLERK_EMAIL ?? process.env.CLERK_E2E_USER_EMAIL ??
 const password = process.env.E2E_CLERK_PASSWORD ?? "";
 
 async function signInIfNeeded(page: Page): Promise<{ blockedBySso: boolean }> {
-  await page.goto("/");
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/(sign-in|dashboard|select-organization|onboarding\/create-organization)/);
 
   if (!page.url().includes("/sign-in")) {

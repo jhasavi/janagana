@@ -7,7 +7,12 @@ import { PortalFlowLayout } from "@/components/portal/portal-flow-layout";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FormField, FormGrid, Input, Select } from "@/components/ui/input";
-import { getPublishedPortalEvent, registerPublicEvent } from "@/lib/actions/public-portal";
+import {
+  EVENT_FULL_MESSAGE,
+  EVENT_PAST_MESSAGE,
+  getPublishedPortalEvent,
+  registerPublicEvent,
+} from "@/lib/actions/public-portal";
 import { paymentFeeDisclosure } from "@/lib/payments/fee-policy";
 import {
   defaultVisitorReturnUrl,
@@ -107,6 +112,13 @@ export default async function EventRegistrationPage({
             ? query.error
             : null;
 
+  const closedMessage =
+    eventResult.registrationClosed === "past"
+      ? EVENT_PAST_MESSAGE
+      : eventResult.registrationClosed === "full"
+        ? EVENT_FULL_MESSAGE
+        : null;
+
   const backUrl = safeReturnTo ?? defaultVisitorReturnUrl(tenantSlug);
   const hasPaidTickets =
     eventResult.data.priceCents > 0 ||
@@ -139,7 +151,9 @@ export default async function EventRegistrationPage({
         </p>
       )}
 
-      {!query.status && (
+      {closedMessage && !query.status && <Alert variant="error">{closedMessage}</Alert>}
+
+      {!query.status && !closedMessage && (
         <form action={registerAction} className="mt-4 space-y-4">
           {hasPaidTickets && (
             <p className="rounded-xl bg-muted px-3 py-2 text-sm text-foreground">{paymentFeeDisclosure()}</p>

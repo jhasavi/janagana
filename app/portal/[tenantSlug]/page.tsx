@@ -26,10 +26,10 @@ export default async function PortalHomePage({ params }: Props) {
         <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="p-6 sm:p-8 lg:p-10">
             <p className="jg-eyebrow">Welcome</p>
-            <h2 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
+            <h2 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-primary-foreground sm:text-5xl">
               {result.tenant.name}
             </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-base leading-7 text-primary-foreground">
               {result.tenant.publicTagline ??
                 "Find upcoming classes, workshops, gatherings, memberships, and ways to stay connected."}
             </p>

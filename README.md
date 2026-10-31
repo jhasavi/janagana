@@ -8,7 +8,7 @@ Local dev: http://localhost:3020
 
 ## What works
 
-- Public marketing landing page (`/`) and pricing page (`/pricing`) for logged-out visitors; self-serve signup (`ENABLE_SELF_SERVE_ONBOARDING`).
+- Public marketing landing page (`/`, with feature comparison) for logged-out visitors; self-serve signup (`ENABLE_SELF_SERVE_ONBOARDING`).
 - Admin events, ticket quantities, check-in/no-show (manual button + camera QR scan / paste-code quick check-in), paid Stripe checkout for tickets.
 - Admin membership tiers, enrollment, renewals desk (including failed-payment / dunning visibility), Stripe subscriptions, renewal reminder job.
 - Contact CRM: profiles, tags, filters, import, CSV export (including custom fields), unified per-contact activity timeline.

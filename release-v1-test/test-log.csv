@@ -1,0 +1,32 @@
+ID,Workflow,Role,Steps,Expected,Actual,Result,Severity,Evidence,Promise
+T-001,Public join/donate,Guest,Open /portal/purple-wings/join and /donate with DB one migration behind,Page renders tiers/donate form,Error boundary; Prisma P2022 column Tenant.stripeConnectAccountId missing,Fail (fixed by migrate deploy),Blocker,dev server log,P2/P4
+T-002,Marketing,Guest,GET /pricing,Pricing page per README,404 (no app/pricing route),Fail,Minor,curl/fetch,-
+T-003,Marketing,Guest,Load landing page,Loads with no console errors,Loads; no console errors,Pass,-,screenshot,-
+T-004,Cross-role,Guest,Open /dashboard /dashboard/members /dashboard/payments /dashboard/communications /api/export/giving-summary signed out,Redirect to sign-in,All redirect,Pass,-,fetch,P7
+T-005,Cross-role,Guest,Unknown portal slug,404,404,Pass,-,fetch,P7
+T-006,Public portal,Guest,Join/donate/events for purple-wings and namaste-boston after migration,200 no error,All OK,Pass,-,curl,P2
+T-007,Event lifecycle,Guest,Playwright 03: view and register free published event; draft hidden,Registered; draft not listed,Passed,Pass,-,playwright,P3
+T-008,Edge,Guest,Register with Hindi/Nepali names,Registered,Registered,Pass,-,playwright,P6
+T-009,Edge,Guest,Last name of 120 characters,Friendly validation message,Rejected but raw message "String must contain at most 100 character(s)" shown in URL,Pass with defect,Minor,playwright,P3
+T-010,Edge,Guest,Double-click Complete registration,One registration,One registration,Pass,-,playwright,P3
+T-011,Edge,Guest,Same email registers twice for one event,One registration + clear notice,One registration; redirected with registration=already-registered,Pass,-,playwright,P3
+T-012,Edge,Guest,0-capacity event,Cannot register,Form shown; submit gives "This event is full." Not confirmed,Pass with defect,Minor,playwright,P3
+T-013,Event lifecycle,Guest,Capacity 1; second person registers,Waitlist,No waitlist; second blocked as full (1 confirmed),Gap (feature missing),Minor (v1.1),playwright,P3
+T-014,Edge,Guest,Register for event dated 2020,Blocked,Registration accepted (redirected registration=registered),Fail,Major,playwright,P3
+T-015,Edge,Guest,375px width on 7 public pages,No horizontal scroll,No overflow,Pass,-,playwright,P1
+T-016,Cross-tenant,System,test-tenant-isolation test-second-tenant-hardening active-tenant-cookie-safety dashboard semantics,No cross-tenant leakage,All pass,Pass,-,scripts,P7
+T-017,Payments,System,fee-policy donations subscriptions renewals stripe-refunds stripe-connect (Stripe test mode),Pass,All pass,Pass,-,scripts,P2/P4
+T-018,Payments,System,test-stripe-refund-webhook,Pass,Script refuses non-local DATABASE_URL; not run,Not run,-,script,P4
+T-019,Members,System,CSV import parser and export scripts,Pass,Pass,Pass,-,scripts,P6
+T-020,Build,System,typecheck lint prisma validate check:db:test verify:tenants,Pass,All pass,Pass,-,scripts,-
+T-021,Test hygiene,System,Playwright 00 (home) 08 09 (x2),Pass,4 fail: expect old homepage / redirect from / ; homepage now public landing,Fail (stale tests),Minor,playwright,-
+T-022,Org setup/members/events/admin UI (A B C),Org Admin,Manual UI,-,Not run: no signed-in session reachable,Blocked,-,-,P1/P2
+T-023,Payments UI,Member/Guest,Checkout with Stripe test card; failed card; refund in admin,-,Not run,Blocked,-,-,P2/P4
+T-024,Communications,All,Emails to test inbox; broadcast; unsubscribe,-,Not run (outbox row only seen in script),Blocked,-,-,P5
+T-025,Dashboard reports,Org Admin,Totals match test data,-,Not run,Blocked,-,-,P4
+T-026,Production health,Ops,Vercel deployment and runtime errors,-,Not run: Vercel API 403,Blocked,-,-,-
+T-027,Fix verification,Guest,Past-dated event register page after fix,Closed message; no form,Closed message shown; no form,Pass (fixed),-,playwright,P3
+T-028,Fix verification,Guest,Zero-capacity and full event after fix,Full message; no form,Shown; no form,Pass (fixed),-,playwright,P3
+T-029,Fix verification,Guest,120-char last name after fix,Friendly message,"Last name must be 100 characters or fewer.",Pass (fixed),-,playwright,P3
+T-030,Accessibility,Guest,axe-core WCAG 2.1 AA on 7 public pages,No violations,1 contrast failure on portal home hero text; fixed to white and rescanned: 0 violations,Pass (fixed),Minor,axe,P1
+T-031,Build,Ops,vercel.json build used prisma db push --accept-data-loss,Safe migrations,Changed to prisma migrate deploy; live DB has no drift from schema,Pass (fixed),Major,diff,P2/P4

@@ -23,10 +23,10 @@ const PublicRegistrationSchema = z
     eventSlug: z.string().trim().min(1),
     ticketTypeId: z.string().trim().optional().or(z.literal("")),
     quantity: z.coerce.number().int().min(1).max(10).default(1),
-    firstName: z.string().trim().min(1).max(100),
-    lastName: z.string().trim().min(1).max(100),
-    email: z.string().trim().email(),
-    phone: z.string().trim().max(30).optional().or(z.literal("")),
+    firstName: z.string().trim().min(1, "Please enter your first name.").max(100, "First name must be 100 characters or fewer."),
+    lastName: z.string().trim().min(1, "Please enter your last name.").max(100, "Last name must be 100 characters or fewer."),
+    email: z.string().trim().email("Please enter a valid email address."),
+    phone: z.string().trim().max(30, "Phone number must be 30 characters or fewer.").optional().or(z.literal("")),
     utmSource: z.string().trim().max(120).optional().or(z.literal("")),
     utmMedium: z.string().trim().max(120).optional().or(z.literal("")),
     utmCampaign: z.string().trim().max(120).optional().or(z.literal("")),
@@ -37,6 +37,9 @@ const PublicRegistrationSchema = z
   .strict();
 
 const ACTIVE_REGISTRATION_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "ATTENDED"] as const;
+
+export const EVENT_PAST_MESSAGE = "Registration is closed because this event has already started.";
+export const EVENT_FULL_MESSAGE = "This event is full.";
 
 function isRetryableTransactionError(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -139,11 +142,23 @@ export async function getPublishedPortalEvent(tenantSlug: string, eventSlug: str
     return { ok: false as const, error: "Event not found", tenant, data: null as any };
   }
 
+  let registrationClosed: "past" | "full" | null = null;
+  if (event.startsAt < new Date()) {
+    registrationClosed = "past";
+  } else if (event.capacity !== null) {
+    const rows = await prisma.eventRegistration.findMany({
+      where: { tenantId: tenant.id, eventId: event.id, status: { in: [...ACTIVE_REGISTRATION_STATUSES] } },
+      select: { quantity: true },
+    });
+    if (rows.reduce((sum, row) => sum + row.quantity, 0) >= event.capacity) registrationClosed = "full";
+  }
+
   const routing = await loadPaymentRoutingForTenant(tenant.id);
   return {
     ok: true as const,
     tenant,
     data: event,
+    registrationClosed,
     paymentsEnabled: routing.mode !== "blocked",
     tipsEnabled: routing.tipsEnabled,
   };
@@ -180,6 +195,10 @@ export async function registerPublicEvent(input: unknown) {
   });
   if (!event) {
     return { ok: false as const, alreadyRegistered: false, error: "Event not found" };
+  }
+
+  if (event.startsAt < new Date()) {
+    return { ok: false as const, alreadyRegistered: false, error: EVENT_PAST_MESSAGE };
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -275,7 +294,7 @@ export async function registerPublicEvent(input: unknown) {
               return {
                 ok: false as const,
                 alreadyRegistered: false as const,
-                error: "This event is full.",
+                error: EVENT_FULL_MESSAGE,
               };
             }
           }

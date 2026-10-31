@@ -13,7 +13,7 @@ test("home page loads as the public marketing landing page for logged-out visito
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   await expect(page).toHaveURL(/:\d+\/$/);
-  await expect(page.getByRole("heading", { name: /Keep your website/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Run memberships and events/i })).toBeVisible();
 });
 
 test("dashboard placeholder loads or redirects predictably", async ({ page }) => {
