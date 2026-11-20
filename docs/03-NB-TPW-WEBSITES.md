@@ -2,19 +2,22 @@
 
 **Production JanaGana:** https://janagana.namasteneedham.com  
 **Canonical slugs:** `namaste-boston`, `purple-wings` (see `lib/pilot/tenants.ts`)  
-**TPW full integration checklist:** [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md) (complete TPW before NB)
+**TPW full integration checklist:** [11-TPW-INTEGRATION.md](./11-TPW-INTEGRATION.md)
 
-## Namaste Boston
+_Corrected 2026-11-19 to match the websites' actual code._
 
-| Visitor action | Destination | JanaGana? |
-|----------------|-------------|-----------|
-| Investment analysis | `/portal/namaste-boston/contact?interest=investment-analysis` | Yes |
-| Events | `/portal/namaste-boston/events` | Yes |
-| Membership join | `/portal/namaste-boston/join` | Yes |
-| Newsletter | `/portal/namaste-boston/contact?interest=newsletter` | Yes |
-| General realtor inquiry | NB on-site `/contact` → Supabase | No (intentional) |
+## Namaste Boston — NOT integrated
 
-## The Purple Wings
+Namaste Boston Homes runs its own CRM (Mission Control on Supabase) plus Brevo for
+email. Its website has **no links to JanaGana** (removed from the homepage and
+`/contact`; `src/lib/janagana-portal.ts` and `janagana-client.ts` were deleted).
+All NB leads go through NB `captureLead`.
+
+The `namaste-boston` tenant here is a demo tenant only. Do not point NB visitors,
+forms or CRM sync at it unless NB launches a paid-membership or paid-event line,
+and decide that explicitly first.
+
+## The Purple Wings — the real tenant
 
 | Visitor action | Destination | JanaGana? |
 |----------------|-------------|-----------|
@@ -31,7 +34,5 @@
 
 ## Verification
 
-- Use unique test emails per tenant.
-- Confirm rows in **Contacts & leads** for the correct tenant only.
-
-Full CTA audit tables lived in legacy `WEBSITE_JANAGANA_VISITOR_PATHS.md` (content preserved above).
+- Use unique test emails.
+- Confirm rows in **Contacts & leads** for the Purple Wings tenant only.
